@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.embed.swing.SwingNode?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="path" maxHeight="1.7976931348623157E308"
+	maxWidth="1.7976931348623157E308" prefHeight="465.0" prefWidth="505.0"
+	stylesheets="@CodaGui.css" xmlns="http://javafx.com/javafx/8.0.111"
+	xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.PathController">
+	<children>
+		<VBox>
+			<children>
+				<HBox prefWidth="200.0">
+					<children>
+						<Pane prefWidth="30.0" HBox.hgrow="NEVER" />
+						<VBox>
+							<children>
+								<Label text="Frequency Band" />
+								<ComboBox fx:id="frequencyBandComboBox" prefWidth="150.0" />
+							</children>
+						</VBox>
+						<Pane prefWidth="30.0" />
+						<VBox>
+							<children>
+								<Label text="Station 1" />
+								<ComboBox fx:id="station1ComboBox" prefWidth="150.0" />
+							</children>
+						</VBox>
+						<Pane layoutX="190.0" layoutY="20.0" prefWidth="30.0" />
+						<VBox layoutX="220.0" layoutY="20.0">
+							<children>
+								<Label text="Station 2" />
+								<ComboBox fx:id="station2ComboBox" prefWidth="150.0" />
+							</children>
+						</VBox>
+						<Pane prefWidth="30.0" />
+						<Button fx:id="refreshBtn" styleClass="material-icons"
+							mnemonicParsing="false" onAction="#reloadData" text=""
+							textAlignment="RIGHT" />
+						<Pane prefWidth="30.0" />
+					</children>
+					<VBox.margin>
+						<Insets />
+					</VBox.margin>
+					<padding>
+						<Insets bottom="10.0" top="10.0" />
+					</padding>
+				</HBox>
+				<SplitPane dividerPositions="0.66" VBox.vgrow="ALWAYS">
+					<items>
+						<SplitPane dividerPositions="0.5" prefHeight="160.0"
+							prefWidth="200.0">
+							<items>
+								<StackPane>
+									<children>
+										<SwingNode fx:id="sdPlotSwingNode" />
+									</children>
+								</StackPane>
+								<StackPane>
+									<children>
+										<SwingNode fx:id="stationPlotSwingNode" />
+									</children>
+								</StackPane>
+							</items>
+						</SplitPane>
+						<StackPane fx:id="mapParent" />
+					</items>
+				</SplitPane>
+			</children>
+		</VBox>
+	</children>
+</StackPane>

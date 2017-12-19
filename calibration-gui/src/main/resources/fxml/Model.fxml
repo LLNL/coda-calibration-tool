@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane fx:id="model" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CodaGui.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ModelController">
+	<children>
+		<SplitPane dividerPositions="0.5" orientation="VERTICAL">
+			<items>
+				<ScrollPane fitToHeight="true" fitToWidth="true">
+					<content>
+						<TableView fx:id="psTableView" tableMenuButtonVisible="true">
+							<columns>
+								<TableColumn fx:id="phaseCol" prefWidth="75.0" text="Phase" />
+								<TableColumn fx:id="q0Col" prefWidth="75.0" text="Q0" />
+								<TableColumn fx:id="delQ0Col" prefWidth="75.0" text="Del Q0" />
+								<TableColumn fx:id="gammaCol" prefWidth="75.0" text="Gamma" />
+								<TableColumn fx:id="delGammaCol" prefWidth="75.0" text="Del Gamma" />
+								<TableColumn fx:id="u0Col" prefWidth="75.0" text="U0" />
+								<TableColumn fx:id="etaCol" prefWidth="75.0" text="Eta" />
+								<TableColumn fx:id="delEtaCol" prefWidth="75.0" text="Del Eta" />
+								<TableColumn fx:id="distCritCol" prefWidth="75.0" text="Distcrit" />
+								<TableColumn fx:id="snrCol" prefWidth="75.0" text="Snr" />
+							</columns>
+							<columnResizePolicy>
+								<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+							</columnResizePolicy>
+						</TableView>
+					</content>
+				</ScrollPane>
+				<ScrollPane fitToHeight="true" fitToWidth="true" layoutX="10.0" layoutY="10.0">
+					<content>
+						<TableView fx:id="fiTableView" tableMenuButtonVisible="true">
+							<columns>
+								<TableColumn fx:id="sigmaCol" prefWidth="75.0" text="Sigma" />
+								<TableColumn fx:id="delSigmaCol" prefWidth="75.0" text="Del Sigma" visible="false" />
+								<TableColumn fx:id="psiCol" prefWidth="75.0" text="Psi" />
+								<TableColumn fx:id="delPsiCol" prefWidth="75.0" text="Del Psi" visible="false" />
+								<TableColumn fx:id="zetaCol" prefWidth="75.0" text="Zeta" />
+								<TableColumn fx:id="m0RefCol" prefWidth="75.0" text="M0Ref" />
+								<TableColumn fx:id="alphasCol" prefWidth="75.0" text="Alphas" />
+								<TableColumn fx:id="betasCol" prefWidth="75.0" text="Betas" />
+								<TableColumn fx:id="rhosCol" prefWidth="75.0" text="Rhos" />
+								<TableColumn fx:id="radpatPCol" prefWidth="75.0" text="RadpatP" />
+								<TableColumn fx:id="radpatSCol" prefWidth="75.0" text="RadpatS" />
+								<TableColumn fx:id="alpharCol" prefWidth="75.0" text="Alphar" />
+								<TableColumn fx:id="betarCol" prefWidth="75.0" text="Betar" />
+								<TableColumn fx:id="rhorCol" prefWidth="75.0" text="Rhor" />
+							</columns>
+							<columnResizePolicy>
+								<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+							</columnResizePolicy>
+						</TableView>
+					</content>
+				</ScrollPane>
+			</items>
+		</SplitPane>
+	</children>
+</StackPane>

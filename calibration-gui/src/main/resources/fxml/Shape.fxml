@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="shape" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CodaGui.css, @FitPlot.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController">
+	<children>
+		<TabPane tabClosingPolicy="UNAVAILABLE">
+			<tabs>
+				<Tab text="Shape Fit">
+					<content>
+								<VBox>
+									<children>
+										<HBox prefWidth="200.0">
+											<children>
+												<Pane prefWidth="30.0" HBox.hgrow="NEVER" />
+												<VBox>
+													<children>
+														<Label text="Data Type" />
+														<ComboBox fx:id="dataTypeCombo" prefWidth="150.0" />
+													</children>
+												</VBox>
+												<Pane prefWidth="30.0" />
+												<VBox>
+													<children>
+														<Label text="Frequency Band" />
+														<ComboBox fx:id="frequencyBandCombo" prefWidth="150.0" />
+													</children>
+												</VBox>
+												<Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#reloadData" styleClass="material-icons" text="" textAlignment="RIGHT">
+													<HBox.margin>
+														<Insets left="20.0" top="10.0" />
+													</HBox.margin>
+												</Button>
+											</children>
+											<VBox.margin>
+												<Insets />
+											</VBox.margin>
+											<padding>
+												<Insets bottom="10.0" top="10.0" />
+											</padding>
+										</HBox>
+										<ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+											<content>
+												<LineChart fx:id="mainFitPlot">
+													<xAxis>
+														<NumberAxis side="BOTTOM" fx:id="xAxis" />
+													</xAxis>
+													<yAxis>
+														<NumberAxis fx:id="yAxis" side="LEFT" />
+													</yAxis>
+												</LineChart>
+											</content>
+										</ScrollPane>
+									</children>
+								</VBox>
+					</content>
+				</Tab>
+			</tabs>
+		</TabPane>
+	</children>
+</StackPane>
