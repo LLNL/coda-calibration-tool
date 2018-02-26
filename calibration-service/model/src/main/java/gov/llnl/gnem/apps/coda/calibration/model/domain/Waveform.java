@@ -221,9 +221,9 @@ public class Waveform implements Serializable {
 
     public Waveform setAssociatedPicks(List<WaveformPick> associatedPicks) {
         if (associatedPicks != null) {
-            this.associatedPicks.clear();;
-            this.associatedPicks.forEach(pick -> pick.setWaveform(this));
+            this.associatedPicks.clear();;            
             this.associatedPicks.addAll(associatedPicks);
+            this.associatedPicks.forEach(pick -> pick.setWaveform(this));
         } else {
             this.associatedPicks.clear();
         }

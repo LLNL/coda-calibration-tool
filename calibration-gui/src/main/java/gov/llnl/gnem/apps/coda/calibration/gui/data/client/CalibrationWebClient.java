@@ -17,7 +17,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
@@ -28,18 +27,18 @@ public class CalibrationWebClient implements CalibrationClient {
 
     private WebClient client;
 
-    @Autowired    
+    @Autowired
     public CalibrationWebClient(WebClient client) {
         this.client = client;
     }
 
     @Override
-    public Mono<ClientResponse> runCalibration(Boolean autoPickingEnabled) {
-        return client.get().uri("/calibration/start/" + autoPickingEnabled).accept(MediaType.APPLICATION_JSON).exchange();
+    public Mono<String> runCalibration(Boolean autoPickingEnabled) {
+        return client.get().uri("/calibration/start/" + autoPickingEnabled).accept(MediaType.APPLICATION_JSON).exchange().map(resp -> resp.toString());
     }
-    
+
     @Override
-    public Mono<ClientResponse> clearData() {
-        return client.get().uri("/calibration/clear-data").accept(MediaType.APPLICATION_JSON).exchange();
+    public Mono<String> clearData() {
+        return client.get().uri("/calibration/clear-data").accept(MediaType.APPLICATION_JSON).exchange().map(resp -> resp.toString());
     }
 }

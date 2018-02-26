@@ -12,56 +12,51 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
+package gov.llnl.gnem.apps.coda.calibration.standalone.data.client;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ReferenceMwParametersService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
-public class ReferenceEventWebClient implements ReferenceEventClient {
+@Primary
+public class ReferenceEventLocalClient implements ReferenceEventClient {
 
-    private WebClient client;
+    private ReferenceMwParametersService service;
+    private MeasuredMwsService measureService;
 
     @Autowired
-    public ReferenceEventWebClient(WebClient client) {
-        this.client = client;
+    public ReferenceEventLocalClient(ReferenceMwParametersService service, MeasuredMwsService measureService) {
+        this.service = service;
+        this.measureService = measureService;
     }
 
     @Override
     public Flux<ReferenceMwParameters> getReferenceEvents() {
-        return client.get()
-                     .uri("/reference-events")
-                     .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(ReferenceMwParameters.class))
-                     .onErrorReturn(new ReferenceMwParameters());
+        return Flux.fromIterable(service.findAll()).filter(Objects::nonNull).onErrorReturn(new ReferenceMwParameters());
     }
 
     @Override
     public Mono<String> postReferenceEvents(List<ReferenceMwParameters> refEvents) throws JsonProcessingException {
-        return client.post().uri("/reference-events/batch").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(refEvents).exchange().map(resp -> resp.toString());
+        return Mono.just(service.save(refEvents).toString());
     }
 
     @Override
     public Flux<MeasuredMwParameters> getMeasuredEvents() {
-        return client.get()
-                     .uri("/measured-mws")
-                     .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(MeasuredMwParameters.class))
-                     .onErrorReturn(new MeasuredMwParameters());
+        return Flux.fromIterable(measureService.findAll()).filter(Objects::nonNull).onErrorReturn(new MeasuredMwParameters());
     }
 
 }

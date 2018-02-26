@@ -172,7 +172,7 @@ public class SpectraCalculator {
                                                              startTime.getEpochTime(),
                                                              minlength,
                                                              maxlength,
-                                                             noiseamp + Math.log10(params.getMinSnr()),
+                                                             noiseamp + params.getMinSnr(),
                                                              params.getLowFrequency() + (params.getHighFrequency() - params.getLowFrequency()),
                                                              distance));
             }

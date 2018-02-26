@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -81,5 +82,10 @@ public class ShapeMeasurementServiceImpl implements ShapeMeasurementService {
     @Override
     public void deleteAll() {
         shapeMeasurementRepository.deleteAllInBatch();
+    }
+
+    @Override
+    public ShapeMeasurement findOneByWaveformId(Long waveformId) {
+        return Optional.ofNullable(shapeMeasurementRepository.findOneByWaveformId(waveformId)).orElseGet(ShapeMeasurement::new);
     }
 }

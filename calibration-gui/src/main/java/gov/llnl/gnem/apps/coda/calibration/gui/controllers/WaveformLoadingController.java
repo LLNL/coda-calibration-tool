@@ -36,6 +36,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToWaveformConverter;
+import gov.llnl.gnem.apps.coda.calibration.gui.converters.sac.SacExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.PassFailEventProgressListener;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.ProgressEventProgressListener;
@@ -62,12 +63,46 @@ public class WaveformLoadingController {
 
     private AtomicLong idCounter = new AtomicLong();
 
+    private SacExporter sacExporter;
+
     @Autowired
-    public WaveformLoadingController(List<FileToWaveformConverter> fileConverters, WaveformClient client, EventBus bus) {
+    public WaveformLoadingController(List<FileToWaveformConverter> fileConverters, WaveformClient client, EventBus bus, SacExporter sacExporter) {
         super();
         this.fileConverters = fileConverters;
         this.client = client;
         this.bus = bus;
+        this.sacExporter = sacExporter;
+    }
+
+    public void saveToDirectory(File exportDirectory) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (exportDirectory.isDirectory() && exportDirectory.canWrite()) {
+                    Progress fileProcessingProgress = new Progress(0l, 0l);
+                    ProgressEvent processingProgressEvent = new ProgressEvent(idCounter.getAndIncrement(), fileProcessingProgress);
+                    ProgressMonitor processingMonitor = new ProgressMonitor("Exporting", new ProgressEventProgressListener(bus, processingProgressEvent));
+
+                    try {
+                        ProgressGui progressGui = new ProgressGui();
+                        progressGui.show();
+                        progressGui.addProgressMonitor(processingMonitor);
+                        fileProcessingProgress.setTotal(1l);
+                        bus.post(processingProgressEvent);
+
+                        client.getAllStacks().doOnComplete(() -> {
+                            fileProcessingProgress.setCurrent(1l);
+                            bus.post(processingProgressEvent);
+                        }).filter(w -> w != null).filter(w -> w.getId() != null).subscribe(w -> {
+                            sacExporter.writeWaveformToDirectory(exportDirectory, w);
+                        });
+                    } catch (RuntimeException e) {
+                        log.error(e.getMessage(), e);
+                    }
+                }
+            } catch (IllegalStateException e) {
+                log.error("Unable to instantiate loading display {}", e.getMessage(), e);
+            }
+        });
     }
 
     public void loadFiles(List<File> inputFiles) {
@@ -94,10 +129,10 @@ public class WaveformLoadingController {
                     ProgressMonitor uploadMonitor = new ProgressMonitor("Saving Data", new PassFailEventProgressListener(bus, fileUploadProgressEvent));
 
                     try {
-                        LoadingGui loadingGui = new LoadingGui();
-                        loadingGui.show();
-                        loadingGui.addProgressMonitor(processingMonitor);
-                        loadingGui.addProgressMonitor(uploadMonitor);
+                        ProgressGui progressGui = new ProgressGui();
+                        progressGui.show();
+                        progressGui.addProgressMonitor(processingMonitor);
+                        progressGui.addProgressMonitor(uploadMonitor);
 
                         fileUploadProgress.setTotal((long) (files.size() / maxBatching) + 1);
                         bus.post(fileUploadProgressEvent);

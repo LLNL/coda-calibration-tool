@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Event;
@@ -51,6 +52,7 @@ import llnl.gnem.core.util.Geometry.EModel;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 public class CodaWaveformPlot extends SeriesPlot {
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
@@ -61,9 +63,12 @@ public class CodaWaveformPlot extends SeriesPlot {
 
     private ParameterClient paramClient;
 
-    public CodaWaveformPlot(String xLabel, WaveformClient waveformClient, ParameterClient paramClient, TimeSeries... seismograms) {
+    private ShapeMeasurementClient shapeClient;
+
+    public CodaWaveformPlot(String xLabel, WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramClient, TimeSeries... seismograms) {
         super(xLabel, seismograms);
         this.waveformClient = waveformClient;
+        this.shapeClient = shapeClient;
         this.paramClient = paramClient;
     }
 
@@ -82,78 +87,110 @@ public class CodaWaveformPlot extends SeriesPlot {
         pickLineMap.clear();
 
         if (waveform.getSegment() != null) {
+            getXaxis().setLabelText("");
             paramClient.getSharedFrequencyBandParametersForFrequency(new FrequencyBand(waveform.getLowFrequency(), waveform.getHighFrequency())).subscribe(params -> {
-                TimeT beginTime = new TimeT(waveform.getBeginTime());
-                float[] waveformSegment = doublesToFloats(waveform.getSegment());
-                TimeSeries series = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
-                this.addSeismogram(series);
-                JSubplot subplot = this.getSubplot(series);
-                subplot.setYlimits(subplot.getYaxis().getMin() - 1.0, subplot.getYaxis().getMax() + 1.0);
-                Legend legend = new Legend(getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.RIGHT, VertPinEdge.TOP, 5, 5);
-                legend.addLabeledLine(waveform.getStream().getStation().getStationName() + "_" + waveform.getEvent().getEventId() + "_" + waveform.getLowFrequency() + "_"
-                        + waveform.getHighFrequency(), new Line(0, series.getDelta(), series.getData(), 1));
-                subplot.AddPlotObject(legend);
+                shapeClient.getMeasuredShape(waveform.getId()).subscribe(shape -> {
+                    TimeT beginTime = new TimeT(waveform.getBeginTime());
+                    float[] waveformSegment = doublesToFloats(waveform.getSegment());
+                    TimeSeries series = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
+                    this.addSeismogram(series);
+                    JSubplot subplot = this.getSubplot(series);
+                    subplot.setYlimits(subplot.getYaxis().getMin() - 1.0, subplot.getYaxis().getMax() + 1.0);
+                    Legend legend = new Legend(getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.RIGHT, VertPinEdge.TOP, 5, 5);
+                    legend.addLabeledLine(waveform.getStream().getStation().getStationName() + "_" + waveform.getEvent().getEventId() + "_" + waveform.getLowFrequency() + "_"
+                            + waveform.getHighFrequency(), new Line(0, series.getDelta(), series.getData(), 1));
+                    subplot.AddPlotObject(legend);
 
-                List<WaveformPick> picks = waveform.getAssociatedPicks();
-                if (picks != null) {
-                    for (WaveformPick pick : picks) {
-                        Collection<VPickLine> pickLines = this.addPick(pick.getPickName(), new TimeT(waveform.getEvent().getOriginTime()).getEpochTime() + pick.getPickTimeSecFromOrigin());
-                        for (VPickLine pickLine : pickLines) {
-                            pickLine.setDraggable(true);
-                            pickLineMap.put(pickLine, pick);
-                        }
-                    }
-                }
-
-                if (synth != null && params != null) {
-                    try {
-                        series = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
-                        float[] synthSegment = doublesToFloats(synth.getSegment());
-                        TimeSeries synthSeries = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
-                        WaveformPick endPick = null;
-                        for (WaveformPick p : waveform.getAssociatedPicks()) {
-                            if (PICK_TYPES.F.name().equals(p.getPickType())) {
-                                endPick = p;
-                                break;
+                    List<WaveformPick> picks = waveform.getAssociatedPicks();
+                    if (picks != null) {
+                        //1221: Plotting throws a runtime error if a pick is before/after the bounds of the waveform so we need to check that
+                        for (WaveformPick pick : picks) {
+                            double pickTime = new TimeT(waveform.getEvent().getOriginTime()).getEpochTime() + pick.getPickTimeSecFromOrigin();
+                            if (pickTime >= new TimeT(waveform.getBeginTime()).getEpochTime() && pickTime <= new TimeT(waveform.getEndTime()).getEpochTime()) {
+                                Collection<VPickLine> pickLines = this.addPick(pick.getPickName(), pickTime);
+                                for (VPickLine pickLine : pickLines) {
+                                    pickLine.setDraggable(true);
+                                    pickLineMap.put(pickLine, pick);
+                                }
                             }
                         }
-                        TimeT endTime;
-                        if (endPick != null && waveform.getEvent() != null) {
-                            endTime = new TimeT(waveform.getEvent().getOriginTime()).add(endPick.getPickTimeSecFromOrigin());
-                        } else {
-                            endTime = new TimeT(synth.getEndTime());
-                        }
-
-                        series.interpolate(synthSeries.getSamprate());
-
-                        Station station = synth.getSourceWaveform().getStream().getStation();
-                        Event event = synth.getSourceWaveform().getEvent();
-
-                        double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
-                        double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
-                        if (vr == 0.0) {
-                            vr = 1.0;
-                        }
-                        TimeT originTime = new TimeT(event.getOriginTime());
-                        TimeT startTime = originTime.add(distance / vr);
-
-                        series.cut(startTime, endTime);
-                        synthSeries.cut(startTime, endTime);
-
-                        TimeSeries diffSeis = series.subtract(synthSeries);
-
-                        int timeShift = (int) (startTime.subtractD(beginTime) - 0.5);
-
-                        double median = diffSeis.getMedian();
-
-                        getXaxis().setLabelText("Shift: " + dfmt4.format(median) + ", Start Time: " + startTime.toString());
-
-                        subplot.AddPlotObject(createLine(timeShift, median, synthSeries, Color.GREEN));
-                        repaint();
-                    } catch (IllegalArgumentException e) {
-                        log.warn(e.getMessage(), e);
                     }
-                }
+
+                    if (shape != null && shape.getId() != null) {
+                        try {
+                            series = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
+                            series.interpolate(1.0);
+                            float[] fitSegment = new float[series.getData().length];
+
+                            double gamma = shape.getMeasuredGamma();
+                            double beta = shape.getMeasuredBeta();
+                            double intercept = shape.getMeasuredIntercept();
+
+                            int timeShift = (int) (new TimeT(shape.getMeasuredTime()).subtractD(beginTime) - 0.5);
+                            for (int i = 0; i < series.getData().length; i++) {
+                                fitSegment[i] = (float) (intercept - gamma * Math.log10(i + 1) + beta * (i + 1));
+                            }
+
+                            TimeSeries fitSeries = new TimeSeries(fitSegment, series.getSamprate(), series.getTime());
+                            subplot.AddPlotObject(createLine(timeShift, 0.0, fitSeries, Color.GRAY));
+                            repaint();
+                        } catch (IllegalArgumentException e) {
+                            log.warn(e.getMessage(), e);
+                        }
+                    }
+
+                    if (synth != null && params != null) {
+                        try {
+                            series = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
+                            float[] synthSegment = doublesToFloats(synth.getSegment());
+                            TimeSeries synthSeries = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
+                            WaveformPick endPick = null;
+                            for (WaveformPick p : waveform.getAssociatedPicks()) {
+                                if (PICK_TYPES.F.name().equals(p.getPickType())) {
+                                    endPick = p;
+                                    break;
+                                }
+                            }
+                            TimeT endTime;
+                            if (endPick != null && endPick.getPickTimeSecFromOrigin() > 0 && waveform.getEvent() != null) {
+                                endTime = new TimeT(waveform.getEvent().getOriginTime()).add(endPick.getPickTimeSecFromOrigin());
+                            } else {
+                                endTime = new TimeT(synth.getEndTime());
+                            }
+
+                            series.interpolate(synthSeries.getSamprate());
+
+                            Station station = synth.getSourceWaveform().getStream().getStation();
+                            Event event = synth.getSourceWaveform().getEvent();
+
+                            double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
+                            double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
+                            if (vr == 0.0) {
+                                vr = 1.0;
+                            }
+                            TimeT originTime = new TimeT(event.getOriginTime());
+                            TimeT startTime = originTime.add(distance / vr);
+
+                            if (startTime.lt(endTime)) {
+                                series.cut(startTime, endTime);
+                                synthSeries.cut(startTime, endTime);
+    
+                                TimeSeries diffSeis = series.subtract(synthSeries);
+    
+                                int timeShift = (int) (startTime.subtractD(beginTime) - 0.5);
+    
+                                double median = diffSeis.getMedian();
+                                double baz = EModel.getBAZ(station.getLatitude(), station.getLongitude(), event.getLatitude(), event.getLongitude());
+    
+                                getXaxis().setLabelText(getXaxis().getLabelText() + "Shift: " + dfmt4.format(median) + ", Distance: " + dfmt4.format(distance) + ", BAz: " + dfmt4.format(baz));
+                                subplot.AddPlotObject(createLine(timeShift, median, synthSeries, Color.GREEN));
+                                repaint();
+                            }
+                        } catch (IllegalArgumentException e) {
+                            log.warn(e.getMessage(), e);
+                        }
+                    }
+                });
             });
         }
     }

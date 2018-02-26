@@ -140,7 +140,7 @@ public class WaveformServiceImpl implements WaveformService {
         Waveform mergedEntry = null;
         if (entry.getId() != null) {
             mergedEntry = waveformRepository.findById(entry.getId()).get();
-        } 
+        }
         if (mergedEntry != null) {
             mergedEntry = mergedEntry.mergeNonNullOrEmptyFields(entry);
         } else {

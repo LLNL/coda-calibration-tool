@@ -16,8 +16,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
 import java.util.List;
 
-import org.springframework.web.reactive.function.client.ClientResponse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SyntheticCoda;
@@ -27,9 +25,9 @@ import reactor.core.publisher.Mono;
 
 public interface WaveformClient {
 
-    public Mono<Waveform> getWaveformFromId(String id);
-    
-    public Mono<SyntheticCoda> getSyntheticFromId(String id);
+    public Mono<Waveform> getWaveformFromId(Long id);
+
+    public Mono<SyntheticCoda> getSyntheticFromId(Long id);
 
     public Mono<Waveform> postWaveform(Waveform segment) throws JsonProcessingException;
 
@@ -37,7 +35,7 @@ public interface WaveformClient {
 
     public Flux<Waveform> getAllStacks();
 
-    public Mono<ClientResponse> postWaveforms(Long sessionId, List<Waveform> segments) throws JsonProcessingException;
+    public Mono<String> postWaveforms(Long sessionId, List<Waveform> segments) throws JsonProcessingException;
 
     public Flux<Waveform> getUniqueEventStationStacks();
 

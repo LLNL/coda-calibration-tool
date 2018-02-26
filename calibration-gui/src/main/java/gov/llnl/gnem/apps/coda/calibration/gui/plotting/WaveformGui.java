@@ -25,6 +25,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.WaveformSelectionEvent;
 import javafx.application.Platform;
@@ -48,11 +49,13 @@ public class WaveformGui {
     private SwingNode waveformPlotNode;
     private CodaWaveformPlot waveformPlot;
     private WaveformClient waveformClient;
+    private ShapeMeasurementClient shapeClient;
     private ParameterClient paramsClient;
 
     @Autowired
-    public WaveformGui(WaveformClient waveformClient, ParameterClient paramsClient, EventBus bus) {
+    public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, EventBus bus) {
         this.waveformClient = waveformClient;
+        this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
         bus.register(this);
         Platform.runLater(() -> {
@@ -87,7 +90,7 @@ public class WaveformGui {
     @FXML
     public void initialize() {
         SwingUtilities.invokeLater(() -> {
-            waveformPlot = new CodaWaveformPlot("", waveformClient, paramsClient);
+            waveformPlot = new CodaWaveformPlot("", waveformClient, shapeClient, paramsClient);
             waveformPlotNode.setContent(waveformPlot);
         });
     }

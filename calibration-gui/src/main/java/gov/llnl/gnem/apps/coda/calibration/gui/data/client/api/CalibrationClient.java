@@ -14,13 +14,11 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
-import org.springframework.web.reactive.function.client.ClientResponse;
-
 import reactor.core.publisher.Mono;
 
 public interface CalibrationClient {
 
-    public Mono<ClientResponse> runCalibration(Boolean autoPickingEnabled);
+    public Mono<String> runCalibration(Boolean autoPickingEnabled);
 
-    public Mono<ClientResponse> clearData();
+    public Mono<String> clearData();
 }

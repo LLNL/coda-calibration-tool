@@ -21,4 +21,6 @@ import io.springlets.data.jpa.repository.DetachableJpaRepository;
 
 @Transactional
 public interface ShapeMeasurementRepository extends DetachableJpaRepository<ShapeMeasurement, Long> {
+
+    public ShapeMeasurement findOneByWaveformId(Long waveformId);
 }

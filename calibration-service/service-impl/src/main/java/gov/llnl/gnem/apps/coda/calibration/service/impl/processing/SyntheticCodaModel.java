@@ -42,9 +42,7 @@ public class SyntheticCodaModel {
         }
         // NOTE Kevin sets the log10(A0) term to 1.0 instead of 0.0
         double log10A0 = 1.0;
-        // NOTE both Scott and Kevin wrap the constant log10(e) into the b(r)
-        // variable
-        return log10A0 - gr * Math.log10(t) + br * t;
+        return (log10A0 - gr * Math.log10(t) + (br * t));
     }
 
     public double getDistanceFunction(double value0, double value1, double value2, double distance) {

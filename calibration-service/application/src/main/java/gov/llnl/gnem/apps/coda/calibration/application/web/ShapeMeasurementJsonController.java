@@ -19,6 +19,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,7 +27,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeMeasurementService;
 
 @RestController
-@RequestMapping(value = "/api/v1/shape-measurements", name = "ShapeMeasurementJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1/shape-measurements/", name = "ShapeMeasurementJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ShapeMeasurementJsonController {
 
     private ShapeMeasurementService service;
@@ -36,9 +37,14 @@ public class ShapeMeasurementJsonController {
         this.service = service;
     }
 
-    @GetMapping(name = "getMeasurements")
+    @GetMapping(path = "/all/", name = "getMeasurements")
     public List<ShapeMeasurement> getMeasurements() {
         return service.findAll();
+    }
+
+    @GetMapping("/byWaveformId/{id}")
+    public ShapeMeasurement getMeasurementByWaveformId(@PathVariable Long id) {
+        return service.findOneByWaveformId(id);
     }
 
     public ShapeMeasurementService getService() {

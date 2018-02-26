@@ -41,6 +41,7 @@ import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.EnvelopeFit;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
@@ -63,28 +64,28 @@ public class CalibrationCurveFitter {
     protected static final double MAX_V_P3 = 5000;
     protected static final double MIN_V_P3 = 1;
 
-    // -0.001
-    protected static final double MAX_B_P1 = -10;
-    // -0.5
+    // .1
+    protected static final double MAX_B_P1 = 1000;
+    // -0.05
     protected static final double MIN_B_P1 = -500;
     protected static final double B0_REG = 10000;
 
-    protected static final double MAX_B_P2 = 5;
-    protected static final double MIN_B_P2 = 0.0001;
+    protected static final double MAX_B_P2 = 20;
+    protected static final double MIN_B_P2 = 0.1;
     protected static final double MAX_B_P3 = 1500;
     protected static final double MIN_B_P3 = 0.0001;
 
-    // 3
-    protected static final double MAX_G_P1 = 300;
-    // -0.5
-    protected static final double MIN_G_P1 = 5;
+    // 1
+    protected static final double MAX_G_P1 = 100;
+    // -0.1
+    protected static final double MIN_G_P1 = 0;
     protected static final double G0_REG = 100;
 
-    protected static final double MAX_G_P2 = 1000;
-    protected static final double MIN_G_P2 = 1;
+    protected static final double MAX_G_P2 = 101;
+    protected static final double MIN_G_P2 = 0;
     protected static final double G1_REG = -1;
 
-    protected static final double MAX_G_P3 = 1000;
+    protected static final double MAX_G_P3 = 101;
     protected static final double MIN_G_P3 = 1;
 
     protected static final double YVV_MIN = 0.5;
@@ -95,50 +96,78 @@ public class CalibrationCurveFitter {
     protected static final double YBB_MAX = 0.0005;
     protected static final double B_DIST_MAX = 1550;
 
-    protected static final double YGG_MIN = 0.1;
+    protected static final double YGG_MIN = 0.01;
     protected static final double YGG_MAX = 100.0;
     protected static final double G_DIST_MAX = 600;
 
     private static final int ITER_COUNT = 10;
     private static final int DATA_POINT_CUTOFF = 100;
 
-    public double[] fitCodaStraightLine(final float[] segment) {
+    public EnvelopeFit fitCodaCMAES(final float[] segment) {
 
-        Double bestFit = null;
-        double[] curve = new double[4];
-        for (int i = 1; i <= 30; i++) {
-            final double gamma = ((double) i) * 0.1;
+        double minInt = 0.01;
+        double maxInt = 10.0;
+        double minGamma = 0.01;
+        double maxGamma = 1.00;
+        double minBeta = -1.0;
+        double maxBeta = 0.0;
 
-            SimpleRegression regression = new SimpleRegression();
+        EnvelopeFit fit = new EnvelopeFit();
 
-            for (int j = (int) (segment.length * .3); j < segment.length; j++) {
-                final double t = j + 1.0;
-                double amp = segment[j] + (Math.log10(t) * gamma);
-                regression.addData(t, amp);
-            }
+        SimpleRegression regression = new SimpleRegression();
+        for (int j = 0; j < segment.length; j++) {
+            regression.addData(j + 1, segment[j]);
+        }
+        double startIntercept = regression.getIntercept();
+        double startBeta = regression.getSlope();
 
+        MultivariateFunction prediction = point -> {
+            double intercept = point[0];
+            double gamma = point[1];
+            double beta = point[2];
             double sum = 0.0;
-            double intercept = regression.getIntercept();
-            double beta = regression.getSlope();
-
-            for (int j = (int) (segment.length * .3); j < segment.length; j++) {
+            for (int j = 0; j < segment.length; j++) {
                 double t = j + 1.0;
-                double actual = segment[j] + (Math.log10(t) * gamma);
-                double predicted = intercept + ((1 / Math.log10(Math.E)) * beta * t);
+                double actual = segment[j];
+                double predicted = intercept - (gamma * Math.log10(t)) + (beta * t);
                 sum = sum + FastMath.sqrt((predicted - actual) * (predicted - actual));
             }
+            return sum;
+        };
 
-            double error = 100 * (sum / (segment.length));
+        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.0005, -1.0, 100000);
 
-            if (bestFit == null || sum < bestFit) {
-                bestFit = sum;
-                curve[0] = gamma;
-                curve[1] = (1 / Math.log10(Math.E)) * beta;
-                curve[2] = intercept;
-                curve[3] = error;
-            }
+        if (Double.isNaN(startIntercept)) {
+            startIntercept = ThreadLocalRandom.current().nextDouble(minInt, maxInt);
+            startBeta = minBeta;
         }
-        return curve;
+
+        if (startIntercept > maxInt) {
+            maxInt += startIntercept;
+        } else if (startIntercept < minInt) {
+            startIntercept = minInt;
+        }
+
+        if (startBeta > maxBeta) {
+            maxBeta += startBeta;
+        } else if (startBeta < minBeta) {
+            startBeta = minBeta;
+        }
+
+        PointValuePair bestResult = optimizeCMAES(prediction,
+                                                  new InitialGuess(new double[] { startIntercept, minGamma, startBeta }),
+                                                  new CMAESOptimizer.Sigma(new double[] { 0.5, 0.05, 0.05 }),
+                                                  convergenceChecker,
+                                                  50,
+                                                  new SimpleBounds(new double[] { minInt, minGamma, minBeta }, new double[] { maxInt, maxGamma, maxBeta }));
+
+        double[] curve = bestResult.getKey();
+        fit.setIntercept(curve[0]);
+        fit.setGamma(curve[1]);
+        fit.setBeta(curve[2]);
+        fit.setError(bestResult.getValue());
+
+        return fit;
     }
 
     public double[] gridSearchCodaVApacheCMAES(List<Entry<Double, Double>> velocityDistancePairs) {
@@ -313,11 +342,11 @@ public class CalibrationCurveFitter {
             return sum;
         };
 
-        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(1.0, 1.0, 100000);
+        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.005, 0.005, 100000);
 
         PointValuePair bestResult = optimizeCMAES(prediction,
                                                   new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), minP2, minP3 }),
-                                                  new CMAESOptimizer.Sigma(new double[] { 1, 250, 500 }),
+                                                  new CMAESOptimizer.Sigma(new double[] { 1, 50, 50 }),
                                                   convergenceChecker,
                                                   50,
                                                   new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
@@ -326,7 +355,7 @@ public class CalibrationCurveFitter {
             PointValuePair result = optimizeCMAES(prediction,
                                                   new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
                                                           ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
-                                                  new CMAESOptimizer.Sigma(new double[] { 1, 250, 500 }),
+                                                  new CMAESOptimizer.Sigma(new double[] { 1, 50, 50 }),
                                                   convergenceChecker,
                                                   50,
                                                   new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
@@ -402,13 +431,12 @@ public class CalibrationCurveFitter {
 
     public double[] gridSearchCodaB(final List<Entry<Double, Double>> betaDistancePairs, final double ybbMin, final double ybbMax, final double distMin, final double distMax) {
         final Double[] baseResult = new Double[] { 0.0, 0.0, 0.0, 9E29 };
-        return ArrayUtils.toPrimitive(IntStream.rangeClosed(0, 200).parallel().mapToObj(ib0 -> {
-            double b0 = 0.0 - ib0 * 0.0005;
-            return IntStream.rangeClosed(0, 200).parallel().mapToObj(ib1 -> {
-                double b1 = 0.0 + ib1 * 0.02;
-
-                return IntStream.rangeClosed(0, 500).parallel().mapToObj(ib2 -> {
-                    double b2 = 0.0001 + ib2 * 1.0;
+        return ArrayUtils.toPrimitive(IntStream.rangeClosed(-50, 201).parallel().mapToObj(ib0 -> {
+            double b0 = -(ib0 - 1.0) * 0.001;
+            return IntStream.rangeClosed(1, 201).parallel().mapToObj(ib1 -> {
+                double b1 = (ib1 - 1.0) * 0.1;
+                return IntStream.rangeClosed(1, 20).parallel().mapToObj(ib2 -> {
+                    double b2 = ib2 * 15.0;
 
                     // avoid "unphysical" situations
                     double ybbDistMin = b0 - b1 / (distMin + b2);
@@ -437,14 +465,14 @@ public class CalibrationCurveFitter {
 
     public double[] gridSearchCodaG(final List<Entry<Double, Double>> gammaDistancePairs, final double yggMin, final double yggMax, final double distMin, final double distMax) {
         final Double[] baseResult = new Double[] { 0.0, 0.0, 0.0, 9E29 };
-        return ArrayUtils.toPrimitive(IntStream.rangeClosed(0, 20).parallel().mapToObj(ig0 -> {
-            double g0 = 2.0 - (ig0) * 0.1;
+        return ArrayUtils.toPrimitive(IntStream.rangeClosed(1, 21).parallel().mapToObj(ig0 -> {
+            double g0 = 2.001 - (ig0 - 1.0) * 0.1;
 
-            return IntStream.rangeClosed(0, 100).parallel().mapToObj(ig1 -> {
+            return IntStream.rangeClosed(1, 101).parallel().mapToObj(ig1 -> {
 
-                double g1 = -((double) ig1) * 1.0;
-                return IntStream.rangeClosed(0, 100).parallel().mapToObj(ig2 -> {
-                    double g2 = 1.0 + (ig2) * 1.0;
+                double g1 = -(ig1 - 1.0);
+                return IntStream.rangeClosed(1, 101).parallel().mapToObj(ig2 -> {
+                    double g2 = 1.0 + (ig2 - 1.0);
 
                     // avoid "unphysical" situations
 
@@ -566,21 +594,21 @@ public class CalibrationCurveFitter {
     private double[] gridSearch(List<Entry<Double, Double>> value, final int dataCutoff, GridFitter main, GridFitter fallback) {
         double[] fit;
 
-        if (value.size() < dataCutoff) {
-            fit = fallback.fitGrid(value);
-        } else {
-            try {
-                fit = main.fitGrid(value);
-                // TODO: Evaluation metrics to decide if its a 'good' fit.
-                if (fit[3] == -1) {
-                    log.trace("Failed to fit using main method, using fallback.");
-                    fit = fallback.fitGrid(value);
-                }
-            } catch (MaxCountExceededException e) {
-                log.trace("Failed to fit using main method, using fallback. {}", e.getMessage(), e);
+        //        if (value.size() < dataCutoff) {
+        //            fit = fallback.fitGrid(value);
+        //        } else {
+        try {
+            fit = main.fitGrid(value);
+            // TODO: Evaluation metrics to decide if its a 'good' fit.
+            if (fit[3] == -1) {
+                log.trace("Failed to fit using main method, using fallback.");
                 fit = fallback.fitGrid(value);
             }
+        } catch (MaxCountExceededException e) {
+            log.trace("Failed to fit using main method, using fallback. {}", e.getMessage(), e);
+            fit = fallback.fitGrid(value);
         }
+        //        }
 
         return fit;
     }

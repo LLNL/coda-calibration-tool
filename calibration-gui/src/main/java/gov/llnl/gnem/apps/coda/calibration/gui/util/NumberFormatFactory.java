@@ -26,6 +26,10 @@ public class NumberFormatFactory {
         super();
     }
 
+    public static NumberFormat oneDecimalOneLeadingZero() {
+        return new DecimalFormat("#0.0");
+    }
+    
     public static NumberFormat twoDecimalOneLeadingZero() {
         return new DecimalFormat("#0.0#");
     }

@@ -119,7 +119,7 @@ public class GuiApplication extends Application {
                          atts.getValue("Built-By"),
                          atts.getValue("Build-Timestamp"));
                 // Update the title bar
-                baseTitle += " Build(" + atts.getValue("Implementation-Build") + ") at " + atts.getValue("Build-Timestamp") + "  ";
+                baseTitle += " Built at " + atts.getValue("Build-Timestamp");
             } else {
                 // Class not from JAR
                 log.info("{} not running from a jar.", baseTitle);

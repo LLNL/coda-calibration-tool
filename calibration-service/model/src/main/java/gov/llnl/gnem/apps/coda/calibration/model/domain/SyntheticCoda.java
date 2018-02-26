@@ -39,7 +39,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.NumberFormat;
 
 @Entity
-@Table(name = "Synthetic_Coda", indexes = { @Index(columnList = "source_waveform_id", name = "source_waveform_id_index")})
+@Table(name = "Synthetic_Coda", indexes = { @Index(columnList = "source_waveform_id", name = "source_waveform_id_index") })
 public class SyntheticCoda implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -75,6 +75,14 @@ public class SyntheticCoda implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     @DateTimeFormat(style = "M-")
     private Date endTime;
+
+    @ManyToOne(optional = false, cascade = { CascadeType.MERGE })
+    private SharedFrequencyBandParameters sourceModel;
+
+    private Double measuredV;
+    private Double measuredB;
+
+    private Double measuredG;
 
     public Long getId() {
         return id;
@@ -143,6 +151,42 @@ public class SyntheticCoda implements Serializable {
         return this;
     }
 
+    public SharedFrequencyBandParameters getSourceModel() {
+        return sourceModel;
+    }
+
+    public SyntheticCoda setSourceModel(SharedFrequencyBandParameters sourceModel) {
+        this.sourceModel = sourceModel;
+        return this;
+    }
+
+    public Double getMeasuredV() {
+        return measuredV;
+    }
+
+    public SyntheticCoda setMeasuredV(Double measuredV) {
+        this.measuredV = measuredV;
+        return this;
+    }
+
+    public Double getMeasuredB() {
+        return measuredB;
+    }
+
+    public SyntheticCoda setMeasuredB(Double measuredB) {
+        this.measuredB = measuredB;
+        return this;
+    }
+
+    public Double getMeasuredG() {
+        return measuredG;
+    }
+
+    public SyntheticCoda setMeasuredG(Double measuredG) {
+        this.measuredG = measuredG;
+        return this;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -150,8 +194,12 @@ public class SyntheticCoda implements Serializable {
         result = prime * result + ((beginTime == null) ? 0 : beginTime.hashCode());
         result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((measuredB == null) ? 0 : measuredB.hashCode());
+        result = prime * result + ((measuredG == null) ? 0 : measuredG.hashCode());
+        result = prime * result + ((measuredV == null) ? 0 : measuredV.hashCode());
         result = prime * result + ((sampleRate == null) ? 0 : sampleRate.hashCode());
         result = prime * result + Arrays.hashCode(segment);
+        result = prime * result + ((sourceModel == null) ? 0 : sourceModel.hashCode());
         result = prime * result + ((sourceWaveform == null) ? 0 : sourceWaveform.hashCode());
         result = prime * result + ((version == null) ? 0 : version.hashCode());
         return result;
@@ -159,51 +207,96 @@ public class SyntheticCoda implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         SyntheticCoda other = (SyntheticCoda) obj;
         if (beginTime == null) {
-            if (other.beginTime != null)
+            if (other.beginTime != null) {
                 return false;
-        } else if (!beginTime.equals(other.beginTime))
+            }
+        } else if (!beginTime.equals(other.beginTime)) {
             return false;
+        }
         if (endTime == null) {
-            if (other.endTime != null)
+            if (other.endTime != null) {
                 return false;
-        } else if (!endTime.equals(other.endTime))
+            }
+        } else if (!endTime.equals(other.endTime)) {
             return false;
+        }
         if (id == null) {
-            if (other.id != null)
+            if (other.id != null) {
                 return false;
-        } else if (!id.equals(other.id))
+            }
+        } else if (!id.equals(other.id)) {
             return false;
+        }
+        if (measuredB == null) {
+            if (other.measuredB != null) {
+                return false;
+            }
+        } else if (!measuredB.equals(other.measuredB)) {
+            return false;
+        }
+        if (measuredG == null) {
+            if (other.measuredG != null) {
+                return false;
+            }
+        } else if (!measuredG.equals(other.measuredG)) {
+            return false;
+        }
+        if (measuredV == null) {
+            if (other.measuredV != null) {
+                return false;
+            }
+        } else if (!measuredV.equals(other.measuredV)) {
+            return false;
+        }
         if (sampleRate == null) {
-            if (other.sampleRate != null)
+            if (other.sampleRate != null) {
                 return false;
-        } else if (!sampleRate.equals(other.sampleRate))
+            }
+        } else if (!sampleRate.equals(other.sampleRate)) {
             return false;
-        if (!Arrays.equals(segment, other.segment))
+        }
+        if (!Arrays.equals(segment, other.segment)) {
             return false;
+        }
+        if (sourceModel == null) {
+            if (other.sourceModel != null) {
+                return false;
+            }
+        } else if (!sourceModel.equals(other.sourceModel)) {
+            return false;
+        }
         if (sourceWaveform == null) {
-            if (other.sourceWaveform != null)
+            if (other.sourceWaveform != null) {
                 return false;
-        } else if (!sourceWaveform.equals(other.sourceWaveform))
+            }
+        } else if (!sourceWaveform.equals(other.sourceWaveform)) {
             return false;
+        }
         if (version == null) {
-            if (other.version != null)
+            if (other.version != null) {
                 return false;
-        } else if (!version.equals(other.version))
+            }
+        } else if (!version.equals(other.version)) {
             return false;
+        }
         return true;
     }
 
     @Override
     public String toString() {
-        return "SyntheticCoda [id=" + id + ", version=" + version + ", sourceWaveform=" + sourceWaveform + ", sampleRate=" + sampleRate + ", beginTime=" + beginTime + ", endTime=" + endTime + "]";
+        return "SyntheticCoda [id=" + id + ", version=" + version + ", sourceWaveform=" + sourceWaveform + ", sampleRate=" + sampleRate + ", segment=" + Arrays.toString(segment) + ", beginTime="
+                + beginTime + ", endTime=" + endTime + ", sourceModel=" + sourceModel + ", measuredV=" + measuredV + ", measuredB=" + measuredB + ", measuredG=" + measuredG + "]";
     }
 
     public SyntheticCoda mergeNonNullOrEmptyFields(SyntheticCoda overlay) {
@@ -233,4 +326,5 @@ public class SyntheticCoda implements Serializable {
 
         return this;
     }
+
 }

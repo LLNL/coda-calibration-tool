@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,8 +44,14 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<ClientResponse> postSharedFrequencyBandParameters(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
-        return client.post().uri("/params/shared-fb-parameters/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange();
+    public Mono<String> postSharedFrequencyBandParameters(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
+        return client.post()
+                     .uri("/params/shared-fb-parameters/update")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(parameters)
+                     .exchange()
+                     .map(resp -> resp.toString());
     }
 
     @Override
@@ -60,8 +65,14 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<ClientResponse> postSiteSpecificFrequencyBandParameters(SiteFrequencyBandParameters parameters) throws JsonProcessingException {
-        return client.post().uri("/params/site-fb-parameters/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange();
+    public Mono<String> postSiteSpecificFrequencyBandParameters(SiteFrequencyBandParameters parameters) throws JsonProcessingException {
+        return client.post()
+                     .uri("/params/site-fb-parameters/update")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(parameters)
+                     .exchange()
+                     .map(resp -> resp.toString());
     }
 
     @Override
@@ -75,8 +86,8 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<ClientResponse> postPsParameters(MdacParametersPS parameters) throws JsonProcessingException {
-        return client.post().uri("/params/ps/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange();
+    public Mono<String> postPsParameters(MdacParametersPS parameters) throws JsonProcessingException {
+        return client.post().uri("/params/ps/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange().map(resp -> resp.toString());
     }
 
     @Override
@@ -85,8 +96,8 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<ClientResponse> postFiParameters(MdacParametersFI parameters) throws JsonProcessingException {
-        return client.post().uri("/params/fi/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange();
+    public Mono<String> postFiParameters(MdacParametersFI parameters) throws JsonProcessingException {
+        return client.post().uri("/params/fi/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange().map(resp -> resp.toString());
     }
 
     @Override

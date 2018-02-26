@@ -34,7 +34,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.CodaParamLoadingController;
-import gov.llnl.gnem.apps.coda.calibration.gui.controllers.LoadingGui;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ProgressGui;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ReferenceEventLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.WaveformLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
@@ -75,7 +75,7 @@ public class CodaGuiController {
 
     private EventBus bus;
 
-    private LoadingGui loadingGui;
+    private ProgressGui loadingGui;
     private WaveformGui waveformGui;
 
     private Map<Long, ProgressMonitor> monitors = new HashMap<>();
@@ -120,6 +120,11 @@ public class CodaGuiController {
     @FXML
     private void openWaveformDisplay() {
         waveformGui.show();
+    }
+
+    @FXML
+    private void openWaveformDirectorySavingWindow() {
+        Optional.ofNullable(sacDirFileChooser.showDialog(rootElement.getScene().getWindow())).ifPresent(waveformLoadingController::saveToDirectory);
     }
 
     @FXML
@@ -183,7 +188,7 @@ public class CodaGuiController {
         });
 
         try {
-            loadingGui = new LoadingGui();
+            loadingGui = new ProgressGui();
         } catch (IllegalStateException e) {
             log.error("Unable to instantiate loading display {}", e.getMessage(), e);
         }

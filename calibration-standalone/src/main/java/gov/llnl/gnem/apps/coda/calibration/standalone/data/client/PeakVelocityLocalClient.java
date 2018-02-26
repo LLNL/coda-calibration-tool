@@ -12,22 +12,30 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.gui.events;
+package gov.llnl.gnem.apps.coda.calibration.standalone.data.client;
 
-public class WaveformSelectionEvent {
-    private Long waveformID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
-    public WaveformSelectionEvent(Long waveformID) {
-        super();
-        this.waveformID = waveformID;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.service.api.PeakVelocityMeasurementService;
+import reactor.core.publisher.Flux;
+
+@Component
+@Primary
+public class PeakVelocityLocalClient implements PeakVelocityClient {
+
+    private PeakVelocityMeasurementService service;
+
+    @Autowired
+    public PeakVelocityLocalClient(PeakVelocityMeasurementService service) {
+        this.service = service;
     }
 
-    public Long getWaveformID() {
-        return waveformID;
-    }
-
-    public WaveformSelectionEvent setWaveformID(Long waveformID) {
-        this.waveformID = waveformID;
-        return this;
+    @Override
+    public Flux<PeakVelocityMeasurement> getMeasuredPeakVelocities() {
+        return Flux.fromIterable(service.findAll()).onErrorReturn(new PeakVelocityMeasurement());
     }
 }

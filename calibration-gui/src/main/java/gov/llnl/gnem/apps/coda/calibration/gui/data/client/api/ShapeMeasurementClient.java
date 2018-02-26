@@ -16,8 +16,11 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public interface ShapeMeasurementClient {
 
     public Flux<ShapeMeasurement> getMeasuredShapes();
+
+    public Mono<ShapeMeasurement> getMeasuredShape(Long id);
 }

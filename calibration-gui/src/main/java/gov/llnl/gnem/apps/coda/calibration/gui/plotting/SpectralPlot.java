@@ -15,35 +15,24 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.awt.Color;
-import java.awt.geom.Point2D;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.stream.Collectors;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
 import llnl.gnem.core.gui.plotting.Legend;
 import llnl.gnem.core.gui.plotting.PaintMode;
 import llnl.gnem.core.gui.plotting.PenStyle;
-import llnl.gnem.core.gui.plotting.SymbolLegend;
-import llnl.gnem.core.gui.plotting.SymbolLegend.SymbolTextPair;
 import llnl.gnem.core.gui.plotting.VertPinEdge;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JMultiAxisPlot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.PlotProperties;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.TickScaleFunc;
 import llnl.gnem.core.gui.plotting.plotobject.Line;
-import llnl.gnem.core.gui.plotting.plotobject.Symbol;
-import llnl.gnem.core.gui.plotting.plotobject.SymbolDef;
 import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
-import llnl.gnem.core.gui.plotting.plotobject.SymbolStyle;
 
 /**
  * @author E. Matzel
@@ -70,17 +59,10 @@ public class SpectralPlot extends JMultiAxisPlot {
     private double defaultXMax = 1.;
     private double defaultYMin = 19.0;
     private double defaultYMax = 27.0;
-    private int symbol = 0;
 
     public SpectralPlot() {
         super();
         setupPlot();
-    }
-
-    public SpectralPlot(List<Point2D.Double> datavector, Color color, SymbolStyle symbolstyle) {
-        super();
-        setupPlot();
-        plotXYdata(datavector, color, symbolstyle);
     }
 
     private void setupPlot() {
@@ -136,22 +118,20 @@ public class SpectralPlot extends JMultiAxisPlot {
     /**
      * @param plots
      *            <p>
-     *            Map of [Legend Key, {X, Y}] values. Presently this is used
-     *            mostly as [Station Name, { log10(centerFrequency),
-     *            log10(amplitiude) }]
+     *            List of {X, Y, Symbol} values. Presently this is used mostly
+     *            as { log10(centerFrequency), log10(amplitiude), Symbol }
      *            </p>
      * @param showLegend
      */
-    public void plotXYdata(final Map<String, List<Point2D.Double>> plots, Boolean showLegend) {
+    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend) {
         plotXYdata(plots, showLegend, null, null);
     }
 
     /**
      * @param plots
      *            <p>
-     *            Map of [Legend Key, {X, Y}] values. Presently this is used
-     *            mostly as [Station Name, { log10(centerFrequency),
-     *            log10(amplitiude) }]
+     *            List of {X, Y, Symbol} values. Presently this is used mostly
+     *            as { log10(centerFrequency), log10(amplitiude), Symbol }
      *            </p>
      * @param showLegend
      * @param referenceSpectra
@@ -165,33 +145,21 @@ public class SpectralPlot extends JMultiAxisPlot {
      *            theoretical best fit spectra
      *            </p>
      */
-    public void plotXYdata(final Map<String, List<Point2D.Double>> plots, Boolean showLegend, Spectra... spectra) {
-        List<Point2D.Double> allPoints = new ArrayList<>();
-        ArrayList<SymbolTextPair> symbolsForLegend = new ArrayList<>();
+    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend, Spectra... spectra) {
 
         // line based legends for trending
         Legend legend = new Legend(getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.RIGHT, VertPinEdge.TOP, 5, 5);
 
-        Map<String, SymbolStyle> symbols = new HashMap<>();
-
-        // plot each set of points - do NOT connect the points
-        int i = 0;
-        int max = plots.size();
-        for (Entry<String, List<Point2D.Double>> entry : plots.entrySet()) {
-            allPoints.addAll(entry.getValue());
-        }
-
         if (plots.size() > 1) {
             // get the average for each freq and plot it - connect the points
-            List<Point2D.Double> allOrderedPoints = sortPointsByX(allPoints);
-            List<Point2D.Double> averages = createAveragePlot(allOrderedPoints);
+            List<PlotPoint> averages = createAveragePlot(sortPointsByX(plots));
 
             float[] x = new float[averages.size()];
             float[] y = new float[averages.size()];
-            for (i = 0; i < averages.size(); i++) {
-                Point2D.Double point = averages.get(i);
-                x[i] = (float) point.getX();
-                y[i] = (float) point.getY();
+            for (int i = 0; i < averages.size(); i++) {
+                PlotPoint point = averages.get(i);
+                x[i] = point.getX().floatValue();
+                y[i] = point.getY().floatValue();
             }
 
             Line line = new Line(x, y, Color.BLACK, PaintMode.COPY, PenStyle.SOLID, 2);
@@ -203,31 +171,11 @@ public class SpectralPlot extends JMultiAxisPlot {
             plotSpectraObject(jsubplot, spectra[j], legend);
         }
 
-        for (Entry<String, List<Point2D.Double>> entry : plots.entrySet()) {
-            String key = entry.getKey();
-            Color color = getSpacedOutColour(i++, max);
-            SymbolStyle symbolStyle;
-            if (!symbols.containsKey(key)) {
-                symbolStyle = nextSymbol();
-                symbols.put(key, symbolStyle);
-            } else {
-                symbolStyle = symbols.get(key);
-            }
-            plotXYdata(entry.getValue(), color, symbolStyle);
-            SymbolDef symbolDef = new SymbolDef(symbolStyle, properties.getSymbolSize(), color, color);
-            SymbolTextPair pair = new SymbolTextPair(key, symbolDef);
-            symbolsForLegend.add(pair);
-        }
+        plotXYdata(plots);
 
         refreshPlotAxes();
 
-        Collections.sort(symbolsForLegend, (s1, s2) -> StringUtils.compare(s1.getText(), s2.getText()));
-
-        // symbol based legend for Stations
-        SymbolLegend symbolLegend = new SymbolLegend(symbolsForLegend, getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.LEFT, VertPinEdge.BOTTOM, 5, 5);
-
         if (showLegend) {
-            jsubplot.AddPlotObject(symbolLegend);
             jsubplot.AddPlotObject(legend);
         }
 
@@ -235,17 +183,14 @@ public class SpectralPlot extends JMultiAxisPlot {
     }
 
     private void plotSpectraObject(JSubplot jsubplot, Spectra spectra, Legend legend) {
-        int i;
-        float[] x;
-        float[] y;
         if (spectra != null && !spectra.getSpectraXY().isEmpty()) {
-            List<Point2D.Double> netMwValues = spectra.getSpectraXY();
-            x = new float[netMwValues.size()];
-            y = new float[netMwValues.size()];
-            for (i = 0; i < netMwValues.size(); i++) {
-                Point2D.Double point = netMwValues.get(i);
-                x[i] = (float) point.getX();
-                y[i] = (float) point.getY();
+            List<PlotPoint> netMwValues = spectra.getSpectraXY().stream().map(d -> new PlotPoint(d.getX(), d.getY(), null, null)).collect(Collectors.toList());
+            float[] x = new float[netMwValues.size()];
+            float[] y = new float[netMwValues.size()];
+            for (int i = 0; i < netMwValues.size(); i++) {
+                PlotPoint point = netMwValues.get(i);
+                x[i] = point.getX().floatValue();
+                y[i] = point.getY().floatValue();
             }
 
             Line line;
@@ -268,50 +213,12 @@ public class SpectralPlot extends JMultiAxisPlot {
         }
     }
 
-    private SymbolStyle nextSymbol() {
-        SymbolStyle nextStyle;
-        symbol = ++symbol % 8;
-        switch (symbol) {
-        case 0:
-            nextStyle = SymbolStyle.CIRCLE;
-            break;
-        case 1:
-            nextStyle = SymbolStyle.SQUARE;
-            break;
-        case 2:
-            nextStyle = SymbolStyle.DIAMOND;
-            break;
-        case 3:
-            nextStyle = SymbolStyle.TRIANGLEUP;
-            break;
-        case 4:
-            nextStyle = SymbolStyle.TRIANGLEDN;
-            break;
-        case 5:
-            nextStyle = SymbolStyle.PLUS;
-            break;
-        case 6:
-            nextStyle = SymbolStyle.CROSS;
-            break;
-        case 7:
-            nextStyle = SymbolStyle.STAR5;
-            break;
-        case 8:
-            nextStyle = SymbolStyle.HEXAGON;
-            break;
-        default:
-            nextStyle = SymbolStyle.ERROR_BAR;
-        }
-
-        return nextStyle;
-    }
-
-    private List<Point2D.Double> createAveragePlot(List<Point2D.Double> allOrderedPoints) {
-        List<Point2D.Double> xyvector = new ArrayList<>();
+    private List<PlotPoint> createAveragePlot(List<PlotPoint> allOrderedPoints) {
+        List<PlotPoint> xyvector = new ArrayList<>();
         List<Double> amplitudes = new ArrayList<>();
         double xTest = allOrderedPoints.get(0).getX();
 
-        for (Point2D.Double point : allOrderedPoints) {
+        for (PlotPoint point : allOrderedPoints) {
             if (Math.abs(Math.abs(point.getX()) - Math.abs(xTest)) < EPSILON) {
                 amplitudes.add(point.getY());
             } else {
@@ -320,7 +227,7 @@ public class SpectralPlot extends JMultiAxisPlot {
                     sum += vals;
                 }
                 Double amplitude = sum / amplitudes.size();
-                Point2D.Double xypoint = new Point2D.Double(xTest, amplitude);
+                PlotPoint xypoint = new PlotPoint(xTest, amplitude, null, null);
                 xyvector.add(xypoint);
 
                 xTest = point.getX();
@@ -335,45 +242,46 @@ public class SpectralPlot extends JMultiAxisPlot {
                 sum += vals;
             }
             Double amplitude = sum / amplitudes.size();
-            Point2D.Double xypoint = new Point2D.Double(xTest, amplitude);
+            PlotPoint xypoint = new PlotPoint(xTest, amplitude, null, null);
             xyvector.add(xypoint);
         }
 
         return xyvector;
     }
 
-    private List<Point2D.Double> sortPointsByX(List<Point2D.Double> allPoints) {
-        int smallestIndex = getSmallestX(allPoints);
-        List<Point2D.Double> orderedList = new ArrayList<>();
-        orderedList.add(allPoints.remove(smallestIndex));
-        while (!allPoints.isEmpty()) {
+    private List<PlotPoint> sortPointsByX(List<PlotPoint> inPlots) {
+        List<PlotPoint> plots = new ArrayList<>(inPlots);
+        int smallestIndex = getSmallestX(plots);
+        List<PlotPoint> orderedList = new ArrayList<>();
+        orderedList.add(plots.remove(smallestIndex));
+        while (!plots.isEmpty()) {
             // Find the index of the closest point (using another method)
-            int nearestIndex = findNearestIndex(orderedList.get(orderedList.size() - 1), allPoints);
+            int nearestIndex = findNearestIndex(orderedList.get(orderedList.size() - 1), plots);
             // Remove from the unorderedList and add to the ordered one
-            orderedList.add(allPoints.remove(nearestIndex));
+            orderedList.add(plots.remove(nearestIndex));
         }
 
         return orderedList;
     }
 
-    private int getSmallestX(List<Point2D.Double> allPoints) {
+    private int getSmallestX(List<PlotPoint> plots) {
         int smallest = -1;
         double test = Double.MAX_VALUE;
-        for (int i = 0; i < allPoints.size(); i++) {
-            if (test > allPoints.get(i).getX()) {
-                test = allPoints.get(i).getX();
+        for (int i = 0; i < plots.size(); i++) {
+            if (test > plots.get(i).getX()) {
+                test = plots.get(i).getX();
                 smallest = i;
             }
         }
         return smallest;
     }
 
-    private int findNearestIndex(Point2D.Double thisPoint, List<Point2D.Double> listToSearch) {
+    private int findNearestIndex(PlotPoint thisPoint, List<PlotPoint> listToSearch) {
         double nearestDistSquared = Double.POSITIVE_INFINITY;
         int nearestIndex = -1;
         for (int i = 0; i < listToSearch.size(); i++) {
-            Point2D.Double point2 = listToSearch.get(i);
-            double distsq = (thisPoint.x - point2.x) * (thisPoint.x - point2.x);
+            PlotPoint point2 = listToSearch.get(i);
+            double distsq = (thisPoint.getX() - point2.getX()) * (thisPoint.getX() - point2.getX());
             if (distsq < nearestDistSquared) {
                 nearestDistSquared = distsq;
                 nearestIndex = i;
@@ -383,39 +291,17 @@ public class SpectralPlot extends JMultiAxisPlot {
     }
 
     /**
-     * This function splits the red-green-blue colour wheel into n equally
-     * spaced divisions and returns the colour from a particular division.
-     * 
-     * @param index
-     *            - The index of the colour to return, the range is 0 -
-     *            (count-1)
-     * @param count
-     *            - The number of divisions to split the HSV colour wheel into
-     * @return A java.awt.Color object containing the color.
-     * @author HughesR
-     */
-    private Color getSpacedOutColour(int index, int count) {
-        final float saturation = 0.95f; // Saturation
-        final float brightness = 0.8f; // Brightness
-        float hue = (float) index / (float) count;
-        return Color.getHSBColor(hue, saturation, brightness);
-    }
-
-    /**
      * Plot a series of double valued (x,y) points in the subplot
      *
      * @param datavector
-     *            - a vector of Point2D.Double objects
+     *            - a vector of PlotPoint objects
      */
-    public final void plotXYdata(List<Point2D.Double> data, Color color, SymbolStyle symbolstyle) {
-        for (Point2D.Double point : data) {
-            double x = point.getX();
-            double y = point.getY();
-
-            rescalePlot(x, y);
-
-            Symbol symbol = SymbolFactory.createSymbol(symbolstyle, x, y, properties.getSymbolSize(), color, properties.getSymbolEdgeColor(), color, "", true, false, 10.0);
-            jsubplot.AddPlotObject(symbol);
+    public final void plotXYdata(List<PlotPoint> data) {
+        if (data != null) {
+            data.stream()
+                .peek(p -> rescalePlot(p.getX(), p.getY()))
+                .map(v -> SymbolFactory.createSymbol(v.getStyle(), v.getX(), v.getY(), properties.getSymbolSize(), v.getColor(), properties.getSymbolEdgeColor(), v.getColor(), "", true, false, 10.0))
+                .forEach(jsubplot::AddPlotObject);
         }
     }
 

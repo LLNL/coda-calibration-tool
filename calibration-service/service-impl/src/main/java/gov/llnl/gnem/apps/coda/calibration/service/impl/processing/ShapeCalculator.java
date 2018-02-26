@@ -19,12 +19,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.EnvelopeFit;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
@@ -59,7 +62,7 @@ public class ShapeCalculator {
         // Loop through each entry and try to fit a line using the max
         // amplitude prediction for that frequency band from the velocity model
 
-        for (Entry<PeakVelocityMeasurement, WaveformPick> filteredVelocityMeasurement : filteredVelocityMeasurements) {
+        measuredShapes = filteredVelocityMeasurements.parallelStream().map(filteredVelocityMeasurement -> {
             PeakVelocityMeasurement velocityMeasurement = filteredVelocityMeasurement.getKey();
             WaveformPick endPick = filteredVelocityMeasurement.getValue();
 
@@ -69,7 +72,7 @@ public class ShapeCalculator {
             if (frequencyBandParameter == null) {
                 // TODO: Feedback to user
                 log.trace("Unable to find frequency band parameters for band {} given input measurement {}; this measurement will be skipped", freqBand, velocityMeasurement);
-                continue;
+                return null;
             }
 
             double distance = velocityMeasurement.getDistance();
@@ -82,28 +85,35 @@ public class ShapeCalculator {
 
             Double velocity = frequencyBandParameter.getVelocity0() - (frequencyBandParameter.getVelocity1() / (frequencyBandParameter.getVelocity2() + distance));
 
-            final Double dt = 1.0;
-            Double travelTimeRaw = (distance / (velocity + dt));
-            travelTime = originTime.add(travelTimeRaw);
+            double travelTimeRaw = 0.0;
+            if (velocity != 0.0) {
+                travelTimeRaw = (distance / velocity);
+            }
 
             Double timeDifference = maxTimeRaw - travelTimeRaw;
+            if (Math.abs(timeDifference) < 5.0) {
+                travelTime = originTime.add(maxTimeRaw);
+            } else {
+                travelTime = originTime.add(travelTimeRaw);
+            }
 
             endTime = originTime.add(endPick.getPickTimeSecFromOrigin());
 
             if (travelTime.ge(endTime)) {
                 log.trace("Encountered F pick with time before expected Coda start while processing {}; processing will skip this file", velocityMeasurement);
-                continue;
+                return null;
             }
             TimeSeries synthSeis = converter.convert(velocityMeasurement.getWaveform());
             try {
-                synthSeis.cut(travelTime, endTime);
+                synthSeis.interpolate(1.0);
+                synthSeis.cut(travelTime, endTime);    
 
                 if (frequencyBandParameter.getMinLength() > 0 && synthSeis.getLengthInSeconds() < frequencyBandParameter.getMinLength()) {
                     log.trace("Encountered a too small window length while processing {} with length {} and minimum window of {}; processing will skip this file",
                               velocityMeasurement,
                               synthSeis.getLengthInSeconds(),
                               frequencyBandParameter.getMinLength());
-                    continue;
+                    return null;
                 } else if (frequencyBandParameter.getMaxLength() > 0 && synthSeis.getLengthInSeconds() > frequencyBandParameter.getMaxLength()) {
                     log.trace("Encountered a too large window length while processing {} with length {} and maxium window of {}; processing will continue on a truncated envelope",
                               velocityMeasurement,
@@ -112,20 +122,24 @@ public class ShapeCalculator {
                     synthSeis.cutAfter(travelTime.add(frequencyBandParameter.getMaxLength()));
                 }
 
-                double[] curve = curveFitter.fitCodaStraightLine(synthSeis.getData());
-                measuredShapes.add(new ShapeMeasurement().setDistance(distance)
-                                                         .setWaveform(velocityMeasurement.getWaveform())
-                                                         .setV0(frequencyBandParameter.getVelocity0())
-                                                         .setV1(frequencyBandParameter.getVelocity1())
-                                                         .setV2(frequencyBandParameter.getVelocity2())
-                                                         .setMeasuredGamma(curve[0])
-                                                         .setMeasuredBeta(curve[1])
-                                                         .setTimeDifference(timeDifference));
+                EnvelopeFit curve = curveFitter.fitCodaCMAES(synthSeis.getData());
+                return new ShapeMeasurement().setDistance(distance)
+                                             .setWaveform(velocityMeasurement.getWaveform())
+                                             .setV0(frequencyBandParameter.getVelocity0())
+                                             .setV1(frequencyBandParameter.getVelocity1())
+                                             .setV2(frequencyBandParameter.getVelocity2())
+                                             .setMeasuredGamma(curve.getGamma())
+                                             .setMeasuredBeta(curve.getBeta())
+                                             .setMeasuredIntercept(curve.getIntercept())
+                                             .setMeasuredError(curve.getError())
+                                             .setMeasuredTime(travelTime.getDate())
+                                             .setTimeDifference(timeDifference);
             } catch (IllegalArgumentException e) {
                 log.info("Error generating shape {}", e.getMessage());
             }
-        }
-
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        
         return measuredShapes;
     }
 }

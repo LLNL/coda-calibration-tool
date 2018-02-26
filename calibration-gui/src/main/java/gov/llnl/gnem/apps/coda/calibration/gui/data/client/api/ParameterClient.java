@@ -14,8 +14,6 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
-import org.springframework.web.reactive.function.client.ClientResponse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.FrequencyBand;
@@ -28,19 +26,19 @@ import reactor.core.publisher.Mono;
 
 public interface ParameterClient {
 
-    public Mono<ClientResponse> postSharedFrequencyBandParameters(SharedFrequencyBandParameters parameters) throws JsonProcessingException;
+    public Mono<String> postSharedFrequencyBandParameters(SharedFrequencyBandParameters parameters) throws JsonProcessingException;
 
     public Flux<SharedFrequencyBandParameters> getSharedFrequencyBandParameters();
 
-    public Mono<ClientResponse> postSiteSpecificFrequencyBandParameters(SiteFrequencyBandParameters parameters) throws JsonProcessingException;
+    public Mono<String> postSiteSpecificFrequencyBandParameters(SiteFrequencyBandParameters parameters) throws JsonProcessingException;
 
     public Flux<SiteFrequencyBandParameters> getSiteSpecificFrequencyBandParameters();
 
-    public Mono<ClientResponse> postPsParameters(MdacParametersPS parameters) throws JsonProcessingException;
+    public Mono<String> postPsParameters(MdacParametersPS parameters) throws JsonProcessingException;
 
     public Flux<MdacParametersPS> getPsParameters();
 
-    public Mono<ClientResponse> postFiParameters(MdacParametersFI parameters) throws JsonProcessingException;
+    public Mono<String> postFiParameters(MdacParametersFI parameters) throws JsonProcessingException;
 
     public Flux<MdacParametersFI> getFiParameters();
 

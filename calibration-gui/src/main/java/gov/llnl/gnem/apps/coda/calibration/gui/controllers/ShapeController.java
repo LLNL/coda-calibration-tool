@@ -303,7 +303,7 @@ public class ShapeController {
 
     private EventHandler<Event> showWaveformPopup(Waveform waveform) {
         return event -> {
-            bus.post(new WaveformSelectionEvent(waveform.getId().toString()));
+            bus.post(new WaveformSelectionEvent(waveform.getId()));
         };
     }
 

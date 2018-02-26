@@ -17,4 +17,5 @@ package gov.llnl.gnem.apps.coda.calibration.service.api;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 
 public interface ShapeMeasurementService extends BaseService<ShapeMeasurement, Long> {
+    public ShapeMeasurement findOneByWaveformId(Long waveformId);
 }

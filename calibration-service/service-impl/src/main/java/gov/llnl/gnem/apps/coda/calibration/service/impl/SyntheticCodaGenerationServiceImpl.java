@@ -78,7 +78,17 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
             double dt = 1.;
 
             // note distance/vr is a singularity point - start at t = dt
-            TimeT codastart = new TimeT(event.getOriginTime()).add(distance / (vr + dt));
+            TimeT eventTime = new TimeT(event.getOriginTime());
+            TimeT codastart = eventTime;
+            if (vr != 0.0) {
+                codastart = codastart.add(distance / vr);
+            }
+            double maxTime = seis.getMaxTime()[0];
+            double timediff = maxTime - codastart.subtractD(eventTime);
+            if (Math.abs(timediff) < 5.0) {
+                codastart.add(timediff);
+            }
+
             TimeT endTime = new TimeT(sourceWaveform.getEndTime());
 
             try {
@@ -102,6 +112,11 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
                 synth.setEndTime(seis.getEndtime().getDate());
                 synth.setSampleRate(seis.getSamprate());
                 synth.setSourceWaveform(sourceWaveform);
+                synth.setSourceModel(model);
+                synth.setMeasuredV(vr);
+                synth.setMeasuredB(br);
+                synth.setMeasuredG(gr);
+                
                 return synth;
             } catch (IllegalArgumentException e) {
                 log.warn("Error attempting to cut seismogram for Synthetic generation {}; {}", sourceWaveform, e.getMessage());

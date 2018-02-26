@@ -12,22 +12,34 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.gui.events;
+package gov.llnl.gnem.apps.coda.calibration.standalone.data.client;
 
-public class WaveformSelectionEvent {
-    private Long waveformID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
-    public WaveformSelectionEvent(Long waveformID) {
-        super();
-        this.waveformID = waveformID;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
+import gov.llnl.gnem.apps.coda.calibration.service.api.CalibrationService;
+import reactor.core.publisher.Mono;
+
+@Component
+@Primary
+public class CalibrationLocalClient implements CalibrationClient {
+
+    private CalibrationService service;
+
+    @Autowired
+    public CalibrationLocalClient(CalibrationService service) {
+        this.service = service;
     }
 
-    public Long getWaveformID() {
-        return waveformID;
+    @Override
+    public Mono<String> runCalibration(Boolean autoPickingEnabled) {
+        return Mono.just(Boolean.toString(service.start(autoPickingEnabled)));
     }
 
-    public WaveformSelectionEvent setWaveformID(Long waveformID) {
-        this.waveformID = waveformID;
-        return this;
+    @Override
+    public Mono<String> clearData() {
+        return Mono.just(Boolean.toString(service.clearData()));
     }
 }

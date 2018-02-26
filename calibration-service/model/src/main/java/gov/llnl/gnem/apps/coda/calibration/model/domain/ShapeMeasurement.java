@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.model.domain;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,8 +25,11 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.Version;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.NumberFormat;
 
 @Entity
@@ -61,6 +65,17 @@ public class ShapeMeasurement implements Serializable {
 
     @NumberFormat
     private double measuredGamma;
+
+    @NumberFormat
+    private double measuredIntercept;
+
+    @NumberFormat
+    private double measuredError;
+
+    @Column(name = "measuredTime")
+    @Temporal(TemporalType.TIMESTAMP)
+    @DateTimeFormat(style = "M-")
+    private Date measuredTime;
 
     @NumberFormat
     private double distance;
@@ -140,6 +155,33 @@ public class ShapeMeasurement implements Serializable {
         return this;
     }
 
+    public double getMeasuredIntercept() {
+        return measuredIntercept;
+    }
+
+    public ShapeMeasurement setMeasuredIntercept(double measuredIntercept) {
+        this.measuredIntercept = measuredIntercept;
+        return this;
+    }
+
+    public double getMeasuredError() {
+        return measuredError;
+    }
+
+    public ShapeMeasurement setMeasuredError(double measuredError) {
+        this.measuredError = measuredError;
+        return this;
+    }
+
+    public Date getMeasuredTime() {
+        return this.measuredTime;
+    }
+
+    public ShapeMeasurement setMeasuredTime(Date measuredTime) {
+        this.measuredTime = measuredTime;
+        return this;
+    }
+
     public double getTimeDifference() {
         return timeDifference;
     }
@@ -168,7 +210,11 @@ public class ShapeMeasurement implements Serializable {
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         temp = Double.doubleToLongBits(measuredBeta);
         result = prime * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(measuredError);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(measuredGamma);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(measuredIntercept);
         result = prime * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(timeDifference);
         result = prime * result + (int) (temp ^ (temp >>> 32));
@@ -185,49 +231,71 @@ public class ShapeMeasurement implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         ShapeMeasurement other = (ShapeMeasurement) obj;
-        if (Double.doubleToLongBits(distance) != Double.doubleToLongBits(other.distance))
+        if (Double.doubleToLongBits(distance) != Double.doubleToLongBits(other.distance)) {
             return false;
+        }
         if (id == null) {
-            if (other.id != null)
+            if (other.id != null) {
                 return false;
-        } else if (!id.equals(other.id))
+            }
+        } else if (!id.equals(other.id)) {
             return false;
-        if (Double.doubleToLongBits(measuredBeta) != Double.doubleToLongBits(other.measuredBeta))
+        }
+        if (Double.doubleToLongBits(measuredBeta) != Double.doubleToLongBits(other.measuredBeta)) {
             return false;
-        if (Double.doubleToLongBits(measuredGamma) != Double.doubleToLongBits(other.measuredGamma))
+        }
+        if (Double.doubleToLongBits(measuredError) != Double.doubleToLongBits(other.measuredError)) {
             return false;
-        if (Double.doubleToLongBits(timeDifference) != Double.doubleToLongBits(other.timeDifference))
+        }
+        if (Double.doubleToLongBits(measuredGamma) != Double.doubleToLongBits(other.measuredGamma)) {
             return false;
-        if (Double.doubleToLongBits(v0) != Double.doubleToLongBits(other.v0))
+        }
+        if (Double.doubleToLongBits(measuredIntercept) != Double.doubleToLongBits(other.measuredIntercept)) {
             return false;
-        if (Double.doubleToLongBits(v1) != Double.doubleToLongBits(other.v1))
+        }
+        if (Double.doubleToLongBits(timeDifference) != Double.doubleToLongBits(other.timeDifference)) {
             return false;
-        if (Double.doubleToLongBits(v2) != Double.doubleToLongBits(other.v2))
+        }
+        if (Double.doubleToLongBits(v0) != Double.doubleToLongBits(other.v0)) {
             return false;
+        }
+        if (Double.doubleToLongBits(v1) != Double.doubleToLongBits(other.v1)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(v2) != Double.doubleToLongBits(other.v2)) {
+            return false;
+        }
         if (version == null) {
-            if (other.version != null)
+            if (other.version != null) {
                 return false;
-        } else if (!version.equals(other.version))
+            }
+        } else if (!version.equals(other.version)) {
             return false;
+        }
         if (waveform == null) {
-            if (other.waveform != null)
+            if (other.waveform != null) {
                 return false;
-        } else if (!waveform.equals(other.waveform))
+            }
+        } else if (!waveform.equals(other.waveform)) {
             return false;
+        }
         return true;
     }
 
     @Override
     public String toString() {
         return "ShapeMeasurement [id=" + id + ", version=" + version + ", waveform=" + waveform + ", v0=" + v0 + ", v1=" + v1 + ", v2=" + v2 + ", measuredBeta=" + measuredBeta + ", measuredGamma="
-                + measuredGamma + ", distance=" + distance + ", timeDifference=" + timeDifference + "]";
+                + measuredGamma + ", measuredIntercept=" + measuredIntercept + ", measuredError=" + measuredError + ", distance=" + distance + ", timeDifference=" + timeDifference + "]";
     }
 
 }

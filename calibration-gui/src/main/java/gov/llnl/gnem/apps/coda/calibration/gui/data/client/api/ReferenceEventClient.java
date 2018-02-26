@@ -16,8 +16,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
 import java.util.List;
 
-import org.springframework.web.reactive.function.client.ClientResponse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
@@ -31,5 +29,5 @@ public interface ReferenceEventClient {
 
     public Flux<MeasuredMwParameters> getMeasuredEvents();
 
-    public Mono<ClientResponse> postReferenceEvents(List<ReferenceMwParameters> refEvents) throws JsonProcessingException;
+    public Mono<String> postReferenceEvents(List<ReferenceMwParameters> refEvents) throws JsonProcessingException;
 }

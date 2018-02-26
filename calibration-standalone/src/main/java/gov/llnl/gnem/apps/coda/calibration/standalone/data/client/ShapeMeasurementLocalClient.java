@@ -12,45 +12,38 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
+package gov.llnl.gnem.apps.coda.calibration.standalone.data.client;
+
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeMeasurementService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
-public class ShapeMeasurementWebClient implements ShapeMeasurementClient {
+@Primary
+public class ShapeMeasurementLocalClient implements ShapeMeasurementClient {
 
-    private WebClient client;
+    private ShapeMeasurementService service;
 
     @Autowired
-    public ShapeMeasurementWebClient(WebClient client) {
-        this.client = client;
+    public ShapeMeasurementLocalClient(ShapeMeasurementService service) {
+        this.service = service;
     }
 
     @Override
     public Flux<ShapeMeasurement> getMeasuredShapes() {
-        return client.get()
-                     .uri("/shape-measurements/all/")
-                     .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(ShapeMeasurement.class))
-                     .onErrorReturn(new ShapeMeasurement());
+        return Flux.fromIterable(service.findAll()).onErrorReturn(new ShapeMeasurement());
     }
 
     @Override
-    public Mono<ShapeMeasurement> getMeasuredShape(Long id) {
-        return client.get()
-                     .uri("/shape-measurements/byWaveformId/" + id)
-                     .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(ShapeMeasurement.class))
-                     .onErrorReturn(new ShapeMeasurement());
+    public Mono<ShapeMeasurement> getMeasuredShape(Long waveformId) {
+        return Mono.just(Optional.ofNullable(service.findOneByWaveformId(waveformId)).orElse(new ShapeMeasurement())).onErrorReturn(new ShapeMeasurement());
     }
 }

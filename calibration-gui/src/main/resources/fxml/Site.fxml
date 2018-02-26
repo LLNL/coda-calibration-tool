@@ -44,29 +44,43 @@
 										<Insets bottom="10.0" top="10.0" />
 									</padding>
 								</HBox>
-								<SplitPane dividerPositions="0.66" prefHeight="160.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-									<items>
-										<SplitPane dividerPositions="0.5" prefHeight="160.0" prefWidth="200.0">
-											<items>
-												<StackPane>
-													<children>
-														<SwingNode fx:id="rawPlotSwingNode" />
-													</children>
-												</StackPane>
-												<StackPane>
-													<children>
-														<SwingNode fx:id="pathPlotSwingNode" />
-													</children>
-												</StackPane>
-											</items>
-										</SplitPane>
-										<StackPane>
-											<children>
-												<SwingNode fx:id="sitePlotSwingNode" />
-											</children>
-										</StackPane>
-									</items>
-								</SplitPane>
+                        <SplitPane dividerPositions="0.15" VBox.vgrow="ALWAYS">
+                           <items>
+                              <ScrollPane fitToHeight="true" fitToWidth="true">
+                                 <content>
+                                    <TableView fx:id="iconTable" prefHeight="200.0">
+                                      <columns>
+                                        <TableColumn fx:id="iconCol" text="Icon" />
+                                        <TableColumn fx:id="stationCol" text="Station" />
+                                      </columns>
+                                    </TableView>
+                                 </content>
+                              </ScrollPane>
+      								<SplitPane dividerPositions="0.66" prefHeight="160.0" prefWidth="200.0">
+      									<items>
+      										<SplitPane dividerPositions="0.5" prefHeight="160.0" prefWidth="200.0">
+      											<items>
+      												<StackPane>
+      													<children>
+      														<SwingNode fx:id="rawPlotSwingNode" />
+      													</children>
+      												</StackPane>
+      												<StackPane>
+      													<children>
+      														<SwingNode fx:id="pathPlotSwingNode" />
+      													</children>
+      												</StackPane>
+      											</items>
+      										</SplitPane>
+      										<StackPane>
+      											<children>
+      												<SwingNode fx:id="sitePlotSwingNode" />
+      											</children>
+      										</StackPane>
+      									</items>
+      								</SplitPane>
+                           </items>
+                        </SplitPane>
 							</children>
 						</VBox>
 					</content>

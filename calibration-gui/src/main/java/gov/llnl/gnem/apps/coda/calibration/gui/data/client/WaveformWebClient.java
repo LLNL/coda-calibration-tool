@@ -19,7 +19,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -41,12 +40,12 @@ public class WaveformWebClient implements WaveformClient {
     }
 
     @Override
-    public Mono<Waveform> getWaveformFromId(String id) {
+    public Mono<Waveform> getWaveformFromId(Long id) {
         return client.get().uri("/single-waveform/{id}", id).accept(MediaType.APPLICATION_JSON).exchange().flatMap(response -> response.bodyToMono(Waveform.class));
     }
 
     @Override
-    public Mono<SyntheticCoda> getSyntheticFromId(String id) {
+    public Mono<SyntheticCoda> getSyntheticFromId(Long id) {
         return client.get().uri("/synthetics/{id}", id).accept(MediaType.APPLICATION_JSON).exchange().flatMap(response -> response.bodyToMono(SyntheticCoda.class));
     }
 
@@ -62,8 +61,8 @@ public class WaveformWebClient implements WaveformClient {
     }
 
     @Override
-    public Mono<ClientResponse> postWaveforms(Long sessionId, List<Waveform> segments) throws JsonProcessingException {
-        return client.post().uri("/waveforms/batch/" + sessionId).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(segments).exchange();
+    public Mono<String> postWaveforms(Long sessionId, List<Waveform> segments) throws JsonProcessingException {
+        return client.post().uri("/waveforms/batch/" + sessionId).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(segments).exchange().map(resp -> resp.toString());
     }
 
     @Override

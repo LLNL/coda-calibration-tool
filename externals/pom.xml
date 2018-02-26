@@ -5,7 +5,7 @@
 
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>externals</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<packaging>jar</packaging>
 
 	<name>externals</name>
