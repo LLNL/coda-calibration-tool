@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -12,25 +12,7 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.model.domain.util;
+package gov.llnl.gnem.apps.coda.calibration.gui.events;
 
-public enum PICK_TYPES {
-
-	F("f"), A("a"), B("b"), PN("Pn"), PG("Pg"), SN("Sn"), LG("Lg"), O("o"), AP("ap"), UNKNOWN("UNK");
-
-	private String phase;
-
-	private PICK_TYPES(String phase) {
-		this.phase = phase;
-	}
-
-	public String getPhase() {
-		return phase;
-	}
-
-	public static boolean isKnownPhase(String type) {
-		return PN.getPhase().equalsIgnoreCase(type) || PG.getPhase().equalsIgnoreCase(type)
-				|| SN.getPhase().equalsIgnoreCase(type) || LG.getPhase().equalsIgnoreCase(type);
-	}
-
+public class LoadStartingEvent {
 }

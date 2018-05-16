@@ -79,7 +79,7 @@ public class SacLoader implements FileToWaveformConverter {
             return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable. %s", "NULL", "File reference is null")));
         }
 
-        String fileName = file.getName();
+        String fileName = file.getPath().toString();
         log.trace("Reading {} ", fileName);
         SACFileReader reader = null;
         try {
@@ -96,16 +96,22 @@ public class SacLoader implements FileToWaveformConverter {
             }
             String stationName = headerResult.getResultPayload().get();
 
+            TimeT originTime = header.getOriginTime() != null ? header.getOriginTime() : header.getReferenceTime();
+            if (originTime == null) {
+                return exceptionalResult(new LightweightIllegalStateException("Both reference time and origin time may not be null!"));
+            }
+
             String evid = null;
             headerResult = validateHeaderDefined(fileName, "NEVID", header.nevid);
             if (headerResult.isSuccess() && !headerResult.getResultPayload().get().equals("0")) {
                 evid = headerResult.getResultPayload().get();
-            }
-            else {
+            } else {
                 headerResult = validateHeaderDefined(fileName, "KEVNM", header.kevnm);
                 if (headerResult.isSuccess() && headerResult.getResultPayload().isPresent() && !headerResult.getResultPayload().get().isEmpty()) {
                     evid = headerResult.getResultPayload().get();
-                } 
+                } else {
+                    evid = getOrCreateEvid(header);
+                }
             }
 
             headerResult = validateHeaderDefined(fileName, "KCMPNM", header.kcmpnm);
@@ -184,11 +190,15 @@ public class SacLoader implements FileToWaveformConverter {
             double sampleRate = header.delta > 0 ? 1.0 / header.delta : 1.0;
             float[] rawVals = sequence.getArray();
             Double[] segment = new Double[rawVals.length];
-            IntStream.range(0, rawVals.length).forEach(index -> segment[index] = Double.valueOf(rawVals[index]));
-
-            TimeT originTime = header.getOriginTime() != null ? header.getOriginTime() : header.getReferenceTime();
-            if (originTime == null) {
-                return exceptionalResult(new IllegalArgumentException("Both reference time and origin time may not be null!"));
+            try {
+                IntStream.range(0, rawVals.length).forEach(index -> {
+                    segment[index] = Double.valueOf(rawVals[index]);
+                    if (!Double.isFinite(segment[index])) {
+                        throw new LightweightIllegalStateException("Invalid data in segment for file: " + fileName);
+                    }
+                });
+            } catch (LightweightIllegalStateException e) {
+                return exceptionalResult(e);
             }
 
             return new Result<>(true,
@@ -241,14 +251,12 @@ public class SacLoader implements FileToWaveformConverter {
     private Result<String> validateDoubleDefinedAndInRange(String fileName, String headerName, float value, double minVal, double maxVal) {
 
         Result<String> validation = new Result<>(false, "");
-        List<Exception> exceptions = new ArrayList<>();
-
         if (SACHeader.isDefault(value)) {
-            exceptions.add(new LightweightIllegalStateException(String.format(SAC_HEADER_NOT_SET, fileName, headerName)));
+            validation.getErrors().add(new LightweightIllegalStateException(String.format(SAC_HEADER_NOT_SET, fileName, headerName)));
         }
 
         if (value < minVal || value > maxVal) {
-            exceptions.add(new LightweightIllegalStateException(String.format("Error parsing (%s): SAC header variable %s must be between %f and %f! Actual value is %f",
+            validation.getErrors().add(new LightweightIllegalStateException(String.format("Error parsing (%s): SAC header variable %s must be between %f and %f! Actual value is %f",
                                                                               fileName,
                                                                               headerName,
                                                                               minVal,
@@ -266,10 +274,9 @@ public class SacLoader implements FileToWaveformConverter {
     private Result<String> validateHeaderDefined(String fileName, String headerName, int headerValue) {
         String validHeader = null;
         Result<String> validation = new Result<>(false, validHeader);
-        List<Exception> exceptions = new ArrayList<>();
 
         if (SACHeader.isDefault(headerValue)) {
-            exceptions.add(new LightweightIllegalStateException(String.format(SAC_HEADER_NOT_SET, fileName, headerName)));
+            validation.getErrors().add(new LightweightIllegalStateException(String.format(SAC_HEADER_NOT_SET, fileName, headerName)));
         } else {
             validHeader = Integer.toString(headerValue);
             validation.setResultPayload(Optional.of(validHeader));
@@ -286,10 +293,9 @@ public class SacLoader implements FileToWaveformConverter {
 
         String validHeader = StringUtils.trimToEmpty(headerValue);
         Result<String> validation = new Result<>(false, validHeader);
-        List<Exception> exceptions = new ArrayList<>();
 
         if (SACHeader.isDefault(validHeader)) {
-            exceptions.add(new LightweightIllegalStateException(String.format(SAC_HEADER_NOT_SET, fileName, headerName)));
+            validation.getErrors().add(new LightweightIllegalStateException(String.format(SAC_HEADER_NOT_SET, fileName, headerName)));
         }
 
         if (validation.getErrors().isEmpty()) {
@@ -312,5 +318,26 @@ public class SacLoader implements FileToWaveformConverter {
     @Override
     public PathMatcher getMatchingPattern() {
         return filter;
+    }
+
+    private String getOrCreateEvid(SACHeader header) {
+        int evid = 0;
+        Double time = 0d;
+        if (header.getOriginTime() != null) {
+            time = header.getOriginTime().getEpochTime();
+        } else if (header.getReferenceTime() != null) {
+            time = header.getReferenceTime().getEpochTime();
+        }
+        evid = createJDateMinuteResolutionFromEpoch(time);
+        return Integer.toString(evid);
+    }
+
+    private int createJDateMinuteResolutionFromEpoch(Double instant) {
+        TimeT time = new TimeT(instant);
+        int jDate = time.getYear() % 100;
+        jDate = jDate * 1000 + time.getJDay();
+        jDate = jDate * 100 + time.getHour();
+        jDate = jDate * 100 + time.getMinute();
+        return jDate;
     }
 }

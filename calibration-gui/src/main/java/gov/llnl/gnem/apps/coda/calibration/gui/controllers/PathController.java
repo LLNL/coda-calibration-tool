@@ -55,14 +55,18 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.StackPane;
 import llnl.gnem.core.gui.plotting.MouseOverPlotObject;
+import llnl.gnem.core.gui.plotting.PaintMode;
+import llnl.gnem.core.gui.plotting.PenStyle;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JMultiAxisPlot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.gui.plotting.plotobject.Circle;
+import llnl.gnem.core.gui.plotting.plotobject.Line;
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
 import llnl.gnem.core.gui.plotting.plotobject.Square;
 import llnl.gnem.core.gui.plotting.plotobject.Symbol;
 import llnl.gnem.core.gui.plotting.plotobject.TriangleDn;
 import llnl.gnem.core.gui.plotting.plotobject.TriangleUp;
+import llnl.gnem.core.util.SeriesMath;
 import llnl.gnem.core.util.Geometry.EModel;
 
 @Component
@@ -382,7 +386,7 @@ public class PathController {
                         if (plotObj.getYcenter() < ymin) {
                             ymin = plotObj.getYcenter();
                         }
-                        plot.AddPlotObject(plotObj);
+                        plot.AddPlotObject(plotObj, 9);
 
                         if (plotObj2.getXcenter() > xmax) {
                             xmax = plotObj2.getXcenter();
@@ -483,7 +487,7 @@ public class PathController {
                                     if (plotObj.getYcenter() < xmin) {
                                         xmin = plotObj.getYcenter();
                                     }
-                                    plot.AddPlotObject(plotObj);
+                                    plot.AddPlotObject(plotObj, 9);
 
                                     if (plotObj2.getXcenter() > xmax) {
                                         xmax = plotObj2.getXcenter();
@@ -503,9 +507,22 @@ public class PathController {
                         }
                     }
 
+                    
+                    double paddedXmin = xmin - (xmin * .1);
+                    double paddedXmax = xmax + (xmax * .1);
                     if (xmax != null) {
-                        plot.SetAxisLimits(xmin - (xmin * .1), xmax + (xmax * .1), xmin - (xmin * .1), xmax + (xmax * .1));
+                        plot.SetAxisLimits(paddedXmin, paddedXmax, paddedXmin, paddedXmax);
                     }
+                    int points = 50;
+                    double dx = (plot.getXaxis().getMax()) / (points - 1);
+                    float[] xy = new float[points];
+                    for (int i = 0; i < points; i++) {
+                        xy[i] = (float) (0 + (dx * i));
+                    }
+                    Line line = new Line(xy, xy, Color.black, PaintMode.COPY, PenStyle.DASH, 2);
+
+                    plot.AddPlotObject(line, 1);
+                    
                     if (stationDistance == null) {
                         stationDistance = 0.0;
                     }

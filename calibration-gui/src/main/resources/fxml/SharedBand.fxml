@@ -9,12 +9,12 @@
 	<children>
 		<ScrollPane fitToHeight="true" fitToWidth="true">
 			<content>
-				<TableView fx:id="codaSharedTableView" tableMenuButtonVisible="true">
+				<TableView fx:id="codaSharedTableView" editable="true" tableMenuButtonVisible="true">
 					<columns>
-						<TableColumn fx:id="freqCol11" editable="false" prefWidth="75.0" text="Frequency">
+						<TableColumn fx:id="freqCol11" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Frequency">
 							<columns>
-								<TableColumn fx:id="lowFreqCol" prefWidth="75.0" text="Low" />
-								<TableColumn fx:id="highFreqCol" prefWidth="75.0" text="High" />
+								<TableColumn fx:id="lowFreqCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Low" />
+								<TableColumn fx:id="highFreqCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="High" />
 							</columns>
 						</TableColumn>
 						<TableColumn fx:id="freqCol12" editable="false" prefWidth="75.0" text="Velocity">
@@ -38,19 +38,19 @@
 								<TableColumn fx:id="g2Col" prefWidth="75.0" text="G2" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="lengthCol" editable="false" prefWidth="75.0" text="Length (Sec)">
+						<TableColumn fx:id="lengthCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Length (Sec)">
 							<columns>
-								<TableColumn fx:id="minLengthCol" prefWidth="75.0" text="Min" />
-								<TableColumn fx:id="maxLengthCol" prefWidth="75.0" text="Max" />
+								<TableColumn fx:id="minLengthCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Min" />
+								<TableColumn fx:id="maxLengthCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Max" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="minSnrCol" prefWidth="75.0" text="Minimum SNR" visible="false" />
-						<TableColumn fx:id="s1Col" prefWidth="75.0" text="S1" visible="false" />
-						<TableColumn fx:id="s2Col" prefWidth="75.0" text="S2" visible="false" />
-						<TableColumn prefWidth="75.0" text="XC" visible="false" fx:id="xcCol" />
-						<TableColumn prefWidth="75.0" text="XT" visible="false" fx:id="xtCol" />
-						<TableColumn fx:id="qCol" prefWidth="75.0" text="Q" visible="false" />
-						<TableColumn fx:id="measureTimeCol" prefWidth="75.0" text="Measurement Time (s)" visible="false" />
+						<TableColumn fx:id="minSnrCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Minimum SNR" visible="false" />
+						<TableColumn fx:id="s1Col" editable="false" prefWidth="75.0" text="S1" visible="false" />
+						<TableColumn fx:id="s2Col" editable="false" prefWidth="75.0" text="S2" visible="false" />
+						<TableColumn editable="false" prefWidth="75.0" text="XC" visible="false" fx:id="xcCol" />
+						<TableColumn editable="false" prefWidth="75.0" text="XT" visible="false" fx:id="xtCol" />
+						<TableColumn fx:id="qCol" editable="false" prefWidth="75.0" text="Q" visible="false" />
+						<TableColumn fx:id="measureTimeCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Measurement Time (s)" visible="false" />
 					</columns>
 					<columnResizePolicy>
 						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

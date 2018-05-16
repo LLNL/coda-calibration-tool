@@ -38,7 +38,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ProgressGui;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ReferenceEventLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.WaveformLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.plotting.WaveformGui;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.CalibrationProgressListener;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.CalibrationStatusEvent;
@@ -76,7 +76,6 @@ public class CodaGuiController {
     private EventBus bus;
 
     private ProgressGui loadingGui;
-    private WaveformGui waveformGui;
 
     private Map<Long, ProgressMonitor> monitors = new HashMap<>();
 
@@ -88,13 +87,12 @@ public class CodaGuiController {
 
     @Autowired
     public CodaGuiController(WaveformLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController, ReferenceEventLoadingController refEventLoadingController,
-            CalibrationClient calibrationClient, WaveformGui waveformGui, EventBus bus) throws IOException {
+            CalibrationClient calibrationClient, EventBus bus) throws IOException {
         super();
         this.waveformLoadingController = waveformLoadingController;
         this.codaParamLoadingController = codaParamLoadingController;
         this.refEventLoadingController = refEventLoadingController;
         this.calibrationClient = calibrationClient;
-        this.waveformGui = waveformGui;
         this.bus = bus;
         sacDirFileChooser.setTitle("Coda STACK File Directory");
         sacFileChooser.getExtensionFilters().add(new ExtensionFilter("Coda STACK Files (.sac,.env)", "*.sac", "*.env"));
@@ -118,8 +116,8 @@ public class CodaGuiController {
     }
 
     @FXML
-    private void openWaveformDisplay() {
-        waveformGui.show();
+    private void openFailureReportDisplay() {
+        bus.post(new ShowFailureReportEvent());
     }
 
     @FXML

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -12,25 +12,21 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.model.domain.util;
+package gov.llnl.gnem.apps.coda.calibration.gui.util;
 
-public enum PICK_TYPES {
+import javafx.event.Event;
+import javafx.scene.Node;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 
-	F("f"), A("a"), B("b"), PN("Pn"), PG("Pg"), SN("Sn"), LG("Lg"), O("o"), AP("ap"), UNKNOWN("UNK");
+public class ClickUtils {
 
-	private String phase;
-
-	private PICK_TYPES(String phase) {
-		this.phase = phase;
-	}
-
-	public String getPhase() {
-		return phase;
-	}
-
-	public static boolean isKnownPhase(String type) {
-		return PN.getPhase().equalsIgnoreCase(type) || PG.getPhase().equalsIgnoreCase(type)
-				|| SN.getPhase().equalsIgnoreCase(type) || LG.getPhase().equalsIgnoreCase(type);
-	}
-
+    public static void clickNode(Node target) {
+       try {
+           Event.fireEvent(target, new MouseEvent(MouseEvent.MOUSE_CLICKED,
+                                                  target.getScene().getX(), target.getScene().getY(), target.getScene().getX(), target.getScene().getY(), MouseButton.PRIMARY, 1,
+                                                  false, false, false, false, true, false, false, false, false, true, null));
+       }
+       finally {}
+    }
 }

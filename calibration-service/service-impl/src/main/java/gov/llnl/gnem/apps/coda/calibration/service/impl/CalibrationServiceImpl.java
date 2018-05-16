@@ -15,11 +15,13 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +49,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParamet
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Station;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Result;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.util.PICK_TYPES;
@@ -70,185 +73,235 @@ import gov.llnl.gnem.apps.coda.calibration.service.api.WaveformService;
 @Transactional
 public class CalibrationServiceImpl implements CalibrationService {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private WaveformService waveformService;
-    private PeakVelocityMeasurementService peakVelocityMeasurementsService;
-    private SharedFrequencyBandParametersService sharedParametersService;
-    private ShapeCalibrationService shapeCalibrationService;
-    private SpectraMeasurementService spectraMeasurementService;
-    private SyntheticCodaGenerationService syntheticGenerationService;
-    private PathCalibrationService pathCalibrationService;
-    private MdacParametersFiService mdacFiService;
-    private MdacParametersPsService mdacPsService;
-    private ReferenceMwParametersService referenceMwService;
-    private SiteCalibrationService siteCalibrationService;
-    private SyntheticService syntheticService;
-    private NotificationService notificationService;
-    private DatabaseCleaningService cleaningService;
+	private WaveformService waveformService;
+	private PeakVelocityMeasurementService peakVelocityMeasurementsService;
+	private SharedFrequencyBandParametersService sharedParametersService;
+	private ShapeCalibrationService shapeCalibrationService;
+	private SpectraMeasurementService spectraMeasurementService;
+	private SyntheticCodaGenerationService syntheticGenerationService;
+	private PathCalibrationService pathCalibrationService;
+	private MdacParametersFiService mdacFiService;
+	private MdacParametersPsService mdacPsService;
+	private ReferenceMwParametersService referenceMwService;
+	private SiteCalibrationService siteCalibrationService;
+	private SyntheticService syntheticService;
+	private NotificationService notificationService;
+	private DatabaseCleaningService cleaningService;
 
-    private static final AtomicLong atomicLong = new AtomicLong(0l);
+	private static final AtomicLong atomicLong = new AtomicLong(0l);
 
-    private static final ExecutorService service = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1), r -> {
-        Thread thread = new Thread(r);
-        thread.setDaemon(true);
-        return thread;
-    });
+	private static final ExecutorService service = new ThreadPoolExecutor(	1, 1, 0, TimeUnit.SECONDS,
+																			new ArrayBlockingQueue<>(1), r -> {
+																				Thread thread = new Thread(r);
+																				thread.setDaemon(true);
+																				return thread;
+																			});
 
-    @Autowired
-    public CalibrationServiceImpl(WaveformService waveformService, PeakVelocityMeasurementService peakVelocityMeasurementsService, SharedFrequencyBandParametersService sharedParametersService,
-            ShapeCalibrationService shapeCalibrationService, SpectraMeasurementService spectraMeasurementService, SyntheticCodaGenerationService syntheticGenerationService,
-            PathCalibrationService pathCalibrationService, MdacParametersFiService mdacFiService, MdacParametersPsService mdacPsService, ReferenceMwParametersService referenceMwService,
-            SiteCalibrationService siteCalibrationService, SyntheticService syntheticService, NotificationService notificationService, DatabaseCleaningService cleaningService) {
-        this.waveformService = waveformService;
-        this.peakVelocityMeasurementsService = peakVelocityMeasurementsService;
-        this.sharedParametersService = sharedParametersService;
-        this.shapeCalibrationService = shapeCalibrationService;
-        this.spectraMeasurementService = spectraMeasurementService;
-        this.syntheticGenerationService = syntheticGenerationService;
-        this.pathCalibrationService = pathCalibrationService;
-        this.mdacFiService = mdacFiService;
-        this.mdacPsService = mdacPsService;
-        this.referenceMwService = referenceMwService;
-        this.siteCalibrationService = siteCalibrationService;
-        this.syntheticService = syntheticService;
-        this.notificationService = notificationService;
-        this.cleaningService = cleaningService;
-    }
+	@Autowired
+	public CalibrationServiceImpl(WaveformService waveformService,
+			PeakVelocityMeasurementService peakVelocityMeasurementsService,
+			SharedFrequencyBandParametersService sharedParametersService,
+			ShapeCalibrationService shapeCalibrationService, SpectraMeasurementService spectraMeasurementService,
+			SyntheticCodaGenerationService syntheticGenerationService, PathCalibrationService pathCalibrationService,
+			MdacParametersFiService mdacFiService, MdacParametersPsService mdacPsService,
+			ReferenceMwParametersService referenceMwService, SiteCalibrationService siteCalibrationService,
+			SyntheticService syntheticService, NotificationService notificationService,
+			DatabaseCleaningService cleaningService) {
+		this.waveformService = waveformService;
+		this.peakVelocityMeasurementsService = peakVelocityMeasurementsService;
+		this.sharedParametersService = sharedParametersService;
+		this.shapeCalibrationService = shapeCalibrationService;
+		this.spectraMeasurementService = spectraMeasurementService;
+		this.syntheticGenerationService = syntheticGenerationService;
+		this.pathCalibrationService = pathCalibrationService;
+		this.mdacFiService = mdacFiService;
+		this.mdacPsService = mdacPsService;
+		this.referenceMwService = referenceMwService;
+		this.siteCalibrationService = siteCalibrationService;
+		this.syntheticService = syntheticService;
+		this.notificationService = notificationService;
+		this.cleaningService = cleaningService;
+	}
 
-    @Override
-    public boolean start(Boolean autoPickingEnabled) {
-        // FIXME: These *All methods should be *AllByProjectID instead!
-        final Long id = atomicLong.getAndIncrement();
-        try {
-            service.submit(() -> {
-                try {
-                    notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.STARTING));
-                    log.info("Starting calibration at {}", LocalDateTime.now());
+	@Override
+	public boolean start(Boolean autoPickingEnabled) {
+		// FIXME: These *All methods should be *AllByProjectID instead!
+		final Long id = atomicLong.getAndIncrement();
+		try {
+			service.submit(() -> {
+				try {
+					notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.STARTING));
+					log.info("Starting calibration at {}", LocalDateTime.now());
 
-                    //TODO: Look at removing auto picking code from the methods below and centralizing it to here instead.
-                    Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.findAll());
-                    final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap = new HashMap<>(frequencyBandParameterMap);
+					// TODO: Look at removing auto picking code from the methods
+					// below and centralizing it to here instead.
+					Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.findAll());
+					final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap = new HashMap<>(frequencyBandParameterMap);
 
-                    List<Waveform> stacks = waveformService.getAllStacks();
-                    // In general each step produces output that the next step consumes
+					List<Waveform> stacks = waveformService.getAllStacks();
+					// In general each step produces output that the next step
+					// consumes
 
-                    // 1) Compute the peak velocity, amplitude, and SNR values for
-                    // the given coda stacks using theoretical group velocities to cut
-                    // the windows for noise and SN/LG arrival
-                    Collection<PeakVelocityMeasurement> velocityMeasurements = peakVelocityMeasurementsService.measureVelocities(stacks);
+					// 1) Compute the peak velocity, amplitude, and SNR values
+					// for
+					// the given coda stacks using theoretical group velocities
+					// to cut
+					// the windows for noise and SN/LG arrival
+					Collection<PeakVelocityMeasurement> velocityMeasurements = peakVelocityMeasurementsService.measureVelocities(stacks);
 
-                    // First step is to clean up all the intermediary results if
-                    // they exist. This is wildly not-thread-safe as you might imagine.
-                    peakVelocityMeasurementsService.deleteAll();
-                    syntheticService.deleteAll();
+					// First step is to clean up all the intermediary results if
+					// they exist. This is wildly not-thread-safe as you might
+					// imagine.
+					peakVelocityMeasurementsService.deleteAll();
+					syntheticService.deleteAll();
 
-                    //We want to filter out the ones that don't pass the user's SNR threshold
-                    List<PeakVelocityMeasurement> snrFilteredVelocity = velocityMeasurements.stream().filter(vel -> {
-                        boolean valid = false;
-                        if (vel.getWaveform() != null) {
-                            FrequencyBand fb = new FrequencyBand(vel.getWaveform().getLowFrequency(), vel.getWaveform().getHighFrequency());
-                            SharedFrequencyBandParameters params = snrFilterMap.get(fb);
-                            valid = params != null && vel.getSnr() >= params.getMinSnr();
-                        }
-                        return valid;
-                    }).collect(Collectors.toList());
+					// We want to filter out the ones that don't pass the user's
+					// SNR threshold
+					List<PeakVelocityMeasurement> snrFilteredVelocity = velocityMeasurements.stream().filter(vel -> {
+						boolean valid = false;
+						if (vel.getWaveform() != null) {
+							FrequencyBand fb = new FrequencyBand(	vel.getWaveform().getLowFrequency(),
+																	vel.getWaveform().getHighFrequency());
+							SharedFrequencyBandParameters params = snrFilterMap.get(fb);
+							valid = params != null && vel.getSnr() >= params.getMinSnr();
+						}
+						return valid;
+					}).collect(Collectors.toList());
 
-                    // Now save the new ones we just calculated
-                    peakVelocityMeasurementsService.save(snrFilteredVelocity);
+					// Now save the new ones we just calculated
+					peakVelocityMeasurementsService.save(snrFilteredVelocity);
 
-                    // 2) Compute the shape parameters describing each stack
-                    // (Velocity V0-2, Beta B0-2, Gamma G0-2) and then fit models to each of
-                    // those parameters for each frequency band that can be used to generate
-                    // synthetic coda at any given distance and frequency band combination
-                    frequencyBandParameterMap = shapeCalibrationService.measureShapes(snrFilteredVelocity, frequencyBandParameterMap, autoPickingEnabled);
+					// 2) Compute the shape parameters describing each stack
+					// (Velocity V0-2, Beta B0-2, Gamma G0-2) and then fit
+					// models to each of
+					// those parameters for each frequency band that can be used
+					// to generate
+					// synthetic coda at any given distance and frequency band
+					// combination
+					frequencyBandParameterMap = shapeCalibrationService.measureShapes(	snrFilteredVelocity,
+																						frequencyBandParameterMap,
+																						autoPickingEnabled);
 
-                    frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
+					frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
 
-                    // 3) Now we need to generate some basic synthetics for the
-                    // measurement code to use to determine where to measure the raw
-                    // amplitudes. Then feed the synthetics to the measurement
-                    // service and get raw at start and raw at measurement time values back
-                    List<SpectraMeasurement> spectra = spectraMeasurementService.measureSpectra(syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap),
-                                                                                                frequencyBandParameterMap,
-                                                                                                autoPickingEnabled);
+					// 3) Now we need to generate some basic synthetics for the
+					// measurement code to use to determine where to measure the
+					// raw
+					// amplitudes. Then feed the synthetics to the measurement
+					// service and get raw at start and raw at measurement time
+					// values back
+					stacks = stacks.parallelStream().filter(wave -> wave.getAssociatedPicks() != null).map(wave -> {
 
-                    // 4) For each event in the data set find all stations that
-                    // recorded the event, then compute what the estimated path effect
-                    // correction needs to be for each frequency band
-                    frequencyBandParameterMap = pathCalibrationService.measurePathCorrections(spectraByFrequencyBand(spectra), frequencyBandParameterMap);
+						Optional<WaveformPick> pick = wave	.getAssociatedPicks().stream()
+															.filter(p -> PICK_TYPES.F	.name()
+																						.equalsIgnoreCase(p.getPickType()))
+															.findFirst();
+						if (pick.isPresent() && pick.get().getPickTimeSecFromOrigin() > 0) {
+							return wave;
+						} else {
+							return null;
+						}
+					}).filter(Objects::nonNull).collect(Collectors.toList());
+					
+					List<SpectraMeasurement> spectra = spectraMeasurementService.measureSpectra(syntheticGenerationService.generateSynthetics(	stacks,
+																																				frequencyBandParameterMap),
+																								frequencyBandParameterMap,
+																								autoPickingEnabled);
 
-                    frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
+					// 4) For each event in the data set find all stations that
+					// recorded the event, then compute what the estimated path
+					// effect
+					// correction needs to be for each frequency band
+					frequencyBandParameterMap = pathCalibrationService.measurePathCorrections(	spectraByFrequencyBand(spectra),
+																								frequencyBandParameterMap);
 
-                    // 5) Measure the amplitudes again but this time we can compute
-                    // ESH path corrected values
-                    spectra = spectraMeasurementService.measureSpectra(syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap), frequencyBandParameterMap, autoPickingEnabled);
+					frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
 
-                    // 6) Now using those path correction values plus a list of
-                    // trusted Mw/spectra measurements for some subset of events in the data
-                    // set we can compute what the offset is at each station from the
-                    // expected source spectra for that MW value. This value is recorded as
-                    // the site specific offset for measured values at each frequency band
-                    Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap = siteCalibrationService.measureSiteCorrections(spectraByFrequencyBand(spectra),
-                                                                                                                                                                mdacFiService.findFirst(),
-                                                                                                                                                                collectByFrequencyBand(mdacPsService.findAll()),
-                                                                                                                                                                collectByEvid(referenceMwService.findAll()),
-                                                                                                                                                                frequencyBandParameterMap,
-                                                                                                                                                                PICK_TYPES.LG);
-                    // 7) Measure the amplitudes one last time to fill out the
-                    // Path+Site corrected amplitude values
-                    spectra = spectraMeasurementService.measureSpectra(syntheticService.save(syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap)),
-                                                                       frequencyBandParameterMap,
-                                                                       autoPickingEnabled,
-                                                                       frequencyBandSiteParameterMap);
+					// 5) Measure the amplitudes again but this time we can
+					// compute
+					// ESH path corrected values
+					spectra = spectraMeasurementService.measureSpectra(	syntheticGenerationService.generateSynthetics(	stacks,
+																														frequencyBandParameterMap),
+																		frequencyBandParameterMap, autoPickingEnabled);
 
-                    log.info("Calibration complete at {}", LocalDateTime.now());
-                    notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.COMPLETE));
-                } catch (Exception ex) {
-                    log.error(ex.getMessage(), ex);
-                    notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.ERROR, new Result<Exception>(false, ex)));
-                    throw ex;
-                }
-                return new CompletableFuture<>();
-            });
-        } catch (RejectedExecutionException e) {
-            notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.ERROR, new Result<Exception>(false, e)));
-            return false;
-        }
-        return true;
-    }
+					// 6) Now using those path correction values plus a list of
+					// trusted Mw/spectra measurements for some subset of events
+					// in the data
+					// set we can compute what the offset is at each station
+					// from the
+					// expected source spectra for that MW value. This value is
+					// recorded as
+					// the site specific offset for measured values at each
+					// frequency band
+					Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap = siteCalibrationService.measureSiteCorrections(spectraByFrequencyBand(spectra),
+																																								mdacFiService.findFirst(),
+																																								collectByFrequencyBand(mdacPsService.findAll()),
+																																								collectByEvid(referenceMwService.findAll()),
+																																								frequencyBandParameterMap,
+																																								PICK_TYPES.LG);
+					// 7) Measure the amplitudes one last time to fill out the
+					// Path+Site corrected amplitude values
+					spectra = spectraMeasurementService.measureSpectra(	syntheticService.save(syntheticGenerationService.generateSynthetics(stacks,
+																																			frequencyBandParameterMap)),
+																		frequencyBandParameterMap, autoPickingEnabled,
+																		frequencyBandSiteParameterMap);
 
-    private Map<String, List<ReferenceMwParameters>> collectByEvid(List<ReferenceMwParameters> refMws) {
-        return refMws.stream().collect(Collectors.groupingBy(ReferenceMwParameters::getEventId));
-    }
+					log.info("Calibration complete at {}", LocalDateTime.now());
+					notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.COMPLETE));
+				} catch (Exception ex) {
+					log.error(ex.getMessage(), ex);
+					notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.ERROR,
+																		new Result<Exception>(false, ex)));
+					throw ex;
+				}
+				return new CompletableFuture<>();
+			});
+		} catch (RejectedExecutionException e) {
+			notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.ERROR,
+																new Result<Exception>(false, e)));
+			return false;
+		}
+		return true;
+	}
 
-    private Map<PICK_TYPES, MdacParametersPS> collectByFrequencyBand(List<MdacParametersPS> mdacPs) {
-        return mdacPs.stream().filter(ps -> PICK_TYPES.isKnownPhase(ps.getPhase())).collect(Collectors.toMap(ps -> (PICK_TYPES) PICK_TYPES.valueOf(ps.getPhase().toUpperCase()), Function.identity()));
-    }
+	private Map<String, List<ReferenceMwParameters>> collectByEvid(List<ReferenceMwParameters> refMws) {
+		return refMws.stream().collect(Collectors.groupingBy(ReferenceMwParameters::getEventId));
+	}
 
-    private Map<FrequencyBand, List<SpectraMeasurement>> spectraByFrequencyBand(List<SpectraMeasurement> spectra) {
-        return spectra.stream()
-                      .filter(Objects::nonNull)
-                      .filter(s -> s.getWaveform() != null)
-                      .collect(Collectors.groupingBy(s -> new FrequencyBand(s.getWaveform().getLowFrequency(), s.getWaveform().getHighFrequency())));
-    }
+	private Map<PICK_TYPES, MdacParametersPS> collectByFrequencyBand(List<MdacParametersPS> mdacPs) {
+		return mdacPs	.stream().filter(ps -> PICK_TYPES.isKnownPhase(ps.getPhase()))
+						.collect(Collectors.toMap(	ps -> (PICK_TYPES) PICK_TYPES.valueOf(ps.getPhase().toUpperCase()),
+													Function.identity()));
+	}
 
-    private Map<FrequencyBand, SharedFrequencyBandParameters> mapParamsToFrequencyBands(Collection<SharedFrequencyBandParameters> params) {
-        return params.stream().collect(Collectors.toMap(fbp -> new FrequencyBand(fbp.getLowFrequency(), fbp.getHighFrequency()), fbp -> fbp));
-    }
+	private Map<FrequencyBand, List<SpectraMeasurement>> spectraByFrequencyBand(List<SpectraMeasurement> spectra) {
+		return spectra	.stream().filter(Objects::nonNull).filter(s -> s.getWaveform() != null)
+						.collect(Collectors.groupingBy(s -> new FrequencyBand(	s.getWaveform().getLowFrequency(),
+																				s.getWaveform().getHighFrequency())));
+	}
 
-    @PreDestroy
-    private void stop() {
-        service.shutdownNow();
-    }
+	private Map<FrequencyBand, SharedFrequencyBandParameters> mapParamsToFrequencyBands(
+			Collection<SharedFrequencyBandParameters> params) {
+		return params.stream().collect(Collectors.toMap(
+														fbp -> new FrequencyBand(	fbp.getLowFrequency(),
+																					fbp.getHighFrequency()),
+														fbp -> fbp));
+	}
 
-    @Override
-    public boolean clearData() {
-        if (cleaningService != null) {
-            return cleaningService.clearAll();
-        }
+	@PreDestroy
+	private void stop() {
+		service.shutdownNow();
+	}
 
-        return false;
-    }
+	@Override
+	public boolean clearData() {
+		if (cleaningService != null) {
+			return cleaningService.clearAll();
+		}
+
+		return false;
+	}
 
 }

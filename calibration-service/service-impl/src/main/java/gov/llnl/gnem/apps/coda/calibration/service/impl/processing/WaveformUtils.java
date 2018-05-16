@@ -45,14 +45,19 @@ public class WaveformUtils {
      */
     public static TimeSeries getNoiseWindow(double distance, TimeT origintime, TimeSeries segment) {
 
-        TimeSeries result = new TimeSeries(segment);
-
+        TimeSeries result1 = new TimeSeries(segment);
+        result1.cutBefore(result1.getTime().add(noiseWindowOffset));
+        double mean1 = result1.getMean();
+        
+        TimeSeries result2 = new TimeSeries(segment);
         double groupVelocity = distance / groupVelocityDenominator;
         TimeT noiseStart = origintime.subtract(noiseWindowOffset);
         TimeT noiseEnd = origintime.add(groupVelocity);
 
-        result.cut(noiseStart, noiseEnd);
-        return result;
+        result2.cut(noiseStart, noiseEnd);
+        double mean2 = result2.getMean();
+        
+        return mean1 > mean2 ? result2 : result1;
     }
 
     /**

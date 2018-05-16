@@ -17,10 +17,12 @@ package gov.llnl.gnem.apps.coda.calibration.standalone;
 import java.awt.Toolkit;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
@@ -45,6 +47,11 @@ public class CodaCalibrationStandalone extends Application {
     private static final Logger log = LoggerFactory.getLogger(CodaCalibrationStandalone.class);
     private static volatile ConfigurableApplicationContext springContext;
     private static String[] initialArgs;
+
+    @PostConstruct
+    void started() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
 
     public static synchronized void main(String[] args) {
         try {

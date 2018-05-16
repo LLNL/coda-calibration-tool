@@ -38,18 +38,25 @@ import com.google.common.eventbus.EventBus;
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToWaveformConverter;
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.sac.SacExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.WaveformClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.LoadStartingEvent;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.PassFailEventProgressListener;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.ProgressEventProgressListener;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.PassFailEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Progress;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.ProgressEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Result;
+import javafx.application.Platform;
+import javafx.scene.input.MouseEvent;
 
 //TODO: This class needs a GUI to display a list of files it's attempting to load and process + pass/fail indicators
 @Component
 @ConfigurationProperties("waveform.client")
 public class WaveformLoadingController {
+
+    private static final Long LOCAL_FAIL_EVENT = -1l;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -120,11 +127,18 @@ public class WaveformLoadingController {
                 });
 
                 if (!files.isEmpty()) {
-                    Progress fileProcessingProgress = new Progress(0l, 0l);
+                    bus.post(new LoadStartingEvent());
+                    // TODO: Condense these bars into a composite pass/fail progress bar
+                    Progress fileProcessingProgress = new Progress(-1l, 0l);
+                    Progress fileFailedProgress = new Progress(-1l, 0l);
                     ProgressEvent processingProgressEvent = new ProgressEvent(idCounter.getAndIncrement(), fileProcessingProgress);
+                    ProgressEvent processingFailedProgressEvent = new ProgressEvent(idCounter.getAndIncrement(), fileFailedProgress);
                     ProgressMonitor processingMonitor = new ProgressMonitor("File Processing", new ProgressEventProgressListener(bus, processingProgressEvent));
+                    ProgressMonitor processingFailedMonitor = new ProgressMonitor("Processing Failures", new ProgressEventProgressListener(bus, processingFailedProgressEvent));
+                    processingFailedMonitor.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> bus.post(new ShowFailureReportEvent()));
+                    Platform.runLater(() -> processingFailedMonitor.getProgressBar().getStyleClass().add("red-bar"));
 
-                    Progress fileUploadProgress = new Progress(0l, 0l);
+                    Progress fileUploadProgress = new Progress(-1l, 0l);
                     ProgressEvent fileUploadProgressEvent = new ProgressEvent(idCounter.getAndIncrement(), fileUploadProgress);
                     ProgressMonitor uploadMonitor = new ProgressMonitor("Saving Data", new PassFailEventProgressListener(bus, fileUploadProgressEvent));
 
@@ -132,6 +146,7 @@ public class WaveformLoadingController {
                         ProgressGui progressGui = new ProgressGui();
                         progressGui.show();
                         progressGui.addProgressMonitor(processingMonitor);
+                        progressGui.addProgressMonitor(processingFailedMonitor);
                         progressGui.addProgressMonitor(uploadMonitor);
 
                         fileUploadProgress.setTotal((long) (files.size() / maxBatching) + 1);
@@ -140,15 +155,28 @@ public class WaveformLoadingController {
                         fileProcessingProgress.setTotal(Integer.toUnsignedLong(files.size()));
                         bus.post(processingProgressEvent);
 
+                        fileFailedProgress.setTotal(0l);
+                        bus.post(processingFailedProgressEvent);
+
                         fileConverters.stream().forEach(fileConverter -> fileConverter.convertFiles(files).buffer(maxBatching, ArrayList::new).subscribe(results -> {
-                            // TODO: Feedback to the user about failure causes!
                             try {
                                 List<Result<Waveform>> successfulResults = results.stream().filter(Result::isSuccess).collect(Collectors.toList());
+                                List<Result<Waveform>> failedResults = results.stream().filter(r -> !r.isSuccess()).collect(Collectors.toList());
                                 client.postWaveforms(fileUploadProgressEvent.getId(), successfulResults.stream().map(result -> result.getResultPayload().get()).collect(Collectors.toList()))
                                       .retry(3)
                                       .subscribe();
                                 fileProcessingProgress.setCurrent(fileProcessingProgress.getCurrent() + successfulResults.size());
+                                fileUploadProgress.setTotal((long) ((files.size() - failedResults.size()) / maxBatching) + 1);
+                                bus.post(fileUploadProgressEvent);
+
                                 bus.post(processingProgressEvent);
+                                if (failedResults.size() > 0) {
+                                    fileProcessingProgress.setTotal(fileProcessingProgress.getTotal() - failedResults.size());
+                                    fileFailedProgress.setTotal(fileFailedProgress.getTotal() + failedResults.size());
+                                    fileFailedProgress.setCurrent(fileFailedProgress.getCurrent() + failedResults.size());
+                                    bus.post(processingFailedProgressEvent);
+                                    failedResults.forEach(r -> bus.post(new PassFailEvent(LOCAL_FAIL_EVENT, "", r)));
+                                }
                             } catch (JsonProcessingException ex) {
                                 log.trace(ex.getMessage(), ex);
                             }
@@ -160,7 +188,6 @@ public class WaveformLoadingController {
             } catch (IllegalStateException e) {
                 log.error("Unable to instantiate loading display {}", e.getMessage(), e);
             }
-
         });
 
     }

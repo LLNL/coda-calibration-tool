@@ -11,3 +11,7 @@
   -fx-white-space: nowrap;
   -fx-direction: ltr;
 }
+
+.red-bar {
+	-fx-accent: red;
+}

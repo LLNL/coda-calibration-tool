@@ -18,11 +18,13 @@ import java.awt.Toolkit;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import javax.annotation.PostConstruct;
 import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
@@ -51,6 +53,11 @@ public class GuiApplication extends Application {
     private ConfigurableApplicationContext springContext;
 
     private Stage primaryStage;
+
+    @PostConstruct
+    void started() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
 
     public GuiApplication() {
     }

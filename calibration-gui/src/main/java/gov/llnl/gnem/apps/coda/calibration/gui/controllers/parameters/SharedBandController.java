@@ -16,7 +16,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters;
 
 import java.text.NumberFormat;
 import java.util.Objects;
-import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -25,25 +24,25 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.util.CellBindingUtils;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SharedFrequencyBandParameters;
-import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableView;
 
 @Component
 public class SharedBandController {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-
-    private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
 
     private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
 
@@ -114,154 +113,53 @@ public class SharedBandController {
     }
 
     @FXML
-    private void reloadTable(ActionEvent e) {
+    private void reloadTable(Event e) {
+        requestData();
+    }
+
+    @FXML
+    private void postUpdate(CellEditEvent<?, ?> e) {
+        sharedFbData.forEach(fb -> {
+            try {
+                client.postSharedFrequencyBandParameters(fb);
+            } catch (JsonProcessingException e1) {
+                log.error(e1.getMessage(), e1);
+            }
+        });
+        sharedFbData.clear();
         requestData();
     }
 
     @FXML
     public void initialize() {
 
-        lowFreqCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                       .map(CellDataFeatures::getValue)
-                                                                                       .map(SharedFrequencyBandParameters::getLowFrequency)
-                                                                                       .filter(Objects::nonNull)
-                                                                                       .map(dfmt2::format)
-                                                                                       .orElseGet(String::new)));
+        CellBindingUtils.attachEditableTextCellFactories(lowFreqCol, SharedFrequencyBandParameters::getLowFrequency, SharedFrequencyBandParameters::setLowFrequency);
         lowFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
-        highFreqCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                        .map(CellDataFeatures::getValue)
-                                                                                        .map(SharedFrequencyBandParameters::getHighFrequency)
-                                                                                        .filter(Objects::nonNull)
-                                                                                        .map(dfmt2::format)
-                                                                                        .orElseGet(String::new)));
+        CellBindingUtils.attachEditableTextCellFactories(highFreqCol, SharedFrequencyBandParameters::getHighFrequency, SharedFrequencyBandParameters::setHighFrequency);
         highFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
-        v0Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getVelocity0)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
+        CellBindingUtils.attachTextCellFactories(v0Col, SharedFrequencyBandParameters::getVelocity0, dfmt4);
+        CellBindingUtils.attachTextCellFactories(v1Col, SharedFrequencyBandParameters::getVelocity1, dfmt4);
+        CellBindingUtils.attachTextCellFactories(v2Col, SharedFrequencyBandParameters::getVelocity2, dfmt4);
+        CellBindingUtils.attachTextCellFactories(b0Col, SharedFrequencyBandParameters::getBeta0, dfmt4);
+        CellBindingUtils.attachTextCellFactories(b1Col, SharedFrequencyBandParameters::getBeta1, dfmt4);
+        CellBindingUtils.attachTextCellFactories(b2Col, SharedFrequencyBandParameters::getBeta2, dfmt4);
+        CellBindingUtils.attachTextCellFactories(g0Col, SharedFrequencyBandParameters::getGamma0, dfmt4);
+        CellBindingUtils.attachTextCellFactories(g1Col, SharedFrequencyBandParameters::getGamma1, dfmt4);
+        CellBindingUtils.attachTextCellFactories(g2Col, SharedFrequencyBandParameters::getGamma2, dfmt4);
 
-        v1Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getVelocity1)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
+        CellBindingUtils.attachEditableTextCellFactories(minSnrCol, SharedFrequencyBandParameters::getMinSnr, SharedFrequencyBandParameters::setMinSnr);
 
-        v2Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getVelocity2)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
+        CellBindingUtils.attachTextCellFactories(s1Col, SharedFrequencyBandParameters::getS1);
+        CellBindingUtils.attachTextCellFactories(s2Col, SharedFrequencyBandParameters::getS2);
+        CellBindingUtils.attachTextCellFactories(xcCol, SharedFrequencyBandParameters::getXc);
+        CellBindingUtils.attachTextCellFactories(xtCol, SharedFrequencyBandParameters::getXt);
+        CellBindingUtils.attachTextCellFactories(qCol, SharedFrequencyBandParameters::getQ);
 
-        b0Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getBeta0)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
-
-        b1Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getBeta1)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
-
-        b2Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getBeta2)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
-
-        g0Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getGamma0)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
-
-        g1Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getGamma1)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
-
-        g2Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getGamma2)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt4::format)
-                                                                                  .orElseGet(String::new)));
-
-        minSnrCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                      .map(CellDataFeatures::getValue)
-                                                                                      .map(SharedFrequencyBandParameters::getMinSnr)
-                                                                                      .filter(Objects::nonNull)
-                                                                                      .map(dfmt2::format)
-                                                                                      .orElseGet(String::new)));
-
-        s1Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getS1)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt2::format)
-                                                                                  .orElseGet(String::new)));
-
-        s2Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getS2)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt2::format)
-                                                                                  .orElseGet(String::new)));
-
-        xcCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getXc)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt2::format)
-                                                                                  .orElseGet(String::new)));
-
-        xtCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(SharedFrequencyBandParameters::getXt)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt2::format)
-                                                                                  .orElseGet(String::new)));
-
-        qCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                 .map(CellDataFeatures::getValue)
-                                                                                 .map(SharedFrequencyBandParameters::getQ)
-                                                                                 .filter(Objects::nonNull)
-                                                                                 .map(dfmt2::format)
-                                                                                 .orElseGet(String::new)));
-
-        minLengthCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                         .map(CellDataFeatures::getValue)
-                                                                                         .map(SharedFrequencyBandParameters::getMinLength)
-                                                                                         .filter(Objects::nonNull)
-                                                                                         .map(dfmt2::format)
-                                                                                         .orElseGet(String::new)));
-
-        maxLengthCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                         .map(CellDataFeatures::getValue)
-                                                                                         .map(SharedFrequencyBandParameters::getMaxLength)
-                                                                                         .filter(Objects::nonNull)
-                                                                                         .map(dfmt2::format)
-                                                                                         .orElseGet(String::new)));
-
-        measureTimeCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                           .map(CellDataFeatures::getValue)
-                                                                                           .map(SharedFrequencyBandParameters::getMeasurementTime)
-                                                                                           .filter(Objects::nonNull)
-                                                                                           .map(dfmt2::format)
-                                                                                           .orElseGet(String::new)));
+        CellBindingUtils.attachEditableTextCellFactories(minLengthCol, SharedFrequencyBandParameters::getMinLength, SharedFrequencyBandParameters::setMinLength);
+        CellBindingUtils.attachEditableTextCellFactories(maxLengthCol, SharedFrequencyBandParameters::getMaxLength, SharedFrequencyBandParameters::setMaxLength);
+        CellBindingUtils.attachEditableTextCellFactories(measureTimeCol, SharedFrequencyBandParameters::getMeasurementTime, SharedFrequencyBandParameters::setMeasurementTime);
 
         codaSharedTableView.setItems(sharedFbData);
     }

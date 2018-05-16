@@ -29,18 +29,17 @@ public class CodaConsensusEndTimePicker implements EndTimePicker {
     private static final double BAD_PICK = -100.0;
 
     @Override
-    public double getEndTime(float[] subsection, float[] synthSubsection, double sampleRate, double startTimeEpochSeconds, double minLengthSec, double maxLengthSec, double minimumSnr,
-            double centerFreq, double distance) {
+    public double getEndTime(float[] subsection, float[] synthSubsection, double sampleRate, double startTimeEpochSeconds, int startOffset, double minLengthSec, double maxLengthSec, double minimumSnr,
+            double noiseAmp, double centerFreq, double distance) {
         List<Double> snrPicks = new ArrayList<>();
-        snrPicks.add(getSnrEndPick(subsection, sampleRate, minLengthSec, maxLengthSec, minimumSnr, 10));
-        snrPicks.add(getSnrEndPick(subsection, sampleRate, minLengthSec, maxLengthSec, minimumSnr, 15));
-        snrPicks.add(getSnrEndPick(subsection, sampleRate, minLengthSec, maxLengthSec, minimumSnr, 20));
-        snrPicks.add(getSnrEndPick(subsection, sampleRate, minLengthSec, maxLengthSec, minimumSnr, 40));
-        snrPicks.add(getSnrEndPick(subsection, sampleRate, minLengthSec, maxLengthSec, minimumSnr, 60));
-        snrPicks.add(getSnrEndPick(subsection, sampleRate, minLengthSec, maxLengthSec, minimumSnr, 80));
+        if (centerFreq >= 1.0) {
+            snrPicks.add(getSnrEndPick(subsection, sampleRate, startOffset, minLengthSec, maxLengthSec, minimumSnr, noiseAmp, 20, centerFreq));
+        }
 
         List<Double> syntheticPicks = new ArrayList<>();
-        syntheticPicks.add(getSyntheticEndPick(subsection, synthSubsection, sampleRate, centerFreq));
+        if (centerFreq <= 3.0) {
+            syntheticPicks.add(getSyntheticEndPick(subsection, synthSubsection, sampleRate, startOffset, centerFreq));
+        }
 
         Double snrAggregatePick = getFilteredGeometricMean(snrPicks, minLengthSec, maxLengthSec);
 
@@ -65,7 +64,7 @@ public class CodaConsensusEndTimePicker implements EndTimePicker {
             }
         }
 
-        return startTimeEpochSeconds + overallPick;
+        return startTimeEpochSeconds + (overallPick * sampleRate);
     }
 
     /**
@@ -83,6 +82,9 @@ public class CodaConsensusEndTimePicker implements EndTimePicker {
      *         not possible.
      */
     private static Double getFilteredGeometricMean(final List<Double> data, final double min, final double max) {
+        if (data != null && data.size() == 1) {
+            return data.get(0);
+        }
         DescriptiveStatistics stats = new DescriptiveStatistics();
         for (Double value : data) {
             if (value > min) {
@@ -92,32 +94,33 @@ public class CodaConsensusEndTimePicker implements EndTimePicker {
         return stats.getGeometricMean();
     }
 
-    private Double getSyntheticEndPick(final float[] subsection, final float[] synthSubsection, final double samprate, final double centerFreq) {
+    private Double getSyntheticEndPick(final float[] subsection, final float[] synthSubsection, final double samprate, int startOffset, final double centerFreq) {
 
         double windowSize;
         double overlap;
         double slopemax;
+        double minLength;
 
         if (centerFreq <= 0.25) {
-            windowSize = 50.0;
-            overlap = 30.0;
-            slopemax = 1.3;
-        } else if (centerFreq <= 0.85) {
-            windowSize = 40.0;
-            overlap = 20.0;
-            slopemax = 0.7;
-        } else if (centerFreq <= 3.5) {
-            windowSize = 30.0;
-            overlap = 20.0;
-            slopemax = 0.4;
-        } else if (centerFreq <= 6.5) {
-            windowSize = 15.0;
+            windowSize = 90.0;
             overlap = 10.0;
-            slopemax = 0.5;
+            slopemax = 2.3;
+            minLength = 200.0;
+        } else if (centerFreq <= 0.85) {
+            windowSize = 60.0;
+            overlap = 10.0;
+            slopemax = 2.0;
+            minLength = 120.0;
+        } else if (centerFreq <= 3.5) {
+            windowSize = 50.0;
+            overlap = 10.0;
+            slopemax = 2.1;
+            minLength = 90.0;
         } else {
             windowSize = 10.0;
-            overlap = 7.0;
-            slopemax = 0.5;
+            overlap = 2.0;
+            slopemax = 2.8;
+            minLength = 10.0;
         }
 
         boolean done = false;
@@ -129,36 +132,52 @@ public class CodaConsensusEndTimePicker implements EndTimePicker {
 
         SimpleRegression obs = new SimpleRegression();
         SimpleRegression synth = new SimpleRegression();
+        DescriptiveStatistics obsStats = new DescriptiveStatistics();
 
         int ii = 0;
+        int stepCount = 0;
         while (!done) {
 
             if (ii + winLength < dataLength) {
                 obs.clear();
                 synth.clear();
+                obsStats.clear();
 
                 for (int i = ii; i < ii + winLength; i++) {
                     obs.addData(i, subsection[i]);
                     synth.addData(i, synthSubsection[i]);
+                    obsStats.addValue(subsection[i]);
                 }
                 ii += (winLength - (overlap * samprate));
 
-                double diffSlope = Math.abs(synth.getSlope() - obs.getSlope());
-                double ratioSlope = diffSlope / Math.abs(synth.getSlope());
+                if (ii >= startOffset) {
+                    double minToMax = obsStats.getMin() / obsStats.getMax();
+                    double diffSlope = Math.abs(synth.getSlope() - obs.getSlope());
+                    double ratioSlope = diffSlope / Math.abs(obs.getSlope());
+                    double synInt = synth.getIntercept() + obsStats.getMean();
+                    double offset = obs.getIntercept() / synInt;
 
-                if (ratioSlope > slopemax && obs.getSlope() > -0.005) {
-                    slopeTimePick = ii;
-                    done = true;
+                    if (stepCount > 0 && (ratioSlope > slopemax || obs.getSlope() < -0.05)) {
+                        slopeTimePick = ii;
+                        done = true;
+                    } else if (stepCount > 0 && (offset > 1.8 || offset < -0.2 || minToMax > 1.0 || minToMax < -0.2)) {
+                        slopeTimePick = ii;
+                        done = true;
+                    }
                 }
+                stepCount++;
+
             } else {
                 slopeTimePick = subsection.length;
                 done = true;
             }
         }
         return slopeTimePick;
+
     }
 
-    private Double getSnrEndPick(final float[] subsection, final double samprate, final double minlength, final double maxlength, final double minimumSnr, final int windowSize) {
+    private Double getSnrEndPick(final float[] subsection, final double samprate, int startOffset, final double minlength, final double maxlength, final double minimumSnr, final double noiseAmp,
+            final int windowSize, final double centerFreq) {
         // end defined by the point at which the signal drops below a
         // minimum level (e.g. 2x noise amplitude)
         int ii = 0;
@@ -166,8 +185,18 @@ public class CodaConsensusEndTimePicker implements EndTimePicker {
         boolean done = false;
 
         int winLength = (int) ((windowSize * samprate) + 2);
+
+        if (centerFreq <= 0.25) {
+            winLength = (int) (winLength * 2.5);
+        } else if (centerFreq <= 0.85) {
+            winLength = (int) (winLength * 2.0);
+        } else if (centerFreq <= 3.5) {
+            winLength = (int) (winLength * 1.5);
+        }
+
         DescriptiveStatistics stats = new DescriptiveStatistics(winLength);
-        double snrTimePick = 0.0;
+        DescriptiveStatistics shortObs = new DescriptiveStatistics(5);
+        double snrTimePick = BAD_PICK;
 
         while (!done) {
             ++ii;
@@ -178,21 +207,27 @@ public class CodaConsensusEndTimePicker implements EndTimePicker {
                 break;
             }
 
-            if (subsection[ii] > (.3 + subsection[ii - 1])) {
-                snrTimePick = (ii - 1) / samprate;
-                break;
-            }
+            if (ii >= startOffset) {
+                shortObs.addValue(subsection[ii]);
 
-            stats.addValue(subsection[ii]);
+                if (subsection[ii] > (1.10 * shortObs.getMean())) {
+                    snrTimePick = (ii - 1) / samprate;
+                    break;
+                }
 
-            if (ii / samprate >= maxlength) {
-                snrTimePick = maxlength;
-                done = true;
-            }
+                stats.addValue(subsection[ii]);
 
-            if (ii > winLength && stats.getMean() < minimumSnr) {
-                snrTimePick = (ii - 1) / samprate;
-                done = true;
+                if (ii / samprate >= maxlength) {
+                    snrTimePick = maxlength;
+                    done = true;
+                }
+
+                if (ii > winLength && (stats.getMean() - noiseAmp) < minimumSnr) {
+                    if (((ii - startOffset) / samprate) > minlength) {
+                        snrTimePick = (ii - 1) / samprate;
+                    }
+                    done = true;
+                }
             }
         }
         return snrTimePick;

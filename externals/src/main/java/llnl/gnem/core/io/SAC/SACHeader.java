@@ -1909,6 +1909,9 @@ public class SACHeader implements Closeable {
      * @return the String minus the ignorable characters
      */
     final String trimIgnorableCharacters(String string) {
+        if (string == null || string.isEmpty() || string.trim().isEmpty()) {
+            return SACHeader.STRINGDEFAULT;
+        }
         char[] charstring = string.toCharArray();
         StringBuilder sb = new StringBuilder();
 

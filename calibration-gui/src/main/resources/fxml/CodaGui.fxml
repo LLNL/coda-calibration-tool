@@ -32,7 +32,7 @@
 				</Menu>
 				<Menu mnemonicParsing="false" text="Window">
 					<items>
-						<MenuItem mnemonicParsing="false" onAction="#openWaveformDisplay" text="Waveforms" />
+						<MenuItem mnemonicParsing="false" onAction="#openFailureReportDisplay" text="View Load Failures" />
 					</items>
 				</Menu>
 

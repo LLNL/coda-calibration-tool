@@ -42,18 +42,18 @@ We don't presently deploy versioned artifacts into a public repository like the 
 #### **As a single runnable JAR**
 
 ```shell
-java -jar coda-calibration/calibration-standalone/target/calibration-standalone-1.0.1-runnable.jar
+java -jar coda-calibration/calibration-standalone/target/calibration-standalone-1.0.2-runnable.jar
 ```
 
 #### **GUI alone**
 
 ```shell
-java -jar coda-calibration/calibration-gui/target/calibration-gui-1.0.1-runnable.jar
+java -jar coda-calibration/calibration-gui/target/calibration-gui-1.0.2-runnable.jar
 ```
 #### **Calibration REST service alone**
 
 ```shell
-java -jar coda-calibration/calibration-service/application/target/application-1.0.1-runnable.jar
+java -jar coda-calibration/calibration-service/application/target/application-1.0.2-runnable.jar
 ```
 
 #### A note about HTTPS
@@ -89,7 +89,7 @@ As of 1.0, CCT is capable of loading four basic file types
 
    ```text
    STATION_CHANNEL_EVENTID_LOWFREQ_HIGHFREQ_UNITS_.*.env
-   (e.g. ANMO.STACK.999999_1.0_1.5_VEL_.env)
+   (e.g. ANMO_STACK_999999_1.0_1.5_VEL_.env)
    ```
 
 2. Reference events

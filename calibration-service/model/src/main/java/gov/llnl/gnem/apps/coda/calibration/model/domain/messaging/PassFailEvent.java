@@ -23,10 +23,10 @@ public class PassFailEvent {
 
     private String messageId;
 
-    private Result<Object> result;
+    private Result<?> result;
 
     @JsonCreator
-    public PassFailEvent(@JsonProperty("id") Long id, @JsonProperty("messageId") String messageId, @JsonProperty("result") Result<Object> result) {
+    public PassFailEvent(@JsonProperty("id") Long id, @JsonProperty("messageId") String messageId, @JsonProperty("result") Result<?> result) {
         this.id = id;
         this.messageId = messageId;
         this.result = result;
@@ -41,7 +41,7 @@ public class PassFailEvent {
         return this;
     }
 
-    public Result<Object> getResult() {
+    public Result<?> getResult() {
         return result;
     }
 

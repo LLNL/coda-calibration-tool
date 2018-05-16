@@ -14,9 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters;
 
-import java.text.NumberFormat;
 import java.util.Objects;
-import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -25,25 +23,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.NumberFormatFactory;
+import gov.llnl.gnem.apps.coda.calibration.gui.util.CellBindingUtils;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
-import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableView;
 
 @Component
 public class ModelController {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-
-    private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
 
     @FXML
     private TableView<MdacParametersFI> fiTableView;
@@ -134,12 +131,34 @@ public class ModelController {
     }
 
     @FXML
-    private void reloadTable(ActionEvent e) {
+    private void reloadTable(Event e) {
         requestData();
     }
 
     @PostConstruct
     private void onSpringStartupFinished() {
+        requestData();
+    }
+
+    @FXML
+    private void postUpdate(CellEditEvent<?, ?> e) {
+        fiData.forEach(p -> {
+            try {
+                client.postFiParameters(p);
+            } catch (JsonProcessingException e1) {
+                log.error(e1.getMessage(), e1);
+            }
+        });
+
+        psData.forEach(p -> {
+            try {
+                client.postPsParameters(p);
+            } catch (JsonProcessingException e1) {
+                log.error(e1.getMessage(), e1);
+            }
+        });
+        fiData.clear();
+        psData.clear();
         requestData();
     }
 
@@ -154,172 +173,30 @@ public class ModelController {
     @FXML
     public void initialize() {
 
-        phaseCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                     .map(CellDataFeatures::getValue)
-                                                                                     .map(MdacParametersPS::getPhase)
-                                                                                     .filter(Objects::nonNull)
-                                                                                     .orElseGet(String::new)));
-
-        q0Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(MdacParametersPS::getQ0)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt2::format)
-                                                                                  .orElseGet(String::new)));
-
-        delQ0Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                     .map(CellDataFeatures::getValue)
-                                                                                     .map(MdacParametersPS::getDelQ0)
-                                                                                     .filter(Objects::nonNull)
-                                                                                     .map(dfmt2::format)
-                                                                                     .orElseGet(String::new)));
-
-        gammaCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                     .map(CellDataFeatures::getValue)
-                                                                                     .map(MdacParametersPS::getGamma0)
-                                                                                     .filter(Objects::nonNull)
-                                                                                     .map(dfmt2::format)
-                                                                                     .orElseGet(String::new)));
-
-        delGammaCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                        .map(CellDataFeatures::getValue)
-                                                                                        .map(MdacParametersPS::getDelGamma0)
-                                                                                        .filter(Objects::nonNull)
-                                                                                        .map(dfmt2::format)
-                                                                                        .orElseGet(String::new)));
-
-        u0Col.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                  .map(CellDataFeatures::getValue)
-                                                                                  .map(MdacParametersPS::getU0)
-                                                                                  .filter(Objects::nonNull)
-                                                                                  .map(dfmt2::format)
-                                                                                  .orElseGet(String::new)));
-
-        etaCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                   .map(CellDataFeatures::getValue)
-                                                                                   .map(MdacParametersPS::getEta)
-                                                                                   .filter(Objects::nonNull)
-                                                                                   .map(dfmt2::format)
-                                                                                   .orElseGet(String::new)));
-
-        delEtaCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                      .map(CellDataFeatures::getValue)
-                                                                                      .map(MdacParametersPS::getDelEta)
-                                                                                      .filter(Objects::nonNull)
-                                                                                      .map(dfmt2::format)
-                                                                                      .orElseGet(String::new)));
-
-        distCritCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                        .map(CellDataFeatures::getValue)
-                                                                                        .map(MdacParametersPS::getDistCrit)
-                                                                                        .filter(Objects::nonNull)
-                                                                                        .map(dfmt2::format)
-                                                                                        .orElseGet(String::new)));
-
-        snrCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                   .map(CellDataFeatures::getValue)
-                                                                                   .map(MdacParametersPS::getSnr)
-                                                                                   .filter(Objects::nonNull)
-                                                                                   .map(dfmt2::format)
-                                                                                   .orElseGet(String::new)));
-
-        sigmaCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                     .map(CellDataFeatures::getValue)
-                                                                                     .map(MdacParametersFI::getSigma)
-                                                                                     .filter(Objects::nonNull)
-                                                                                     .map(dfmt2::format)
-                                                                                     .orElseGet(String::new)));
-
-        delSigmaCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                        .map(CellDataFeatures::getValue)
-                                                                                        .map(MdacParametersFI::getDelSigma)
-                                                                                        .filter(Objects::nonNull)
-                                                                                        .map(dfmt2::format)
-                                                                                        .orElseGet(String::new)));
-
-        psiCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                   .map(CellDataFeatures::getValue)
-                                                                                   .map(MdacParametersFI::getPsi)
-                                                                                   .filter(Objects::nonNull)
-                                                                                   .map(dfmt2::format)
-                                                                                   .orElseGet(String::new)));
-
-        delPsiCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                      .map(CellDataFeatures::getValue)
-                                                                                      .map(MdacParametersFI::getDelPsi)
-                                                                                      .filter(Objects::nonNull)
-                                                                                      .map(dfmt2::format)
-                                                                                      .orElseGet(String::new)));
-
-        zetaCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                    .map(CellDataFeatures::getValue)
-                                                                                    .map(MdacParametersFI::getZeta)
-                                                                                    .filter(Objects::nonNull)
-                                                                                    .map(dfmt2::format)
-                                                                                    .orElseGet(String::new)));
-
-        m0RefCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                     .map(CellDataFeatures::getValue)
-                                                                                     .map(MdacParametersFI::getM0ref)
-                                                                                     .filter(Objects::nonNull)
-                                                                                     .map(d -> d.toString())
-                                                                                     .orElseGet(String::new)));
-
-        alphasCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                      .map(CellDataFeatures::getValue)
-                                                                                      .map(MdacParametersFI::getAlphas)
-                                                                                      .filter(Objects::nonNull)
-                                                                                      .map(dfmt2::format)
-                                                                                      .orElseGet(String::new)));
-
-        betasCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                     .map(CellDataFeatures::getValue)
-                                                                                     .map(MdacParametersFI::getBetas)
-                                                                                     .filter(Objects::nonNull)
-                                                                                     .map(dfmt2::format)
-                                                                                     .orElseGet(String::new)));
-
-        rhosCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                    .map(CellDataFeatures::getValue)
-                                                                                    .map(MdacParametersFI::getRhos)
-                                                                                    .filter(Objects::nonNull)
-                                                                                    .map(dfmt2::format)
-                                                                                    .orElseGet(String::new)));
-
-        radpatPCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                       .map(CellDataFeatures::getValue)
-                                                                                       .map(MdacParametersFI::getRadPatP)
-                                                                                       .filter(Objects::nonNull)
-                                                                                       .map(dfmt2::format)
-                                                                                       .orElseGet(String::new)));
-
-        radpatSCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                       .map(CellDataFeatures::getValue)
-                                                                                       .map(MdacParametersFI::getRadPatS)
-                                                                                       .filter(Objects::nonNull)
-                                                                                       .map(dfmt2::format)
-                                                                                       .orElseGet(String::new)));
-
-        alpharCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                      .map(CellDataFeatures::getValue)
-                                                                                      .map(MdacParametersFI::getAlphaR)
-                                                                                      .filter(Objects::nonNull)
-                                                                                      .map(dfmt2::format)
-                                                                                      .orElseGet(String::new)));
-
-        betarCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                     .map(CellDataFeatures::getValue)
-                                                                                     .map(MdacParametersFI::getBetaR)
-                                                                                     .filter(Objects::nonNull)
-                                                                                     .map(dfmt2::format)
-                                                                                     .orElseGet(String::new)));
-
-        rhorCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                    .map(CellDataFeatures::getValue)
-                                                                                    .map(MdacParametersFI::getRhor)
-                                                                                    .filter(Objects::nonNull)
-                                                                                    .map(dfmt2::format)
-                                                                                    .orElseGet(String::new)));
+        CellBindingUtils.attachTextCellFactoriesString(phaseCol, MdacParametersPS::getPhase);
+        CellBindingUtils.attachEditableTextCellFactories(q0Col, MdacParametersPS::getQ0, MdacParametersPS::setQ0);
+        CellBindingUtils.attachEditableTextCellFactories(delQ0Col, MdacParametersPS::getDelQ0, MdacParametersPS::setDelQ0);
+        CellBindingUtils.attachEditableTextCellFactories(gammaCol, MdacParametersPS::getGamma0, MdacParametersPS::setGamma0);
+        CellBindingUtils.attachEditableTextCellFactories(delGammaCol, MdacParametersPS::getDelGamma0, MdacParametersPS::setDelGamma0);
+        CellBindingUtils.attachEditableTextCellFactories(u0Col, MdacParametersPS::getU0, MdacParametersPS::setU0);
+        CellBindingUtils.attachEditableTextCellFactories(etaCol, MdacParametersPS::getEta, MdacParametersPS::setEta);
+        CellBindingUtils.attachEditableTextCellFactories(delEtaCol, MdacParametersPS::getDelEta, MdacParametersPS::setDelEta);
+        CellBindingUtils.attachEditableTextCellFactories(distCritCol, MdacParametersPS::getDistCrit, MdacParametersPS::setDistCrit);
+        CellBindingUtils.attachEditableTextCellFactories(snrCol, MdacParametersPS::getSnr, MdacParametersPS::setSnr);
+        CellBindingUtils.attachEditableTextCellFactories(sigmaCol, MdacParametersFI::getSigma, MdacParametersFI::setSigma);
+        CellBindingUtils.attachEditableTextCellFactories(delSigmaCol, MdacParametersFI::getDelSigma, MdacParametersFI::setDelSigma);
+        CellBindingUtils.attachEditableTextCellFactories(psiCol, MdacParametersFI::getPsi, MdacParametersFI::setPsi);
+        CellBindingUtils.attachEditableTextCellFactories(delPsiCol, MdacParametersFI::getDelPsi, MdacParametersFI::setDelPsi);
+        CellBindingUtils.attachEditableTextCellFactories(zetaCol, MdacParametersFI::getZeta, MdacParametersFI::setZeta);
+        CellBindingUtils.attachEditableTextCellFactories(m0RefCol, MdacParametersFI::getM0ref, MdacParametersFI::setM0ref);
+        CellBindingUtils.attachEditableTextCellFactories(alphasCol, MdacParametersFI::getAlphas, MdacParametersFI::setAlphas);
+        CellBindingUtils.attachEditableTextCellFactories(betasCol, MdacParametersFI::getBetas, MdacParametersFI::setBetas);
+        CellBindingUtils.attachEditableTextCellFactories(rhosCol, MdacParametersFI::getRhos, MdacParametersFI::setRhos);
+        CellBindingUtils.attachEditableTextCellFactories(radpatPCol, MdacParametersFI::getRadPatP, MdacParametersFI::setRadPatP);
+        CellBindingUtils.attachEditableTextCellFactories(radpatSCol, MdacParametersFI::getRadPatS, MdacParametersFI::setRadPatS);
+        CellBindingUtils.attachEditableTextCellFactories(alpharCol, MdacParametersFI::getAlphaR, MdacParametersFI::setAlphaR);
+        CellBindingUtils.attachEditableTextCellFactories(betarCol, MdacParametersFI::getBetaR, MdacParametersFI::setBetaR);
+        CellBindingUtils.attachEditableTextCellFactories(rhorCol, MdacParametersFI::getRhor, MdacParametersFI::setRhor);
 
         fiTableView.setItems(fiData);
         psTableView.setItems(psData);

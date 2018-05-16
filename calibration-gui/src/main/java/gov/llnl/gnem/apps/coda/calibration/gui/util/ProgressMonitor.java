@@ -50,7 +50,7 @@ public class ProgressMonitor extends VBox implements Observer {
                 Parent root = fxmlLoader.load();
                 this.getChildren().add(root);
 
-                if (progressListener.getProgress() > 0.0) {
+                if (progressListener.getProgress() >= 0.0) {
                     progressBar.setProgress(progressListener.getProgress());
                 } else {
                     progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
@@ -67,7 +67,7 @@ public class ProgressMonitor extends VBox implements Observer {
         if (event instanceof Progress) {
             Progress progress = (Progress) event;
             Platform.runLater(() -> {
-                if (progress.getTotal() > 0.0) {
+                if (progress.getTotal() >= 0.0) {
                     label.setText(progress.getCurrent() + "/" + progress.getTotal());
                     progressBar.setProgress(progress.getProgress());
                 } else {
@@ -80,5 +80,9 @@ public class ProgressMonitor extends VBox implements Observer {
 
     public String getDisplayableName() {
         return displayableName;
+    }
+
+    public ProgressBar getProgressBar() {
+        return progressBar;
     }
 }

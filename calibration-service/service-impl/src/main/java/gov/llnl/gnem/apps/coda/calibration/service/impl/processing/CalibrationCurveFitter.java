@@ -170,7 +170,72 @@ public class CalibrationCurveFitter {
         return fit;
     }
 
-    public double[] gridSearchCodaVApacheCMAES(List<Entry<Double, Double>> velocityDistancePairs) {
+    public EnvelopeFit fitCodaCMAESStraightLine(float[] segment) {
+
+        double minInt = 0.01;
+        double maxInt = 10.0;
+        double minBeta = -1.0;
+        double maxBeta = 0.0;
+
+        EnvelopeFit fit = new EnvelopeFit();
+
+        SimpleRegression regression = new SimpleRegression();
+        for (int j = 0; j < segment.length; j++) {
+            regression.addData(j + 1, segment[j]);
+        }
+        double startIntercept = regression.getIntercept();
+        double startBeta = regression.getSlope();
+
+        MultivariateFunction prediction = point -> {
+            double intercept = point[0];
+            double gamma = 0.0;
+            double beta = point[1];
+            double sum = 0.0;
+            for (int j = 0; j < segment.length; j++) {
+                double t = j + 1.0;
+                double actual = segment[j];
+                double predicted = intercept - (gamma * Math.log10(t)) + (beta * t);
+                sum = sum + FastMath.sqrt((predicted - actual) * (predicted - actual));
+            }
+            return sum;
+        };
+
+        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.0005, -1.0, 100000);
+
+        if (Double.isNaN(startIntercept)) {
+            startIntercept = ThreadLocalRandom.current().nextDouble(minInt, maxInt);
+            startBeta = minBeta;
+        }
+
+        if (startIntercept > maxInt) {
+            maxInt += startIntercept;
+        } else if (startIntercept < minInt) {
+            startIntercept = minInt;
+        }
+
+        if (startBeta > maxBeta) {
+            maxBeta += startBeta;
+        } else if (startBeta < minBeta) {
+            startBeta = minBeta;
+        }
+
+        PointValuePair bestResult = optimizeCMAES(prediction,
+                                                  new InitialGuess(new double[] { startIntercept, startBeta }),
+                                                  new CMAESOptimizer.Sigma(new double[] { 0.5, 0.05 }),
+                                                  convergenceChecker,
+                                                  50,
+                                                  new SimpleBounds(new double[] { minInt, minBeta }, new double[] { maxInt, maxBeta }));
+
+        double[] curve = bestResult.getKey();
+        fit.setIntercept(curve[0]);
+        fit.setGamma(0.0);
+        fit.setBeta(curve[1]);
+        fit.setError(bestResult.getValue());
+
+        return fit;
+	}
+
+	public double[] gridSearchCodaVApacheCMAES(List<Entry<Double, Double>> velocityDistancePairs) {
         return gridSearchCodaVApacheCMAES(velocityDistancePairs, YVV_MIN, YVV_MAX, 0, V_DIST_MAX);
     }
 

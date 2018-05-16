@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
 import java.io.IOException;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.util.ClickUtils;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.ProgressMonitor;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -74,8 +75,9 @@ public class ProgressGui {
                         return new TableCell<ProgressMonitor, Node>() {
                             @Override
                             protected void updateItem(Node item, boolean empty) {
-                                if (item == getItem())
+                                if (item == getItem()) {
                                     return;
+                                }
                                 super.updateItem(item, empty);
 
                                 if (item == null) {
@@ -90,6 +92,11 @@ public class ProgressGui {
                     }
                 });
                 progressTable.setItems(monitors);
+                progressTable.getSelectionModel().selectedItemProperty().addListener((obs, prevSelection, newSelection) -> {
+                    if (newSelection != null) {
+                        ClickUtils.clickNode(newSelection);
+                    }
+                });
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
