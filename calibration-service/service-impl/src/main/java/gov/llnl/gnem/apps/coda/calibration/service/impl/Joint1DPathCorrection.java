@@ -32,15 +32,17 @@ import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.PowellOptimizer;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
 import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 import org.apache.commons.math3.optim.univariate.UnivariateOptimizer;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.stat.StatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +94,8 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     private static final double P1_MAX = -0.001;
     private static final double SITE_MAX = 10.0;
     private static final double SITE_MIN = -10.0;
+
+    private static final int POP_SIZE = 10;
 
     // Evids actually potentially need meta-data about p1,p2,q,xt,xc,etc per
     // evid in the future but for now they are common values for 1D.
@@ -216,20 +220,29 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                     optimizationLowBounds[i] = SITE_MIN;
                     optimizationHighBounds[i] = SITE_MAX;
                 }
+                
+                double[] sigmaArray = new double[optimizationParams.length];
+                for (int i = 0; i < sigmaArray.length; i++) {
+                    sigmaArray[i] = 1.;
+                }
 
-                // starting L1.2 residual
-                Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, (1.0 / 1.2));
+                // starting residual
+                Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, (1.0 / 2.0));
 
                 PointValuePair optimizedResult = IntStream.range(0, STARTING_POINTS).parallel().mapToObj(i -> {
                     ConvergenceChecker<PointValuePair> convergenceChecker = new SimpleValueChecker(TOLERANCE, TOLERANCE);
-                    PowellOptimizer optimizer = new PowellOptimizer(TOLERANCE, TOLERANCE, convergenceChecker);
+                    CMAESOptimizer optimizer = new CMAESOptimizer(1000000, TOLERANCE, true, 0, 10, new MersenneTwister(), true, convergenceChecker);
+
                     MultivariateFunction prediction = new ESHPathMultivariate(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand);
                     PointValuePair opt = null;
                     try {
-                        opt = optimizer.optimize(new MaxEval(2000000),
+                        opt = optimizer.optimize(new MaxEval(1000000),
                                                  new ObjectiveFunction(prediction),
                                                  GoalType.MINIMIZE,
-                                                 new InitialGuess(perturbParams(optimizationLowBounds, optimizationHighBounds)));
+                                                 new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
+                                                 new InitialGuess(perturbParams(optimizationLowBounds, optimizationHighBounds)),
+                                                 new CMAESOptimizer.PopulationSize(POP_SIZE),
+                                                 new CMAESOptimizer.Sigma(sigmaArray));
                     } catch (TooManyEvaluationsException e) {
                     }
                     return opt;
@@ -242,9 +255,9 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                     optimizationParams = optimizedResult.getPoint();
                 }
 
-                // final L1.2 residual
+                // final residual
                 PathCostFunctionResult finalResults = costFunctionFull(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams);
-                Double finalResidual = Math.pow(finalResults.getCost() / totalDataCount, (1.0 / 1.2));
+                Double finalResidual = Math.pow(finalResults.getCost() / totalDataCount, (1.0 / 2.0));
 
                 PathCalibrationMeasurement measurement = new PathCalibrationMeasurement();
                 measurement.setInitialResidual(initialResidual);
@@ -331,7 +344,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     }
 
     /**
-     * L1.2 cost function for use in optimization code. Extended Street-Herrmann
+     * cost function for use in optimization code. Extended Street-Herrmann
      * spreading model, no Q.
      */
     public double costFunction(Map<Event, Map<Station, SpectraMeasurement>> evidStaData, Map<Event, Map<Station, Double>> dataMap, Map<Event, Map<Station, Double>> distanceMap,
@@ -378,7 +391,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
             if (dataVec.size() > 1) {
                 double dmed = lpMean(ArrayUtils.toPrimitive(dataVec.toArray(new Double[0])));
                 for (Entry<Station, SpectraMeasurement> entry : stationMapData.entrySet()) {
-                    rsum = rsum + Math.pow(Math.abs(localDataMap.get(evid).get(entry.getKey()) - dmed), 1.2);
+                    rsum = rsum + Math.pow(Math.abs(localDataMap.get(evid).get(entry.getKey()) - dmed), 2.0);
                     if (!residuals.containsKey(evid)) {
                         residuals.put(evid, new HashMap<Station, Double>());
                     }
@@ -455,7 +468,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
         } else {
             UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
             UnivariatePointValuePair result = optimizer.optimize(new UnivariateObjectiveFunction(x -> xlpSum(values, x)),
-                                                                 new MaxEval(1000000),
+                                                                 new MaxEval(10000),
                                                                  GoalType.MINIMIZE,
                                                                  new SearchInterval(xmin, xmax, xstart));
             mean = result.getPoint();
@@ -466,7 +479,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     private double xlpSum(double[] x, double x0) {
         double sum = 0.0;
         for (int i = 0; i < x.length; i++) {
-            sum = sum + Math.pow(Math.abs(x[i] - x0), 1.2);
+            sum = sum + Math.pow(Math.abs(x[i] - x0), 2.0);
         }
         return sum;
     }

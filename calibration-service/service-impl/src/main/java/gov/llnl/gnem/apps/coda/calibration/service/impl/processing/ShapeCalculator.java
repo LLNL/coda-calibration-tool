@@ -71,7 +71,7 @@ public class ShapeCalculator {
 
             if (frequencyBandParameter == null) {
                 // TODO: Feedback to user
-                log.trace("Unable to find frequency band parameters for band {} given input measurement {}; this measurement will be skipped", freqBand, velocityMeasurement);
+                log.info("Unable to find frequency band parameters for band {} given input measurement {}; this measurement will be skipped", freqBand, velocityMeasurement);
                 return null;
             }
 

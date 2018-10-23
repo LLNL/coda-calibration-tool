@@ -5,7 +5,7 @@
 
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>calibration-gui</artifactId>
-	<version>1.0.2</version>
+	<version>1.0.3</version>
 	<packaging>jar</packaging>
 
 	<name>calibration-gui</name>
@@ -65,12 +65,12 @@
 		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 			<artifactId>externals</artifactId>
-			<version>1.0.2</version>
+			<version>1.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 			<artifactId>model</artifactId>
-			<version>1.0.2</version>
+			<version>1.0.3</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.eclipse.persistence</groupId>

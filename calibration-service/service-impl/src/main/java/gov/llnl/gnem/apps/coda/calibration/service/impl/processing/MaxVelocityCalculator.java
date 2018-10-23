@@ -71,9 +71,9 @@ public class MaxVelocityCalculator {
                 // cut the coda window portion of the seismograms
                 waveform.cut(starttime, endtime);
 
-                double min_length = 50.;
+                double min_length = 25.;
                 if (endtime.subtract(starttime).getEpochTime() < min_length) {
-                    log.trace("Coda window length too short: {}", endtime.subtract(starttime).getEpochTime());
+                    log.info("Coda window length too short: {}", endtime.subtract(starttime).getEpochTime());
                 }
 
                 // peakS[0] time in seconds for

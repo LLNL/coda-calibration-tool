@@ -42,18 +42,18 @@ We don't presently deploy versioned artifacts into a public repository like the 
 #### **As a single runnable JAR**
 
 ```shell
-java -jar coda-calibration/calibration-standalone/target/calibration-standalone-1.0.2-runnable.jar
+java -jar coda-calibration/calibration-standalone/target/calibration-standalone-1.0.3-runnable.jar
 ```
 
 #### **GUI alone**
 
 ```shell
-java -jar coda-calibration/calibration-gui/target/calibration-gui-1.0.2-runnable.jar
+java -jar coda-calibration/calibration-gui/target/calibration-gui-1.0.3-runnable.jar
 ```
 #### **Calibration REST service alone**
 
 ```shell
-java -jar coda-calibration/calibration-service/application/target/application-1.0.2-runnable.jar
+java -jar coda-calibration/calibration-service/application/target/application-1.0.3-runnable.jar
 ```
 
 #### A note about HTTPS

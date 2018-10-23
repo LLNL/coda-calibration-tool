@@ -372,6 +372,8 @@ public class PathController {
 
                         if (xmax == null) {
                             xmax = plotObj.getXcenter();
+                        }
+                        if (xmin == null) {
                             xmin = plotObj.getXcenter();
                         }
                         if (plotObj.getXcenter() > xmax) {
@@ -402,10 +404,14 @@ public class PathController {
                         }
                         plot.AddPlotObject(plotObj2, 10);
                     }
+                    String labelText;
                     if (xmax != null) {
                         plot.SetAxisLimits(xmin - (xmin * .1) - .1, xmax + (xmax * .1) + .1, ymin - (ymin * .1) - .1, ymax + (ymax * .1) + .1);
+                        labelText = "StdDev(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + " StdDev(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation());
                     }
-                    String labelText = "StdDev(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + " StdDev(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation());
+                    else {
+                        labelText = "";
+                    }
                     sdPlot.getXaxis().setVisible(false);
                     sdPlot.getXaxis().setLabelText(labelText);
                     sdPlot.getXaxis().setVisible(true);
@@ -473,6 +479,8 @@ public class PathController {
 
                                     if (xmax == null) {
                                         xmax = plotObj.getXcenter();
+                                    }
+                                    if (xmin == null) {
                                         xmin = plotObj.getXcenter();
                                     }
                                     if (plotObj.getXcenter() > xmax) {
@@ -507,7 +515,12 @@ public class PathController {
                         }
                     }
 
-                    
+                    if (xmax == null) {
+                        xmax = 1.0;
+                    }
+                    if (xmin == null) {
+                        xmin = 0.0;
+                    }
                     double paddedXmin = xmin - (xmin * .1);
                     double paddedXmax = xmax + (xmax * .1);
                     if (xmax != null) {
