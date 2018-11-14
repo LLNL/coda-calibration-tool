@@ -1,0 +1,530 @@
+{
+    "$id": "llnl/coda-calibration-tool",
+    "type": "object",
+    "title": "Root Schema",
+    "version": "1",
+    "required": [
+        "schemaVersion",
+        "type"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "$id": "#/properties/schemaVersion",
+            "type": "number",
+            "title": "Version of the schema used to generate the file.",
+            "default": false,
+            "examples": [
+                "1"
+            ]
+        },
+        "type": {
+            "$id": "#/properties/type",
+            "type": "string",
+            "title": "Type indicator for the contents of the json file.",
+            "const": "llnl/coda-calibration-tool",
+            "default": false
+        },
+        "bands": {
+            "$id": "#/properties/bands",
+            "type": "array",
+            "title": "Array of frequency band definitions.",
+            "items": {
+                "$id": "#/properties/bands/band",
+                "type": "object",
+                "title": "A specific frequency band definitions.",
+                "required": [
+                    "lowFreqHz",
+                    "highFreqHz"
+                ],
+                "properties": {
+                    "lowFreqHz": {
+                        "$id": "#/properties/bands/band/properties/lowFreqHz",
+                        "type": "number",
+                        "title": "Low Frequency of the band",
+                        "default": false,
+                        "examples": [
+                            0.5
+                        ]
+                    },
+                    "highFreqHz": {
+                        "$id": "#/properties/bands/band/properties/highFreqHz",
+                        "type": "number",
+                        "title": "High Frequency of the band",
+                        "default": false,
+                        "examples": [
+                            1
+                        ]
+                    },
+                    "minWindowLengthSec": {
+                        "$id": "#/properties/bands/band/properties/minWindowLengthSec",
+                        "type": "number",
+                        "title": "Minimum coda energy window length selection criteria to be used in calibration (secs). Too short windows are discarded.",
+                        "default": 0,
+                        "examples": [
+                            10
+                        ]
+                    },
+                    "maxWindowLengthSec": {
+                        "$id": "#/properties/bands/band/properties/maxWindowLengthSec",
+                        "type": "number",
+                        "title": "Maximum coda energy window length selection criteria to be used in calibration (secs). Too long windows are truncated to the maximum.",
+                        "default": 1000,
+                        "examples": [
+                            1000
+                        ]
+                    },
+                    "snrThresholdAboveNoiseLog10": {
+                        "$id": "#/properties/bands/band/properties/snrThresholdAboveNoiseLog10",
+                        "type": "number",
+                        "title": "Defines a log10 additive threshold above the computed noise level to use for selection and marking criteria during calibration.",
+                        "default": 0,
+                        "examples": [
+                            1
+                        ]
+                    },
+                    "measurementTimeSec": {
+                        "$id": "#/properties/bands/band/properties/measurementTimeSec",
+                        "type": "number",
+                        "title": "This is the time in seconds after the start of the phase to make amplitude measurements at.",
+                        "default": 100,
+                        "examples": [
+                            100
+                        ]
+                    },
+                    "velocity0": {
+                        "$id": "#/properties/bands/band/properties/velocity0",
+                        "type": "number",
+                        "title": "Defines the V0 parameter for the velocity model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "velocity1": {
+                        "$id": "#/properties/bands/band/properties/velocity1",
+                        "type": "number",
+                        "title": "Defines the V1 parameter for the velocity model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "velocity2": {
+                        "$id": "#/properties/bands/band/properties/velocity2",
+                        "type": "number",
+                        "title": "Defines the V2 parameter for the velocity model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "beta0": {
+                        "$id": "#/properties/bands/band/properties/beta0",
+                        "type": "number",
+                        "title": "Defines the B0 parameter for the beta model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "beta1": {
+                        "$id": "#/properties/bands/band/properties/beta1",
+                        "type": "number",
+                        "title": "Defines the B1 parameter for the beta model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "beta2": {
+                        "$id": "#/properties/bands/band/properties/beta2",
+                        "type": "number",
+                        "title": "Defines the B2 parameter for the beta model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "gamma0": {
+                        "$id": "#/properties/bands/band/properties/gamma0",
+                        "type": "number",
+                        "title": "Defines the G0 parameter for the gamma model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "gamma1": {
+                        "$id": "#/properties/bands/band/properties/gamma1",
+                        "type": "number",
+                        "title": "Defines the G1 parameter for the gamma model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "gamma2": {
+                        "$id": "#/properties/bands/band/properties/gamma2",
+                        "type": "number",
+                        "title": "Defines the G2 parameter for the gamma model formula.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "s1": {
+                        "$id": "#/properties/bands/band/properties/s1",
+                        "type": "number",
+                        "title": "Defines the S1 parameter for the ESH path correction model.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "s2": {
+                        "$id": "#/properties/bands/band/properties/s2",
+                        "type": "number",
+                        "title": "Defines the S2 parameter for the ESH path correction model.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "xc": {
+                        "$id": "#/properties/bands/band/properties/xc",
+                        "type": "number",
+                        "title": "Defines the first critical distance parameter for the ESH path correction model.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "xt": {
+                        "$id": "#/properties/bands/band/properties/xt",
+                        "type": "number",
+                        "title": "Defines the second critical distance parameter for the ESH path correction model.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "q": {
+                        "$id": "#/properties/bands/band/properties/q",
+                        "type": "number",
+                        "title": "Defines the Q parameter for the ESH path correction model.",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    }
+                }
+            }
+        },
+        "mdac-ps": {
+            "$id": "#/properties/mdac-ps",
+            "type": "array",
+            "title": "Array of MDAC2 phase specific definitions.",
+            "items": {
+                "$id": "#/properties/mdac-ps/entry",
+                "type": "object",
+                "title": "A specific MDAC2 phase entry.",
+                "required": [
+                    "phase",
+                    "q0",
+                    "delQ0",
+                    "gamma0",
+                    "delGamma0",
+                    "u0",
+                    "eta",
+                    "delEta",
+                    "distCrit",
+                    "snr"
+                ],
+                "properties": {
+                    "phase": {
+                        "$id": "#/properties/mdac-ps/entry/properties/phase",
+                        "type": "string",
+                        "title": "Identifies the phase corresponding to these parameters",
+                        "default": false,
+                        "examples": [
+                            "Pg", "Pn", "Sn", "Lg"
+                        ]
+                    },
+                    "q0": {
+                        "$id": "#/properties/mdac-ps/entry/properties/q0",
+                        "type": "number",
+                        "title": "Quality factor",
+                        "default": 0,
+                        "examples": [
+                            200
+                        ]
+                    },
+                    "delQ0": {
+                        "$id": "#/properties/mdac-ps/entry/properties/delQ0",
+                        "type": "number",
+                        "title": "Delta quality",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "gamma0": {
+                        "$id": "#/properties/mdac-ps/entry/properties/gamma0",
+                        "type": "number",
+                        "title": "Exponent for the frequency coefficient of Q",
+                        "default": 0,
+                        "examples": [
+                            0.5
+                        ]
+                    },
+                    "delGamma0": {
+                        "$id": "#/properties/mdac-ps/entry/properties/delGamma0",
+                        "type": "number",
+                        "title": "Delta gamma",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "u0": {
+                        "$id": "#/properties/mdac-ps/entry/properties/u0",
+                        "type": "number",
+                        "title": "Phase velocity term",
+                        "default": 0,
+                        "examples": [
+                            5000
+                        ]
+                    },
+                    "eta": {
+                        "$id": "#/properties/mdac-ps/entry/properties/eta",
+                        "type": "number",
+                        "title": "Geometrical spreading term",
+                        "default": 0,
+                        "examples": [
+                            1.1
+                        ]
+                    },
+                    "delEta": {
+                        "$id": "#/properties/mdac-ps/entry/properties/delEta",
+                        "type": "number",
+                        "title": "Delta eta",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "distCrit": {
+                        "$id": "#/properties/mdac-ps/entry/properties/distCrit",
+                        "type": "number",
+                        "title": "Critical distance (km) at which the spreading begins to decay at rate eta",
+                        "default": 0,
+                        "examples": [
+                            1.0
+                        ]
+                    },
+                    "snr": {
+                        "$id": "#/properties/mdac-ps/entry/properties/snr",
+                        "type": "number",
+                        "title": "Expected signal to noise thresholds",
+                        "default": 0,
+                        "examples": [
+                            2.0
+                        ]
+                    }
+                }
+            }
+        },
+        "mdac-fi": {
+            "$id": "#/properties/mdac-fi",
+            "type": "object",
+            "title": "MDAC2 frequency indipendent model difinition.",
+            "required": [
+                "sigma",
+                "delSigma",
+                "psi",
+                "delPsi",
+                "zeta",
+                "m0ref",
+                "alphas",
+                "betas",
+                "rhor",
+                "rhos",
+                "radPatP",
+                "radPatS",
+                "alphaR",
+                "betaR"
+            ],
+            "properties": {
+                "sigma": {
+                    "$id": "#/properties/mdac-fi/properties/sigma",
+                    "type": "number",
+                    "title": "Stress term",
+                    "default": 0,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "delSigma": {
+                    "$id": "#/properties/mdac-fi/properties/delSigma",
+                    "type": "number",
+                    "title": "Delta stress term",
+                    "default": 0,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "psi": {
+                    "$id": "#/properties/mdac-fi/properties/psi",
+                    "type": "number",
+                    "title": "Stress exponent",
+                    "default": 0,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "delPsi": {
+                    "$id": "#/properties/mdac-fi/properties/delPsi",
+                    "type": "number",
+                    "title": "Delta stress exponent",
+                    "default": 0,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "zeta": {
+                    "$id": "#/properties/mdac-fi/properties/zeta",
+                    "type": "number",
+                    "title": "Scaling factor",
+                    "default": 0,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "m0ref": {
+                    "$id": "#/properties/mdac-fi/properties/m0ref",
+                    "type": "number",
+                    "title": "Moment reference in NM/s",
+                    "default": 0,
+                    "examples": [
+                        10000000000000000
+                    ]
+                },
+                "alphas": {
+                    "$id": "#/properties/mdac-fi/properties/alphas",
+                    "type": "number",
+                    "title": "Source region velocity term for P",
+                    "default": 0,
+                    "examples": [
+                        5000
+                    ]
+                },
+                "betas": {
+                    "$id": "#/properties/mdac-fi/properties/betas",
+                    "type": "number",
+                    "title": "Source region velocity term for S",
+                    "default": 0,
+                    "examples": [
+                        5000
+                    ]
+                },
+                "rhor": {
+                    "$id": "#/properties/mdac-fi/properties/rhor",
+                    "type": "number",
+                    "title": "Density",
+                    "default": 0,
+                    "examples": [
+                        2500
+                    ]
+                },                
+                "rhos": {
+                    "$id": "#/properties/mdac-fi/properties/rhos",
+                    "type": "number",
+                    "title": "Density",
+                    "default": 0,
+                    "examples": [
+                        2500
+                    ]
+                },
+                "radPatP": {
+                    "$id": "#/properties/mdac-fi/properties/radPatP",
+                    "type": "number",
+                    "title": "Radiation pattern coefficient for P-phases",
+                    "default": 0,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "radPatS": {
+                    "$id": "#/properties/mdac-fi/properties/radPatS",
+                    "type": "number",
+                    "title": "Radiation pattern coefficient for S-phases",
+                    "default": 0,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "alphaR": {
+                    "$id": "#/properties/mdac-fi/properties/alphaR",
+                    "type": "number",
+                    "title": "Receiver region velocity term for P",
+                    "default": 0,
+                    "examples": [
+                        3000
+                    ]
+                },
+                "betaR": {
+                    "$id": "#/properties/mdac-fi/properties/betaR",
+                    "type": "number",
+                    "title": "Receiver region velocity term for S",
+                    "default": 0,
+                    "examples": [
+                        3000
+                    ]
+                }
+            }
+        },
+        "reference-events": {
+            "$id": "#/properties/reference-events",
+            "type": "array",
+            "title": "Array of known reference events for site correction tie-points.",
+            "items": {
+                "$id": "#/properties/reference-events/entry",
+                "type": "object",
+                "title": "A specific reference event entry.",
+                "required": [
+                    "eventId",
+                    "refMw"
+                ],
+                "properties": {
+                    "eventId": {
+                        "$id": "#/properties/reference-events/entry/properties/eventId",
+                        "type": "string",
+                        "title": "Specific event id, must match an event id in the calibration set to be used as a tie point.",
+                        "default": false,
+                        "examples": [
+                            "0101190012"
+                        ]
+                    },
+                    "refMw": {
+                        "$id": "#/properties/reference-events/entry/properties/refMw",
+                        "type": "number",
+                        "title": "The Mw value for the reference event. These can be from previous calibrations, waveform modeling, etc.",
+                        "default": 0,
+                        "examples": [
+                            5.0
+                        ]
+                    },
+                    "stressDropInMpa": {
+                        "$id": "#/properties/reference-events/entry/properties/stressDropInMpa",
+                        "type": "number",
+                        "title": "An optional measure of the stress drop term for this specific event. If present it will be used in lieu of the MDAC2 Sigma-Psi terms loaded for calibrating tie points for this event.",
+                        "default": false,
+                        "examples": [
+                            0.0, 0.5
+                        ]
+                    }
+                }
+            }
+        }        
+    }
+}

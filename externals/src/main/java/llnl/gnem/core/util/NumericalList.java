@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -26,8 +26,8 @@ public interface NumericalList {
     public void set(int i, double value);
 
     public int size();
-    
-    public NumericalList clone();
+
+    public NumericalList copy();
 
     public static class FloatList implements NumericalList {
         private final float[] data;
@@ -50,9 +50,9 @@ public interface NumericalList {
         public int size() {
             return data.length;
         }
-        
+
         @Override
-        public FloatList clone() {
+        public FloatList copy() {
             return new FloatList(data.clone());
         }
     }
@@ -78,9 +78,9 @@ public interface NumericalList {
         public int size() {
             return data.length;
         }
-        
+
         @Override
-        public DoubleList clone() {
+        public DoubleList copy() {
             return new DoubleList(data.clone());
         }
     }
@@ -106,9 +106,9 @@ public interface NumericalList {
         public int size() {
             return data.length;
         }
-        
+
         @Override
-        public NumberList clone() {
+        public NumberList copy() {
             return new NumberList(data.clone());
         }
     }

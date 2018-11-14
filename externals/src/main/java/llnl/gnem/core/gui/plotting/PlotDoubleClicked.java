@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -19,26 +19,22 @@ import java.awt.event.MouseEvent;
 import llnl.gnem.core.gui.plotting.transforms.Coordinate;
 
 /**
- * User: dodge1
- * Date: Feb 24, 2006
+ * User: dodge1 Date: Feb 24, 2006
  */
 public class PlotDoubleClicked {
     private final MouseEvent me;
     private final Coordinate coordinate;
 
-    public PlotDoubleClicked( MouseEvent me, Coordinate c )
-    {
+    public PlotDoubleClicked(MouseEvent me, Coordinate c) {
         this.me = me;
         this.coordinate = c;
     }
 
-    public MouseEvent getMe()
-    {
+    public MouseEvent getMe() {
         return me;
     }
 
-    public Coordinate getCoordinate()
-    {
+    public Coordinate getCoordinate() {
         return coordinate;
     }
 }

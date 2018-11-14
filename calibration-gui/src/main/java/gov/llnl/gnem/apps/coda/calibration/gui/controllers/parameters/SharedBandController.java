@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,7 +15,10 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -25,16 +28,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.CellBindingUtils;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.MaybeNumericStringComparator;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.NumberFormatFactory;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.SharedFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.gui.util.TimeLatchedGetSet;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.BandParametersDataChangeEvent;
+import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
+import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
 import javafx.fxml.FXML;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableView;
@@ -42,7 +50,7 @@ import javafx.scene.control.TableView;
 @Component
 public class SharedBandController {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(SharedBandController.class);
 
     private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
 
@@ -50,94 +58,99 @@ public class SharedBandController {
     private TableView<SharedFrequencyBandParameters> codaSharedTableView;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> lowFreqCol;
+    private ContextMenu paramTableContextMenu;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> highFreqCol;
+    private TableColumn<SharedFrequencyBandParameters, String> lowFreqCol;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> v0Col;
-    @FXML
-    TableColumn<SharedFrequencyBandParameters, String> v1Col;
-    @FXML
-    TableColumn<SharedFrequencyBandParameters, String> v2Col;
+    private TableColumn<SharedFrequencyBandParameters, String> highFreqCol;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> b0Col;
+    private TableColumn<SharedFrequencyBandParameters, String> v0Col;
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> b1Col;
+    private TableColumn<SharedFrequencyBandParameters, String> v1Col;
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> b2Col;
+    private TableColumn<SharedFrequencyBandParameters, String> v2Col;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> g0Col;
+    private TableColumn<SharedFrequencyBandParameters, String> b0Col;
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> g1Col;
+    private TableColumn<SharedFrequencyBandParameters, String> b1Col;
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> g2Col;
+    private TableColumn<SharedFrequencyBandParameters, String> b2Col;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> minSnrCol;
+    private TableColumn<SharedFrequencyBandParameters, String> g0Col;
+    @FXML
+    private TableColumn<SharedFrequencyBandParameters, String> g1Col;
+    @FXML
+    private TableColumn<SharedFrequencyBandParameters, String> g2Col;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> s1Col;
+    private TableColumn<SharedFrequencyBandParameters, String> minSnrCol;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> s2Col;
+    private TableColumn<SharedFrequencyBandParameters, String> s1Col;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> xcCol;
+    private TableColumn<SharedFrequencyBandParameters, String> s2Col;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> xtCol;
+    private TableColumn<SharedFrequencyBandParameters, String> xcCol;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> qCol;
+    private TableColumn<SharedFrequencyBandParameters, String> xtCol;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> minLengthCol;
+    private TableColumn<SharedFrequencyBandParameters, String> qCol;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> maxLengthCol;
+    private TableColumn<SharedFrequencyBandParameters, String> minLengthCol;
 
     @FXML
-    TableColumn<SharedFrequencyBandParameters, String> measureTimeCol;
+    private TableColumn<SharedFrequencyBandParameters, String> maxLengthCol;
+
+    @FXML
+    private TableColumn<SharedFrequencyBandParameters, String> measureTimeCol;
 
     private ObservableList<SharedFrequencyBandParameters> sharedFbData = FXCollections.observableArrayList();
 
     private ParameterClient client;
 
+    private EventBus bus;
+
+    private TimeLatchedGetSet scheduler;
+
     @Autowired
-    public SharedBandController(ParameterClient client) {
+    public SharedBandController(ParameterClient client, EventBus bus) {
         this.client = client;
-    }
-
-    @FXML
-    private void reloadTable(Event e) {
-        requestData();
-    }
-
-    @FXML
-    private void postUpdate(CellEditEvent<?, ?> e) {
-        sharedFbData.forEach(fb -> {
+        this.bus = bus;
+        this.bus.register(this);
+        this.scheduler = new TimeLatchedGetSet(() -> requestData(), () -> sharedFbData.forEach(sfb -> {
             try {
-                client.postSharedFrequencyBandParameters(fb);
+                client.setSharedFrequencyBandParameter(sfb).subscribe();
             } catch (JsonProcessingException e1) {
                 log.error(e1.getMessage(), e1);
             }
-        });
-        sharedFbData.clear();
-        requestData();
+        }));
+    }
+
+    @FXML
+    private void postUpdate(CellEditEvent<?, ?> event) {
+        scheduler.set();
+    }
+
+    @Subscribe
+    private void updateNotification(BandParametersDataChangeEvent event) {
+        scheduler.get();
     }
 
     @FXML
     public void initialize() {
 
         CellBindingUtils.attachEditableTextCellFactories(lowFreqCol, SharedFrequencyBandParameters::getLowFrequency, SharedFrequencyBandParameters::setLowFrequency);
-        lowFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
-
         CellBindingUtils.attachEditableTextCellFactories(highFreqCol, SharedFrequencyBandParameters::getHighFrequency, SharedFrequencyBandParameters::setHighFrequency);
-        highFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
         CellBindingUtils.attachTextCellFactories(v0Col, SharedFrequencyBandParameters::getVelocity0, dfmt4);
         CellBindingUtils.attachTextCellFactories(v1Col, SharedFrequencyBandParameters::getVelocity1, dfmt4);
@@ -162,6 +175,23 @@ public class SharedBandController {
         CellBindingUtils.attachEditableTextCellFactories(measureTimeCol, SharedFrequencyBandParameters::getMeasurementTime, SharedFrequencyBandParameters::setMeasurementTime);
 
         codaSharedTableView.setItems(sharedFbData);
+        codaSharedTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+    }
+
+    @FXML
+    private void clearTable() {
+        sharedFbData.forEach(x -> client.removeSharedFrequencyBandParameter(x).subscribe());
+        requestData();
+    }
+
+    @FXML
+    private void removeBands() {
+        List<SharedFrequencyBandParameters> sfb = new ArrayList<>();
+        codaSharedTableView.getSelectionModel().getSelectedIndices().forEach(i -> sfb.add(sharedFbData.get(i)));
+        if (!sfb.isEmpty()) {
+            sfb.forEach(x -> client.removeSharedFrequencyBandParameter(x).subscribe());
+            requestData();
+        }
     }
 
     @PostConstruct
@@ -171,6 +201,14 @@ public class SharedBandController {
 
     protected void requestData() {
         sharedFbData.clear();
-        client.getSharedFrequencyBandParameters().filter(Objects::nonNull).filter(value -> null != value.getId()).subscribe(value -> sharedFbData.add(value), err -> log.trace(err.getMessage(), err));
+        client.getSharedFrequencyBandParameters()
+              .filter(Objects::nonNull)
+              .filter(value -> null != value.getId())
+              .doOnComplete(() -> codaSharedTableView.sort())
+              .subscribe(value -> sharedFbData.add(value), err -> log.trace(err.getMessage(), err));
+
+        Platform.runLater(() -> {
+            Optional.ofNullable(codaSharedTableView).ifPresent(v -> v.refresh());
+        });
     }
 }

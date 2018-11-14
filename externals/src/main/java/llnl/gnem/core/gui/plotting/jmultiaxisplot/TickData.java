@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,15 +22,14 @@ import llnl.gnem.core.gui.plotting.TickDir;
 public class TickData {
 
     private int NumMinor = 4;
-    private double MajorLen = 3;  // In physical units, e.g. mm
-    private double MinorLen = 2;  // In physical units, e.g. mm
+    private double MajorLen = 3; // In physical units, e.g. mm
+    private double MinorLen = 2; // In physical units, e.g. mm
     private TickDir dir = TickDir.IN;
     private boolean visible = true;
     private String FontName = "Arial";
     private int FontSize = 10;
     private int FontStyle = Font.PLAIN;
     private Color FontColor = Color.black;
-
 
     public TickDir getDir() {
         return dir;

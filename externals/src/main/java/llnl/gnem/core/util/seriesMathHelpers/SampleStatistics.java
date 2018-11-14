@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -31,6 +31,8 @@ import llnl.gnem.core.util.SeriesMath;
  */
 public class SampleStatistics implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final double min;
     private final double max;
     private final double rms;
@@ -57,31 +59,31 @@ public class SampleStatistics implements Serializable {
     @Override
     public String toString() {
         switch (order) {
-            case FIRST:
-                return String.format("Mean = %f", mean);
-            case SECOND:
-                return String.format("Mean = %f, variance = %f", mean, variance);
-            case THIRD:
-                return String.format("Mean = %f, variance = %f, Skewness = %f", mean, variance, skewness);
-            case FOURTH:
-                return String.format("Mean = %f, variance = %f, Skewness = %f, Kurtosis = %f", mean, variance, skewness, kurtosis);
-            default:
-                return "";
+        case FIRST:
+            return String.format("Mean = %f", mean);
+        case SECOND:
+            return String.format("Mean = %f, variance = %f", mean, variance);
+        case THIRD:
+            return String.format("Mean = %f, variance = %f, Skewness = %f", mean, variance, skewness);
+        case FOURTH:
+            return String.format("Mean = %f, variance = %f, Skewness = %f, Kurtosis = %f", mean, variance, skewness, kurtosis);
+        default:
+            return "";
         }
     }
 
     public String toCSV() {
         switch (order) {
-            case FIRST:
-                return String.format("%f", mean);
-            case SECOND:
-                return String.format("%f,%f", mean, variance);
-            case THIRD:
-                return String.format("%f,%f,%f", mean, variance, skewness);
-            case FOURTH:
-                return String.format("%f,%f,%f,%f", mean, variance, skewness, kurtosis);
-            default:
-                return "";
+        case FIRST:
+            return String.format("%f", mean);
+        case SECOND:
+            return String.format("%f,%f", mean, variance);
+        case THIRD:
+            return String.format("%f,%f,%f", mean, variance, skewness);
+        case FOURTH:
+            return String.format("%f,%f,%f,%f", mean, variance, skewness, kurtosis);
+        default:
+            return "";
         }
 
     }
@@ -123,7 +125,7 @@ public class SampleStatistics implements Serializable {
     }
 
     public SampleStatistics(Collection<? extends Number> data, Order order) {
-        this(new NumberList((Number[]) data.toArray(new Number[1])), order);
+        this(new NumberList(data.toArray(new Number[1])), order);
     }
 
     /**
@@ -177,7 +179,7 @@ public class SampleStatistics implements Serializable {
             variance = stats.getVariance();
             standardDeviation = rms;
             if (order.ordinal() > Order.SECOND.ordinal()) {
-                double tmp  = stats.getSkewness();
+                double tmp = stats.getSkewness();
                 skewness = Double.isNaN(tmp) ? 0 : tmp;
                 if (order.ordinal() > Order.THIRD.ordinal()) {
                     tmp = stats.getKurtosis();
@@ -249,6 +251,6 @@ public class SampleStatistics implements Serializable {
     }
 
     public static double quickMedian(NumericalList values) {
-        return SeriesMath.quickMedian(values.clone());
+        return SeriesMath.quickMedian(values.copy());
     }
 }

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	
+	<parent>
+		<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+		<artifactId>envelope-service</artifactId>
+		<version>1.0.4-SNAPSHOT</version>
+	</parent>
+
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>envelope-service-api</artifactId>
+	<packaging>jar</packaging>
+	<name>envelope-service-api</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+			<artifactId>envelope-model</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.springlets</groupId>
+			<artifactId>springlets-data-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+			<artifactId>common-model</artifactId>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<!-- Compiler plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+			<!-- Asciidoclet plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>

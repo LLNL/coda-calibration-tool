@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,78 +20,62 @@ import llnl.gnem.core.gui.plotting.plotobject.SymbolStyle;
 
 /**
  *
- * User: Eric Matzel
- * Date: Oct 23, 2007
+ * User: Eric Matzel Date: Oct 23, 2007
  */
-public class PlotProperties
-{
-    public SymbolStyle getSymbolStyle()
-    {
+public class PlotProperties {
+    public SymbolStyle getSymbolStyle() {
         return symbolStyle;
     }
 
-    public void setSymbolStyle( SymbolStyle symbolStyle )
-    {
+    public void setSymbolStyle(SymbolStyle symbolStyle) {
         this.symbolStyle = symbolStyle;
     }
 
-    public double getSymbolSize()
-    {
+    public double getSymbolSize() {
         return symbolSize;
     }
 
-    public void setSymbolSize( double symbolSize )
-    {
+    public void setSymbolSize(double symbolSize) {
         this.symbolSize = symbolSize;
     }
 
-    public Color getSymbolEdgeColor()
-    {
+    public Color getSymbolEdgeColor() {
         return symbolEdgeColor;
     }
 
-    public void setSymbolEdgeColor( Color symbolEdgeColor )
-    {
+    public void setSymbolEdgeColor(Color symbolEdgeColor) {
         this.symbolEdgeColor = symbolEdgeColor;
     }
 
-    public Color getSymbolFillColor()
-    {
+    public Color getSymbolFillColor() {
         return symbolFillColor;
     }
 
-    public void setSymbolFillColor( Color symbolFillColor )
-    {
+    public void setSymbolFillColor(Color symbolFillColor) {
         this.symbolFillColor = symbolFillColor;
     }
 
-    public double getMinYAxisValue()
-    {
+    public double getMinYAxisValue() {
         return minYAxisValue;
     }
 
-    public void setMinYAxisValue( double minYAxisValue )
-    {
+    public void setMinYAxisValue(double minYAxisValue) {
         this.minYAxisValue = minYAxisValue;
     }
 
-    public double getMaxYAxisValue()
-    {
+    public double getMaxYAxisValue() {
         return maxYAxisValue;
     }
 
-    public void setMaxYAxisValue( double maxYAxisValue )
-    {
+    public void setMaxYAxisValue(double maxYAxisValue) {
         this.maxYAxisValue = maxYAxisValue;
     }
 
-    public boolean getAutoCalculateYaxisRange()
-    {
+    public boolean getAutoCalculateYaxisRange() {
         return autoCalculateYaxisRange;
     }
 
-    public void setAutoCalculateYaxisRange( boolean autoCalculateYaxisRange )
-    {
+    public void setAutoCalculateYaxisRange(boolean autoCalculateYaxisRange) {
         this.autoCalculateYaxisRange = autoCalculateYaxisRange;
     }
 

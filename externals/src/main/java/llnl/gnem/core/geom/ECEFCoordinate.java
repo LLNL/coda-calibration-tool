@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -39,8 +39,7 @@ import llnl.gnem.core.util.Geometry.EModel;
  * Datum to ECEF can be used as an intermediate step in converting velocities to
  * the North East Down coordinate system." https://en.wikipedia.org/wiki/ECEF
  *
- * @see
- * http://www.springer.com/cda/content/document/cda_downloaddocument/9780857296344-c2.pdf?SGWID=0-0-45-1143141-p174116371
+ * @see http://www.springer.com/cda/content/document/cda_downloaddocument/9780857296344-c2.pdf?SGWID=0-0-45-1143141-p174116371
  * @see https://en.wikipedia.org/wiki/ECEF
  * @see https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
  *

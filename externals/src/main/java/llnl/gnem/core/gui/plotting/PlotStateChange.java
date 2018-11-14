@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -23,10 +23,10 @@ package llnl.gnem.core.gui.plotting;
  */
 
 /**
- * A class that can be passed to an Observer of PlotObjectObservable that indicates
- * that some change has occurred to the plot state, e.g. zoom change etc. For now,
- * the class has no methods, but this may change if it becomes desirable to identify
- * specific kinds of state changes to Observers.
+ * A class that can be passed to an Observer of PlotObjectObservable that
+ * indicates that some change has occurred to the plot state, e.g. zoom change
+ * etc. For now, the class has no methods, but this may change if it becomes
+ * desirable to identify specific kinds of state changes to Observers.
  */
 public class PlotStateChange {
 }

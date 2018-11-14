@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,15 +14,14 @@
 */
 package llnl.gnem.core.gui.plotting;
 
-
 import java.awt.event.MouseEvent;
 
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
 
 /**
- * A class that holds a MouseEvent and a PlotObject. Used by PlotObjectObservable
- * to pass information about mouse button events involving PlotObjects to registered
- * listeners.
+ * A class that holds a MouseEvent and a PlotObject. Used by
+ * PlotObjectObservable to pass information about mouse button events involving
+ * PlotObjects to registered listeners.
  *
  * @author Doug Dodge
  * @see llnl.gnem.plotting.PlotObjectObservable
@@ -31,27 +30,54 @@ public class PlotObjectClicked {
     /**
      * The packaged MouseEvent
      */
-    public MouseEvent me;
+    private MouseEvent me;
     /**
      * The packaged PlotObject
      */
-    public PlotObject po;
+    private PlotObject po;
     /**
      * The MouseMode in effect when this selection was made
      */
-    public MouseMode mode;
+    private MouseMode mode;
 
     /**
      * Constructor for the PlotObjectSelectInfo object
      *
-     * @param me MouseEvent to be packaged
-     * @param po PlotObject to be packaged
+     * @param me
+     *            MouseEvent to be packaged
+     * @param po
+     *            PlotObject to be packaged
      */
-    public PlotObjectClicked( MouseEvent me, PlotObject po, MouseMode mode )
-    {
+    public PlotObjectClicked(MouseEvent me, PlotObject po, MouseMode mode) {
+        this.setMouseEvent(me);
+        this.setPlotObject(po);
+        this.setMode(mode);
+    }
+
+    public MouseEvent getMouseEvent() {
+        return me;
+    }
+
+    public PlotObjectClicked setMouseEvent(MouseEvent me) {
         this.me = me;
+        return this;
+    }
+
+    public PlotObject getPlotObject() {
+        return po;
+    }
+
+    public PlotObjectClicked setPlotObject(PlotObject po) {
         this.po = po;
+        return this;
+    }
+
+    public MouseMode getMode() {
+        return mode;
+    }
+
+    public PlotObjectClicked setMode(MouseMode mode) {
         this.mode = mode;
+        return this;
     }
 }
-

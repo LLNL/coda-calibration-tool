@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,26 +14,25 @@
 */
 package llnl.gnem.core.gui.plotting.plotobject;
 
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import llnl.gnem.core.gui.plotting.JBasicPlot;
 
-
 public class DisabledMarker extends PlotObject {
 
     /**
      * render this Symbol to the supplied graphics context
      *
-     * @param g     The graphics context
-     * @param owner The JBasicPlot that owns this symbol
+     * @param g
+     *            The graphics context
+     * @param owner
+     *            The JBasicPlot that owns this symbol
      */
     @Override
-    public void render( Graphics g, JBasicPlot owner )
-    {
-        if( g == null || !visible || owner == null || !owner.getCanDisplay() )
+    public void render(Graphics g, JBasicPlot owner) {
+        if (g == null || !visible || owner == null || !owner.getCanDisplay())
             return;
         Graphics2D g2d = (Graphics2D) g;
         g2d.setPaintMode(); // Make sure that we are not in XOR mode.
@@ -43,16 +42,13 @@ public class DisabledMarker extends PlotObject {
         int left = owner.getPlotLeft();
         int width = owner.getPlotWidth();
         g2d.setPaint(Color.red);
-        g2d.drawLine(left,top,left + width, top + height);
-        g2d.drawLine(left,top+height,left+width,top);
+        g2d.drawLine(left, top, left + width, top + height);
+        g2d.drawLine(left, top + height, left + width, top);
     }
-
-
 
     @Override
     public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy) {
         // This object is not allowed to change position.
     }
-
 
 }

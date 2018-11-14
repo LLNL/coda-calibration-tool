@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -33,12 +33,12 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.WindowDurationChangedState;
  */
 public class WaveformPlot extends JMultiAxisPlot implements Observer {
     private boolean ctrlKeyIsDown;
-   
+
     public WaveformPlot() {
         this(MouseMode.SELECT_ZOOM, "");
-        
+
     }
-    
+
     public WaveformPlot(MouseMode defaultMode, String xAxisLabel) {
         super(defaultMode, XAxisType.Standard);
         ctrlKeyIsDown = false;
@@ -104,6 +104,5 @@ public class WaveformPlot extends JMultiAxisPlot implements Observer {
 
     protected void resizeAllWindows(Object obj) {
     }
-
 
 }

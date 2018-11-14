@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -16,17 +16,15 @@ package llnl.gnem.core.gui.plotting;
 
 import java.io.Serializable;
 
-
 /**
  * A type-safe enum to represent vertical pinning of text objects.
  *
  * @author Doug Dodge
  */
-public class VertPinEdge implements Serializable{
+public class VertPinEdge implements Serializable {
     private final String name;
 
-    private VertPinEdge( String name )
-    {
+    private VertPinEdge(String name) {
         this.name = name;
     }
 
@@ -35,28 +33,25 @@ public class VertPinEdge implements Serializable{
      *
      * @return The String description
      */
-    public String toString()
-    {
+    public String toString() {
         return name;
     }
 
     /**
      * Description of the Field
      */
-    public final static VertPinEdge TOP = new VertPinEdge( "top" );
+    public final static VertPinEdge TOP = new VertPinEdge("top");
     /**
      * Description of the Field
      */
-    public final static VertPinEdge BOTTOM = new VertPinEdge( "bottom" );
+    public final static VertPinEdge BOTTOM = new VertPinEdge("bottom");
 
-    public static VertPinEdge getVertPinEdge( String str )
-    {
-        if( str.equals( "top" ) )
+    public static VertPinEdge getVertPinEdge(String str) {
+        if (str.equals("top"))
             return TOP;
-        else if( str.equals( "bottom" ) )
+        else if (str.equals("bottom"))
             return BOTTOM;
         else
-            throw new IllegalArgumentException( "Invalid type: " + str );
+            throw new IllegalArgumentException("Invalid type: " + str);
     }
 }
-

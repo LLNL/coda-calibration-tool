@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,7 +22,7 @@ import java.io.Serializable;
  *
  * @author dodge1
  */
-public class DrawingRegionPrefs implements Serializable{
+public class DrawingRegionPrefs implements Serializable {
     boolean drawBox = true;
     Color lineColor = Color.black;
     int lineWidth = 1;
@@ -41,7 +41,8 @@ public class DrawingRegionPrefs implements Serializable{
     }
 
     /**
-     * @param drawBox the drawBox to set
+     * @param drawBox
+     *            the drawBox to set
      */
     public void setDrawBox(boolean drawBox) {
         this.drawBox = drawBox;
@@ -55,7 +56,8 @@ public class DrawingRegionPrefs implements Serializable{
     }
 
     /**
-     * @param lineColor the lineColor to set
+     * @param lineColor
+     *            the lineColor to set
      */
     public void setLineColor(Color lineColor) {
         this.lineColor = lineColor;
@@ -69,7 +71,8 @@ public class DrawingRegionPrefs implements Serializable{
     }
 
     /**
-     * @param lineWidth the lineWidth to set
+     * @param lineWidth
+     *            the lineWidth to set
      */
     public void setLineWidth(int lineWidth) {
         this.lineWidth = lineWidth;
@@ -83,7 +86,8 @@ public class DrawingRegionPrefs implements Serializable{
     }
 
     /**
-     * @param fillRegion the fillRegion to set
+     * @param fillRegion
+     *            the fillRegion to set
      */
     public void setFillRegion(boolean fillRegion) {
         this.fillRegion = fillRegion;
@@ -97,13 +101,12 @@ public class DrawingRegionPrefs implements Serializable{
     }
 
     /**
-     * @param backgroundColor the backgroundColor to set
+     * @param backgroundColor
+     *            the backgroundColor to set
      */
     public void setBackgroundColor(Color backgroundColor) {
         this.backgroundColor = backgroundColor;
     }
-
-
 
     /**
      * @return the color
@@ -116,7 +119,8 @@ public class DrawingRegionPrefs implements Serializable{
     }
 
     /**
-     * @param color the color to set
+     * @param color
+     *            the color to set
      */
     public void setFontColor(Color color) {
         this.fontColor = color;
@@ -135,7 +139,8 @@ public class DrawingRegionPrefs implements Serializable{
 
     /**
      *
-     * @param font to set
+     * @param font
+     *            to set
      */
     public void setFont(Font font) {
         this.font = font;

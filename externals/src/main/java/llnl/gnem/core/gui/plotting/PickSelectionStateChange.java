@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,27 +17,22 @@ package llnl.gnem.core.gui.plotting;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.VPickLine;
 
 /**
- * User: dodge1
- * Date: Jun 16, 2005
- * Time: 4:43:54 PM
+ * User: dodge1 Date: Jun 16, 2005 Time: 4:43:54 PM
  */
 public class PickSelectionStateChange {
     private VPickLine vpl;
     private boolean isSelected;
 
-    public PickSelectionStateChange( VPickLine vpl, boolean isSelected )
-    {
+    public PickSelectionStateChange(VPickLine vpl, boolean isSelected) {
         this.vpl = vpl;
         this.isSelected = isSelected;
     }
 
-    public VPickLine getVpl()
-    {
+    public VPickLine getVpl() {
         return vpl;
     }
 
-    public boolean isSelected()
-    {
+    public boolean isSelected() {
         return isSelected;
     }
 }

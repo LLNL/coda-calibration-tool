@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -16,22 +16,21 @@ package llnl.gnem.core.util.Geometry;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import llnl.gnem.core.util.FileUtil.FileManager;
 import llnl.gnem.core.util.MathFunctions.MathFunction;
 
-
 /**
  * User: Eric Matzel Date: Mar 23, 2010
  */
-public class CoordinateTransform
-{
+public class CoordinateTransform {
 
+    private static final Logger log = LoggerFactory.getLogger(CoordinateTransform.class);
     private final static double HALF_CIRCLE = 180.0;
     public final static double RADIANS_TO_DEGREES = HALF_CIRCLE / Math.PI;
     public final static double DEGREES_TO_RADIANS = Math.PI / HALF_CIRCLE;
@@ -39,13 +38,15 @@ public class CoordinateTransform
     /**
      * Spherical Coordinates to Cartesian Coordinates
      *
-     * @param theta angle x to y (a.k.a. longitude in RADIANS)
-     * @param phi angle from x-y plane to z (a.k.a. latitude in RADIANS)
-     * @param radius length of the vector from the origin at (0,0,0)
+     * @param theta
+     *            angle x to y (a.k.a. longitude in RADIANS)
+     * @param phi
+     *            angle from x-y plane to z (a.k.a. latitude in RADIANS)
+     * @param radius
+     *            length of the vector from the origin at (0,0,0)
      * @return a Point3d object in Cartesian coordinates
      */
-    public static Vector3D SphericalToCartesian(double theta, double phi, double radius)
-    {
+    public static Vector3D SphericalToCartesian(double theta, double phi, double radius) {
         double x = radius * Math.cos(phi) * Math.cos(theta);
         double y = radius * Math.cos(phi) * Math.sin(theta);
         double z = radius * Math.sin(phi);
@@ -58,14 +59,14 @@ public class CoordinateTransform
     /**
      * Spherical Coordinates to Cartesian Coordinates
      *
-     * @param point - a Point3d object in format point.x = theta, point.y = phi,
-     * point.z = radius
+     * @param point
+     *            - a Point3d object in format point.x = theta, point.y = phi,
+     *            point.z = radius
      *
-     * Note theta and phi need to be in RADIANS
+     *            Note theta and phi need to be in RADIANS
      * @return a Point3d object in cartesian x,y,z coordinates
      */
-    public static Vector3D SphericalToCartesian(Vector3D point)
-    {
+    public static Vector3D SphericalToCartesian(Vector3D point) {
         double theta = point.getX();
         double phi = point.getY();
         double radius = point.getZ();
@@ -76,12 +77,12 @@ public class CoordinateTransform
     /**
      * Cartesian coordinates x,y,z to Spherical coordinates theta, phi, r
      *
-     * @param point a Point3d object x,y,z
+     * @param point
+     *            a Point3d object x,y,z
      * @return a Point3d object in format point.x = theta, point.y = phi,
-     * point.z = radius (theta and phi in RADIANS)
+     *         point.z = radius (theta and phi in RADIANS)
      */
-    public static Vector3D CartesianToSpherical(Vector3D point)
-    {
+    public static Vector3D CartesianToSpherical(Vector3D point) {
         return CartesianToSpherical(point.getX(), point.getY(), point.getZ());
     }
 
@@ -92,10 +93,9 @@ public class CoordinateTransform
      * @param y
      * @param z
      * @return a Point3d object in format point.x = theta, point.y = phi,
-     * point.z = r (theta and phi in RADIANS)
+     *         point.z = r (theta and phi in RADIANS)
      */
-    public static Vector3D CartesianToSpherical(double x, double y, double z)
-    {
+    public static Vector3D CartesianToSpherical(double x, double y, double z) {
         double theta = Math.atan2(y, x);
         double phi = Math.atan2(z, Math.sqrt(x * x + y * y));
         double radius = Math.sqrt(x * x + y * y + z * z);
@@ -108,12 +108,12 @@ public class CoordinateTransform
     /**
      * Cartesian coordinates x,y,z to Polar coordinates theta, rho, z
      *
-     * @param point a Point3d object x,y,z
+     * @param point
+     *            a Point3d object x,y,z
      * @return a Point3d object in format point.x = theta, point.y = rho,
-     * point.z = z
+     *         point.z = z
      */
-    public static Vector3D CartesianToPolar(Vector3D point)
-    {
+    public static Vector3D CartesianToPolar(Vector3D point) {
         return CartesianToPolar(point.getX(), point.getY(), point.getZ());
     }
 
@@ -124,10 +124,9 @@ public class CoordinateTransform
      * @param y
      * @param z
      * @return a Point3d object in format point.x = theta, point.y = rho,
-     * point.z = z
+     *         point.z = z
      */
-    public static Vector3D CartesianToPolar(double x, double y, double z)
-    {
+    public static Vector3D CartesianToPolar(double x, double y, double z) {
         double theta = Math.atan2(y, x);
         double rho = Math.sqrt(x * x + y * y);
 
@@ -141,25 +140,24 @@ public class CoordinateTransform
      * @param x
      * @param y
      * @return a Point3d object in format point.x = theta, point.y = rho,
-     * point.z = z
+     *         point.z = z
      */
-    public static Vector3D CartesianToPolar(double x, double y)
-    {
+    public static Vector3D CartesianToPolar(double x, double y) {
         return CartesianToPolar(x, y, 0);
     }
 
     /**
      * Polar coordinates theta, rho, z to Cartesian coordinates x,y,z
      *
-     * @param theta angle from x to y
-     * @param rho distance from origin (0,0,0)
-     * @param z distance along the z-axis
+     * @param theta
+     *            angle from x to y
+     * @param rho
+     *            distance from origin (0,0,0)
+     * @param z
+     *            distance along the z-axis
      * @return a Point3d object (x,y,z)
      */
-    public static Vector3D PolarToCartesian(double theta, double rho, double z)
-    {
-        System.out.println("PolarToCartesian code not written");
-
+    public static Vector3D PolarToCartesian(double theta, double rho, double z) {
         double x = rho * Math.cos(theta);
         double y = rho * Math.sin(theta);
         // z = z
@@ -172,24 +170,25 @@ public class CoordinateTransform
      * Polar coordinates theta, rho, (z = 0) to Cartesian coordinates x, y, (z =
      * 0)
      *
-     * @param theta angle from x to y
-     * @param rho distance from origin (0,0)
+     * @param theta
+     *            angle from x to y
+     * @param rho
+     *            distance from origin (0,0)
      * @return a Point3d object (x,y,0)
      */
-    public static Vector3D PolarToCartesian(double theta, double rho)
-    {
+    public static Vector3D PolarToCartesian(double theta, double rho) {
         return PolarToCartesian(theta, rho, 0);
     }
 
     /**
      * Polar coordinates theta, rho, (z = 0) to Cartesian coordinates x, y, z
      *
-     * @param point a Point3d object in format point.x = theta, point.y = rho,
-     * point.z = z
+     * @param point
+     *            a Point3d object in format point.x = theta, point.y = rho,
+     *            point.z = z
      * @return a Point3d object (x,y,z)
      */
-    public static Vector3D PolarToCartesian(Vector3D point)
-    {
+    public static Vector3D PolarToCartesian(Vector3D point) {
         double theta = point.getX();
         double rho = point.getY();
         double z = point.getZ();
@@ -201,13 +200,16 @@ public class CoordinateTransform
      * A convenience method to allow SphericalToCartesian conversion from
      * longitude, latitude (DEGREES) instead of theta,phi (RADIANS)
      *
-     * @param longitude - the longitude in DEGREES
-     * @param latitude - the latitude in DEGREES
-     * @param radius - the radius to the point in space NOTE: units of radius (e.g. meters, km, miles) determine the units of XYZ
+     * @param longitude
+     *            - the longitude in DEGREES
+     * @param latitude
+     *            - the latitude in DEGREES
+     * @param radius
+     *            - the radius to the point in space NOTE: units of radius (e.g.
+     *            meters, km, miles) determine the units of XYZ
      * @return a Point3d object (x,y,z)
      */
-    public static Vector3D LonLatRadiusToXYZ(double longitude, double latitude, double radius)
-    {
+    public static Vector3D LonLatRadiusToXYZ(double longitude, double latitude, double radius) {
         double theta = longitude * DEGREES_TO_RADIANS;
         double phi = latitude * DEGREES_TO_RADIANS;
 
@@ -216,14 +218,14 @@ public class CoordinateTransform
 
     /**
      * A convenience method to allow SphericalToCartesian conversion from
-     * longitude, latitude (DEGREES) instead of theta,phi (RADIANS)
-     * NOTE: units of radius (e.g. meters, km, miles) determine the units of XYZ
+     * longitude, latitude (DEGREES) instead of theta,phi (RADIANS) NOTE: units
+     * of radius (e.g. meters, km, miles) determine the units of XYZ
      *
-     * @param lonlatradpoint = a Point3d object (longitude, latitude, radius)
+     * @param lonlatradpoint
+     *            = a Point3d object (longitude, latitude, radius)
      * @return a Point3d object (x,y,z)
      */
-    public static Vector3D LonLatRadiusToXYZ(Vector3D lonlatradpoint)
-    {
+    public static Vector3D LonLatRadiusToXYZ(Vector3D lonlatradpoint) {
         double longitude = lonlatradpoint.getX();
         double latitude = lonlatradpoint.getY();
         double radius = lonlatradpoint.getZ();
@@ -233,35 +235,33 @@ public class CoordinateTransform
 
     /**
      * A convenience method to allow CartesianToSpherical conversion from X,Y,Z
-     * to longitude, latitude (DEGREES) and radius
-     * NOTE: units of xyz (e.g. meters, km, miles) determine the units of radius
+     * to longitude, latitude (DEGREES) and radius NOTE: units of xyz (e.g.
+     * meters, km, miles) determine the units of radius
      *
      * @param x
      * @param y
      * @param z
      * @return a Point3d object (longitude, latitude, radius)
      */
-    public static Vector3D XYZToLonLatRadius(double x, double y, double z)
-    {
+    public static Vector3D XYZToLonLatRadius(double x, double y, double z) {
         Vector3D result = CartesianToSpherical(x, y, z);
 
-        return new Vector3D(result.getX() * RADIANS_TO_DEGREES, result.getY() * RADIANS_TO_DEGREES, result.getZ() );
+        return new Vector3D(result.getX() * RADIANS_TO_DEGREES, result.getY() * RADIANS_TO_DEGREES, result.getZ());
     }
 
     /**
      * A convenience method to allow CartesianToSpherical conversion from X,Y,Z
      * to longitude, latitude (DEGREES) and radius
      *
-     * @param xyzpoint - a Point3d object (X, Y, Z)
+     * @param xyzpoint
+     *            - a Point3d object (X, Y, Z)
      * @return a Point3d object (longitude, latitude, radius)
      */
-    public static Vector3D XYZToLonLatRadius(Vector3D xyzpoint)
-    {
+    public static Vector3D XYZToLonLatRadius(Vector3D xyzpoint) {
         return XYZToLonLatRadius(xyzpoint.getX(), xyzpoint.getY(), xyzpoint.getZ());
     }
 
-    public static double GeodeticToGeocentricLatitude(double geodeticlatitude)
-    {
+    public static double GeodeticToGeocentricLatitude(double geodeticlatitude) {
         double DegreesToRadians = Math.PI / 180.;
         double ecc = 0.081819190842621; // WGS84 eccentricity
         double phi = geodeticlatitude * DegreesToRadians;
@@ -272,8 +272,7 @@ public class CoordinateTransform
         return geocentriclatitude;
     }
 
-    public static double GeocentricToGeodeticLatitude(double geocentriclatitude)
-    {
+    public static double GeocentricToGeodeticLatitude(double geocentriclatitude) {
         double DegreesToRadians = Math.PI / 180.;
         double ecc = 0.081819190842621; // WGS84 eccentricity
         double phi = geocentriclatitude * DegreesToRadians;
@@ -285,8 +284,7 @@ public class CoordinateTransform
     }
 
     //-----TODO move the following methods to more appropriate classes-------------------------------------------------------------
-    static void createHemisphereSources(double centerlat, double centerlon, double radius, double hemisphereradius, int maxpoints)
-    {
+    static void createHemisphereSources(double centerlat, double centerlon, double radius, double hemisphereradius, int maxpoints) {
         //int maxpoints = 10000; // create 10,000 points
         //double centerlat = 40;
         //double centerlon = -121;
@@ -300,11 +298,10 @@ public class CoordinateTransform
 
         double r = hemisphereradius;
 
-        System.out.println(x0 + "\t" + y0 + "\t" + z0);
+        log.warn(x0 + "\t" + y0 + "\t" + z0);
 
         int index = 0;
-        while (index < maxpoints)
-        {
+        while (index < maxpoints) {
             double dx = MathFunction.randomBetween(-r, r); // creates a random
 
             double dymax = Math.sqrt(r * r - dx * dx); // y^2 = r^2 - x^2
@@ -324,13 +321,11 @@ public class CoordinateTransform
             // save only the portion of the sphere that falls below the reference radius
             if (lonlatradius1.getZ() < radius) // forces the hemisphere to fall below the original radius point
             {
-                //System.out.println(x + "\t" + y + "\t" + z1 + "\t" + dx + "\t" + dy + "\t" + dz + "\t" + lonlatradius1.x + "\t" + lonlatradius1.y + "\t" + lonlatradius1.z);
                 writeSW4source(lonlatradius1.getX(), lonlatradius1.getY(), 1000 * (radius - lonlatradius1.getZ()));
                 index = index + 1;
             }
             if (lonlatradius2.getZ() < radius) // forces the hemisphere to fall below the original radius point
             {
-                //System.out.println(x + "\t" + y + "\t" + z2 + "\t" + dx + "\t" + dy + "\t" + dz + "\t" + lonlatradius2.x + "\t" + lonlatradius2.y + "\t" + lonlatradius2.z);
                 writeSW4source(lonlatradius2.getX(), lonlatradius2.getY(), 1000 * (radius - lonlatradius2.getZ())); // note conversion from radius in km to depth in m
                 index = index + 1;
             }
@@ -341,8 +336,7 @@ public class CoordinateTransform
     /**
      * Write SW4/WPP style source output
      */
-    static void writeSW4source(double longitude, double latitude, double depth)
-    {
+    static void writeSW4source(double longitude, double latitude, double depth) {
         String dfmt4 = "%-10.4f";// Note -10.4f aligns to the left +10.4.f aligns to right
 
         double t0 = 0.100;
@@ -356,19 +350,30 @@ public class CoordinateTransform
 
         depth = depth - 1500; //TODO replace this is a special case for Newberry - reference radius MSL versus ~min surface radius
 
-        String sourceline = "source lon=" + String.format(dfmt4, longitude)
-                + "  lat=" + String.format(dfmt4, latitude)
-                + "  z=" + String.format(dfmt4, depth)
-                + "  type=Dirac t0=" + t0
-                + "  m0=" + M0
-                + "  mxx=" + String.format(dfmt4, mxx)
-                + "  mxy=" + String.format(dfmt4, mxy)
-                + "  myy=" + String.format(dfmt4, myy)
-                + "  mxz=" + String.format(dfmt4, mxz)
-                + "  myz=" + String.format(dfmt4, myz)
-                + "  mzz=" + String.format(dfmt4, mzz);
+        String sourceline = "source lon="
+                + String.format(dfmt4, longitude)
+                + "  lat="
+                + String.format(dfmt4, latitude)
+                + "  z="
+                + String.format(dfmt4, depth)
+                + "  type=Dirac t0="
+                + t0
+                + "  m0="
+                + M0
+                + "  mxx="
+                + String.format(dfmt4, mxx)
+                + "  mxy="
+                + String.format(dfmt4, mxy)
+                + "  myy="
+                + String.format(dfmt4, myy)
+                + "  mxz="
+                + String.format(dfmt4, mxz)
+                + "  myz="
+                + String.format(dfmt4, myz)
+                + "  mzz="
+                + String.format(dfmt4, mzz);
 
-        System.out.println(sourceline);
+        log.warn(sourceline);
     }
 
 }
@@ -382,8 +387,7 @@ public class CoordinateTransform
  *
  * @author matzel1
  */
-class SwissProjection
-{
+class SwissProjection {
 
     /**
      * 4 Approximate solution for the transformation CH1903 ⇔ WGS84
@@ -394,13 +398,14 @@ class SwissProjection
      * formulas for the direct transformation of: ellipsoidal ETRS89 or WGS84
      * coordinates to Swiss projection coordinates
      *
-     * @param longitude in decimal degrees
-     * @param latitude in decimal degrees
+     * @param longitude
+     *            in decimal degrees
+     * @param latitude
+     *            in decimal degrees
      * @return Easting, Northing in meters
      *
      */
-    public static double[] LonLatToSwissProjection(double longitude, double latitude)
-    {
+    public static double[] LonLatToSwissProjection(double longitude, double latitude) {
 
         //1. The latitudes phi and longitudes lambda have to be converted into arc seconds ["] 
         double latsec = latitude * 3600;
@@ -417,10 +422,7 @@ class SwissProjection
         double Easting = 600072.37 + 211455.93 * lambdaprime - 10938.51 * lambdaprime * phiprime - 0.36 * lambdaprime * phiprime2 - 44.54 * lambdaprime3;// in meters
         double Northing = 200147.07 + 308807.95 * phiprime + 3745.25 * lambdaprime2 + 76.63 * phiprime2 - 194.56 * lambdaprime2 * phiprime + 119.79 * phiprime3;// in meters
 
-        double[] result =
-        {
-            Easting, Northing
-        };
+        double[] result = { Easting, Northing };
         return result;
 
     }
@@ -432,13 +434,14 @@ class SwissProjection
      * formulas for the direct transformation of: Swiss projection coordinates
      * to ellipsoidal ETRS89 or WGS84 coordinates
      *
-     * @param Easting : in meters
-     * @param Northing: in meters
+     * @param Easting
+     *            : in meters
+     * @param Northing:
+     *            in meters
      * @return latitude, longitude in decimal degrees
      *
      */
-    public static double[] SwissProjectionToLonLat(double Easting, double Northing)
-    {
+    public static double[] SwissProjectionToLonLat(double Easting, double Northing) {
         //1. The projection coordinates y (easting) and x (northing) have to be converted into the civilian system (Bern = 0 / 0) and have to expressed in the unit [1000 km] : 
         double yprime = (Easting - 600000) / 1000000; // units from meters to 1000 km;
         double xprime = (Northing - 200000) / 1000000; // units from meters to 1000 km;
@@ -455,10 +458,7 @@ class SwissProjection
         double longitude = lambdaprime * 100 / 36;
         double latitude = phiprime * 100 / 36;
 
-        double[] result =
-        {
-            longitude, latitude
-        };
+        double[] result = { longitude, latitude };
 
         return result;
     }
@@ -467,15 +467,12 @@ class SwissProjection
      * A utility test method to read an East,North catalog and return the
      * equivalent longitudes and latitudes.
      */
-    public static void BaselCatalog()
-    {
+    public static void BaselCatalog() {
         File file = FileManager.openFile("Open a catalog file", null, null)[0];
 
         ArrayList<String> textrowlist = FileManager.createTextRowCollection(file);
-        for (String row : textrowlist)
-        {
-            try
-            {
+        for (String row : textrowlist) {
+            try {
                 StringTokenizer tokenizer = new StringTokenizer(row);
                 long evid = Long.parseLong(tokenizer.nextToken());
                 double Easting = Double.parseDouble(tokenizer.nextToken()); // a number in meters ~ 600,000
@@ -484,15 +481,9 @@ class SwissProjection
 
                 // calculate the latitude and longitude here
                 double[] lonlat = SwissProjectionToLonLat(Easting, Northing);
-
-                System.out.println(row + "\t" + lonlat[0] + "\t" + lonlat[1] +"\t");
-
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
             }
         }
 
     }
 }
-

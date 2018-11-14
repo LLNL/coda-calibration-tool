@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,10 +22,10 @@ public class LabelData {
     private String Text = "";
     private String FontName = "Arial";
     private Color color = Color.black;
-    private int Size = 12;        // This is in units of points
+    private int Size = 12; // This is in units of points
     private int Style = Font.PLAIN;
     private boolean Visible = true;
-    private double Offset = 6;  // Offset of label from axis line in physical units, e.g. mm
+    private double Offset = 6; // Offset of label from axis line in physical units, e.g. mm
 
     public Color getColor() {
         return color;

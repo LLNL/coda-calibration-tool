@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -30,8 +30,7 @@ public class PolygonSet {
     private double maxlon;
     private List<Polygon> polygons;
 
-    public PolygonSet(PolygonSetType type, String name, int id,
-            double minlat, double maxlat, double minlon, double maxlon) {
+    public PolygonSet(PolygonSetType type, String name, int id, double minlat, double maxlat, double minlon, double maxlon) {
         this.type = type;
         this.name = name;
         this.id = id;
@@ -41,9 +40,8 @@ public class PolygonSet {
         this.maxlon = maxlon;
         polygons = null;
     }
-    
-    public PolygonSet(PolygonSetType type, String name, int id, Collection<Polygon> polygons )
-    {
+
+    public PolygonSet(PolygonSetType type, String name, int id, Collection<Polygon> polygons) {
         this.type = type;
         this.name = name;
         this.id = id;
@@ -63,7 +61,7 @@ public class PolygonSet {
 
     public final void refreshSetBounds() {
         Iterator<Polygon> polyIter = polygons.iterator();
-         Double minLat = 90.0;
+        Double minLat = 90.0;
         Double maxLat = -90.0;
         Double minLon = 180.0;
         Double maxLon = -180.0;

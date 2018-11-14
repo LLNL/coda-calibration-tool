@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-	<artifactId>calibration-gui</artifactId>
-	<version>1.0.3</version>
-	<packaging>jar</packaging>
+	<parent>
+		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+		<artifactId>coda-calibration</artifactId>
+		<version>1.0.4-SNAPSHOT</version>
+	</parent>
 
+	<artifactId>calibration-gui</artifactId>
+	<packaging>jar</packaging>
 	<name>calibration-gui</name>
 	<url>http://www.llnl.gov</url>
 
@@ -17,11 +21,7 @@
 	</organization>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compile.source>1.8</maven.compile.source>
-		<maven.compile.target>1.8</maven.compile.target>
 		<app.main.class>gov.llnl.gnem.apps.coda.calibration.gui.GuiApplication</app.main.class>
-		<maven.shade.plugin.version>3.0.0</maven.shade.plugin.version>
 	</properties>
 
 	<repositories>
@@ -41,36 +41,22 @@
 		</pluginRepository>
 	</pluginRepositories>
 
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>io.projectreactor</groupId>
-				<artifactId>reactor-bom</artifactId>
-				<version>Bismuth-RELEASE</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-starter-parent</artifactId>
-				<version>2.0.2.RELEASE</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<dependencies>
 		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 			<artifactId>externals</artifactId>
-			<version>1.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+			<artifactId>common-gui</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+			<artifactId>mapping</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-			<artifactId>model</artifactId>
-			<version>1.0.3</version>
+			<artifactId>calibration-model</artifactId>
 			<exclusions>
 				<exclusion>
 					<groupId>org.eclipse.persistence</groupId>
@@ -130,8 +116,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-params</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -160,17 +156,14 @@
 		<dependency>
 			<groupId>org.glassfish.tyrus.bundles</groupId>
 			<artifactId>tyrus-standalone-client</artifactId>
-			<version>1.13.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<version>1.14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
-			<version>3.6.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -179,12 +172,20 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>23.0</version>
 		</dependency>
 		<dependency>
 			<groupId>net.jodah</groupId>
 			<artifactId>failsafe</artifactId>
-			<version>1.0.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -192,17 +193,45 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+									<artifactId>common-gui</artifactId>
+									<version>${project.version}</version>
+									<includes>**</includes>
+									<excludes>gov/**</excludes>
+								</artifactItem>
+								<artifactItem>
+									<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+									<artifactId>mapping</artifactId>
+									<version>${project.version}</version>
+									<includes>**</includes>
+									<excludes>gov/**</excludes>
+								</artifactItem>
+							</artifactItems>
+							<outputDirectory>${project.build.directory}/classes/</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.6.1</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>${maven.compile.source}</source>
+					<target>${maven.compile.target}</target>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>2.0.2.RELEASE</version>
 				<configuration>
 					<executable>true</executable>
 					<mainClass>${start-class}</mainClass>
@@ -220,7 +249,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.0.2</version>
 				<configuration>
 					<archive>
 						<manifest>

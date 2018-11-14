@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -34,10 +34,11 @@ public class FileInputArrayLoader {
      * per line in the file. The file is assumed to have one int value per line
      * and no empty lines or lines with characters not interpretable as an int.
      *
-     * @param filename The name of the file to be read.
+     * @param filename
+     *            The name of the file to be read.
      * @return The array of ints read from the file.
-     * @throws IOException Exception thrown if there is an error reading the
-     * file.
+     * @throws IOException
+     *             Exception thrown if there is an error reading the file.
      */
     public static int[] fillIntsFromFile(final String filename) throws IOException {
         String[] intStrings = fillStrings(filename);
@@ -58,10 +59,11 @@ public class FileInputArrayLoader {
      * Read the specified text file and return an array of Strings with one
      * element per line in the file.
      *
-     * @param filename The name of the file to be read.
+     * @param filename
+     *            The name of the file to be read.
      * @return The array of Strings read from the file.
-     * @throws IOException Exception thrown if there is an error reading the
-     * file.
+     * @throws IOException
+     *             Exception thrown if there is an error reading the file.
      */
     public static String[] fillStrings(final String filename) throws IOException {
         boolean discardEmptyLines = true;

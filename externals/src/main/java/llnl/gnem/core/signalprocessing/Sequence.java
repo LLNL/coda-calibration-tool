@@ -13,10 +13,10 @@ import java.util.Arrays;
 
 public class Sequence {
 
-// instance variables
+    // instance variables
     private float[] seqvalues;
 
-// static methods
+    // static methods
     public Sequence(int n) {
         seqvalues = new float[n];
     }
@@ -157,8 +157,8 @@ public class Sequence {
         int n;
         int srcptr, dstptr;
         if (Math.abs(shift) > seqvalues.length) {
-            zero(seqvalues, 0, seqvalues.length);   // zeroes sequence
-        } else if (shift < 0) {                                    // left shift
+            zero(seqvalues, 0, seqvalues.length); // zeroes sequence
+        } else if (shift < 0) { // left shift
 
             n = seqvalues.length + shift;
             dstptr = 0;
@@ -167,9 +167,9 @@ public class Sequence {
                 seqvalues[dstptr++] = seqvalues[srcptr++];
             }
 
-            zero(seqvalues, seqvalues.length + shift, -shift);     // zero high end
+            zero(seqvalues, seqvalues.length + shift, -shift); // zero high end
 
-        } else if (shift > 0) {                                    // right shift
+        } else if (shift > 0) { // right shift
 
             n = seqvalues.length - shift;
             dstptr = seqvalues.length - 1;
@@ -178,7 +178,7 @@ public class Sequence {
                 seqvalues[dstptr--] = seqvalues[srcptr--];
             }
 
-            zero(seqvalues, 0, shift);                             // zero low end
+            zero(seqvalues, 0, shift); // zero low end
 
         }
 
@@ -189,30 +189,30 @@ public class Sequence {
 
         int n = x.length;
         int src, dst;
-        if (shift >= n || -shift >= n) {   // shift off of end of array
+        if (shift >= n || -shift >= n) { // shift off of end of array
             Arrays.fill(x, 0.0f);
             return;
         }
 
-        if (shift > 0) {                                              // shift to right
+        if (shift > 0) { // shift to right
 
             dst = n - 1;
             src = dst - shift;
             while (src >= 0) {
-                x[ dst--] = x[ src--];
+                x[dst--] = x[src--];
             }
 
             Arrays.fill(x, 0, shift, 0.0f);
 
-        } else if (shift < 0) {                                        // shift to left
+        } else if (shift < 0) { // shift to left
 
             dst = 0;
             src = -shift;
             while (src < n) {
-                x[ dst++] = x[ src++];
+                x[dst++] = x[src++];
             }
 
-            Arrays.fill(x, n + shift, n, 0.0f);     // zero high end
+            Arrays.fill(x, n + shift, n, 0.0f); // zero high end
 
         }
 
@@ -222,30 +222,30 @@ public class Sequence {
 
         int n = x.length;
         int src, dst;
-        if (shift >= n || -shift >= n) {   // shift off of end of array
+        if (shift >= n || -shift >= n) { // shift off of end of array
             Arrays.fill(x, 0.0f);
             return;
         }
 
-        if (shift > 0) {                                              // shift to right
+        if (shift > 0) { // shift to right
 
             dst = n - 1;
             src = dst - shift;
             while (src >= 0) {
-                x[ dst--] = x[ src--];
+                x[dst--] = x[src--];
             }
 
             Arrays.fill(x, 0, shift, 0.0f);
 
-        } else if (shift < 0) {                                        // shift to left
+        } else if (shift < 0) { // shift to left
 
             dst = 0;
             src = -shift;
             while (src < n) {
-                x[ dst++] = x[ src++];
+                x[dst++] = x[src++];
             }
 
-            Arrays.fill(x, n + shift, n, 0.0f);     // zero high end
+            Arrays.fill(x, n + shift, n, 0.0f); // zero high end
 
         }
 
@@ -278,13 +278,12 @@ public class Sequence {
         float[] buffer = new float[bsize];
         int n = seqvalues.length;
 
-// two cases - right and left shifts
-
+        // two cases - right and left shifts
 
         int i, j;
-        if (shift > 0) {                      // right shift
+        if (shift > 0) { // right shift
 
-            shift = shift % n;                    // prevent extraneous transfers
+            shift = shift % n; // prevent extraneous transfers
 
             j = n - shift;
             for (i = 0; i < shift; i++) {
@@ -299,9 +298,9 @@ public class Sequence {
                 seqvalues[i] = buffer[i];
             }
 
-        } else if (shift < 0) {                 // left shift
+        } else if (shift < 0) { // left shift
 
-            shift = shift % n;                    // prevent extraneous transfers
+            shift = shift % n; // prevent extraneous transfers
 
             for (i = 0; i < -shift; i++) {
                 buffer[i] = seqvalues[i];
@@ -335,9 +334,9 @@ public class Sequence {
 
         int n = x.length;
 
-        shift = shift % n;    // prevent extraneous transfers
+        shift = shift % n; // prevent extraneous transfers
 
-        int altshift = shift;                           // investigate smaller shift
+        int altshift = shift; // investigate smaller shift
         if (shift > 0) {
             altshift = shift - n;
         } else if (shift < 0) {
@@ -354,37 +353,37 @@ public class Sequence {
         }
         float[] buffer = new float[bsize];
 
-// two cases - right and left shifts
+        // two cases - right and left shifts
 
         int i, j;
-        if (shift > 0) {                      // right shift
+        if (shift > 0) { // right shift
 
             j = n - shift;
             for (i = 0; i < shift; i++) {
-                buffer[ i] = x[ j++];
+                buffer[i] = x[j++];
             }
             j = n - 1;
             i = j - shift;
             while (i >= 0) {
-                x[ j--] = x[ i--];
+                x[j--] = x[i--];
             }
             for (i = 0; i < shift; i++) {
-                x[ i] = buffer[ i];
+                x[i] = buffer[i];
             }
 
-        } else if (shift < 0) {                 // left shift
+        } else if (shift < 0) { // left shift
 
             for (i = 0; i < -shift; i++) {
-                buffer[ i] = x[ i];
+                buffer[i] = x[i];
             }
             j = 0;
             i = -shift;
             while (i < n) {
-                x[ j++] = x[ i++];
+                x[j++] = x[i++];
             }
             j = n + shift;
             for (i = 0; i < -shift; i++) {
-                x[ j++] = buffer[ i];
+                x[j++] = buffer[i];
             }
 
         }
@@ -405,9 +404,9 @@ public class Sequence {
 
         int n = x.length;
 
-        shift = shift % n;    // prevent extraneous transfers
+        shift = shift % n; // prevent extraneous transfers
 
-        int altshift = shift;                           // investigate smaller shift
+        int altshift = shift; // investigate smaller shift
         if (shift > 0) {
             altshift = shift - n;
         } else if (shift < 0) {
@@ -424,37 +423,37 @@ public class Sequence {
         }
         double[] buffer = new double[bsize];
 
-// two cases - right and left shifts
+        // two cases - right and left shifts
 
         int i, j;
-        if (shift > 0) {                      // right shift
+        if (shift > 0) { // right shift
 
             j = n - shift;
             for (i = 0; i < shift; i++) {
-                buffer[ i] = x[ j++];
+                buffer[i] = x[j++];
             }
             j = n - 1;
             i = j - shift;
             while (i >= 0) {
-                x[ j--] = x[ i--];
+                x[j--] = x[i--];
             }
             for (i = 0; i < shift; i++) {
-                x[ i] = buffer[ i];
+                x[i] = buffer[i];
             }
 
-        } else if (shift < 0) {                 // left shift
+        } else if (shift < 0) { // left shift
 
             for (i = 0; i < -shift; i++) {
-                buffer[ i] = x[ i];
+                buffer[i] = x[i];
             }
             j = 0;
             i = -shift;
             while (i < n) {
-                x[ j++] = x[ i++];
+                x[j++] = x[i++];
             }
             j = n + shift;
             for (i = 0; i < -shift; i++) {
-                x[ j++] = buffer[ i];
+                x[j++] = buffer[i];
             }
 
         }
@@ -502,7 +501,7 @@ public class Sequence {
         return new Sequence(newseqvalues);
     }
 
-//  window group
+    //  window group
     public static void window(float[] x, int src, float[] w, float[] y, int dst) {
 
         int nw = w.length;
@@ -637,7 +636,7 @@ public class Sequence {
         int N = dst.length;
         Arrays.fill(dst, 0.0f);
         for (int i = 0; i < src.length; i++) {
-            dst[ i % N] += src[ i];
+            dst[i % N] += src[i];
         }
     }
 
@@ -645,7 +644,7 @@ public class Sequence {
         int N = dst.length;
         Arrays.fill(dst, 0.0);
         for (int i = 0; i < src.length; i++) {
-            dst[ i % N] += src[ i];
+            dst[i % N] += src[i];
         }
     }
 
@@ -683,7 +682,7 @@ public class Sequence {
         seqvalues = dptr;
     }
 
-// decimate group - with source and destination
+    // decimate group - with source and destination
     public static void decimate(float[] x, float[] y, int decrate) {
         int ix = 0;
         int iy = 0;
@@ -746,7 +745,8 @@ public class Sequence {
      *
      * result[i] = orig[i] + othersequence[i]
      *
-     * @param S - the other Sequence
+     * @param S
+     *            - the other Sequence
      */
     public void plusEquals(Sequence S) {
         int n = Math.min(seqvalues.length, S.seqvalues.length);
@@ -761,7 +761,8 @@ public class Sequence {
      *
      * result[i] = orig[i]/othersequence[i]
      *
-     * @param S - the other Sequence object
+     * @param S
+     *            - the other Sequence object
      */
     public void divideBy(Sequence S) {
         int n = Math.min(seqvalues.length, S.seqvalues.length);
@@ -774,7 +775,8 @@ public class Sequence {
      * Treat the Sequences as vector and calculate the cross product of this
      * Sequence (A) with another (B)
      *
-     * @param B another vector as a Sequence object
+     * @param B
+     *            another vector as a Sequence object
      * @return the cross product (AxB)
      */
     public Sequence cross(Sequence B) {
@@ -788,9 +790,9 @@ public class Sequence {
         }
 
         double[] result = new double[length()];
-        result[0] = get(1) * B.get(2) - get(2) * B.get(1);    // i = a1*b2 - a2*b1
-        result[1] = get(2) * B.get(0) - get(0) * B.get(2);    // j = a2*b0 - a0*b2
-        result[2] = get(0) * B.get(1) - get(1) * B.get(0);    // k = a0*b1 - a1*b0
+        result[0] = get(1) * B.get(2) - get(2) * B.get(1); // i = a1*b2 - a2*b1
+        result[1] = get(2) * B.get(0) - get(0) * B.get(2); // j = a2*b0 - a0*b2
+        result[2] = get(0) * B.get(1) - get(1) * B.get(0); // k = a0*b1 - a1*b0
 
         return new Sequence(result);
     }
@@ -798,7 +800,8 @@ public class Sequence {
     /**
      * Takes the dot product between this Sequence and another Sequence object
      *
-     * @param S - the other Sequence object
+     * @param S
+     *            - the other Sequence object
      * @return the float result of the dot product
      */
     public float dotprod(Sequence S) {
@@ -864,9 +867,10 @@ public class Sequence {
     /**
      * raise each of the values of the sequence to a power
      *
-     * @param value --> seq^value each element will be raised to the power
-     * (value) e.g. value= 2 squares the sequence value = 0.5 takes a square
-     * root
+     * @param value
+     *            --> seq^value each element will be raised to the power (value)
+     *            e.g. value= 2 squares the sequence value = 0.5 takes a square
+     *            root
      */
     public void power(double value) {
         for (int i = 0; i < seqvalues.length; i++) {
@@ -877,9 +881,10 @@ public class Sequence {
     /**
      * raise each of the values of the sequence to its
      *
-     * @param value --> seq^value each element will be raised to the power
-     * (value) e.g. value= 2 squares the sequence value = 0.5 takes a square
-     * root
+     * @param value
+     *            --> seq^value each element will be raised to the power (value)
+     *            e.g. value= 2 squares the sequence value = 0.5 takes a square
+     *            root
      */
     public void power(int value) {
         for (int i = 0; i < seqvalues.length; i++) {
@@ -900,7 +905,8 @@ public class Sequence {
      * Convert each element to the signed power(or root) Raise each Sequence
      * element to a power, then multiply by the original sign
      *
-     * @param value - the power e.g. 2 == square, .5 == square root
+     * @param value
+     *            - the power e.g. 2 == square, .5 == square root
      */
     public void signedPower(double value) {
         for (int i = 0; i < seqvalues.length; i++) {
@@ -1060,7 +1066,7 @@ public class Sequence {
     }
 
     public void set(int i, float f) {
-        if (i >= 0 & i < seqvalues.length) {
+        if (i >= 0 && i < seqvalues.length) {
             seqvalues[i] = f;
         }
     }
@@ -1097,27 +1103,5 @@ public class Sequence {
         for (int i = 0; i < x.length; i++) {
             Arrays.fill(x[i], 0.0);
         }
-    }
-
-    public static void main(String[] args) {
-        Sequence S = new Sequence(12);
-        for (int i = 0; i < 12; i++) {
-            S.set(i, 0.0f);
-        }
-        S.set(5, 1.0f);
-        System.out.println("S: ");
-        S.print(System.out);
-        System.out.println();
-        Sequence w = new Sequence(5);
-        w.set(0, 1.0f);
-        w.set(1, 2.0f);
-        w.set(2, 3.0f);
-        w.set(3, 2.0f);
-        w.set(4, 1.0f);
-        Sequence S1 = S.window(4, w);
-        System.out.println("S1: ");
-        S1.print(System.out);
-        System.out.println();
-
     }
 }

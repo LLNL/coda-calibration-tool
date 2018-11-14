@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -21,7 +21,6 @@ import com.google.common.base.Objects;
 /**
  * Created by dodge1 Date: Sep 29, 2010
  */
-@SuppressWarnings({"RedundantIfStatement"})
 public class StaChanKey implements StreamKey, Comparable<StaChanKey>, Serializable {
 
     static final long serialVersionUID = -5652680329737865547L;
@@ -62,9 +61,6 @@ public class StaChanKey implements StreamKey, Comparable<StaChanKey>, Serializab
         if (!(o instanceof StaChanKey)) {
             return false;
         }
-        if (this == o) {
-            return true;
-        }
 
         StaChanKey staChan = (StaChanKey) o;
 
@@ -82,11 +78,10 @@ public class StaChanKey implements StreamKey, Comparable<StaChanKey>, Serializab
     public int hashCode() {
         return Objects.hashCode(sta, chan);
     }
-    
+
     @Override
-    public String getPlotLabel()
-    {
-        return String.format("%s - %s",sta,chan);
+    public String getPlotLabel() {
+        return String.format("%s - %s", sta, chan);
     }
 
     @Override

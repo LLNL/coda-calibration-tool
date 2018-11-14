@@ -10,7 +10,6 @@
  */
 package llnl.gnem.core.io;
 
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -18,12 +17,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FileDataSource extends AbstractDataSource {
+    private static final Logger log = LoggerFactory.getLogger(FileDataSource.class);
     protected String path;
     protected InputStream fis;
     protected int format;
-    protected byte[] buffer;              // temporary buffer for reading data, persists between reads
-    protected long foff;                // offset to first byte of data (for formats with headers, offsets)
+    protected byte[] buffer; // temporary buffer for reading data, persists between reads
+    protected long foff; // offset to first byte of data (for formats with headers, offsets)
     public static final int CSS_T4 = 1, CSS_S4 = 2, CSS_S3 = 3, CSS_F4 = 4;
 
     /**
@@ -53,9 +56,9 @@ public class FileDataSource extends AbstractDataSource {
         close();
         try {
             initiate(new FileInputStream(path));
-            fis.skip(foff);   // skip bytes, as necessary
+            fis.skip(foff); // skip bytes, as necessary
         } catch (IOException ioe) {
-            System.err.println("io.FileDataSource.initiate():  " + ioe.getMessage());
+            log.warn("io.FileDataSource.initiate():  {} ", ioe.getMessage(), ioe);
             fis = null;
         }
     }
@@ -71,7 +74,7 @@ public class FileDataSource extends AbstractDataSource {
                 fis.close();
                 fis = null;
             } catch (IOException ioe) {
-                System.err.println("io.FileDataSource.close():  " + ioe.getMessage());
+                log.warn("io.FileDataSource.close(): {} ", ioe.getMessage(), ioe);
             }
         }
     }
@@ -84,21 +87,21 @@ public class FileDataSource extends AbstractDataSource {
 
             switch (format) {
 
-                case CSS_S4:
-                case CSS_T4:
-                case CSS_F4:
+            case CSS_S4:
+            case CSS_T4:
+            case CSS_F4:
 
-                    fis.skip(4 * numSamplesToSkip);
-                    break;
+                fis.skip(4 * numSamplesToSkip);
+                break;
 
-                case CSS_S3:
+            case CSS_S3:
 
-                    fis.skip(3 * numSamplesToSkip);
-                    break;
+                fis.skip(3 * numSamplesToSkip);
+                break;
 
-                default:
+            default:
 
-                    System.err.println("io.FileDataSource:  unsupported format");
+                log.warn("io.FileDataSource:  unsupported format");
 
             }
 
@@ -106,7 +109,7 @@ public class FileDataSource extends AbstractDataSource {
             nextSample += numSamplesToSkip;
 
         } catch (IOException ioe) {
-            System.err.println(ioe.getMessage());
+            log.warn(ioe.getMessage());
         }
 
     }
@@ -126,31 +129,29 @@ public class FileDataSource extends AbstractDataSource {
 
             switch (format) {
 
-                // calculate #bytes to read and allocate buffer space as appropriate
+            // calculate #bytes to read and allocate buffer space as appropriate
 
-                case CSS_S4:
-                case CSS_T4:
-                case CSS_F4:
+            case CSS_S4:
+            case CSS_T4:
+            case CSS_F4:
 
-                    numBytesToRead = numSamplesToRead * 4;
-                    legitFormat = true;
-                    break;
+                numBytesToRead = numSamplesToRead * 4;
+                legitFormat = true;
+                break;
 
-                case CSS_S3:
+            case CSS_S3:
 
-                    numBytesToRead = numSamplesToRead * 3;
-                    legitFormat = true;
-                    break;
+                numBytesToRead = numSamplesToRead * 3;
+                legitFormat = true;
+                break;
 
-                default:
+            default:
 
-                    System.err.println("io.FileDataSource:  unsupported format " + format);
+                log.warn("io.FileDataSource:  unsupported format " + format);
 
             }
 
-            if (buffer == null) {
-                buffer = new byte[numBytesToRead];
-            } else if (buffer.length < numBytesToRead) {
+            if (buffer == null || buffer.length < numBytesToRead) {
                 buffer = new byte[numBytesToRead];
             }
             if (fis == null) {
@@ -166,65 +167,58 @@ public class FileDataSource extends AbstractDataSource {
 
             switch (format) {
 
-                case CSS_S4:
+            case CSS_S4:
 
-                    for (int i = 0; i < numSamplesToRead; i++) {
-                        dataArray[ i + offset] = (float) dis.readInt();
+                for (int i = 0; i < numSamplesToRead; i++) {
+                    dataArray[i + offset] = (float) dis.readInt();
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
+                break;
+
+            case CSS_T4:
+
+                for (int i = 0; i < numSamplesToRead; i++) {
+                    dataArray[i + offset] = dis.readFloat();
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
+                break;
+
+            case CSS_S3:
+
+                ib = 0;
+                for (int i = 0; i < numSamplesToRead; i++) {
+
+                    if ((0x80 & buffer[ib]) == 0x80) {
+                        dataArray[i + offset] = (float) (((0xff) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
+                    } else {
+                        dataArray[i + offset] = (float) (((0x00) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
                     }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
-                    break;
 
-                case CSS_T4:
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
 
-                    for (int i = 0; i < numSamplesToRead; i++) {
-                        dataArray[ i + offset] = dis.readFloat();
-                    }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
-                    break;
+                break;
 
-                case CSS_S3:
+            case CSS_F4:
 
-                    ib = 0;
-                    for (int i = 0; i < numSamplesToRead; i++) {
+                ib = 0;
+                for (int i = 0; i < numSamplesToRead; i++) {
+                    dataArray[i + offset] = Float.intBitsToFloat( // float conversion
+                            ((buffer[ib++] & 0xff)) + // per Phil Crotwell's
+                                    ((buffer[ib++] & 0xff) << 8) + // suggestion
+                                    ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 24));
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
 
-                        if ((0x80 & buffer[ib]) == 0x80) {
-                            dataArray[ i + offset] = (float) (((0xff) << 24)
-                                    + ((buffer[ib++] & 0xff) << 16)
-                                    + ((buffer[ib++] & 0xff) << 8)
-                                    + ((buffer[ib++] & 0xff)));
-                        } else {
-                            dataArray[ i + offset] = (float) (((0x00) << 24)
-                                    + ((buffer[ib++] & 0xff) << 16)
-                                    + ((buffer[ib++] & 0xff) << 8)
-                                    + ((buffer[ib++] & 0xff)));
-                        }
+                break;
 
-                    }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
+            default:
 
-                    break;
-
-                case CSS_F4:
-
-                    ib = 0;
-                    for (int i = 0; i < numSamplesToRead; i++) {
-                        dataArray[ i + offset] = Float.intBitsToFloat( // float conversion
-                                ((buffer[ib++] & 0xff)) + // per Phil Crotwell's
-                                ((buffer[ib++] & 0xff) << 8) + // suggestion
-                                ((buffer[ib++] & 0xff) << 16)
-                                + ((buffer[ib++] & 0xff) << 24));
-                    }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
-
-                    break;
-
-                default:
-
-                    System.err.println("io.FileDataSource:  unsupported format");
+                log.warn("io.FileDataSource:  unsupported format");
 
             }
 
@@ -233,12 +227,12 @@ public class FileDataSource extends AbstractDataSource {
             }
 
         } catch (IOException ioe) {
-            System.err.println("io.FileDataSource  " + ioe.getMessage());
+            log.warn("io.FileDataSource  " + ioe.getMessage());
         }
 
         if (numSamplesToRead < numRequested) {
             for (int i = numSamplesToRead; i < numRequested; i++) {
-                dataArray[ i + offset] = 0.0f;
+                dataArray[i + offset] = 0.0f;
             }
         }
 
@@ -252,8 +246,5 @@ public class FileDataSource extends AbstractDataSource {
     public void print(PrintStream ps) {
         ps.println("io.FileDataSource:");
         super.print(ps);
-    }
-
-    public static void main(String[] args) {
     }
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,6 +14,8 @@
 */
 package llnl.gnem.core.waveform.responseProcessing;
 
+import java.util.Locale;
+
 /**
  * A type-safe enum class for response types.
  *
@@ -21,8 +23,7 @@ package llnl.gnem.core.waveform.responseProcessing;
  */
 public enum ResponseType {
 
-    DIS("dis"), NONE("none"), VEL("vel"), ACC("acc"), EVRESP("evresp"), SACPZF("sacpzf"), PAZ("paz"), FAP("fap"), PAZFIR(
-                    "pazfir"),PAZFAP("pazfap");
+    DIS("dis"), NONE("none"), VEL("vel"), ACC("acc"), EVRESP("evresp"), SACPZF("sacpzf"), PAZ("paz"), FAP("fap"), PAZFIR("pazfir"), PAZFAP("pazfap");
 
     private final String dbValue;
 
@@ -39,14 +40,16 @@ public enum ResponseType {
     }
 
     /**
-     * Utility method to convert a String representation of the response type. This methods supports aliases in addition
-     * to the 'name' for some of the ResponseTypes.
+     * Utility method to convert a String representation of the response type.
+     * This methods supports aliases in addition to the 'name' for some of the
+     * ResponseTypes.
      * 
-     * @param type String representing the response type
+     * @param type
+     *            String representing the response type
      * @return ResponseType enum
      */
     public static ResponseType getResponseType(String type) {
-        type = type.toLowerCase();
+        type = type.toLowerCase(Locale.ENGLISH);
 
         if (type.equals("displacement") || type.equals("dis")) {
             return ResponseType.DIS;

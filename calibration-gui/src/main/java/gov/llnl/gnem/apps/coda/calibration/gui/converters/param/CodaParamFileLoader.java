@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -30,9 +30,9 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterConverter;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.LightweightIllegalStateException;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.SharedFrequencyBandParameters;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.util.LightweightIllegalStateException;
 import reactor.core.publisher.Flux;
 
 @Service

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,7 +14,7 @@
 */
 package llnl.gnem.core.util.randomNumbers;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  *
@@ -22,40 +22,35 @@ import java.util.Random;
  */
 public class SimpleRandom extends BaseRandomAlgorithm {
 
-    private final Random myRandom;
+    private final SecureRandom random;
 
     public SimpleRandom() {
-        myRandom = new Random();
-    }
-
-    public SimpleRandom(final long seed) {
-        myRandom = new Random(seed);
-
+        random = new SecureRandom();
     }
 
     @Override
     public double nextDouble() {
-        return myRandom.nextDouble();
+        return random.nextDouble();
     }
 
     @Override
     public int nextInt() {
-        return myRandom.nextInt();
+        return random.nextInt();
     }
 
     @Override
     public int nextInt(int n) {
-        return myRandom.nextInt(n);
+        return random.nextInt(n);
     }
 
     @Override
     public long nextLong() {
-        return myRandom.nextLong();
+        return random.nextLong();
     }
 
     @Override
     public void resetSeed(long seed) {
-        myRandom.setSeed(seed);
+        random.setSeed(seed);
     }
-   
+
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,7 +15,6 @@
 package llnl.gnem.core.util.Geometry;
 
 import java.util.Collection;
-
 
 public class GeodeticCoordinate {
 
@@ -43,29 +42,33 @@ public class GeodeticCoordinate {
     }
 
     public GeodeticCoordinate() {
-        lat=0;
-        lon=0;
-        depthKm=0;
-        elevationKm=0;
+        lat = 0;
+        lon = 0;
+        depthKm = 0;
+        elevationKm = 0;
     }
-/**
- * Constructs a GeodeticCoordinate from lat, lon, depth.
- * @param lat
- * @param lon
- * @param depth Depth is in km with positive down. Depth = 0 is on the ellipsoid.
- */
+
+    /**
+     * Constructs a GeodeticCoordinate from lat, lon, depth.
+     * 
+     * @param lat
+     * @param lon
+     * @param depth
+     *            Depth is in km with positive down. Depth = 0 is on the
+     *            ellipsoid.
+     */
     public GeodeticCoordinate(double lat, double lon, double depth) {
-        this.lat=lat;
-        this.lon=lon;
-        this.depthKm=depth;
-        elevationKm=0;
+        this.lat = lat;
+        this.lon = lon;
+        this.depthKm = depth;
+        elevationKm = 0;
     }
-    
+
     public GeodeticCoordinate(double lat, double lon, double depth, double elevKm) {
-        this.lat=lat;
-        this.lon=lon;
-        this.depthKm=depth;
-        elevationKm=elevKm;
+        this.lat = lat;
+        this.lon = lon;
+        this.depthKm = depth;
+        elevationKm = elevKm;
     }
 
     public GeodeticCoordinate(GeodeticCoordinate old) {
@@ -74,8 +77,6 @@ public class GeodeticCoordinate {
         depthKm = old.getDepthKm();
         this.elevationKm = old.elevationKm;
     }
-
-
 
     public double getLat() {
         return lat;
@@ -88,7 +89,6 @@ public class GeodeticCoordinate {
     public double getDepthKm() {
         return depthKm;
     }
-
 
     public double getElevationKm() {
         return elevationKm;
@@ -135,6 +135,5 @@ public class GeodeticCoordinate {
     public String toString() {
         return "GeodeticCoordinate{" + "lat=" + lat + ", lon=" + lon + ", depthKm=" + depthKm + ", elevationKm=" + elevationKm + '}';
     }
-    
-    
+
 }

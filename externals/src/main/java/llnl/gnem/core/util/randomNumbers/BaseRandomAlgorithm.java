@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -19,7 +19,7 @@ package llnl.gnem.core.util.randomNumbers;
  *
  * @author dodge1
  */
-public abstract class BaseRandomAlgorithm implements RandomAlgorithm{
+public abstract class BaseRandomAlgorithm implements RandomAlgorithm {
 
     @Override
     public abstract double nextDouble();
@@ -55,8 +55,8 @@ public abstract class BaseRandomAlgorithm implements RandomAlgorithm{
         double numerator = (value - min) * outRange;
         return lower + numerator / inRange;
     }
-    
-        /**
+
+    /**
      * Produce a normally-distributed deviate using Box-Muller transformation.
      * Adapted from Numerical Recipes P. 203
      *
@@ -77,5 +77,4 @@ public abstract class BaseRandomAlgorithm implements RandomAlgorithm{
         return value * std + mean;
     }
 
-    
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -42,14 +42,14 @@ public class BasePolygon implements Serializable {
     // Need this serialVersionUId in order to be compatible with serialized
     // Polygons stored on server for map display.
     static final long serialVersionUID = 3801579673383872402L;
-    
+
     public void scale(double factor) {
         cartesianPolygon.scale(factor);
         ArrayList<Vector3D> scaled = cartesianPolygon.getVertices();
-        if( scaled.size() != vertices.length){
+        if (scaled.size() != vertices.length) {
             throw new IllegalStateException("Size of vertex collection changed after scaling!");
         }
-        for ( int j = 0; j < vertices.length; ++j ){
+        for (int j = 0; j < vertices.length; ++j) {
             NEZCoordinate tmp = new NEZCoordinate(scaled.get(j));
             GeodeticCoordinate v = EModel.getGeodeticCoords(coordOrigin, tmp);
             Vertex vv = new Vertex(v.getLat(), v.getLon());
@@ -60,25 +60,26 @@ public class BasePolygon implements Serializable {
     /**
      * Constructor for the Polygon object
      *
-     * @param P A Vector of Vertex objects describing the polygon's perimeter.
+     * @param P
+     *            A Vector of Vertex objects describing the polygon's perimeter.
      */
     public BasePolygon(Vertex[] P) {
         vertices = P.clone();
         setLocalCoords();
     }
-    
+
     public BasePolygon(Vertex[] P, boolean isSpansDateline) {
         vertices = P.clone();
         this.isSpansDateLine = isSpansDateline;
         setLocalCoords();
     }
-    
+
     public BasePolygon(final String polygonFileName) throws IOException {
         String[] lines = FileInputArrayLoader.fillStrings(polygonFileName);
         if (lines.length < 3) {
             throw new IllegalArgumentException("File: " + polygonFileName + " has too few points!");
         }
-        
+
         vertices = new Vertex[lines.length];
         for (int j = 0; j < lines.length; ++j) {
             StringTokenizer st = new StringTokenizer(lines[j]);
@@ -91,14 +92,15 @@ public class BasePolygon implements Serializable {
             vertices[j] = new Vertex(Double.parseDouble(latstr), Double.parseDouble(lonstr));
         }
         setLocalCoords();
-        
+
     }
 
     /**
      * Determine whether a point (given as a Vertex object) is inside the
- BasePolygon. Uses a method by Sedgewick, "Algorithms in C"
+     * BasePolygon. Uses a method by Sedgewick, "Algorithms in C"
      *
-     * @param t The point to be tested
+     * @param t
+     *            The point to be tested
      * @return true if the point is inside the BasePolygon
      */
     public boolean contains(Vertex t) {
@@ -109,10 +111,12 @@ public class BasePolygon implements Serializable {
 
     /**
      * Determine whether a point (given as a lat and a lon is inside the
- BasePolygon. Uses a method by Sedgewick, "Algorithms in C"
+     * BasePolygon. Uses a method by Sedgewick, "Algorithms in C"
      *
-     * @param x The latitude of the point to be tested
-     * @param y The longitude of the point to be tested
+     * @param x
+     *            The latitude of the point to be tested
+     * @param y
+     *            The longitude of the point to be tested
      * @return true if the point is inside the BasePolygon
      */
     public boolean contains(double x, double y) {
@@ -121,10 +125,11 @@ public class BasePolygon implements Serializable {
     }
 
     /**
-     * Gets the latitude of the most Southerly Vertex in the BasePolygon. For rapid
- selection of candidate points from the database, it is convenient to get
- the lat and lon extrema of the BasePolygon to form a query that returns all
- the points within the smallest box that encloses the BasePolygon.
+     * Gets the latitude of the most Southerly Vertex in the BasePolygon. For
+     * rapid selection of candidate points from the database, it is convenient
+     * to get the lat and lon extrema of the BasePolygon to form a query that
+     * returns all the points within the smallest box that encloses the
+     * BasePolygon.
      *
      * @return The minLat value
      */
@@ -140,10 +145,11 @@ public class BasePolygon implements Serializable {
     }
 
     /**
-     * Gets the latitude of the most Northerly Vertex in the BasePolygon. For rapid
- selection of candidate points from the database, it is convenient to get
- the lat and lon extrema of the BasePolygon to form a query that returns all
- the points within the smallest box that encloses the BasePolygon.
+     * Gets the latitude of the most Northerly Vertex in the BasePolygon. For
+     * rapid selection of candidate points from the database, it is convenient
+     * to get the lat and lon extrema of the BasePolygon to form a query that
+     * returns all the points within the smallest box that encloses the
+     * BasePolygon.
      *
      * @return The maxLat value
      */
@@ -159,10 +165,11 @@ public class BasePolygon implements Serializable {
     }
 
     /**
-     * Gets the latitude of the most Westerly Vertex in the BasePolygon. For rapid
- selection of candidate points from the database, it is convenient to get
- the lat and lon extrema of the BasePolygon to form a query that returns all
- the points within the smallest box that encloses the BasePolygon.
+     * Gets the latitude of the most Westerly Vertex in the BasePolygon. For
+     * rapid selection of candidate points from the database, it is convenient
+     * to get the lat and lon extrema of the BasePolygon to form a query that
+     * returns all the points within the smallest box that encloses the
+     * BasePolygon.
      *
      * @return The minLon value
      */
@@ -178,10 +185,11 @@ public class BasePolygon implements Serializable {
     }
 
     /**
-     * Gets the latitude of the most Easterly Vertex in the BasePolygon. For rapid
- selection of candidate points from the database, it is convenient to get
- the lat and lon extrema of the BasePolygon to form a query that returns all
- the points within the smallest box that encloses the BasePolygon.
+     * Gets the latitude of the most Easterly Vertex in the BasePolygon. For
+     * rapid selection of candidate points from the database, it is convenient
+     * to get the lat and lon extrema of the BasePolygon to form a query that
+     * returns all the points within the smallest box that encloses the
+     * BasePolygon.
      *
      * @return The maxLon value
      */
@@ -197,12 +205,15 @@ public class BasePolygon implements Serializable {
     }
 
     /**
-     * Make a BasePolygon that approximates a circle. The approximation will be good
-     * for small radii near the Equator and poor near the poles.
+     * Make a BasePolygon that approximates a circle. The approximation will be
+     * good for small radii near the Equator and poor near the poles.
      *
-     * @param center The center of the BasePolygon
-     * @param kmRadius The radius of the BasePolygon in km
-     * @param npts The number of points in the polygon.
+     * @param center
+     *            The center of the BasePolygon
+     * @param kmRadius
+     *            The radius of the BasePolygon in km
+     * @param npts
+     *            The number of points in the polygon.
      * @return The generated BasePolygon
      */
     public static BasePolygon makeCirclePolygon(Vertex center, double kmRadius, int npts) {
@@ -211,7 +222,7 @@ public class BasePolygon implements Serializable {
         double DegDistance = Math.toDegrees(kmRadius / EarthRadius);
         return makeCirclePolygon_Deg(center, DegDistance, npts);
     }
-    
+
     public static BasePolygon makeCirclePolygon_Deg(Vertex center, double DegDistance, int npts) {
         Vertex[] vertices = EModel.smallCircle(center, DegDistance, npts);
         return new BasePolygon(vertices);
@@ -225,7 +236,7 @@ public class BasePolygon implements Serializable {
     public Vertex[] getVertices() {
         return vertices.clone();
     }
-    
+
     private void setLocalCoords() {
         double latAvg = 0;
         double lonAvg = 0;
@@ -236,7 +247,7 @@ public class BasePolygon implements Serializable {
             } else {
                 lonAvg += v.getLon();
             }
-            
+
         }
         coordOrigin = new GeodeticCoordinate(latAvg / vertices.length, lonAvg / vertices.length, 0.0);
         ArrayList<NEZCoordinate> vLocal = EModel.getLocalCoords(coordOrigin, vertices);

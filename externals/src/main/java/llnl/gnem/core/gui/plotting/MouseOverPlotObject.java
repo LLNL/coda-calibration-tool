@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,18 +17,14 @@ package llnl.gnem.core.gui.plotting;
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
 
 /**
- * User: dodge1
- * Date: Jan 5, 2004
- * Time: 9:34:44 AM
+ * User: dodge1 Date: Jan 5, 2004 Time: 9:34:44 AM
  */
 public class MouseOverPlotObject {
-    public MouseOverPlotObject( PlotObject po )
-    {
+    public MouseOverPlotObject(PlotObject po) {
         this.po = po;
     }
 
-    public PlotObject getPlotObject()
-    {
+    public PlotObject getPlotObject() {
         return po;
     }
 

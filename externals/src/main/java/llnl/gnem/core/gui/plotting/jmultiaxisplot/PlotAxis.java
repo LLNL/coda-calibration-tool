@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -59,7 +59,8 @@ public abstract class PlotAxis {
     /**
      * Sets the numMinorTicks attribute of the PlotAxis object
      *
-     * @param v The new numMinorTicks value
+     * @param v
+     *            The new numMinorTicks value
      */
     public void setNumMinorTicks(int v) {
         int val = v >= 0 ? v : 0;
@@ -78,7 +79,8 @@ public abstract class PlotAxis {
     /**
      * Sets the majorTickLen attribute of the PlotAxis object
      *
-     * @param v The new majorTickLen value
+     * @param v
+     *            The new majorTickLen value
      */
     public void setMajorTickLen(double v) {
         double val = v >= 0 ? v : 0;
@@ -97,7 +99,8 @@ public abstract class PlotAxis {
     /**
      * Sets the minorTickLen attribute of the PlotAxis object
      *
-     * @param v The new minorTickLen value
+     * @param v
+     *            The new minorTickLen value
      */
     public void setMinorTickLen(double v) {
         double val = v >= 0 ? v : 0;
@@ -116,7 +119,8 @@ public abstract class PlotAxis {
     /**
      * Sets the tickDirection attribute of the PlotAxis object
      *
-     * @param v The new tickDirection value
+     * @param v
+     *            The new tickDirection value
      */
     public void setTickDirection(TickDir v) {
         ticks.setDir(v);
@@ -134,7 +138,8 @@ public abstract class PlotAxis {
     /**
      * Sets the ticksVisible attribute of the PlotAxis object
      *
-     * @param v The new ticksVisible value
+     * @param v
+     *            The new ticksVisible value
      */
     public void setTicksVisible(boolean v) {
         ticks.setVisible(v);
@@ -168,7 +173,8 @@ public abstract class PlotAxis {
     /**
      * Sets the tickFontName attribute of the PlotAxis object
      *
-     * @param v The new tickFontName value
+     * @param v
+     *            The new tickFontName value
      */
     public void setTickFontName(String v) {
         ticks.setFontName(v);
@@ -186,7 +192,8 @@ public abstract class PlotAxis {
     /**
      * Sets the tickFontColor attribute of the PlotAxis object
      *
-     * @param v The new tickFontColor value
+     * @param v
+     *            The new tickFontColor value
      */
     public void setTickFontColor(Color v) {
         ticks.setFontColor(v);
@@ -204,18 +211,12 @@ public abstract class PlotAxis {
     /**
      * Sets the tickFontSize attribute of the PlotAxis object
      *
-     * @param v The new tickFontSize value
+     * @param v
+     *            The new tickFontSize value
      */
     public void setTickFontSize(int v) {
         ticks.setFontSize(v);
     }
-
-
-
-
-
-
-
 
     /**
      * Gets the labelColor attribute of the PlotAxis object
@@ -229,7 +230,8 @@ public abstract class PlotAxis {
     /**
      * Sets the labelColor attribute of the PlotAxis object
      *
-     * @param v The new labelColor value
+     * @param v
+     *            The new labelColor value
      */
     public void setLabelColor(Color v) {
         label.setColor(v);
@@ -271,7 +273,8 @@ public abstract class PlotAxis {
     /**
      * Sets the labelOffset attribute of the PlotAxis object
      *
-     * @param v The new labelOffset value
+     * @param v
+     *            The new labelOffset value
      */
     public void setLabelOffset(double v) {
         label.setOffset(v);
@@ -289,7 +292,8 @@ public abstract class PlotAxis {
     /**
      * Sets the labelText attribute of the PlotAxis object
      *
-     * @param v The new labelText value
+     * @param v
+     *            The new labelText value
      */
     public void setLabelText(String v) {
         label.setText(v);
@@ -307,12 +311,12 @@ public abstract class PlotAxis {
     /**
      * Sets the labelVisible attribute of the PlotAxis object
      *
-     * @param v The new labelVisible value
+     * @param v
+     *            The new labelVisible value
      */
     public void setLabelVisible(boolean v) {
         label.setVisible(visible);
     }
-
 
     /**
      * Gets the axisColor attribute of the PlotAxis object
@@ -326,7 +330,8 @@ public abstract class PlotAxis {
     /**
      * Sets the axisColor attribute of the PlotAxis object
      *
-     * @param v The new axisColor value
+     * @param v
+     *            The new axisColor value
      */
     public void setAxisColor(Color v) {
         axisColor = v;
@@ -344,7 +349,8 @@ public abstract class PlotAxis {
     /**
      * Sets the axisPenWidth attribute of the PlotAxis object
      *
-     * @param v The new axisPenWidth value
+     * @param v
+     *            The new axisPenWidth value
      */
     public void setAxisPenWidth(int v) {
         axisPenWidth = v > 0 ? v : 1;
@@ -362,7 +368,8 @@ public abstract class PlotAxis {
     /**
      * Sets the visible attribute of the PlotAxis object
      *
-     * @param v The new visible value
+     * @param v
+     *            The new visible value
      */
     public void setVisible(boolean v) {
         visible = v;
@@ -377,10 +384,12 @@ public abstract class PlotAxis {
      * Function to define axis based on range of data using properties of
      * decimal place-value system and linearity of axis.
      *
-     * @param minIn The minimum data value
-     * @param maxIn The maximum data value.
+     * @param minIn
+     *            The minimum data value
+     * @param maxIn
+     *            The maximum data value.
      * @return A TickMetrics object holding the suggested axis minimum, maximum,
-     * and increment values.
+     *         and increment values.
      */
     public static LinearTickMetrics defineAxis(double minIn, double maxIn) {
         return defineAxis(minIn, maxIn, false);
@@ -393,11 +402,11 @@ public abstract class PlotAxis {
         double inc;
         double testInc;
         double // candidate increment value
-                Test_min;
+        Test_min;
         double // minimum scale value
-                Test_max;
+        Test_max;
         double // maximum scale value
-                Range = max - min;
+        Range = max - min;
         // range of data
 
         int i = 0;
@@ -481,6 +490,7 @@ public abstract class PlotAxis {
 
         return new LogTickMetrics(displayMin, displayMax, fullyDecorate);
     }
+
     /**
      * Information about the tick to be rendered on this axis.
      */
@@ -513,10 +523,14 @@ public abstract class PlotAxis {
     /**
      * render the ticks for this axis.
      *
-     * @param g The graphics context.
-     * @param min The minimum value of the axis.
-     * @param max The maximum value of the axis.
-     * @param Scale Controls whether the axis has a linear or log(10) scale.
+     * @param g
+     *            The graphics context.
+     * @param min
+     *            The minimum value of the axis.
+     * @param max
+     *            The maximum value of the axis.
+     * @param Scale
+     *            Controls whether the axis has a linear or log(10) scale.
      */
     protected void renderTicks(Graphics g, double min, double max, AxisScale Scale) {
         if (!ticks.isVisible()) {
@@ -533,9 +547,12 @@ public abstract class PlotAxis {
     /**
      * render ticks for the linear scale case
      *
-     * @param g The graphics context
-     * @param minIn The minimum value of the axis
-     * @param maxIn The maximum value of the axis
+     * @param g
+     *            The graphics context
+     * @param minIn
+     *            The minimum value of the axis
+     * @param maxIn
+     *            The maximum value of the axis
      */
     protected void renderLinearTicks(Graphics g, double minIn, double maxIn) {
         double min = minIn;
@@ -566,9 +583,12 @@ public abstract class PlotAxis {
     /**
      * render ticks for the log(10) case
      *
-     * @param g The graphics context
-     * @param minIn The minimum value of the axis
-     * @param max The maximum value of the axis
+     * @param g
+     *            The graphics context
+     * @param minIn
+     *            The minimum value of the axis
+     * @param max
+     *            The maximum value of the axis
      */
     protected void renderLogTicks(Graphics g, double minIn, double max) {
         if (max <= 0) {
@@ -598,7 +618,7 @@ public abstract class PlotAxis {
             }
         }
     }
-//---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------
 
     private static String formatValue(double val) {
         String tmp = String.format("%.6G", val);
@@ -620,7 +640,6 @@ public abstract class PlotAxis {
                 tmp = tmp.substring(0, idxLastChr + 1) + part2;
             }
 
-
         } else {
             int idxLastChr = tmp.length() - 1;
             int idxDot = tmp.indexOf('.');
@@ -639,16 +658,20 @@ public abstract class PlotAxis {
         }
         return tmp;
     }
-//---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------
 
     /**
      * render a single tick. This action is performed by derived classes because
      * some of the specifics depend on the nature of the derived class
      *
-     * @param g The graphics context
-     * @param val The axis value at the position of the tick
-     * @param label A label that may be associated with the tick
-     * @param isMajor true if this is a major tick mark
+     * @param g
+     *            The graphics context
+     * @param val
+     *            The axis value at the position of the tick
+     * @param label
+     *            A label that may be associated with the tick
+     * @param isMajor
+     *            true if this is a major tick mark
      */
     protected abstract void renderTick(Graphics g, double val, TickLabel label, boolean isMajor, HorizAlignment alignment);
 

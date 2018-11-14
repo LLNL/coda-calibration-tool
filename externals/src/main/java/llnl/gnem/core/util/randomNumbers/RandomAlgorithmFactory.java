@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,33 +17,19 @@ package llnl.gnem.core.util.randomNumbers;
 public class RandomAlgorithmFactory {
 
     private static AlgorithmType alogorithmType = AlgorithmType.Simple;
-    private static final int RANDOM_SEED = 129875439;
-    
-    public static RandomAlgorithm getAlgorithm() {
-        return getAlgorithm(RANDOM_SEED);
-    }
 
-    public static RandomAlgorithm getAlgorithm(long seed) {
+    public static RandomAlgorithm getAlgorithm() {
         switch (alogorithmType) {
-            case Simple:
-                return new SimpleRandom(seed);
-            case XorShift:
-                return new XorShiftRandom(seed);
-            case SecureRandom:
-                return new SecureRandomAlg(seed);
-            default:
-                throw new IllegalStateException("Do no know how to create algorithm of type : " + alogorithmType);
+        case Simple:
+            return new SimpleRandom();
+        default:
+            throw new IllegalStateException("Do no know how to create algorithm of type : " + alogorithmType);
 
         }
 
     }
-    
-    public static void setAlgorithmType( AlgorithmType type){
+
+    public static void setAlgorithmType(AlgorithmType type) {
         alogorithmType = type;
     }
-
-    public static long getSeed() {
-        return RANDOM_SEED;
-    }
-
 }

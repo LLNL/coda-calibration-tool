@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -23,9 +23,7 @@ import java.util.List;
  */
 public enum OrientationCode {
 
-    Z("Z"), N("N"), E("E"), A("A"), B("B"), C("C"), D("D"), T("T"), R("R"),
-    U("U"), V("V"), W("W"), O("O"), I("I"), F("F"), H("H"), S("S"), ONE("1"),
-    TWO("2"), THREE("3"), UNKNOWN("UNKNOWN");
+    Z("Z"), N("N"), E("E"), A("A"), B("B"), C("C"), D("D"), T("T"), R("R"), U("U"), V("V"), W("W"), O("O"), I("I"), F("F"), H("H"), S("S"), ONE("1"), TWO("2"), THREE("3"), UNKNOWN("UNKNOWN");
     private final String code;
 
     OrientationCode(String code) {
@@ -101,14 +99,12 @@ public enum OrientationCode {
         result.add(D);
         return result;
     }
-    
 
     static List<OrientationCode> getTideCode() {
         List<OrientationCode> result = new ArrayList<>();
         result.add(Z);
         return result;
     }
- 
 
     static List<OrientationCode> getWindCodes() {
         List<OrientationCode> result = new ArrayList<>();
@@ -117,7 +113,7 @@ public enum OrientationCode {
         return result;
     }
 
-   static List<OrientationCode> getBeamCodes() {
+    static List<OrientationCode> getBeamCodes() {
         List<OrientationCode> result = new ArrayList<>();
         result.add(I);
         result.add(C);
@@ -125,23 +121,22 @@ public enum OrientationCode {
         result.add(O);
         return result;
     }
-    
-    
+
     @Override
     public String toString() {
         return code;
     }
 
     public static OrientationCode getEnumValue(String string) {
-        if (string.equals("1")) {
+        if (string.equalsIgnoreCase("1")) {
             return OrientationCode.ONE;
-        } else if (string.equals("2")) {
+        } else if (string.equalsIgnoreCase("2")) {
             return OrientationCode.TWO;
-        } else if (string.equals("3")) {
+        } else if (string.equalsIgnoreCase("3")) {
             return OrientationCode.THREE;
         } else {
             for (OrientationCode code : OrientationCode.values()) {
-                if (code.toString().equals(string)) {
+                if (code.toString().equalsIgnoreCase(string)) {
                     return code;
                 }
             }

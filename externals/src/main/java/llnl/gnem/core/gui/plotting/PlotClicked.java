@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,28 +20,24 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.gui.plotting.transforms.Coordinate;
 
 /**
- * Created by dodge1
- * Date: Feb 7, 2008
+ * Created by dodge1 Date: Feb 7, 2008
  */
 public class PlotClicked {
     private final MouseEvent me;
     private final Coordinate coordinate;
     private final JSubplot subplot;
 
-    public PlotClicked(MouseEvent me, Coordinate c, JSubplot subplot)
-    {
+    public PlotClicked(MouseEvent me, Coordinate c, JSubplot subplot) {
         this.me = me;
         this.coordinate = c;
         this.subplot = subplot;
     }
 
-    public MouseEvent getMe()
-    {
+    public MouseEvent getMe() {
         return me;
     }
 
-    public Coordinate getCoordinate()
-    {
+    public Coordinate getCoordinate() {
         return coordinate;
     }
 
@@ -49,4 +45,3 @@ public class PlotClicked {
         return subplot;
     }
 }
-

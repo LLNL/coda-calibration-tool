@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,6 +22,7 @@ import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,9 +31,9 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToReferenceEventConverter;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.LightweightIllegalStateException;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.util.LightweightIllegalStateException;
 import reactor.core.publisher.Flux;
 
 @Component
@@ -57,7 +58,7 @@ public class ReferenceEventLoader implements FileToReferenceEventConverter {
         if (file == null || !file.exists() || file.isDirectory()) {
             return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable.", "NULL")));
         }
-        if (!file.getName().toUpperCase().endsWith(".TXT") && !file.getName().toUpperCase().endsWith(".DAT")) {
+        if (!file.getName().toUpperCase(Locale.ENGLISH).endsWith(".TXT") && !file.getName().toUpperCase(Locale.ENGLISH).endsWith(".DAT")) {
             return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file is not of a recognized format. The accepted file formats are .txt and .dat.",
                                                                                         file.getName())));
         }

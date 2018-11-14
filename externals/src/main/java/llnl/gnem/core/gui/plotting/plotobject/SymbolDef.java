@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,8 +17,7 @@ package llnl.gnem.core.gui.plotting.plotobject;
 import java.awt.Color;
 
 /**
- * Created by dodge1
- * Date: Feb 6, 2008
+ * Created by dodge1 Date: Feb 6, 2008
  */
 public class SymbolDef {
     private final SymbolStyle style;
@@ -26,31 +25,26 @@ public class SymbolDef {
     private final Color fillColor;
     private final Color edgeColor;
 
-    public SymbolDef(SymbolStyle style, double size, Color fillColor, Color edgeColor )
-    {
+    public SymbolDef(SymbolStyle style, double size, Color fillColor, Color edgeColor) {
         this.style = style;
         this.size = size;
         this.fillColor = fillColor;
         this.edgeColor = edgeColor;
     }
 
-    public SymbolStyle getStyle()
-    {
+    public SymbolStyle getStyle() {
         return style;
     }
 
-    public double getSize()
-    {
+    public double getSize() {
         return size;
     }
 
-    public Color getFillColor()
-    {
+    public Color getFillColor() {
         return fillColor;
     }
 
-    public Color getEdgeColor()
-    {
+    public Color getEdgeColor() {
         return edgeColor;
     }
 }

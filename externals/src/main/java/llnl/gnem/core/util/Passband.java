@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,19 +22,17 @@ package llnl.gnem.core.util;
 public class Passband {
     private final String name;
 
-    private Passband( String name )
-    {
+    private Passband(String name) {
         this.name = name;
     }
 
     /**
-     * A string representation of the passband for a filter suitable for use with the
-     * dbh.ButterworthFilter..
+     * A string representation of the passband for a filter suitable for use
+     * with the dbh.ButterworthFilter..
      *
      * @return A String with the one of the values "LP", or "HP", "BP", "BR"
      */
-    public String toString()
-    {
+    public String toString() {
         return name;
     }
 
@@ -43,35 +41,34 @@ public class Passband {
      *
      * @return A String array containing all the passband codes
      */
-    public static String[] getPassBandCodes()
-    {
-        String[] codes = {"BP", "BR", "LP", "HP"};
+    public static String[] getPassBandCodes() {
+        String[] codes = { "BP", "BR", "LP", "HP" };
         return codes;
     }
 
     /**
-     * Returns a Passband object given a 2-character String descriptor. Only recognized codes are
-     * "BP", "LP", "HP", "BR". Any other String will result in a null Passband object.
+     * Returns a Passband object given a 2-character String descriptor. Only
+     * recognized codes are "BP", "LP", "HP", "BR". Any other String will result
+     * in a null Passband object.
      *
-     * @param code The code of the desired passband object.
+     * @param code
+     *            The code of the desired passband object.
      * @return The specified Passband object.
      */
-    public static Passband getPassbandFromString( final String code )
-    {
-        if( code.equals( "BP" ) )
+    public static Passband getPassbandFromString(final String code) {
+        if (code.equals("BP"))
             return Passband.BAND_PASS;
-        else if( code.equals( "LP" ) )
+        else if (code.equals("LP"))
             return Passband.LOW_PASS;
-        else if( code.equals( "HP" ) )
+        else if (code.equals("HP"))
             return Passband.HIGH_PASS;
-        else if( code.equals( "BR" ) )
+        else if (code.equals("BR"))
             return Passband.BAND_REJECT;
         else
             return null;
     }
 
-    public static Passband[] getAvailablePassBands()
-    {
+    public static Passband[] getAvailablePassBands() {
         Passband[] result = new Passband[4];
         result[0] = BAND_PASS;
         result[1] = BAND_REJECT;
@@ -83,20 +80,17 @@ public class Passband {
     /**
      * Specifies a band-pass filter
      */
-    public final static Passband BAND_PASS = new Passband( "BP" );
+    public final static Passband BAND_PASS = new Passband("BP");
     /**
      * Specifies a band-reject filter
      */
-    public final static Passband BAND_REJECT = new Passband( "BR" );
+    public final static Passband BAND_REJECT = new Passband("BR");
     /**
      * Specifies a low-pass filter
      */
-    public final static Passband LOW_PASS = new Passband( "LP" );
+    public final static Passband LOW_PASS = new Passband("LP");
     /**
      * Specifies a high-pass filter
      */
-    public final static Passband HIGH_PASS = new Passband( "HP" );
+    public final static Passband HIGH_PASS = new Passband("HP");
 }
-
-
-

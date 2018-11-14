@@ -1,0 +1,102 @@
+{
+    "$id": "llnl/coda-calibration-tool",
+    "type": "object",
+    "title": "Root Schema",
+    "version": "1",
+    "required": [
+        "schemaVersion",
+        "type"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "$id": "#/properties/schemaVersion",
+            "type": "number",
+            "title": "Version of the schema used to generate the file.",
+            "default": false,
+            "examples": [
+                "1"
+            ]
+        },
+        "type": {
+            "$id": "#/properties/type",
+            "type": "string",
+            "title": "Type indicator for the contents of the json file.",
+            "const": "llnl/coda-calibration-tool",
+            "default": false
+        },
+        "measured-events": {
+            "$id": "#/properties/measured-events",
+            "type": "array",
+            "title": "Array of events measurements.",
+            "items": {
+                "$id": "#/properties/measured-events/entry",
+                "type": "object",
+                "title": "A specific measured event entry.",
+                "required": [
+                    "eventId",
+                    "mw",
+                    "stressDropInMpa",
+                    "datetime",
+                    "latitude",
+                    "longitude"
+                ],
+                "properties": {
+                    "eventId": {
+                        "$id": "#/properties/measured-events/entry/properties/eventId",
+                        "type": "string",
+                        "title": "Specific event id.",
+                        "default": false,
+                        "examples": [
+                            "0101190012"
+                        ]
+                    },
+                    "mw": {
+                        "$id": "#/properties/reference-events/entry/properties/mw",
+                        "type": "number",
+                        "title": "The Mw value measured for this event.",
+                        "default": 0,
+                        "examples": [
+                            5.0
+                        ]
+                    },
+                    "stressDropInMpa": {
+                        "$id": "#/properties/reference-events/entry/properties/stressDropInMpa",
+                        "type": "number",
+                        "title": "An estimate measure of the stress drop term for this specific event.",
+                        "default": false,
+                        "examples": [                            
+                            0.3
+                        ]
+                    },
+                    "datetime": {
+                        "$id": "#/properties/reference-events/entry/properties/latitude",
+                        "type": "string",
+                        "title": "Event time as an ISO-8601 UTC instant.",
+                        "default": false,
+                        "examples": [                            
+                            "2011-12-03T10:15:30Z"
+                        ]
+                    },
+                    "latitude": {
+                        "$id": "#/properties/reference-events/entry/properties/latitude",
+                        "type": "number",
+                        "title": "Event latitude in WGS84 decimal degrees (as of v1).",
+                        "default": false,
+                        "examples": [                            
+                            0.0
+                        ]
+                    },
+                    "longitude": {
+                        "$id": "#/properties/reference-events/entry/properties/longitude",
+                        "type": "number",
+                        "title": "Event longitude in WGS84 decimal degrees (as of v1).",
+                        "default": false,
+                        "examples": [                            
+                            0.0
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

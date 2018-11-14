@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -71,7 +71,7 @@ public class JMultiAxisPlot extends JPlotContainer {
     private static final Color SELECTION_COLOR = new Color(0xADD8E6);
     private final XAxis xaxis;
     private final SubplotManager subplots;
-    private final JPlotMouseListener mouseListener;
+    private final JPlotMouseListener plotMouseListener;
     private final Stack<MouseMode> mouseModes;
     private final Selection selection;
     private final Cursor defaultCursor;
@@ -117,31 +117,31 @@ public class JMultiAxisPlot extends JPlotContainer {
 
         coordTransform = new CartesianTransform();
         switch (xAxisType) {
-            case Standard: {
-                xaxis = new XAxis(this);
-                xaxis.setMin(0.0);
-                xaxis.setMax(1.0);
-                break;
-            }
-            case EpochTime: {
-                xaxis = new EpochTimeXAxis(this);
-                xaxis.setMin(0.0);
-                xaxis.setMax(new TimeT().getEpochTime());
-                break;
-            }
-            default:
-                throw new IllegalArgumentException("Unknown X-axis type: " + xAxisType);
+        case Standard: {
+            xaxis = new XAxis(this);
+            xaxis.setMin(0.0);
+            xaxis.setMax(1.0);
+            break;
+        }
+        case EpochTime: {
+            xaxis = new EpochTimeXAxis(this);
+            xaxis.setMin(0.0);
+            xaxis.setMax(new TimeT().getEpochTime());
+            break;
+        }
+        default:
+            throw new IllegalArgumentException("Unknown X-axis type: " + xAxisType);
         }
         subplots = new SubplotManager(this);
-        mouseListener = new JPlotMouseListener(this);
+        plotMouseListener = new JPlotMouseListener(this);
         mouseModes = new Stack<>();
         selection = new Selection();
 
         setFocusTraversalKeysEnabled(false);
-        addMouseListener(mouseListener);
-        addMouseMotionListener(mouseListener);
-        addKeyListener(mouseListener);
-        this.addMouseWheelListener(mouseListener);
+        addMouseListener(plotMouseListener);
+        addMouseMotionListener(plotMouseListener);
+        addKeyListener(plotMouseListener);
+        this.addMouseWheelListener(plotMouseListener);
         //   this.setDoubleBuffered( false );
 
         setCursorForMouseModeChange();
@@ -149,7 +149,7 @@ public class JMultiAxisPlot extends JPlotContainer {
     }
 
     public void clear() {
-        mouseListener.clear();
+        plotMouseListener.clear();
         subplots.clear();
         this.repaint();
     }
@@ -157,18 +157,19 @@ public class JMultiAxisPlot extends JPlotContainer {
     /**
      * Sets the mouseMode attribute of the JMultiAxisPlot object
      *
-     * @param newMode The new mouseMode value
+     * @param newMode
+     *            The new mouseMode value
      */
     public void setMouseMode(MouseMode newMode) {
         mouseModes.push(mouseMode);
         mouseMode = newMode;
         setCursorForMouseModeChange();
 
-        mouseListener.notifyObserversMouseModeChange(newMode);
+        plotMouseListener.notifyObserversMouseModeChange(newMode);
     }
 
     public void nullifyDeletedObject(PlotObject po) {
-        mouseListener.nullifyDeletedObject(po);
+        plotMouseListener.nullifyDeletedObject(po);
         if (po instanceof VPickLine) {
             VPickLine vpl = (VPickLine) po;
             for (PlotObject p : vpl.getContainedObjects()) {
@@ -179,7 +180,8 @@ public class JMultiAxisPlot extends JPlotContainer {
     }
 
     private void setCursorForMouseModeChange() {
-        if (null != mouseMode) switch (mouseMode) {
+        if (null != mouseMode)
+            switch (mouseMode) {
             case PAN:
                 setCursor(handCursor);
                 break;
@@ -195,7 +197,7 @@ public class JMultiAxisPlot extends JPlotContainer {
             default:
                 setCursor(defaultCursor);
                 break;
-        }
+            }
     }
 
     public void restorePreviousMouseMode() {
@@ -203,7 +205,7 @@ public class JMultiAxisPlot extends JPlotContainer {
         } else {
             mouseMode = mouseModes.pop();
             setCursorForMouseModeChange();
-            mouseListener.notifyObserversMouseModeChange(mouseMode);
+            plotMouseListener.notifyObserversMouseModeChange(mouseMode);
         }
     }
 
@@ -211,7 +213,7 @@ public class JMultiAxisPlot extends JPlotContainer {
         mouseModes.clear();
         mouseMode = defaultMode;
         setCursorForMouseModeChange();
-        mouseListener.notifyObserversMouseModeChange(mouseMode);
+        plotMouseListener.notifyObserversMouseModeChange(mouseMode);
     }
 
     public MouseMode getMouseMode() {
@@ -231,7 +233,7 @@ public class JMultiAxisPlot extends JPlotContainer {
     }
 
     public MouseEvent getCurrentMouseEvent() {
-        return mouseListener.getCurrentEvent();
+        return plotMouseListener.getCurrentEvent();
     }
 
     /**
@@ -252,7 +254,8 @@ public class JMultiAxisPlot extends JPlotContainer {
     /**
      * Sets the spacing in mm between adjacent subplots
      *
-     * @param v The new spacing value
+     * @param v
+     *            The new spacing value
      */
     public void setplotSpacing(double v) {
         subplots.setplotSpacing(v);
@@ -275,10 +278,11 @@ public class JMultiAxisPlot extends JPlotContainer {
      * x-range which will be zoomed to with adaptive y-scaling. This method
      * selects which of these zoom types will be used.
      *
-     * @param zoomType The new zoomType value
+     * @param zoomType
+     *            The new zoomType value
      */
     public void setZoomType(ZoomType zoomType) {
-        mouseListener.setZoomType(zoomType);
+        plotMouseListener.setZoomType(zoomType);
     }
 
     /**
@@ -300,10 +304,12 @@ public class JMultiAxisPlot extends JPlotContainer {
     /**
      * Adds a Subplot to the JMultiAxisPlot object at a user-specified position.
      *
-     * @param position The vertical placement of the Subplot being added. If
-     * position is LTEQ 0 then the new Subplot will be placed at the top. If
-     * position is GTEQ the number of Subplots already in the JMultiAxisPlot,
-     * then the new Subplot will be placed at the bottom.
+     * @param position
+     *            The vertical placement of the Subplot being added. If position
+     *            is LTEQ 0 then the new Subplot will be placed at the top. If
+     *            position is GTEQ the number of Subplots already in the
+     *            JMultiAxisPlot, then the new Subplot will be placed at the
+     *            bottom.
      * @return A reference to the Subplot just added
      */
     public JSubplot addSubplot(int position) {
@@ -329,7 +335,8 @@ public class JMultiAxisPlot extends JPlotContainer {
      * the render method that takes a Graphics reference and the 4 position
      * values. The position values are all in Drawing Units, e.g. mm.
      *
-     * @param g The graphics context on which to render this object
+     * @param g
+     *            The graphics context on which to render this object
      */
     @Override
     public void Render(Graphics g) {
@@ -343,11 +350,16 @@ public class JMultiAxisPlot extends JPlotContainer {
      * render to some graphics context, supplying positioning parameters
      * appropriate for the device on which rendering will occur.
      *
-     * @param g The graphics context
-     * @param HOffset The horizontal offset in mm
-     * @param VertOffset The vertical offset in mm
-     * @param boxWidth The width of the plot region in mm
-     * @param boxHeight The height of the plot region in mm
+     * @param g
+     *            The graphics context
+     * @param HOffset
+     *            The horizontal offset in mm
+     * @param VertOffset
+     *            The vertical offset in mm
+     * @param boxWidth
+     *            The width of the plot region in mm
+     * @param boxHeight
+     *            The height of the plot region in mm
      */
     @Override
     public void Render(Graphics g, double HOffset, double VertOffset, double boxWidth, double boxHeight) {
@@ -356,33 +368,33 @@ public class JMultiAxisPlot extends JPlotContainer {
         }
         left = unitsMgr.getHorizUnitsToPixels(HOffset);
         top = unitsMgr.getVertUnitsToPixels(VertOffset);
-        width = unitsMgr.getHorizUnitsToPixels(boxWidth);
-        height = unitsMgr.getVertUnitsToPixels(boxHeight);
+        plotWidth = unitsMgr.getHorizUnitsToPixels(boxWidth);
+        plotHeight = unitsMgr.getVertUnitsToPixels(boxHeight);
         int bWidth = unitsMgr.getHorizUnitsToPixels(borderWidth);
-        PlotBorder.setRect(left - bWidth, top - bWidth, height + 2 * bWidth, width + 2 * bWidth);
+        PlotBorder.setRect(left - bWidth, top - bWidth, plotHeight + 2 * bWidth, plotWidth + 2 * bWidth);
 
         // Color the border region and box
         if (showBorder) {
             PlotBorder.render(g);
             // render the plot title
-            title.Render(g, left, top, width, unitsMgr);
+            title.Render(g, left, top, plotWidth, unitsMgr);
         }
-        PlotRegion.setRect(left, top, height, width);
+        PlotRegion.setRect(left, top, plotHeight, plotWidth);
 
         // Color the plotting region and box
         PlotRegion.render(g);
 
         // Don't render interior if it cannot show up.
-        if (height < 2 || width < 2) {
+        if (plotHeight < 2 || plotWidth < 2) {
             return;
         }
 
         // Initialize the data xmapper for the current plot size and data values
         // Can only initialize the x-part with meaningful values since there are no y-axes available.
-        coordTransform.initialize(xaxis.getMin(), xaxis.getMax(), left, width, 0.0, 1.0, 0, 1);
+        coordTransform.initialize(xaxis.getMin(), xaxis.getMax(), left, plotWidth, 0.0, 1.0, 0, 1);
         // render subplots
-        subplots.Render(g, top, height);
-        xaxis.Render(g, left, top, height, width);
+        subplots.Render(g, top, plotHeight);
+        xaxis.Render(g, left, top, plotHeight, plotWidth);
 
         selection.draw(g);
     }
@@ -394,7 +406,8 @@ public class JMultiAxisPlot extends JPlotContainer {
      * rendering to the screen, but gives low- resolution printer plots. To
      * render to the printer, set this parameter to false.
      *
-     * @param value The new polyLineUsage value
+     * @param value
+     *            The new polyLineUsage value
      */
     @Override
     public void setPolyLineUsage(boolean value) {
@@ -405,12 +418,18 @@ public class JMultiAxisPlot extends JPlotContainer {
      * Create a single X-Y plot in this object. Any previous subplots will be
      * removed and their references invalidated.
      *
-     * @param X The array of X-values
-     * @param Y The array of Y-values
-     * @param c The color of the line
-     * @param m The PaintMode of the line
-     * @param s The PenStyle of the line
-     * @param w The width of the line
+     * @param X
+     *            The array of X-values
+     * @param Y
+     *            The array of Y-values
+     * @param c
+     *            The color of the line
+     * @param m
+     *            The PaintMode of the line
+     * @param s
+     *            The PenStyle of the line
+     * @param w
+     *            The width of the line
      * @return A line object
      */
     public PlotObject Plot(float[] X, float[] Y, Color c, PaintMode m, PenStyle s, int w) {
@@ -423,8 +442,10 @@ public class JMultiAxisPlot extends JPlotContainer {
      * Create a single X-Y plot in this object. Any previous subplots will be
      * removed and their references invalidated.
      *
-     * @param X The array of X-values
-     * @param Y The array of Y-values
+     * @param X
+     *            The array of X-values
+     * @param Y
+     *            The array of Y-values
      * @return A line object
      */
     public PlotObject Plot(float[] X, float[] Y) {
@@ -440,8 +461,10 @@ public class JMultiAxisPlot extends JPlotContainer {
     /**
      * Sets the x-limits of all contained subplots to the input values.
      *
-     * @param xmin The minimum value for all x-axes
-     * @param xmax The maximum value for all x-axes
+     * @param xmin
+     *            The minimum value for all x-axes
+     * @param xmax
+     *            The maximum value for all x-axes
      */
     public void setAllXlimits(double xmin, double xmax) {
         xaxis.setMin(xmin);
@@ -461,8 +484,10 @@ public class JMultiAxisPlot extends JPlotContainer {
      * Auto-scale the y-axes of all the subplots for the data within the range
      * of the x-values specified as input arguments.
      *
-     * @param xmin The minimum x-value to be used in computing new y-limits.
-     * @param xmax The maximum x-value to be used in computing new x-limits.
+     * @param xmin
+     *            The minimum x-value to be used in computing new y-limits.
+     * @param xmax
+     *            The maximum x-value to be used in computing new x-limits.
      * @param resetYlimits
      */
     public void scaleAllTraces(double xmin, double xmax, boolean resetYlimits) {
@@ -479,8 +504,10 @@ public class JMultiAxisPlot extends JPlotContainer {
      * scale GT 1 will magnify the data and values LT 1 will shrink the data.
      * Scale values GTEQ 0 are not allowed.
      *
-     * @param scale The scale factor to use in scaling all the subplots.
-     * @param centerOnZero When true scaling is around the zero point.
+     * @param scale
+     *            The scale factor to use in scaling all the subplots.
+     * @param centerOnZero
+     *            When true scaling is around the zero point.
      */
     public void YScaleAllTraces(double scale, boolean centerOnZero) {
         subplots.YScaleAllTraces(scale, centerOnZero);
@@ -491,11 +518,11 @@ public class JMultiAxisPlot extends JPlotContainer {
     }
 
     public void setShowPickTooltips(boolean v) {
-        mouseListener.setShowPickTooltips(v);
+        plotMouseListener.setShowPickTooltips(v);
     }
 
     public void addPlotObjectObserver(Observer o) {
-        mouseListener.addPlotObjectObserver(o);
+        plotMouseListener.addPlotObjectObserver(o);
     }
 
     ArrayList<SubplotSelectionRegion> getSelectedRegionList(Rectangle zoomRect) {
@@ -508,10 +535,12 @@ public class JMultiAxisPlot extends JPlotContainer {
      * PlotObjects contain the input point, the last one added will be returned.
      * If no PlotObject contains the input point, then null is returned.
      *
-     * @param X The X-pixel value
-     * @param Y The Y-pixel value
+     * @param X
+     *            The X-pixel value
+     * @param Y
+     *            The Y-pixel value
      * @return The PlotObject containing the point or null if no PlotObject
-     * contains the point.
+     *         contains the point.
      */
     public PlotObject getClickedObject(int X, int Y) {
         return subplots.getClickedObject(X, Y);
@@ -520,10 +549,12 @@ public class JMultiAxisPlot extends JPlotContainer {
     /**
      * Gets the subplot that contains the input point
      *
-     * @param X The X-pixel value
-     * @param Y The Y-pixel value
+     * @param X
+     *            The X-pixel value
+     * @param Y
+     *            The Y-pixel value
      * @return The JSubplot containing the point or null if no JSubplot contains
-     * the point.
+     *         the point.
      */
     public JSubplot getCurrentSubplot(int X, int Y) {
         return subplots.getCurrentSubplot(X, Y);
@@ -534,8 +565,9 @@ public class JMultiAxisPlot extends JPlotContainer {
      * within the input Rectangle. Any JSubplot whose intersection with the
      * input Rectangle is empty will not be displayed after zooming.
      *
-     * @param zoomRect The Rectangle (specified in pixels) that defines the
-     * final displayed region.
+     * @param zoomRect
+     *            The Rectangle (specified in pixels) that defines the final
+     *            displayed region.
      */
     public void zoomToBox(Rectangle zoomRect) {
         subplots.zoomToBox(zoomRect);
@@ -544,6 +576,7 @@ public class JMultiAxisPlot extends JPlotContainer {
     public void zoomToBox(ZoomInStateChange zisc) {
         this.handleZoomIn(zisc);
     }
+
     public void zoomToNewLimits(ZoomLimits newLimits) {
         subplots.zoomToNewLimits(newLimits);
     }
@@ -555,7 +588,7 @@ public class JMultiAxisPlot extends JPlotContainer {
     public void zoomToNewXLimits(double xmin, double xmax) {
         subplots.zoomToNewXLimits(xmin, xmax);
     }
-    
+
     public Stack<ZoomLimits> getZoomLimits(JSubplot p) {
         return subplots.getZoomLimits(p);
     }
@@ -608,11 +641,11 @@ public class JMultiAxisPlot extends JPlotContainer {
     }
 
     public void setcontrolKeyMapper(ControlKeyMapper controlKeyMapper) {
-        mouseListener.setcontrolKeyMapper(controlKeyMapper);
+        plotMouseListener.setcontrolKeyMapper(controlKeyMapper);
     }
 
     public PickCreationInfo getPickCreationInfo() {
-        return mouseListener.getPickCreationInfo();
+        return plotMouseListener.getPickCreationInfo();
     }
 
     Iterator getSubplotIterator() {
@@ -620,7 +653,7 @@ public class JMultiAxisPlot extends JPlotContainer {
     }
 
     public JPlotMouseListener getMouseListener() {
-        return mouseListener;
+        return plotMouseListener;
     }
 
     @Override
@@ -673,8 +706,8 @@ public class JMultiAxisPlot extends JPlotContainer {
 
     public void setPanStyle(PanStyle panStyle) {
         this.panStyle = panStyle;
-        if (mouseListener != null) {
-            mouseListener.setPanStyle(panStyle);
+        if (plotMouseListener != null) {
+            plotMouseListener.setPanStyle(panStyle);
         }
     }
 
@@ -754,11 +787,11 @@ public class JMultiAxisPlot extends JPlotContainer {
         repaint();
         activePlot = sp;
     }
+
     public void handleZoomIn(ZoomInStateChange zisc) {
         zoomToBox(zisc.getZoomBounds());
         repaint();
     }
-    
 
     public void handleZoomOut() {
         zoomOut();
@@ -791,9 +824,7 @@ public class JMultiAxisPlot extends JPlotContainer {
         }
 
         public void setPosition(int left, int right) {
-            rect.setBounds(
-                    left, (int) getPlotRegion().getRect().getY(),
-                    right - left, (int) getPlotRegion().getRect().getHeight());
+            rect.setBounds(left, (int) getPlotRegion().getRect().getY(), right - left, (int) getPlotRegion().getRect().getHeight());
         }
 
         public void draw(Graphics g) {
@@ -844,7 +875,7 @@ public class JMultiAxisPlot extends JPlotContainer {
         xAxis.setTicksVisible(xPrefs.getTickPrefs().isVisible());
 
         getTitle().setColor(prefs.getTitleColor());
-//        getTitle().setFontSize(prefs.getTitleFontSize());
+        //        getTitle().setFontSize(prefs.getTitleFontSize());
         Font titleFont = prefs.getTitleFont();
         getTitle().setFont(titleFont);
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,6 +15,7 @@
 package llnl.gnem.core.waveform.seismogram;
 
 import llnl.gnem.core.util.Epoch;
+import llnl.gnem.core.util.Passband;
 import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.util.seriesMathHelpers.DiscontinuityCollection;
 import llnl.gnem.core.util.seriesMathHelpers.MinMax;
@@ -129,6 +130,33 @@ public interface SeismicSignal {
      * et al. ) Must be at least 4 points in series for this to work.
      */
     void differentiate();
+
+    void filter(double lc, double hc);
+
+    void filter(double lc, double hc, boolean twoPass);
+
+    /**
+     * Apply a Butterworth filter to the time series data of this CssSeismogram.
+     *
+     * @param order
+     *            The order of the filter to be applied
+     * @param passband
+     *            The passband of the filter. Passband is one of
+     *            Passband.LOW_PASS, Passband.HIGH_PASS, Passband.BAND_PASS,
+     *            Passband.BAND_REJECT
+     * @param cutoff1
+     *            For BAND_PASS and BAND_REJECT filters this is the low corner
+     *            of the filter. For HIGH_PASS and LOW_PASS filters, this is the
+     *            single corner frequency
+     * @param cutoff2
+     *            For BAND_PASS and BAND_REJECT filters, this is the
+     *            high-frequency corner. For other filters, this argument is
+     *            ignored.
+     * @param two_pass
+     *            When true, the filter is applied in both forward and reverse
+     *            directions to achieve zero-phase.
+     */
+    void filter(int order, Passband passband, double cutoff1, double cutoff2, boolean two_pass);
 
     DiscontinuityCollection findDiscontinuities(int winLength, double factor);
 

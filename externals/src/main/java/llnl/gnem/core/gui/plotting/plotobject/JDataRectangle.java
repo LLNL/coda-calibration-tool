@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,18 +17,13 @@ package llnl.gnem.core.gui.plotting.plotobject;
 import java.awt.geom.Point2D;
 
 /**
- * User: dodge1
- * Date: Mar 22, 2006
+ * User: dodge1 Date: Mar 22, 2006
  */
 public class JDataRectangle extends JPolygon {
 
-    public JDataRectangle( double xmin, double ymin, double width, double height )
-    {
-        Point2D[] vertices = {new Point2D.Double( xmin, ymin ),
-                              new Point2D.Double( xmin, ymin + height ),
-                              new Point2D.Double( xmin + width, ymin + height ),
-                              new Point2D.Double( xmin + width, ymin ),
-                              new Point2D.Double( xmin, ymin )};
-        this.setVertices( vertices );
+    public JDataRectangle(double xmin, double ymin, double width, double height) {
+        Point2D[] vertices = { new Point2D.Double(xmin, ymin), new Point2D.Double(xmin, ymin + height), new Point2D.Double(xmin + width, ymin + height), new Point2D.Double(xmin + width, ymin),
+                new Point2D.Double(xmin, ymin) };
+        this.setVertices(vertices);
     }
 }

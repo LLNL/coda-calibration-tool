@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,14 +14,8 @@
 */
 package llnl.gnem.core.gui.waveform.plotPrefs;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.prefs.Preferences;
 
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JMultiAxisPlot;
 
@@ -33,24 +27,10 @@ public class PlotPreferenceModel {
 
     private final Map<JMultiAxisPlot, String> plotMap;
     private PlotPresentationPrefs plotPrefs;
-    private final Preferences prefs;
 
     private PlotPreferenceModel() {
         plotPrefs = new PlotPresentationPrefs();
         plotMap = new WeakHashMap<>();
-        prefs = Preferences.userNodeForPackage(this.getClass());
-    }
-
-    public void updateFromDb() throws Exception {
-
-        byte[] bytes = prefs.getByteArray("PLOT_PREFS", null);
-        if (bytes != null) {
-            Object obj = deserialize(bytes);
-            if (obj instanceof PlotPresentationPrefs) {
-                plotPrefs = (PlotPresentationPrefs) obj;
-            }
-        }
-
     }
 
     public void registerPlot(JMultiAxisPlot plot) {
@@ -68,55 +48,7 @@ public class PlotPreferenceModel {
         return plotPrefs;
     }
 
-    public void setPrefs(PlotPresentationPrefs prefs) throws Exception {
-        this.plotPrefs = prefs;
-        byte[] bytes = serialize(plotPrefs);
-        this.prefs.putByteArray("PLOT_PREFS", bytes);
-        for (JMultiAxisPlot plot : plotMap.keySet()) {
-            plot.updateForChangedPrefs();
-        }
-    }
-
     private static class PlotPreferenceModelHolder {
-
         private static final PlotPreferenceModel instance = new PlotPreferenceModel();
-    }
-
-    public static byte[] serialize(Object obj) throws IOException {
-        ByteArrayOutputStream out = null;
-
-        ObjectOutputStream os = null;
-        try {
-            out = new ByteArrayOutputStream();
-            os = new ObjectOutputStream(out);
-            os.writeObject(obj);
-            return out.toByteArray();
-        } finally {
-            if (os != null) {
-                os.close();
-            }
-            if (out != null) {
-                out.close();
-            }
-        }
-    }
-
-    public static Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream in = null;
-
-        ObjectInputStream is = null;
-        try {
-            in = new ByteArrayInputStream(data);
-            is = new ObjectInputStream(in);
-
-            return is.readObject();
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-        }
     }
 }

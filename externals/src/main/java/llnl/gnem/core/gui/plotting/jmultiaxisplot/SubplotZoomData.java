@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -33,7 +33,8 @@ class SubplotZoomData {
     /**
      * Constructor for the SubplotZoomData object
      *
-     * @param p The JSubplot
+     * @param p
+     *            The JSubplot
      */
     public SubplotZoomData(JSubplot p) {
         this.p = p;
@@ -59,7 +60,8 @@ class SubplotZoomData {
     /**
      * Zoom in to the state held in the input argument
      *
-     * @param newState The state to zoom to
+     * @param newState
+     *            The state to zoom to
      */
     public void zoomIn(boolean visible, ZoomLimits limits) {
         saveCurrentState();

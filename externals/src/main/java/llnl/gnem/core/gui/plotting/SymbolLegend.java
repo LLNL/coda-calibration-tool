@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -29,11 +29,9 @@ import llnl.gnem.core.gui.plotting.plotobject.SymbolDef;
 import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
 
 /**
- * Created by dodge1
- * Date: Feb 6, 2008
+ * Created by dodge1 Date: Feb 6, 2008
  */
 public class SymbolLegend extends PlotObject {
-
 
     private ArrayList<SymbolTextPair> legendEntries;
     private String fontName;
@@ -43,14 +41,7 @@ public class SymbolLegend extends PlotObject {
     private double xOffset;
     private double yOffset;
 
-    public SymbolLegend(ArrayList<SymbolTextPair> entries,
-                        String fontName,
-                        double fontSize,
-                        HorizPinEdge hAlign,
-                        VertPinEdge vAlign,
-                        double xOff,
-                        double yOff )
-    {
+    public SymbolLegend(ArrayList<SymbolTextPair> entries, String fontName, double fontSize, HorizPinEdge hAlign, VertPinEdge vAlign, double xOff, double yOff) {
         this.legendEntries = entries;
         this.fontName = fontName;
         this.fontSize = fontSize;
@@ -60,8 +51,7 @@ public class SymbolLegend extends PlotObject {
         this.yOffset = yOff;
     }
 
-    public void render(Graphics g, JBasicPlot owner)
-    {
+    public void render(Graphics g, JBasicPlot owner) {
         if (legendEntries.size() < 1 || !owner.getCanDisplay() || !isVisible())
             return;
 
@@ -84,7 +74,6 @@ public class SymbolLegend extends PlotObject {
         g2d.draw(rect);
         addToRegion(rect);
 
-
         int off = fm.getMaxAscent() + fm.getMaxDescent();
         int off2 = off / 2;
         for (int j = 0; j < legendEntries.size(); ++j) {
@@ -99,27 +88,19 @@ public class SymbolLegend extends PlotObject {
 
     }
 
-
-    private void drawSymbol(SymbolDef line, Graphics g, int x, int y)
-    {
+    private void drawSymbol(SymbolDef line, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g;
-        try {
-            Symbol s = SymbolFactory.createSymbol(line);
+        Symbol s = SymbolFactory.createSymbol(line);
+        if (s != null) {
             s.setXcoordPinned(true);
             s.setYcoordPinned(true);
             s.setXcoordIntValue(x);
             s.setYcoordIntValue(y);
             s.render(g2d, owner);
-            s.setXcoordIntValue(x);
-
-        } catch (Exception e) {
-            // give up on this symbol
         }
-
     }
 
-    private int getLegendWidth(JBasicPlot owner, FontMetrics fm)
-    {
+    private int getLegendWidth(JBasicPlot owner, FontMetrics fm) {
         int maxlen = 0;
         for (SymbolTextPair a_Text : legendEntries) {
             int advance = fm.stringWidth(a_Text.getText());
@@ -130,27 +111,22 @@ public class SymbolLegend extends PlotObject {
         return maxlen + owner.getUnitsMgr().getHorizUnitsToPixels(minLineLen) + 5;
     }
 
-    private int getLegendHeight(FontMetrics fm)
-    {
+    private int getLegendHeight(FontMetrics fm) {
         int height = fm.getMaxAscent() + fm.getMaxDescent();
         return (legendEntries.size() + 1) * height;
     }
 
-    private int getLegendLeft(JBasicPlot owner, int legendwidth)
-    {
+    private int getLegendLeft(JBasicPlot owner, int legendwidth) {
         int offset = owner.getUnitsMgr().getHorizUnitsToPixels(xOffset);
         return horAlign == HorizPinEdge.LEFT ? owner.getPlotLeft() + offset : owner.getPlotLeft() + owner.getPlotWidth() - offset - legendwidth;
     }
 
-    private int getLegendTop(JBasicPlot owner, int legendheight)
-    {
+    private int getLegendTop(JBasicPlot owner, int legendheight) {
         int offset = owner.getUnitsMgr().getVertUnitsToPixels(yOffset);
         return vertAlign == VertPinEdge.TOP ? owner.getPlotTop() + offset : owner.getPlotTop() + owner.getPlotHeight() - offset - legendheight;
     }
 
-
-    public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy)
-    {
+    public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy) {
         // Movement not allowed.
     }
 
@@ -158,19 +134,16 @@ public class SymbolLegend extends PlotObject {
         private final String text;
         private final SymbolDef symbolDef;
 
-        public SymbolTextPair(String text, SymbolDef symbolDef)
-        {
+        public SymbolTextPair(String text, SymbolDef symbolDef) {
             this.text = text;
             this.symbolDef = symbolDef;
         }
 
-        public String getText()
-        {
+        public String getText() {
             return text;
         }
 
-        public SymbolDef getSymbolDef()
-        {
+        public SymbolDef getSymbolDef() {
             return symbolDef;
         }
     }

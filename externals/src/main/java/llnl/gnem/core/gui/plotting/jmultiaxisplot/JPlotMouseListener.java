@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -57,7 +57,6 @@ import llnl.gnem.core.gui.plotting.transforms.CoordinateTransform;
  *
  * @author Doug Dodge
  */
-@SuppressWarnings({"IfStatementWithTooManyBranches", "OverlyComplexClass", "AssignmentToNull"})
 public class JPlotMouseListener extends MouseInputAdapter implements KeyListener {
     private int keyCode;
     private Coordinate mouseZoomRefPoint;
@@ -106,12 +105,13 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
     private int panStartY;
     private double anchorYmin;
     private double anchorYmax;
-    private final Color zoomColor = new Color(230,230,255);
+    private final Color zoomColor = new Color(230, 230, 255);
 
     /**
      * Constructor for the JPlotMouseListener object
      *
-     * @param plot The JMultiAxisPlot that will be using this listener.
+     * @param plot
+     *            The JMultiAxisPlot that will be using this listener.
      */
     JPlotMouseListener(JMultiAxisPlot plot) {
         this.plot = plot;
@@ -236,7 +236,8 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
      * Controls whether the mouse is being used to do selects / zooms or whether
      * it is being used to do panning.
      *
-     * @param newMode The new mouseMode value
+     * @param newMode
+     *            The new mouseMode value
      */
     void notifyObserversMouseModeChange(MouseMode newMode) {
         objectObservable.notifyMouseModeChange(newMode);
@@ -245,7 +246,8 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
     /**
      * Controls the type of zoom rectangle that can be drawn
      *
-     * @param zoomType The new zoomType value
+     * @param zoomType
+     *            The new zoomType value
      */
     public void setZoomType(ZoomType zoomType) {
         this.zoomType = zoomType;
@@ -256,8 +258,9 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
      * Currently, mouse clicks can signal the start of zoom, select, drag, or
      * pan operations.
      *
-     * @param me The MouseEvent containing information on the current mouse
-     * position.
+     * @param me
+     *            The MouseEvent containing information on the current mouse
+     *            position.
      */
     @Override
     public void mousePressed(MouseEvent me) {
@@ -325,7 +328,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
 
         // Maybe drag a plot object
         if (mouseMode == MouseMode.SELECT_ZOOM || mouseMode == MouseMode.CONTROL_SELECT) {
-            if (po != null && me.getButton() == 1) {  // Only allow drag with left button
+            if (po != null && me.getButton() == 1) { // Only allow drag with left button
                 plot.unselect();
                 maybeDragObject(po, X, Y, sp);
                 return;
@@ -342,7 +345,6 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
             return;
         }
 
-
         if (mouseMode == MouseMode.PAN) {
             startPan(X, Y, getCurrentCoord(), sp);
         }
@@ -355,12 +357,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         Rectangle newBounds = plot.getPlotRegion().getRect();
         plot.zoomToBox(newBounds);
         YAxis axis = sp.getYaxis();
-        panMagnifierManager = new PanMagnifierManager(sp.getPlotTop(),
-                sp.getPlotHeight(),
-                y,
-                axis.getMin(),
-                axis.getMax(),
-                ct.getWorldC2());
+        panMagnifierManager = new PanMagnifierManager(sp.getPlotTop(), sp.getPlotHeight(), y, axis.getMin(), axis.getMax(), ct.getWorldC2());
 
         panStartX = x;
         XAxis ax = plot.getXaxis();
@@ -393,7 +390,6 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         lastX = anchorX;
         lastY = anchorY;
 
-
         myGraphics = (Graphics2D) plot.getGraphics();
         if (myGraphics == null) {
             myGraphics = (Graphics2D) plot.getGraphics();
@@ -401,8 +397,8 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         myGraphics.setXORMode(Color.white);
         myGraphics.setColor(zoomColor);
         myGraphics.setStroke(new BasicStroke(1));
-   //     Rectangle rect = plot.getPlotRegion().getRect();
-   //     myGraphics.clip(rect);
+        //     Rectangle rect = plot.getPlotRegion().getRect();
+        //     myGraphics.clip(rect);
 
         zooming = true;
 
@@ -469,15 +465,15 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
      * Currently this is used to manage the end of zoom, PlotObject drag, and
      * pan operations.
      *
-     * @param me The MouseEvent containing information on the current mouse
-     * position.
+     * @param me
+     *            The MouseEvent containing information on the current mouse
+     *            position.
      */
     @Override
     public void mouseReleased(MouseEvent me) {
         if (me.getClickCount() == 2) {
             objectObservable.sendPlotDoubleClickedMessage(me, currentCoord);
         }
-
 
         currentEvent = me;
         selectedSubplot = null;
@@ -564,7 +560,6 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
             tmp.finishedDragOperation();
         }
 
-
         pickErrorChangeState = null;
         windowDurationChangedState = null;
         pickMovedState = null;
@@ -591,8 +586,9 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
      * JMultiAxisPlot. Currently, this is used to help manage plot zooming,
      * PlotObject dragging, and panning operations.
      *
-     * @param me The MouseEvent containing information on the current mouse
-     * position.
+     * @param me
+     *            The MouseEvent containing information on the current mouse
+     *            position.
      */
     @Override
     public void mouseDragged(MouseEvent me) {
@@ -679,7 +675,6 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         double dy = WorldY - currentCoord.getWorldC2();
         plot.setAllXlimits(anchorXmin - dx, anchorXmax - dx);
 
-
         YAxis axis = selectedSubplot.getYaxis();
         axis.setMin(anchorYmin - dy);
         axis.setMax(anchorYmax - dy);
@@ -702,8 +697,9 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
      * Currently, it is used to set the mouse pointer style and to set the focus
      * to the JMultiAxisPlot.
      *
-     * @param me The MouseEvent containing information on the current mouse
-     * position.
+     * @param me
+     *            The MouseEvent containing information on the current mouse
+     *            position.
      */
     @Override
     public void mouseEntered(MouseEvent me) {
@@ -718,8 +714,9 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
      * giving visual feedback on which objects are currently under the mouse
      * pointer.
      *
-     * @param me The MouseEvent containing information on the current mouse
-     * position.
+     * @param me
+     *            The MouseEvent containing information on the current mouse
+     *            position.
      */
     @Override
     public void mouseMoved(MouseEvent me) {
@@ -738,14 +735,12 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
 
         objectObservable.MouseMove(getCurrentCoord());
 
-
         if (!plot.getPlotRegion().getRect().contains(x, y)) {
             selectedSubplot = null;
             currentObject = null;
             currentPickCreationInfo = new PickCreationInfo(currentObject, selectedSubplot, getCurrentCoord(), me);
             return;
         }
-
 
         myGraphics = (Graphics2D) plot.getGraphics();
         JSubplot sp = plot.getCurrentSubplot(x, y);
@@ -777,7 +772,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         }
         currentPickCreationInfo = new PickCreationInfo(currentObject, selectedSubplot, getCurrentCoord(), me);
 
-// Current object does not belong to this subplot, so skip it.
+        // Current object does not belong to this subplot, so skip it.
         if (po.getOwner() != sp) {
             return;
         }
@@ -786,7 +781,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         if (ObjectAlreadyHot(po)) {
             return;
         }
-// Hot object has changed
+        // Hot object has changed
         resetHotObject(myGraphics, po);
     }
 
@@ -802,7 +797,6 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         currentPickCreationInfo = null;
     }
 
-    @SuppressWarnings({"IfStatementWithTooManyBranches"})
     private void resetHotObject(Graphics g, PlotObject po) {
         UnselectAll(g);
         if (po instanceof VPickLine) {
@@ -862,7 +856,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         int xl = Math.min(anchorX, lastX);
         int xr = Math.max(anchorX, lastX);
         zoomRect = new Rectangle(xl, (int) rect.getY(), xr - xl, (int) rect.getHeight());
-        
+
         Graphics2D g2 = (Graphics2D) g;
         if (plot.getMouseMode() == MouseMode.SELECT_REGION) {
             plot.select(xl, xr);
@@ -926,12 +920,12 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         if (zoomRect == null) {
             return;
         }
-        
+
         ArrayList<SubplotSelectionRegion> regions = plot.getSelectedRegionList(zoomRect);
         if (!regions.isEmpty()) {
             objectObservable.RegionSelectionAction(regions);
         }
-        
+
         plot.repaint();
         plot.restorePreviousMouseMode();
     }
@@ -969,7 +963,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
 
     @Override
     public void keyTyped(KeyEvent e) {
-     }
+    }
 
     public PickCreationInfo getPickCreationInfo() {
         return currentPickCreationInfo;
@@ -1006,7 +1000,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
 
         double xmin = cLeft.getWorldC1();
         double xmax = cRight.getWorldC1();
-        ZoomInStateChange zisc = new ZoomInStateChange(zoomRect,xmin,xmax, plot);
+        ZoomInStateChange zisc = new ZoomInStateChange(zoomRect, xmin, xmax, plot);
         plot.handleZoomIn(zisc);
         objectObservable.sendZoomInMessage(zisc);
     }

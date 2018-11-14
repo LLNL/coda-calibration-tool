@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,18 +22,13 @@ import java.awt.BasicStroke;
  * @author Doug Dodge
  */
 public enum PenStyle {
-    NONE( "None", null ),
-    SOLID( "Solid", null ),
-    DASH( "Dash", new float[]{10.0F, 10.0F} ),
-    DOT( "Dot", new float[]{1.0F, 5.0F} ),
-    DASHDOT( "DashDot", new float[]{10.0F, 5.0F, 1.0F, 5.0F} ),
-    DASHDOTDOT( "DashDotDot", new float[]{10.0F, 5.0F, 1.0F, 5.0F, 1.0F, 5.0F} );
+    NONE("None", null), SOLID("Solid", null), DASH("Dash", new float[] { 10.0F, 10.0F }), DOT("Dot", new float[] { 1.0F, 5.0F }), DASHDOT("DashDot",
+            new float[] { 10.0F, 5.0F, 1.0F, 5.0F }), DASHDOTDOT("DashDotDot", new float[] { 10.0F, 5.0F, 1.0F, 5.0F, 1.0F, 5.0F });
 
     String name;
     float[] pattern;
 
-    private PenStyle( String name, float[] template )
-    {
+    private PenStyle(String name, float[] template) {
         this.name = name;
         pattern = template;
     }
@@ -43,8 +38,8 @@ public enum PenStyle {
      *
      * @return The String description
      */
-    public String toString()
-    {
+    @Override
+    public String toString() {
         return name;
     }
 
@@ -54,8 +49,7 @@ public enum PenStyle {
      *
      * @return The pattern value
      */
-    public float[] getPattern()
-    {
+    public float[] getPattern() {
         return pattern;
     }
 
@@ -63,29 +57,25 @@ public enum PenStyle {
      * Gets a new stroke of the specified width using the pattern for this
      * PenStyle.
      *
-     * @param width Width of the requested BasicStroke
+     * @param width
+     *            Width of the requested BasicStroke
      * @return The new BasicStroke object
      */
-    public BasicStroke getStroke( float width )
-    {
-        return new BasicStroke( width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, pattern, 0.0f );
+    public BasicStroke getStroke(float width) {
+        return new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, pattern, 0.0f);
     }
 
-
-    public static PenStyle[] getAllStyles()
-    {
+    public static PenStyle[] getAllStyles() {
         return PenStyle.values();
     }
 
-
-    public static PenStyle getPenStyle( String style )
-    {
-        for ( PenStyle astyle : PenStyle.values() ){
-            if( astyle.toString().equalsIgnoreCase( style ) )
+    public static PenStyle getPenStyle(String style) {
+        for (PenStyle astyle : PenStyle.values()) {
+            if (astyle.toString().equalsIgnoreCase(style)) {
                 return astyle;
+            }
         }
-        throw new IllegalArgumentException( "Invalid style string: " + style );
+        throw new IllegalArgumentException("Invalid style string: " + style);
     }
 
 }
-

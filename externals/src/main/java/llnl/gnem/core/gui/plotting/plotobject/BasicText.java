@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,7 +14,6 @@
 */
 package llnl.gnem.core.gui.plotting.plotobject;
 
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.font.TextLayout;
@@ -24,8 +23,7 @@ import llnl.gnem.core.gui.plotting.JBasicPlot;
 import llnl.gnem.core.gui.plotting.VertAlignment;
 
 /**
- * Base class for all text that can be displayed in the plotting area of a
- * JAxis
+ * Base class for all text that can be displayed in the plotting area of a JAxis
  *
  * @author Doug Dodge
  */
@@ -33,10 +31,10 @@ public abstract class BasicText extends PlotObject {
     /**
      * Constructor for the BasicText object
      *
-     * @param text The String to be displayed
+     * @param text
+     *            The String to be displayed
      */
-    public BasicText( String text )
-    {
+    public BasicText(String text) {
         _Text = text;
         _FontName = "Arial";
         _FontSize = 12;
@@ -46,22 +44,26 @@ public abstract class BasicText extends PlotObject {
     }
 
     // For now text cannot be moved
-    public void ChangePosition( JBasicPlot owner, Graphics graphics, double dx, double dy )
-    {
+    public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy) {
     }
 
     /**
      * Constructor for the BasicText object
      *
-     * @param text     The String to be displayed
-     * @param fontName The name of the font which will be used to display the text
-     * @param fontSize The size of the font to use
-     * @param textC    The color with which to render the string
-     * @param hAlign   The horizontal alignment of the string
-     * @param vAlign   The vertical alignment of the string
+     * @param text
+     *            The String to be displayed
+     * @param fontName
+     *            The name of the font which will be used to display the text
+     * @param fontSize
+     *            The size of the font to use
+     * @param textC
+     *            The color with which to render the string
+     * @param hAlign
+     *            The horizontal alignment of the string
+     * @param vAlign
+     *            The vertical alignment of the string
      */
-    public BasicText( String text, String fontName, double fontSize, Color textC, HorizAlignment hAlign, VertAlignment vAlign )
-    {
+    public BasicText(String text, String fontName, double fontSize, Color textC, HorizAlignment hAlign, VertAlignment vAlign) {
         _Text = text;
         _FontName = fontName;
         _FontSize = fontSize;
@@ -75,8 +77,7 @@ public abstract class BasicText extends PlotObject {
      *
      * @return The string value
      */
-    public String getText()
-    {
+    public String getText() {
         return _Text;
     }
 
@@ -85,8 +86,7 @@ public abstract class BasicText extends PlotObject {
      *
      * @return The fontName value
      */
-    public String getFontName()
-    {
+    public String getFontName() {
         return _FontName;
     }
 
@@ -95,8 +95,7 @@ public abstract class BasicText extends PlotObject {
      *
      * @return The fontSize value
      */
-    public double getFontSize()
-    {
+    public double getFontSize() {
         return _FontSize;
     }
 
@@ -105,8 +104,7 @@ public abstract class BasicText extends PlotObject {
      *
      * @return The color value
      */
-    public Color getColor()
-    {
+    public Color getColor() {
         return _Color;
     }
 
@@ -115,8 +113,7 @@ public abstract class BasicText extends PlotObject {
      *
      * @return The horizontalAlignment value
      */
-    public HorizAlignment getHorizontalAlignment()
-    {
+    public HorizAlignment getHorizontalAlignment() {
         return _HorAlign;
     }
 
@@ -125,90 +122,90 @@ public abstract class BasicText extends PlotObject {
      *
      * @return The verticalAlignment value
      */
-    public VertAlignment getVerticalAlignment()
-    {
+    public VertAlignment getVerticalAlignment() {
         return _VertAlign;
     }
 
     /**
      * Sets the string of the BasicText object
      *
-     * @param v The new text value
+     * @param v
+     *            The new text value
      */
-    public void setText( String v )
-    {
+    public void setText(String v) {
         _Text = v;
     }
 
     /**
      * Sets the fontName of the BasicText object
      *
-     * @param v The new fontName value
+     * @param v
+     *            The new fontName value
      */
-    public void setFontName( String v )
-    {
+    public void setFontName(String v) {
         _FontName = v;
     }
 
     /**
      * Sets the fontSize of the BasicText object
      *
-     * @param v The new fontSize value
+     * @param v
+     *            The new fontSize value
      */
-    public void setFontSize( double v )
-    {
+    public void setFontSize(double v) {
         _FontSize = v;
     }
 
     /**
      * Sets the color of the BasicText object
      *
-     * @param v The new color value
+     * @param v
+     *            The new color value
      */
-    public void setColor( Color v )
-    {
+    public void setColor(Color v) {
         _Color = v;
     }
 
     /**
      * Sets the horizontalAlignment of the BasicText object
      *
-     * @param v The new horizontalAlignment value
+     * @param v
+     *            The new horizontalAlignment value
      */
-    public void setHorizontalAlignment( HorizAlignment v )
-    {
+    public void setHorizontalAlignment(HorizAlignment v) {
         _HorAlign = v;
     }
 
     /**
      * Sets the verticalAlignment of the BasicText object
      *
-     * @param v The new verticalAlignment value
+     * @param v
+     *            The new verticalAlignment value
      */
-    public void setVerticalAlignment( VertAlignment v )
-    {
+    public void setVerticalAlignment(VertAlignment v) {
         _VertAlign = v;
     }
 
     /**
      * render this text on the supplied graphics context of the supplied JAxis
      *
-     * @param g     The graphics context
-     * @param owner The JBasicPlot that contains this object
+     * @param g
+     *            The graphics context
+     * @param owner
+     *            The JBasicPlot that contains this object
      */
-    public abstract void render( Graphics g, JBasicPlot owner );
+    public abstract void render(Graphics g, JBasicPlot owner);
 
     /**
      * Produce a string representation of this object
      *
      * @return The String description
      */
-    public String toString()
-    {
-        StringBuffer s = new StringBuffer( "Text = " + _Text + ", FontName = " );
-        s.append( _FontName + ", FontSize = " + _FontSize + ", Color = " );
-        s.append( _Color + ", Horizontal Alignment = " + _HorAlign );
-        s.append( ", Vertical Alignment = " + _VertAlign );
+    public String toString() {
+        StringBuffer s = new StringBuffer("Text = " + _Text + ", FontName = ");
+        s.append(_FontName + ", FontSize = " + _FontSize + ", Color = ");
+        s.append(_Color + ", Horizontal Alignment = " + _HorAlign);
+        s.append(", Vertical Alignment = " + _VertAlign);
         return s.toString();
     }
 
@@ -216,16 +213,16 @@ public abstract class BasicText extends PlotObject {
      * Gets the horizontal Offset necessary to produce the desired horizontal
      * alignment
      *
-     * @param textTl The TextLayout for this text
+     * @param textTl
+     *            The TextLayout for this text
      * @return The horizontal Offset value
      */
-    protected float getHorizontalAlignmentOffset( TextLayout textTl )
-    {
+    protected float getHorizontalAlignmentOffset(TextLayout textTl) {
         float advance = textTl.getAdvance();
         float xshift = 0.0F;
-        if( _HorAlign == HorizAlignment.CENTER )
+        if (_HorAlign == HorizAlignment.CENTER)
             xshift = -advance / 2;
-        else if( _HorAlign == HorizAlignment.RIGHT )
+        else if (_HorAlign == HorizAlignment.RIGHT)
             xshift = -advance;
         return xshift;
     }
@@ -234,18 +231,18 @@ public abstract class BasicText extends PlotObject {
      * Gets the vertical Offset necessary to produce the desired vertical
      * alignment
      *
-     * @param textTl The TextLayout for this text
+     * @param textTl
+     *            The TextLayout for this text
      * @return The vertical Offset value
      */
-    protected float getVerticalAlignmentOffset( TextLayout textTl )
-    {
+    protected float getVerticalAlignmentOffset(TextLayout textTl) {
         float ascent = textTl.getAscent();
         double height = textTl.getBounds().getHeight();
         float yshift = ascent - 3;
         // Need to shift up by 3 points for some reason.
-        if( _VertAlign == VertAlignment.BOTTOM )
+        if (_VertAlign == VertAlignment.BOTTOM)
             yshift -= height;
-        else if( _VertAlign == VertAlignment.CENTER )
+        else if (_VertAlign == VertAlignment.CENTER)
             yshift -= height / 2;
         return yshift;
     }
@@ -257,4 +254,3 @@ public abstract class BasicText extends PlotObject {
     protected HorizAlignment _HorAlign;
     protected VertAlignment _VertAlign;
 }
-

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,26 +17,20 @@ package llnl.gnem.core.polygon;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 /**
- * User: dodge1
- * Date: Jan 22, 2004
- * Time: 1:43:24 PM
+ * User: dodge1 Date: Jan 22, 2004 Time: 1:43:24 PM
  */
 public class line {
     public Vector3D p1;
     public Vector3D p2;
 
-    public line()
-    {
-        p1 = new Vector3D( 0.0, 0.0, 0.0 );
-        p2 = new Vector3D( 0.0, 0.0, 0.0 );
+    public line() {
+        p1 = new Vector3D(0.0, 0.0, 0.0);
+        p2 = new Vector3D(0.0, 0.0, 0.0);
     }
 
-    public line( Vector3D pp1, Vector3D pp2 )
-    {
-        p1 = new Vector3D( pp1.getX(), pp1.getY(), pp1.getZ() );
-        p2 = new Vector3D( pp2.getX(), pp2.getY(), pp2.getZ() );
+    public line(Vector3D pp1, Vector3D pp2) {
+        p1 = new Vector3D(pp1.getX(), pp1.getY(), pp1.getZ());
+        p2 = new Vector3D(pp2.getX(), pp2.getY(), pp2.getZ());
     }
 
 }
-
-

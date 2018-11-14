@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
+import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
 import llnl.gnem.core.gui.plotting.Legend;
 import llnl.gnem.core.gui.plotting.PaintMode;
@@ -328,7 +329,7 @@ public class SpectralPlot extends JMultiAxisPlot {
 
     public void refreshPlotAxes() {
         if (properties.getAutoCalculateYaxisRange()) {
-            jsubplot.SetAxisLimits(xmin, xmax, ymin, ymax);
+            jsubplot.setAxisLimits(xmin, xmax, ymin, ymax);
         } else {
             jsubplot.getYaxis().setMin(properties.getMinYAxisValue());
             jsubplot.getYaxis().setMax(properties.getMaxYAxisValue());

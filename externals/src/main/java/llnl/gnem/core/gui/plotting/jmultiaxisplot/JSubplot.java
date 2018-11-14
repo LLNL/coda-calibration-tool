@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -59,20 +59,20 @@ public class JSubplot extends JBasicPlot {
         super(owner);
         this.owner = owner;
         switch (xAxisType) {
-            case Standard: {
-                xaxis = new XAxis(owner);
-                xaxis.setMin(0.0);
-                xaxis.setMax(1.0);
-                break;
-            }
-            case EpochTime: {
-                xaxis = new EpochTimeXAxis(owner);
-                xaxis.setMin(0.0);
-                xaxis.setMax(new TimeT().getEpochTime());
-                break;
-            }
-            default:
-                throw new IllegalArgumentException("Unknown X-axis type: " + xAxisType);
+        case Standard: {
+            xaxis = new XAxis(owner);
+            xaxis.setMin(0.0);
+            xaxis.setMax(1.0);
+            break;
+        }
+        case EpochTime: {
+            xaxis = new EpochTimeXAxis(owner);
+            xaxis.setMin(0.0);
+            xaxis.setMax(new TimeT().getEpochTime());
+            break;
+        }
+        default:
+            throw new IllegalArgumentException("Unknown X-axis type: " + xAxisType);
         }
 
         yaxis = new YAxis(this);
@@ -107,7 +107,8 @@ public class JSubplot extends JBasicPlot {
      * less than the global Xmin, then the global Xmin will be updated and the
      * JMultiAxisPlot X-axis updated accordingly.
      *
-     * @param v The new xmin value
+     * @param v
+     *            The new xmin value
      */
     public void setXmin(double v) {
         xaxis.setMin(v);
@@ -121,7 +122,8 @@ public class JSubplot extends JBasicPlot {
      * greater than the global Xmax, then the global Xmax will be updated and
      * the JMultiAxisPlot X-axis updated accordingly.
      *
-     * @param v The new xmax value
+     * @param v
+     *            The new xmax value
      */
     public void setXmax(double v) {
         JMultiAxisPlot thisOwner = (JMultiAxisPlot) owner;
@@ -148,7 +150,28 @@ public class JSubplot extends JBasicPlot {
         return yaxis;
     }
 
-    public void SetAxisLimits() {
+    public void setLogLogAxisLimits(double xmin, double xmax, double ymin, double ymax) {
+        xmin = (int) (Math.log10(xmin));
+        if (xmin <= 0) {
+            --xmin;
+        }
+        xmin = Math.pow(10.0, xmin);
+
+        ymin = (int) (Math.log10(ymin));
+        if (ymin <= 0) {
+            --ymin;
+        }
+        ymin = Math.pow(10.0, ymin);
+
+        xmax = Math.pow(10.0, ((int) (Math.log10(xmax)) + 1));
+        ymax = Math.pow(10.0, ((int) (Math.log10(ymax)) + 1));
+        this.setAxisLimits(xmin, xmax, ymin, ymax);
+        this.setXmin(xmin);
+        this.getYaxis().setMin(ymin);
+
+    }
+
+    public void setAxisLimits() {
         // First set up the X-axis dimensions...
         double xmin = Double.MAX_VALUE;
         double xmax = -xmin;
@@ -178,31 +201,28 @@ public class JSubplot extends JBasicPlot {
 
         }
 
-        SetAxisLimits(xmin, xmax, ymin, ymax);
+        setAxisLimits(xmin, xmax, ymin, ymax);
     }
 
-    public void setLogLogAxisLimits(double xmin, double xmax, double ymin, double ymax) {
-        xmin = (int) (Math.log10(xmin));
-        if (xmin <= 0) {
-            --xmin;
-        }
-        xmin = Math.pow(10.0, xmin);
+    public void setAxisLimits(float[] X, float[] Y) {
+        // First set up the X-axis dimensions...
+        double xmin = Line.getDataMin(X);
+        double xmax = Line.getDataMax(X);
 
-        ymin = (int) (Math.log10(ymin));
-        if (ymin <= 0) {
-            --ymin;
-        }
-        ymin = Math.pow(10.0, ymin);
+        // Now set up the Y-axis dimensions...
+        double ymin = Line.getDataMin(Y);
+        double ymax = Line.getDataMax(Y);
+        TickMetrics ticks = PlotAxis.defineAxis(xmin, xmax);
+        setXmax(ticks.getMax());
+        setXmin(ticks.getMin());
 
-        xmax = Math.pow(10.0, ((int) (Math.log10(xmax)) + 1));
-        ymax = Math.pow(10.0, ((int) (Math.log10(ymax)) + 1));
-        this.SetAxisLimits(xmin, xmax, ymin, ymax);
-        this.setXmin(xmin);
-        this.getYaxis().setMin(ymin);
-
+        // Now set up the Y-axis dimensions...
+        ticks = PlotAxis.defineAxis(ymin, ymax);
+        yaxis.setMin(ticks.getMin());
+        yaxis.setMax(ticks.getMax());
     }
 
-    public void SetAxisLimits(double xmin, double xmax, double ymin, double ymax) {
+    public void setAxisLimits(double xmin, double xmax, double ymin, double ymax) {
         TickMetrics ticks = PlotAxis.defineAxis(xmin, xmax);
         setXmax(ticks.getMax());
         setXmin(ticks.getMin());
@@ -228,8 +248,9 @@ public class JSubplot extends JBasicPlot {
     /**
      * Scale the subplot in the Y-dimension.
      *
-     * @param scale Amount to scale by. Values greater (in absolute value) than
-     * 1 magnify the plot. Non-positive values are not allowed.
+     * @param scale
+     *            Amount to scale by. Values greater (in absolute value) than 1
+     *            magnify the plot. Non-positive values are not allowed.
      */
     public void Scale(double scale, boolean centerOnZero) {
         if (scale <= 0) {
@@ -257,12 +278,18 @@ public class JSubplot extends JBasicPlot {
      * Plot the input X-Y data after first erasing any pre-existing objects in
      * the subplot.
      *
-     * @param X X-data values
-     * @param Y Y-data values
-     * @param c The color of the line
-     * @param m The PaintMode of the line
-     * @param s The PenStyle of the line
-     * @param w The width of the line
+     * @param X
+     *            X-data values
+     * @param Y
+     *            Y-data values
+     * @param c
+     *            The color of the line
+     * @param m
+     *            The PaintMode of the line
+     * @param s
+     *            The PenStyle of the line
+     * @param w
+     *            The width of the line
      * @return the line object created by Plot.
      */
     public PlotObject Plot(float[] X, float[] Y, Color c, PaintMode m, PenStyle s, int w) {
@@ -274,8 +301,10 @@ public class JSubplot extends JBasicPlot {
      * Plot the input X-Y data after first erasing any pre-existing objects in
      * the subplot.
      *
-     * @param X X-data values
-     * @param Y Y-data values
+     * @param X
+     *            X-data values
+     * @param Y
+     *            Y-data values
      * @return the line object created by Plot.
      */
     public PlotObject Plot(float[] X, float[] Y) {
@@ -326,11 +355,15 @@ public class JSubplot extends JBasicPlot {
     /**
      * render this subplot object
      *
-     * @param g Graphics context on which the rendering will take place
-     * @param top Top of the subplot in pixels
-     * @param height Height of the subplot in pixels
+     * @param g
+     *            Graphics context on which the rendering will take place
+     * @param top
+     *            Top of the subplot in pixels
+     * @param height
+     *            Height of the subplot in pixels
      */
-    void Render(Graphics g, int top, int height) {
+    @Override
+    public void Render(Graphics g, int top, int height) {
         if (!getVisible()) {
             return;
         }
@@ -358,8 +391,7 @@ public class JSubplot extends JBasicPlot {
                 !lastPlotRect.equals(plotRect) || // Plot was resized
                 !lastVisibleRect.equals(visibleRect) || // scrollable plot had scroolbar change
                 !currentXLimits.equals(lastXLimits) || //Plot has been zoomed/unzoomed
-                !currentYLimits.equals(lastYLimits)
-                || !generateLineSelectionRegion) {
+                !currentYLimits.equals(lastYLimits) || !generateLineSelectionRegion) {
             renderPlotFromScratch(g2d, LeftMargin, top, height, BoxWidth, plotRect);
         } else {
             reRenderDirtyRegion(dirtyRect, g2d, LeftMargin, top, height, BoxWidth, plotRect);
@@ -423,7 +455,7 @@ public class JSubplot extends JBasicPlot {
         if (isBoundsIntersectsPlotRegion(lineBounds)) {
             line.setGenerateSelectionRegion(false);
             boolean retainOldSelectionRegion = true;
-            line.Render(g2d, this, retainOldSelectionRegion);
+            line.renderLine(g2d, this, retainOldSelectionRegion);
         }
     }
 
@@ -439,7 +471,6 @@ public class JSubplot extends JBasicPlot {
      * @param boxWidth
      * @param plotRect
      */
-    @SuppressWarnings({"UNUSED_SYMBOL"})
     private void renderPlotFromScratch(Graphics2D g2d, int leftMargin, int top, int height, int boxWidth, Rectangle plotRect) {
         clearSelectionRegions();
 
@@ -518,8 +549,7 @@ public class JSubplot extends JBasicPlot {
         double ymin = yaxis.getMin();
         double ymax = yaxis.getMax();
 
-        coordTransform.initialize(xmin, xmax, rect.x, rect.width,
-                ymin, ymax, rect.y, rect.height);
+        coordTransform.initialize(xmin, xmax, rect.x, rect.width, ymin, ymax, rect.y, rect.height);
 
     }
 
@@ -533,24 +563,6 @@ public class JSubplot extends JBasicPlot {
 
         setAxisLimits(X, Y);
 
-    }
-
-    public void setAxisLimits(float[] X, float[] Y) {
-        // First set up the X-axis dimensions...
-        double xmin = Line.getDataMin(X);
-        double xmax = Line.getDataMax(X);
-
-        // Now set up the Y-axis dimensions...
-        double ymin = Line.getDataMin(Y);
-        double ymax = Line.getDataMax(Y);
-        TickMetrics ticks = PlotAxis.defineAxis(xmin, xmax);
-        setXmax(ticks.getMax());
-        setXmin(ticks.getMin());
-
-        // Now set up the Y-axis dimensions...
-        ticks = PlotAxis.defineAxis(ymin, ymax);
-        yaxis.setMin(ticks.getMin());
-        yaxis.setMax(ticks.getMax());
     }
 
     public void setUpAxesForLines() {
@@ -607,6 +619,7 @@ public class JSubplot extends JBasicPlot {
         yaxis.setMin(ticks.getMin());
         yaxis.setMax(ticks.getMax());
     }
+
     private final XAxis xaxis;
     private final YAxis yaxis;
     private Rectangle lastPlotRect;
@@ -621,6 +634,7 @@ public class JSubplot extends JBasicPlot {
     public void setShowALL(boolean showALL) {
         this.showALL = showALL;
     }
+
     private boolean showALL;
 
     public Limits getLastXLimits() {

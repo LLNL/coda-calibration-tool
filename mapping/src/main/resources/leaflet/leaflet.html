@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="leaflet.css" />
+<script type='text/javascript' src="leaflet.js"></script>
+<script type='text/javascript' src="countries.js"></script>
+<meta charset="UTF-8">
+</head>
+<body>
+	<div id="map" style="height: 98vh;"></div>
+	<script type="text/javascript">
+		var markers = new Map();
+
+		var map = L.map('map', {
+			attributionControl : false
+		}).setView([ 0, 0 ], 2);
+		
+		var countriesLayer = L.geoJson(countryData, {
+			style: {		
+            	color: "darkgreen"
+			}
+        }).addTo(map);
+		
+		var iconGroup = L.layerGroup().addTo(map);		
+		
+		var basicOverlayMaps = {
+		    "Countries": countriesLayer,
+		    "Icons": iconGroup
+		};
+
+		var layerControl = L.control.layers(null, basicOverlayMaps, { 
+			sortLayers:true
+		}).addTo(map);
+		
+		map.createPane("important-event-pane");
+		map.getPane("important-event-pane").style.zIndex = 1000000;
+		
+		var clearIcons = function()
+		{			
+			iconGroup.clearLayers();
+			markers.clear();
+		}
+		
+		var removeIcon = function(uid)
+		{			
+			mark = markers.get(uid);
+			if (typeof mark != "undefined") {
+				iconGroup.removeLayer(mark);
+			}
+			markers.delete(uid);
+		}
+	</script>
+</body>
+</html>

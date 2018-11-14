@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -23,20 +23,17 @@ import java.util.regex.Pattern;
  *
  * @author dodge1
  */
-  class PatternFilter implements FilenameFilter {
+class PatternFilter implements FilenameFilter {
 
     private Pattern pattern;
 
-
-    public PatternFilter( String regex ) {
-      pattern = Pattern.compile( regex );
+    public PatternFilter(String regex) {
+        pattern = Pattern.compile(regex);
     }
 
-
-    public boolean accept( File arg0, String arg1 ) {
-      Matcher m = pattern.matcher( arg1 );
-      return m.matches();
+    public boolean accept(File arg0, String arg1) {
+        Matcher m = pattern.matcher(arg1);
+        return m.matches();
     }
 
-  }
-
+}

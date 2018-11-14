@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -25,8 +25,7 @@ import java.awt.Graphics;
 public class PaintMode {
     private final String name;
 
-    private PaintMode( String name )
-    {
+    private PaintMode(String name) {
         this.name = name;
     }
 
@@ -35,31 +34,29 @@ public class PaintMode {
      *
      * @return The String description
      */
-    public String toString()
-    {
+    public String toString() {
         return name;
     }
 
     /**
      * Sets the graphics PaintMode based on the PaintMode type
      *
-     * @param g The graphics context to be operated on.
+     * @param g
+     *            The graphics context to be operated on.
      */
-    public void setGraphicsPaintMode( Graphics g )
-    {
-        if( name.equals( "Copy" ) )
+    public void setGraphicsPaintMode(Graphics g) {
+        if (name.equals("Copy"))
             g.setPaintMode();
         else
-            g.setXORMode( Color.white );
+            g.setXORMode(Color.white);
     }
 
     /**
      * PaintMode for doing SRCCOPY
      */
-    public final static PaintMode COPY = new PaintMode( "Copy" );
+    public final static PaintMode COPY = new PaintMode("Copy");
     /**
      * PaintMode for doing XOR
      */
-    public final static PaintMode XOR = new PaintMode( "Xor" );
+    public final static PaintMode XOR = new PaintMode("Xor");
 }
-

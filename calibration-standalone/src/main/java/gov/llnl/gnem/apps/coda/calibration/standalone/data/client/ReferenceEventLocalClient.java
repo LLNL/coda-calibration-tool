@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -28,6 +28,8 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ReferenceMwParametersService;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -37,11 +39,13 @@ public class ReferenceEventLocalClient implements ReferenceEventClient {
 
     private ReferenceMwParametersService service;
     private MeasuredMwsService measureService;
+    private WaveformService waveformService;
 
     @Autowired
-    public ReferenceEventLocalClient(ReferenceMwParametersService service, MeasuredMwsService measureService) {
+    public ReferenceEventLocalClient(ReferenceMwParametersService service, MeasuredMwsService measureService, WaveformService waveformService) {
         this.service = service;
         this.measureService = measureService;
+        this.waveformService = waveformService;
     }
 
     @Override
@@ -57,6 +61,15 @@ public class ReferenceEventLocalClient implements ReferenceEventClient {
     @Override
     public Flux<MeasuredMwParameters> getMeasuredEvents() {
         return Flux.fromIterable(measureService.findAll()).filter(Objects::nonNull).onErrorReturn(new MeasuredMwParameters());
+    }
+
+    @Override
+    public Mono<Event> getEvent(String eventId) {
+        Event event = waveformService.findEventById(eventId);
+        if (event == null) {
+            event = new Event();
+        }
+        return Mono.just(event);
     }
 
 }

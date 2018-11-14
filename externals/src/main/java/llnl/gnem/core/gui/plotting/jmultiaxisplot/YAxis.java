@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -46,7 +46,8 @@ public class YAxis extends PlotAxis {
     /**
      * Constructor for the YAxis object
      *
-     * @param subplot The subplot that owns this Y-axis
+     * @param subplot
+     *            The subplot that owns this Y-axis
      */
     public YAxis(JSubplot subplot) {
         this.subplot = subplot;
@@ -73,7 +74,8 @@ public class YAxis extends PlotAxis {
      * it can be shifted left and right. The XPosition is the horizontal
      * position in Drawing units e.g. mm.
      *
-     * @param v The X-offset in mm from the left end of the X-axis.
+     * @param v
+     *            The X-offset in mm from the left end of the X-axis.
      */
     public void XPosition(double v) {
         xpos = v;
@@ -91,7 +93,8 @@ public class YAxis extends PlotAxis {
     /**
      * Sets the minimum value of the YAxis
      *
-     * @param v The new min value
+     * @param v
+     *            The new min value
      */
     public void setMin(double v) {
         ymin = v;
@@ -109,7 +112,8 @@ public class YAxis extends PlotAxis {
     /**
      * Sets the maximum value of the YAxis
      *
-     * @param v The new max value
+     * @param v
+     *            The new max value
      */
     public void setMax(double v) {
         ymax = v;
@@ -136,11 +140,16 @@ public class YAxis extends PlotAxis {
     /**
      * render the axis on the supplied graphics context
      *
-     * @param g The graphics context
-     * @param LeftMargin The plotting area left margin in pixels
-     * @param TopMargin The plotting area top margin in pixels
-     * @param BoxHeight The height of the plotting area in pixels
-     * @param BoxWidth The width of the plotting area in pixels
+     * @param g
+     *            The graphics context
+     * @param LeftMargin
+     *            The plotting area left margin in pixels
+     * @param TopMargin
+     *            The plotting area top margin in pixels
+     * @param BoxHeight
+     *            The height of the plotting area in pixels
+     * @param BoxWidth
+     *            The width of the plotting area in pixels
      */
     public void Render(Graphics g, int LeftMargin, int TopMargin, int BoxHeight, int BoxWidth) {
         if (!visible) {
@@ -190,10 +199,14 @@ public class YAxis extends PlotAxis {
     /**
      * render a single tick
      *
-     * @param g The graphics context to use
-     * @param val The data value for this tick
-     * @param label A String with the label value
-     * @param isMajor true if this is a major tick
+     * @param g
+     *            The graphics context to use
+     * @param val
+     *            The data value for this tick
+     * @param label
+     *            A String with the label value
+     * @param isMajor
+     *            true if this is a major tick
      */
     @Override
     protected void renderTick(Graphics g, double val, TickLabel label, boolean isMajor, HorizAlignment alignment) {
@@ -213,12 +226,13 @@ public class YAxis extends PlotAxis {
             g2d.drawLine(xPosPixel, yPixelVal, MinorTickEndPixel, yPixelVal);
         }
     }
-//---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------
 
     /**
      * Gets a tick label string given a value
      *
-     * @param value The data value for this tick
+     * @param value
+     *            The data value for this tick
      * @return The string to be printed for this tick
      */
     String getValueString(double value) {
@@ -260,6 +274,7 @@ public class YAxis extends PlotAxis {
         g2d.setColor(oldColor);
         g2d.setFont(oldFont);
     }
+
     private double xpos;
     // Position in real-world units right of left edge of axis
     private int MajorTickEndPixel;

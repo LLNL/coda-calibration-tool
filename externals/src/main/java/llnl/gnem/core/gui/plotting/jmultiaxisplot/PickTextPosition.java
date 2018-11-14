@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,17 +15,16 @@
 package llnl.gnem.core.gui.plotting.jmultiaxisplot;
 
 /**
- * A type-safe enum to represent the position of text associated with a
- * vertical pick line.
+ * A type-safe enum to represent the position of text associated with a vertical
+ * pick line.
  *
  * @author Doug Dodge
  */
 public enum PickTextPosition {
-    TOP( "top" ), BOTTOM( "bottom" );
+    TOP("top"), BOTTOM("bottom");
     String name;
 
-    private PickTextPosition( String name )
-    {
+    private PickTextPosition(String name) {
         this.name = name;
     }
 
@@ -34,24 +33,21 @@ public enum PickTextPosition {
      *
      * @return The String description
      */
-    public String toString()
-    {
+    @Override
+    public String toString() {
         return name;
     }
 
-
-    public static PickTextPosition getTextItemType( String style )
-    {
-        for ( PickTextPosition pos : PickTextPosition.values() ){
-            if( pos.toString().equalsIgnoreCase( style ) )
+    public static PickTextPosition getTextItemType(String style) {
+        for (PickTextPosition pos : PickTextPosition.values()) {
+            if (pos.toString().equalsIgnoreCase(style)) {
                 return pos;
+            }
         }
-        throw new IllegalArgumentException( "Invalid style string: " + style );
+        throw new IllegalArgumentException("Invalid style string: " + style);
     }
 
-    public static PickTextPosition[] getAllPossiblePositions()
-    {
+    public static PickTextPosition[] getAllPossiblePositions() {
         return PickTextPosition.values();
     }
 }
-

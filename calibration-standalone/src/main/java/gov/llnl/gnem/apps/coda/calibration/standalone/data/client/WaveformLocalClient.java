@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -23,13 +23,13 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.WaveformClient;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.Event;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.Stream;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.SyntheticCoda;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticService;
-import gov.llnl.gnem.apps.coda.calibration.service.api.WaveformService;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
+import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
+import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -62,13 +62,8 @@ public class WaveformLocalClient implements WaveformClient {
     }
 
     @Override
-    public Mono<String> postWaveforms(Long sessionId, List<Waveform> segments) throws JsonProcessingException {
-        return Mono.just(service.update(sessionId, segments).toString());
-    }
-
-    @Override
-    public Flux<Waveform> getWaveformsMatchingAllFields(Waveform segment) {
-        return Flux.fromIterable(service.getByExampleAllMatching(segment)).onErrorReturn(new Waveform());
+    public Flux<String> postWaveforms(Long sessionId, List<Waveform> segments) {
+        return Flux.just(service.update(sessionId, segments).toString());
     }
 
     @Override
@@ -77,7 +72,7 @@ public class WaveformLocalClient implements WaveformClient {
     }
 
     @Override
-    public Flux<Waveform> getUniqueEventStationStacks() {
+    public Flux<Waveform> getUniqueEventStationMetadataForStacks() {
         List<Object[]> eventStations = service.getUniqueEventStationStacks();
         return Flux.fromStream(eventStations.parallelStream().filter(evSta -> evSta.length >= 2).map(evSta -> new Waveform().setEvent((Event) evSta[0]).setStream((Stream) evSta[1])))
                    .onErrorReturn(null);

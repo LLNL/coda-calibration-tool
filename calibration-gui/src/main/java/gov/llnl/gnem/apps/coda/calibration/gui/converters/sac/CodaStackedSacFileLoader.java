@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -18,19 +18,22 @@ import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.converters.StackInfo;
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.CodaFilenameParser;
-import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToWaveformConverter;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.Waveform;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.gui.converters.api.FileToEnvelopeConverter;
+import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacLoader;
+import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
-public class CodaStackedSacFileLoader implements FileToWaveformConverter {
+public class CodaStackedSacFileLoader implements FileToEnvelopeConverter {
 
     private static final String DEFAULT_VEL_UNITS = "nm/s";
     private SacLoader sacLoader;
@@ -50,12 +53,17 @@ public class CodaStackedSacFileLoader implements FileToWaveformConverter {
             return Mono.fromSupplier(() -> sacLoader.convertSacFileToWaveform(file)).map(result -> {
                 if (result.getResultPayload().isPresent()) {
                     Waveform waveform = result.getResultPayload().get();
-                    filenameParser.parse(file.getName().toUpperCase());
-                    waveform.getStream().setChannelName("STACK");
-                    waveform.setSegmentType(filenameParser.getDataType());
-                    waveform.setSegmentUnits(DEFAULT_VEL_UNITS);
-                    waveform.setLowFrequency(filenameParser.getLowFrequency());
-                    waveform.setHighFrequency(filenameParser.getHighFrequency());
+                    Result<StackInfo> res = filenameParser.parse(file.getName().toUpperCase(Locale.ENGLISH));
+                    if (res.isSuccess()) {
+                        waveform.getStream().setChannelName("STACK");
+                        waveform.setSegmentType(res.getResultPayload().get().getDataType());
+                        waveform.setSegmentUnits(DEFAULT_VEL_UNITS);
+                        waveform.setLowFrequency(res.getResultPayload().get().getLowFrequency());
+                        waveform.setHighFrequency(res.getResultPayload().get().getHighFrequency());
+                    } else {
+                        result.getErrors().addAll(res.getErrors());
+                        result.setSuccess(false);
+                    }
                 }
                 return result;
             });

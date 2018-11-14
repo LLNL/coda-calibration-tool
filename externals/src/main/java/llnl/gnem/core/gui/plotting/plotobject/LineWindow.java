@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -13,7 +13,6 @@
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
 package llnl.gnem.core.gui.plotting.plotobject;
-
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -33,9 +32,7 @@ import llnl.gnem.core.polygon.BinarySearch;
 import llnl.gnem.core.util.Pair;
 
 /**
- * User: dodge1
- * Date: Jul 21, 2005
- * Time: 12:57:55 PM
+ * User: dodge1 Date: Jul 21, 2005 Time: 12:57:55 PM
  */
 public class LineWindow extends PlotObject {
 
@@ -115,8 +112,7 @@ public class LineWindow extends PlotObject {
         rightHandle = new LineWindowHandle(this, endTime);
     }
 
-    public LineWindow(Line owner, double startTime, double endTime,
-            LineWindowMigrationManager manager) {
+    public LineWindow(Line owner, double startTime, double endTime, LineWindowMigrationManager manager) {
         initialize(owner, endTime, startTime);
         migrationManager = manager;
     }
@@ -131,6 +127,7 @@ public class LineWindow extends PlotObject {
         return bounds.xmax;
     }
 
+    @Override
     public void setSelected(boolean selected, Graphics g) {
         if (this.selected == selected) {
             return;
@@ -174,6 +171,7 @@ public class LineWindow extends PlotObject {
         g2d.fill(currentArea);
     }
 
+    @Override
     public void render(Graphics g, JBasicPlot owningPlot) {
 
         if (!isVisible() || g == null || owningPlot == null) {
@@ -186,7 +184,6 @@ public class LineWindow extends PlotObject {
         region.clear();
         Color tmp = usable ? color : disabledColor;
         renderColor = selected ? selectedColor : tmp;
-
 
         g2d.setColor(renderColor);
         Mode.setGraphicsPaintMode(g2d);
@@ -289,7 +286,6 @@ public class LineWindow extends PlotObject {
     protected void windowHandleWasMoved(LineWindowHandle lwh, JBasicPlot owningPlot) {
         ensureWindowMeetsMinLengthCriterion(lwh);
 
-
         double newValue = lwh.getXval();
         Pair windowArrays = getWindowDataForHandleChange(lwh);
         float[] x = (float[]) windowArrays.getFirst();
@@ -340,7 +336,6 @@ public class LineWindow extends PlotObject {
                             currentArea.add(addArea);
                         }
                         rePaintCurrentArea(g, addArea, null);
-
 
                     }
 
@@ -395,12 +390,7 @@ public class LineWindow extends PlotObject {
     }
 
     private Area getArea(float[] x, float[] y, int idxStart, int idxEnd, JBasicPlot owningPlot) {
-        RegionGenerator rg = new RegionGenerator(owningPlot.getPlotRegion().getRect(),
-                numRegionSegments,
-                RegionGenerationStyle.RECTANGULAR_BLOCK);
-        if (rg == null) {
-            return null;
-        }
+        RegionGenerator rg = new RegionGenerator(owningPlot.getPlotRegion().getRect(), numRegionSegments, RegionGenerationStyle.RECTANGULAR_BLOCK);
 
         rg.setToleranceInPixels(TOLERANCE);
         coordTransform = owner.getCoordinateTransform();
@@ -425,7 +415,6 @@ public class LineWindow extends PlotObject {
     @Override
     public void ChangePosition(JBasicPlot owningPlot, Graphics graphics, double dx, double dy) {
         dx = keepWindowInTraceLimits(dx);
-
 
         if (graphics != null) {
             // erase both window handles first
@@ -460,10 +449,7 @@ public class LineWindow extends PlotObject {
         return dx;
     }
 
-    private void updateAndPaintNewWindowRegion(Pair windowArrays,
-            double dx,
-            JBasicPlot owningPlot,
-            Graphics g) {
+    private void updateAndPaintNewWindowRegion(Pair windowArrays, double dx, JBasicPlot owningPlot, Graphics g) {
         float[] x = (float[]) windowArrays.getFirst();
         float[] y = (float[]) windowArrays.getSecond();
         Area removeArea = null;
@@ -566,10 +552,7 @@ public class LineWindow extends PlotObject {
 
     private Area createRemoveArea(int x, int width) {
         Area removeArea;
-        Rectangle rect = new Rectangle(x,
-                0,
-                width,
-                VERY_BIG_WINDOW_DIMENSION);
+        Rectangle rect = new Rectangle(x, 0, width, VERY_BIG_WINDOW_DIMENSION);
         removeArea = new Area(currentArea);
         removeArea.intersect(new Area(rect));
         return removeArea;

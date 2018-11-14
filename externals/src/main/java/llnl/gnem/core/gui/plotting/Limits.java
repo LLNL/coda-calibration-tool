@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,38 +15,61 @@
 package llnl.gnem.core.gui.plotting;
 
 /**
- * Created by: dodge1
- * Date: Jan 27, 2005
+ * Created by: dodge1 Date: Jan 27, 2005
  */
 public class Limits {
 
-    public double getMin()
-    {
+    public double getMin() {
         return min;
     }
 
-    public double getMax()
-    {
+    public double getMax() {
         return max;
     }
 
     private double min;
     private double max;
-    public Limits( double min, double max )
-    {
+
+    public Limits(double min, double max) {
         this.min = min;
         this.max = max;
     }
 
     @Override
-    public String toString()
-    {
-        return  "Limits are " + min + " to " + max;
+    public String toString() {
+        return "Limits are " + min + " to " + max;
     }
 
-    public boolean equals( Limits other )
-    {
-        return other != null && other instanceof Limits &&
-                other.min == min && other.max == max;
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        long temp;
+        temp = Double.doubleToLongBits(max);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(min);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        Limits other = (Limits) obj;
+        if (Double.doubleToLongBits(max) != Double.doubleToLongBits(other.max)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(min) != Double.doubleToLongBits(other.min)) {
+            return false;
+        }
+        return true;
     }
 }

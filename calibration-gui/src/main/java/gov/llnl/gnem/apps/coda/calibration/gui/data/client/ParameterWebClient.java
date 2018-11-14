@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -24,11 +24,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -36,7 +36,7 @@ import reactor.core.publisher.Mono;
 public class ParameterWebClient implements ParameterClient {
 
     private WebClient client;
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(ParameterWebClient.class);
 
     @Autowired
     public ParameterWebClient(WebClient client) {
@@ -44,14 +44,25 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postSharedFrequencyBandParameters(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
+    public Mono<String> setSharedFrequencyBandParameter(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
         return client.post()
                      .uri("/params/shared-fb-parameters/update")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .syncBody(parameters)
                      .exchange()
-                     .map(resp -> resp.toString());
+                     .flatMap(resp -> resp.bodyToMono(String.class));
+    }
+
+    @Override
+    public Mono<String> removeSharedFrequencyBandParameter(SharedFrequencyBandParameters parameters) {
+        return client.post()
+                     .uri("/params/shared-fb-parameters/delete")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(parameters)
+                     .exchange()
+                     .flatMap(resp -> resp.bodyToMono(String.class));
     }
 
     @Override
@@ -65,14 +76,14 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postSiteSpecificFrequencyBandParameters(SiteFrequencyBandParameters parameters) throws JsonProcessingException {
+    public Mono<String> setSiteSpecificFrequencyBandParameter(SiteFrequencyBandParameters parameters) throws JsonProcessingException {
         return client.post()
                      .uri("/params/site-fb-parameters/update")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .syncBody(parameters)
                      .exchange()
-                     .map(resp -> resp.toString());
+                     .flatMap(resp -> resp.bodyToMono(String.class));
     }
 
     @Override
@@ -86,8 +97,25 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postPsParameters(MdacParametersPS parameters) throws JsonProcessingException {
-        return client.post().uri("/params/ps/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange().map(resp -> resp.toString());
+    public Mono<String> setPsParameter(MdacParametersPS parameters) throws JsonProcessingException {
+        return client.post()
+                     .uri("/params/ps/update")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(parameters)
+                     .exchange()
+                     .flatMap(resp -> resp.bodyToMono(String.class));
+    }
+
+    @Override
+    public Mono<String> removePsParameter(MdacParametersPS parameters) {
+        return client.post()
+                     .uri("/params/ps/delete")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(parameters)
+                     .exchange()
+                     .flatMap(resp -> resp.bodyToMono(String.class));
     }
 
     @Override
@@ -96,8 +124,25 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postFiParameters(MdacParametersFI parameters) throws JsonProcessingException {
-        return client.post().uri("/params/fi/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(parameters).exchange().map(resp -> resp.toString());
+    public Mono<String> setFiParameter(MdacParametersFI parameters) throws JsonProcessingException {
+        return client.post()
+                     .uri("/params/fi/update")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(parameters)
+                     .exchange()
+                     .flatMap(resp -> resp.bodyToMono(String.class));
+    }
+
+    @Override
+    public Mono<String> removeFiParameter(MdacParametersFI parameters) {
+        return client.post()
+                     .uri("/params/fi/delete")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(parameters)
+                     .exchange()
+                     .flatMap(resp -> resp.bodyToMono(String.class));
     }
 
     @Override

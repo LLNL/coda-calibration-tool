@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -25,19 +25,16 @@ import llnl.gnem.core.gui.plotting.PenStyle;
  *
  * @author dodge1
  */
-public class CrossHairs  extends PlotObject{
+public class CrossHairs extends PlotObject {
     private final Line horizLine;
     private final Line vertLine;
     private static final int npts = 10;
 
-    public CrossHairs( double xmin, double xmax, double ymin, double ymax, double xval, double yval, Color color, PenStyle penStyle){
-        horizLine = addHorizontalLine(  xmin ,  xmax,  yval,  npts, color , penStyle );
-        vertLine = addVerticalLine( xval,  ymin,  ymax,  npts, color , penStyle );
+    public CrossHairs(double xmin, double xmax, double ymin, double ymax, double xval, double yval, Color color, PenStyle penStyle) {
+        horizLine = addHorizontalLine(xmin, xmax, yval, npts, color, penStyle);
+        vertLine = addVerticalLine(xval, ymin, ymax, npts, color, penStyle);
     }
-    
-    
-    
-    
+
     @Override
     public void render(Graphics g, JBasicPlot owner) {
         horizLine.render(g, owner);
@@ -49,7 +46,7 @@ public class CrossHairs  extends PlotObject{
         horizLine.ChangePosition(owner, graphics, dx, dy);
         vertLine.ChangePosition(owner, graphics, dx, dy);
     }
-    
+
     private static Line addHorizontalLine(double xmin, double xmax, double yval, int npts, Color c, PenStyle style) {
         float dx = (float) (xmax - xmin) / (npts - 1);
         float[] x = new float[npts];
@@ -70,7 +67,6 @@ public class CrossHairs  extends PlotObject{
             y[j] = (float) ymin + dy * j;
         }
         return new Line(x, y, c, PaintMode.COPY, style, 1);
-    }    
-    
-    
+    }
+
 }

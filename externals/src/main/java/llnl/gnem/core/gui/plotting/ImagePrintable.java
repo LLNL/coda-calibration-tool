@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -44,8 +44,7 @@ public class ImagePrintable implements Printable {
     }
 
     @Override
-    public int print(Graphics g, PageFormat pageFormat, int pageIndex)
-            throws PrinterException {
+    public int print(Graphics g, PageFormat pageFormat, int pageIndex) throws PrinterException {
 
         Graphics2D g2 = (Graphics2D) g;
         if (pageIndex < images.size()) {
@@ -61,13 +60,12 @@ public class ImagePrintable implements Printable {
                 scaleH = pageHeight / image.getHeight();
             }
             double scale = Math.min(scaleW, scaleH);
-            if( scale < 1 ){
+            if (scale < 1) {
                 imageWidth *= scale;
                 imageHeight *= scale;
             }
-            
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
             g2.drawImage(image, (int) x, (int) y, imageWidth, imageHeight, null);
             return PAGE_EXISTS;
         } else {

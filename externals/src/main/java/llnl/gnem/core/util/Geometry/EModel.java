@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -26,7 +26,6 @@ import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicLine;
 import net.sf.geographiclib.GeodesicMask;
-
 
 /**
  * A class that provides static methods for calculating distances and azimuths
@@ -64,9 +63,7 @@ public class EModel {
     }
 
     private static ENUCoordinate nez2enu(NEZCoordinate other) {
-        return new ENUCoordinate(other.getyEastKm() * 1000,
-                other.getxNorthKm() * 1000,
-                -other.getzDownKm() * 1000);
+        return new ENUCoordinate(other.getyEastKm() * 1000, other.getxNorthKm() * 1000, -other.getzDownKm() * 1000);
     }
 
     static double getSeparationMeters(GeodeticCoordinate c1, GeodeticCoordinate c2) {
@@ -86,10 +83,10 @@ public class EModel {
      * Gets the angle in degrees between two vectors represented as azimuths in
      * degrees clockwise from North.
      *
-     * @param azimuth1 Azimuth of the first vector in degrees clockwise from
-     * North.
-     * @param azimuth2 Azimuth of the second vector in degrees clockwise from
-     * North.
+     * @param azimuth1
+     *            Azimuth of the first vector in degrees clockwise from North.
+     * @param azimuth2
+     *            Azimuth of the second vector in degrees clockwise from North.
      * @return The angle between the two azimuths in degrees.
      */
     public static double getAngleBetweenAzimuths(double azimuth1, double azimuth2) {
@@ -116,7 +113,8 @@ public class EModel {
      * Gets the azimuthal gap of an origin solution given a Vector of
      * event-station azimuths.
      *
-     * @param az The Vector of event-station azimuths
+     * @param az
+     *            The Vector of event-station azimuths
      * @return The azgap value
      */
     public static double getAzGapFromAzVector(ArrayList<Double> az) {
@@ -139,10 +137,14 @@ public class EModel {
      * Gets the azimuthal gap of an origin solution given the epicenter location
      * and the locations of the stations used in the origin solution.
      *
-     * @param evla Event latitude
-     * @param evlo Event longitude
-     * @param stla A Vector of station latitudes
-     * @param stlo A Vector of station longitudes
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
+     * @param stla
+     *            A Vector of station latitudes
+     * @param stlo
+     *            A Vector of station longitudes
      * @return The azgap value
      */
     public static double getAzgap(double evla, double evlo, ArrayList<Double> stla, ArrayList<Double> stlo) {
@@ -165,10 +167,14 @@ public class EModel {
     /**
      * Gets the azimuth of an event relative to a station on a spherical Earth.
      *
-     * @param stla Station latitude
-     * @param stlo Station longitude
-     * @param evla Event latitude
-     * @param evlo Event longitude
+     * @param stla
+     *            Station latitude
+     * @param stlo
+     *            Station longitude
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
      * @return The azimuth of the event relative to the station
      */
     public static double getAzimuth(double stla, double stlo, double evla, double evlo) {
@@ -180,10 +186,14 @@ public class EModel {
      * Gets the azimuth of an event relative to a station using the WGS84 Earth
      * model.
      *
-     * @param stla Station latitude
-     * @param stlo Station longitude
-     * @param evla Event latitude
-     * @param evlo Event longitude
+     * @param stla
+     *            Station latitude
+     * @param stlo
+     *            Station longitude
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
      * @return The azimuth of the event relative to the station
      */
     public static double getAzimuthWGS84(double stla, double stlo, double evla, double evlo) {
@@ -195,10 +205,14 @@ public class EModel {
      * Gets the back azimuth in degrees (azimuth from event to station) on a
      * spherical Earth.
      *
-     * @param stla Station latitude
-     * @param stlo Station longitude
-     * @param evla Event latitude
-     * @param evlo Event longitude
+     * @param stla
+     *            Station latitude
+     * @param stlo
+     *            Station longitude
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
      * @return The back azimuth value
      */
     public static double getBAZ(double stla, double stlo, double evla, double evlo) {
@@ -210,10 +224,14 @@ public class EModel {
      * Gets the back azimuth in degrees (azimuth from event to station) using
      * the WGS84 Earth model
      *
-     * @param stla Station latitude
-     * @param stlo Station longitude
-     * @param evla Event latitude
-     * @param evlo Event longitude
+     * @param stla
+     *            Station latitude
+     * @param stlo
+     *            Station longitude
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
      * @return The back azimuth value
      */
     public static double getBAZWGS84(double stla, double stlo, double evla, double evlo) {
@@ -225,8 +243,10 @@ public class EModel {
      * Gets the change in longitude in degrees given a latitude and departure in
      * km
      *
-     * @param lat The latitude at which to compute.
-     * @param departureKm The departure in km.
+     * @param lat
+     *            The latitude at which to compute.
+     * @param departureKm
+     *            The departure in km.
      * @return the change in longitude.
      */
     public static double getDegreesFromDeparture(double lat, double departureKm) {
@@ -244,24 +264,22 @@ public class EModel {
      * valid and that errors introduced by assigning a local Cartesian
      * coordinate system are small.
      *
-     * @param sourcePosition The position of the source of the plane wave (used
-     * to determine the back azimuth.)
-     * @param referenceElementPosition The position of the reference element of
-     * the array.
-     * @param observationElementPosition The position of the element for which
-     * the delay is to be computed.
-     * @param apparentVelocity The apparent velocity of the plane wave in
-     * km/sec.
+     * @param sourcePosition
+     *            The position of the source of the plane wave (used to
+     *            determine the back azimuth.)
+     * @param referenceElementPosition
+     *            The position of the reference element of the array.
+     * @param observationElementPosition
+     *            The position of the element for which the delay is to be
+     *            computed.
+     * @param apparentVelocity
+     *            The apparent velocity of the plane wave in km/sec.
      * @return The delay in seconds between when the wavefront crosses the
-     * reference element and when it crosses the observation element.
+     *         reference element and when it crosses the observation element.
      */
     public static double getDelay(GeodeticCoordinate sourcePosition, GeodeticCoordinate referenceElementPosition, GeodeticCoordinate observationElementPosition, double apparentVelocity) {
-        NEZCoordinate localCoords = EModel.getLocalCoords(referenceElementPosition,
-                observationElementPosition);
-        double baz = EModel.getBAZWGS84(referenceElementPosition.getLat(),
-                referenceElementPosition.getLon(),
-                sourcePosition.getLat(),
-                sourcePosition.getLon());
+        NEZCoordinate localCoords = EModel.getLocalCoords(referenceElementPosition, observationElementPosition);
+        double baz = EModel.getBAZWGS84(referenceElementPosition.getLat(), referenceElementPosition.getLon(), sourcePosition.getLat(), sourcePosition.getLon());
         double az = baz - 180;
         double sx = Math.cos(az * DEGREES_TO_RADIANS) / apparentVelocity;
         double sy = Math.sin(az * DEGREES_TO_RADIANS) / apparentVelocity;
@@ -274,10 +292,14 @@ public class EModel {
      * Gets the distance in degrees of an event from a station on a spherical
      * Earth.
      *
-     * @param stla Station latitude.
-     * @param stlo Station longitude.
-     * @param evla Event latitude.
-     * @param evlo Event longitude.
+     * @param stla
+     *            Station latitude.
+     * @param stlo
+     *            Station longitude.
+     * @param evla
+     *            Event latitude.
+     * @param evlo
+     *            Event longitude.
      * @return The distance in degrees.
      */
     public static double getDelta(double stla, double stlo, double evla, double evlo) {
@@ -288,8 +310,10 @@ public class EModel {
      * Gets the distance in degrees of an event from a station on a spherical
      * Earth.
      *
-     * @param sta Vertex object containing station coordinates.
-     * @param event Vertex object containing the event epicentral coordinates.
+     * @param sta
+     *            Vertex object containing station coordinates.
+     * @param event
+     *            Vertex object containing the event epicentral coordinates.
      * @return The distance in degrees.
      */
     public static double getDelta(Vertex sta, Vertex event) {
@@ -300,10 +324,14 @@ public class EModel {
      * Gets the distance in degrees of an event from a station using the WGS84
      * Earth model
      *
-     * @param stla Station latitude
-     * @param stlo Station longitude
-     * @param evla Event latitude
-     * @param evlo Event longitude
+     * @param stla
+     *            Station latitude
+     * @param stlo
+     *            Station longitude
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
      * @return The distance in degrees
      */
     public static double getDeltaWGS84(double stla, double stlo, double evla, double evlo) {
@@ -314,20 +342,23 @@ public class EModel {
      * Gets the distance in degrees of two points on the surface of the Earth
      * using the WGS84 Earth model.
      *
-     * @param point1 The first point.
-     * @param point2 The second point.
+     * @param point1
+     *            The first point.
+     * @param point2
+     *            The second point.
      * @return The distance in degrees.
      */
     public static double getDeltaWGS84(Vertex point1, Vertex point2) {
-        return Geodesic.WGS84.Inverse(point1.getLat(), point1.getLon(),
-                point2.getLat(), point2.getLon()).a12;
+        return Geodesic.WGS84.Inverse(point1.getLat(), point1.getLon(), point2.getLat(), point2.getLon()).a12;
     }
 
     /**
      * Gets the distance in km along a line of constant latitude
      *
-     * @param lat The latitude at which to compute.
-     * @param delta The distance in degrees
+     * @param lat
+     *            The latitude at which to compute.
+     * @param delta
+     *            The distance in degrees
      * @return the departure in km
      */
     public static double getDepartureKm(double lat, double delta) {
@@ -337,10 +368,14 @@ public class EModel {
     /**
      * Gets the distance in km between two points on a spherical Earth.
      *
-     * @param stla Station latitude
-     * @param stlo Station longitude
-     * @param evla Event latitude
-     * @param evlo Event longitude
+     * @param stla
+     *            Station latitude
+     * @param stlo
+     *            Station longitude
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
      * @return The distance in kilometers
      */
     public static double getDistance(double stla, double stlo, double evla, double evlo) {
@@ -350,8 +385,10 @@ public class EModel {
     /**
      * Gets the distance in km between two points on a spherical Earth model.
      *
-     * @param pt1 Vertex object representing first point.
-     * @param pt2 Vertex object representing second point.
+     * @param pt1
+     *            Vertex object representing first point.
+     * @param pt2
+     *            Vertex object representing second point.
      * @return The distance in km.
      */
     public static double getDistance(Vertex pt1, Vertex pt2) {
@@ -361,10 +398,14 @@ public class EModel {
     /**
      * Gets the distance in km between two points using the WGS84 Earth model
      *
-     * @param stla Station latitude
-     * @param stlo Station longitude
-     * @param evla Event latitude
-     * @param evlo Event longitude
+     * @param stla
+     *            Station latitude
+     * @param stlo
+     *            Station longitude
+     * @param evla
+     *            Event latitude
+     * @param evlo
+     *            Event longitude
      * @return The distance in kilometers
      */
     public static double getDistanceWGS84(double stla, double stlo, double evla, double evlo) {
@@ -378,8 +419,9 @@ public class EModel {
     /**
      * Gets the Earth Radius in km as a function of latitude in degrees
      *
-     * @param latitude The latitude in degrees of the place where the radius is
-     * desired
+     * @param latitude
+     *            The latitude in degrees of the place where the radius is
+     *            desired
      * @return The Earth Radius value in km
      */
     public static double getEarthRadius(double latitude) {
@@ -394,34 +436,35 @@ public class EModel {
     /**
      * Gets the Event to Station azimuth on a spherical Earth model.
      *
-     * @param event The epicentral Vertex.
-     * @param sta The station Vertex.
+     * @param event
+     *            The epicentral Vertex.
+     * @param sta
+     *            The station Vertex.
      * @return The azimuth of the station relative to the event epicenter in
-     * degrees.
+     *         degrees.
      */
     public static double getEsaz(Vertex event, Vertex sta) {
-        double result = Geodesic.WGS84.Inverse(event.getLat(), event.getLon(),
-                sta.getLat(), sta.getLon()).azi1;
+        double result = Geodesic.WGS84.Inverse(event.getLat(), event.getLon(), sta.getLat(), sta.getLon()).azi1;
         return result >= 0 ? result : 360 + result;
     }
 
     public static double getEsaz(double evla, double evlo, double stla, double stlo) {
-        double result = Geodesic.WGS84.Inverse(evla, evlo,
-                stla, stlo).azi1;
+        double result = Geodesic.WGS84.Inverse(evla, evlo, stla, stlo).azi1;
         return result >= 0 ? result : 360 + result;
     }
 
     /**
      * Gets the Event to Station azimuth using the WGS84 Earth model.
      *
-     * @param event The epicentral Vertex.
-     * @param sta The station Vertex.
+     * @param event
+     *            The epicentral Vertex.
+     * @param sta
+     *            The station Vertex.
      * @return The azimuth of the station relative to the event epicenter in
-     * degrees.
+     *         degrees.
      */
     public static double getEsazWGS84(Vertex event, Vertex sta) {
-        double result = Geodesic.WGS84.Inverse(event.getLat(), event.getLon(),
-                sta.getLat(), sta.getLon()).azi1;
+        double result = Geodesic.WGS84.Inverse(event.getLat(), event.getLon(), sta.getLat(), sta.getLon()).azi1;
         return result >= 0 ? result : 360 + result;
     }
 
@@ -434,13 +477,16 @@ public class EModel {
      * Returns a great-circle azimuth in degrees between two points specified by
      * their latitude and longitude in degrees.
      *
-     * @param lat1 Latitude of the first point in degrees.
-     * @param lon1 Longitude of the second point in degrees.
-     * @param lat2 Latitude of the second point in degrees.
-     * @param lon2 Longitude of the second point in degrees.
+     * @param lat1
+     *            Latitude of the first point in degrees.
+     * @param lon1
+     *            Longitude of the second point in degrees.
+     * @param lat2
+     *            Latitude of the second point in degrees.
+     * @param lon2
+     *            Longitude of the second point in degrees.
      * @return great-circle distance in degrees
      */
-    @SuppressWarnings({"IfStatementWithTooManyBranches"})
     public static double getGreatCircleAzimuth(double lat1, double lon1, double lat2, double lon2) {
         lat1 *= DEGREES_TO_RADIANS;
         lon1 *= DEGREES_TO_RADIANS;
@@ -471,10 +517,14 @@ public class EModel {
      * Returns a great-circle distance in degrees between two points specified
      * by their latitude and longitude in degrees.
      *
-     * @param lat1 Latitude of the first point in degrees.
-     * @param lon1 Longitude of the second point in degrees.
-     * @param lat2 Latitude of the second point in degrees.
-     * @param lon2 Longitude of the second point in degrees.
+     * @param lat1
+     *            Latitude of the first point in degrees.
+     * @param lon1
+     *            Longitude of the second point in degrees.
+     * @param lat2
+     *            Latitude of the second point in degrees.
+     * @param lon2
+     *            Longitude of the second point in degrees.
      * @return great-circle distance in degrees
      */
     public static double getGreatCircleDelta(double lat1, double lon1, double lat2, double lon2) {
@@ -537,8 +587,10 @@ public class EModel {
      * A convience method to calculate the Local Radius based on the latitude in
      * degrees
      *
-     * @param latitude - in DEGREES
-     * @param depth - in km
+     * @param latitude
+     *            - in DEGREES
+     * @param depth
+     *            - in km
      * @return the local radius at the given latitude
      */
     public static double getLocalRadiusFromLatitude(double latitude, double depth) {
@@ -553,8 +605,10 @@ public class EModel {
     /**
      * Gets the station to event azimuth.
      *
-     * @param event position of the event epicenter.
-     * @param sta position of the station.
+     * @param event
+     *            position of the event epicenter.
+     * @param sta
+     *            position of the station.
      * @return the station-to-event azimuth in degrees.
      */
     public static double getSeaz(Vertex event, Vertex sta) {
@@ -578,10 +632,14 @@ public class EModel {
      * Returns a Vertex at great-circle distance delta and azimuth Azimuth.
      * <p>
      *
-     * @param latIn latitude in degrees of start point
-     * @param deltaIn great-circle distance between points in degrees
-     * @param azimuthIn east of north (-180 LTEQ Azimuth LTEQ 180 )
-     * @param lonIn Longitude of the start point
+     * @param latIn
+     *            latitude in degrees of start point
+     * @param deltaIn
+     *            great-circle distance between points in degrees
+     * @param azimuthIn
+     *            east of north (-180 LTEQ Azimuth LTEQ 180 )
+     * @param lonIn
+     *            Longitude of the start point
      * @return Vertex of point reckoned to
      */
     public static Vertex reckon(double latIn, double lonIn, double deltaIn, double azimuthIn) {
@@ -613,10 +671,13 @@ public class EModel {
      * returned is equal to npts. TODO note as written this returns (npts + 1)
      * Vertices
      *
-     * @param center A Vertex object defining the center latitude-longitude of
-     * the small circle.
-     * @param radius The radius of the small circle in degrees.
-     * @param npts The number of points to create.
+     * @param center
+     *            A Vertex object defining the center latitude-longitude of the
+     *            small circle.
+     * @param radius
+     *            The radius of the small circle in degrees.
+     * @param npts
+     *            The number of points to create.
      * @return An array of Vertex objects defining the requested small circle.
      */
     public static Vertex[] smallCircle(Vertex center, double radius, int npts) {
@@ -642,11 +703,16 @@ public class EModel {
      * Computes a vector of waypoints (including the start and end) for a
      * great-circle track defined by its start and end points.
      *
-     * @param startLat The starting point latitude in degrees.
-     * @param startLon The starting point longitude in degrees.
-     * @param endLat The ending point latitude in degrees.
-     * @param endLon The ending point longitude in degrees.
-     * @param npts The number of desired points in the track.
+     * @param startLat
+     *            The starting point latitude in degrees.
+     * @param startLon
+     *            The starting point longitude in degrees.
+     * @param endLat
+     *            The ending point latitude in degrees.
+     * @param endLon
+     *            The ending point longitude in degrees.
+     * @param npts
+     *            The number of desired points in the track.
      * @return The Vector of Vertex objects that define the track.
      */
     public static ArrayList<Vertex> track(double startLat, double startLon, double endLat, double endLon, int npts) {
@@ -659,9 +725,7 @@ public class EModel {
         double arcDist = aLine.Distance();
         double ds = arcDist / (npts);
         for (int i = 0; i <= npts; ++i) {
-            GeodesicData g = aLine.Position(i * ds,
-                    GeodesicMask.LATITUDE
-                    | GeodesicMask.LONGITUDE);
+            GeodesicData g = aLine.Position(i * ds, GeodesicMask.LATITUDE | GeodesicMask.LONGITUDE);
             result.add(new Vertex(g.lat2, g.lon2));
         }
         return result;
@@ -673,8 +737,7 @@ public class EModel {
      * after the fortran routine by Dave Harris to do the same.
      * 
      */
-    public static void getGreatCircleArc(GeographicCoordinate coord1, GeographicCoordinate coord2, double az, double dist,
-            double[] lats, double[] lons, int npts) {
+    public static void getGreatCircleArc(GeographicCoordinate coord1, GeographicCoordinate coord2, double az, double dist, double[] lats, double[] lons, int npts) {
 
         double earth_radius = WGS84Radius / 1000;
         double dl = dist / (npts - 1);

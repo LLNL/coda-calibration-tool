@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -31,13 +31,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToReferenceEventConverter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 
 //TODO: This class needs a GUI to display a list of files it's attempting to load and process + pass/fail indicators
 @Component
 public class ReferenceEventLoadingController {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(ReferenceEventLoadingController.class);
 
     private ReferenceEventClient client;
 

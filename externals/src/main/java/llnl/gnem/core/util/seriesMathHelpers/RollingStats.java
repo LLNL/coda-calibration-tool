@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -18,6 +18,7 @@ import llnl.gnem.core.util.SeriesMath;
 
 /**
  * http://en.wikipedia.org/wiki/Standard_deviation#Rapid_calculation_methods
+ * 
  * @author dodge1
  */
 public class RollingStats {
@@ -45,12 +46,11 @@ public class RollingStats {
     }
 
     public double getStandardDeviation() {
-        return Math.sqrt((n * s2 - s1 * s1) / (n * (n-1)));
+        return Math.sqrt((n * s2 - s1 * s1) / (n * (n - 1)));
     }
-    
+
     @Override
-    public String toString()
-    {
+    public String toString() {
         return String.format("Mean = %f, std = %f", getMean(), getStandardDeviation());
     }
 }

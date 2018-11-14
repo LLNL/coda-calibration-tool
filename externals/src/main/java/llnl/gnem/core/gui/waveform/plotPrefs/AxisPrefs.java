@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -29,9 +29,7 @@ public class AxisPrefs implements Serializable {
     private boolean visible;
     static final long serialVersionUID = 7471394890458400754L;
 
-
-    public AxisPrefs()
-    {
+    public AxisPrefs() {
         labelPrefs = new LabelPrefs();
         tickPrefs = new TickPrefs();
         color = Color.black;
@@ -47,7 +45,8 @@ public class AxisPrefs implements Serializable {
     }
 
     /**
-     * @param color the color to set
+     * @param color
+     *            the color to set
      */
     public void setColor(Color color) {
         this.color = color;
@@ -68,7 +67,8 @@ public class AxisPrefs implements Serializable {
     }
 
     /**
-     * @param penWidth the penWidth to set
+     * @param penWidth
+     *            the penWidth to set
      */
     public void setPenWidth(int penWidth) {
         this.penWidth = penWidth;
@@ -89,7 +89,8 @@ public class AxisPrefs implements Serializable {
     }
 
     /**
-     * @param visible the visible to set
+     * @param visible
+     *            the visible to set
      */
     public void setVisible(boolean visible) {
         this.visible = visible;

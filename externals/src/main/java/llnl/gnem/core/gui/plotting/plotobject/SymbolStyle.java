@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,40 +20,37 @@
 package llnl.gnem.core.gui.plotting.plotobject;
 
 /**
- * An enumeration of the available Symbol styles. Any new symbols added
- * to the collection must have entries made in this class.
+ * An enumeration of the available Symbol styles. Any new symbols added to the
+ * collection must have entries made in this class.
  */
 public enum SymbolStyle {
-    NONE("NONE"),
-    CIRCLE( "Circle" ),
-    SQUARE( "Square" ),
-    DIAMOND( "Diamond" ),
-    TRIANGLEUP( "TriangleUp" ),
-    TRIANGLEDN( "TriangleDn" ),
-    PLUS( "Plus" ),
-    CROSS( "Cross" ),
-    STAR5( "Star5" ),
-    HEXAGON( "Hexagon" ),
-    ERROR_BAR ( "ErrorBar" );
+    NONE("NONE"), CIRCLE("Circle"), SQUARE("Square"), DIAMOND("Diamond"), TRIANGLEUP("TriangleUp"), TRIANGLEDN("TriangleDn"), PLUS("Plus"), CROSS("Cross"), STAR5("Star5"), HEXAGON(
+            "Hexagon"), ERROR_BAR("ErrorBar");
 
-    private final String myName; // for debug only
+    private final String name;
 
-    SymbolStyle( String name )
-    {
-        myName = name;
+    private SymbolStyle(String name) {
+        this.name = name;
     }
 
-    public String toString()
-    {
-        return myName;
+    @Override
+    public String toString() {
+        return name;
     }
 
-
-    public static SymbolStyle getSymbolStyle( final String name )
-    {
-        for(SymbolStyle style: SymbolStyle.values()){
-           if (style.toString().equals(name)) return style;
+    /***
+     * 
+     * @param name
+     * @return {@link SymbolStyle} matching name (ignores case)
+     * @throws {@link
+     *             IllegalArgumentException} if the name is not defined.
+     */
+    public static SymbolStyle getSymbolStyle(final String name) {
+        for (SymbolStyle style : SymbolStyle.values()) {
+            if (style.toString().equalsIgnoreCase(name)) {
+                return style;
+            }
         }
-       throw new IllegalArgumentException("Not a valid Style");
+        throw new IllegalArgumentException("Not a valid Style");
     }
 }

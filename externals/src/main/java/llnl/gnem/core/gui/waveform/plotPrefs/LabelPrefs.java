@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -30,7 +30,6 @@ public class LabelPrefs implements Serializable {
     private double offset = 6;
     static final long serialVersionUID = 7757692269404713358L;
 
-
     /**
      *
      * @return the font to set
@@ -41,7 +40,8 @@ public class LabelPrefs implements Serializable {
 
     /**
      *
-     * @param font to set
+     * @param font
+     *            to set
      */
     public void setFont(Font font) {
         fontName = font.getName();
@@ -57,7 +57,8 @@ public class LabelPrefs implements Serializable {
     }
 
     /**
-     * @param color the color to set
+     * @param color
+     *            the color to set
      */
     public void setFontColor(Color color) {
         this.color = color;
@@ -71,11 +72,11 @@ public class LabelPrefs implements Serializable {
     }
 
     /**
-     * @param offset the offset to set
+     * @param offset
+     *            the offset to set
      */
     public void setOffset(double offset) {
         this.offset = offset;
     }
-
 
 }

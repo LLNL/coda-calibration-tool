@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,34 +14,34 @@
 */
 package llnl.gnem.core.gui.plotting;
 
-
 /**
  * A type-safe enum class for interpretation of mouse actions
  *
  * @author Doug Dodge
  */
 public enum MouseMode {
-    SELECT_ZOOM("select_zoom"),  // Left button down marks a selection attempt or start of a zoom
-    PAN("pan"),      // Left button down marks start of panning
+    SELECT_ZOOM("select_zoom"), // Left button down marks a selection attempt or start of a zoom
+    PAN("pan"), // Left button down marks start of panning
     PAN2("pan2"), // two-D pan
-    ZOOM_ONLY("zoomOnly"),      // Left button down marks start of zoom only
-    CONTROL_SELECT("ControlSelect"),  // Indicates that the Control Key was depressed while this mouse action was made.
-    SELECT_REGION("RegionSelect"),      /**
- * Indicates that the mouse can only be used for selecting a region. Region selection
- * causes no change to the plot. but any registered observers will be notified of
- * the action, and given the specifications of the selected region.
- */
-CREATE_PICK("CreatePick"),
+    ZOOM_ONLY("zoomOnly"), // Left button down marks start of zoom only
+    CONTROL_SELECT("ControlSelect"), // Indicates that the Control Key was depressed while this mouse action was made.
+    SELECT_REGION("RegionSelect"),
     /**
-     * In this mode, the mouse listener will interpret left-mouse clicks as an attempt to create
-     * a new pick.
+     * Indicates that the mouse can only be used for selecting a region. Region
+     * selection causes no change to the plot. but any registered observers will
+     * be notified of the action, and given the specifications of the selected
+     * region.
      */
-    CREATE_POLYGON("CreatePolygon" );
+    CREATE_PICK("CreatePick"),
+    /**
+     * In this mode, the mouse listener will interpret left-mouse clicks as an
+     * attempt to create a new pick.
+     */
+    CREATE_POLYGON("CreatePolygon");
 
     private final String name;
 
-    MouseMode(String name)
-    {
+    MouseMode(String name) {
         this.name = name;
     }
 
@@ -51,10 +51,8 @@ CREATE_PICK("CreatePick"),
      * @return The String description
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         return name;
     }
 
 }
-

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -16,9 +16,9 @@ package llnl.gnem.core.polygon;
 
 import java.io.Serializable;
 
-
 /**
- * A class that encapsulates a 2-D point on the surface of the Earth described by a latitude and a longitude
+ * A class that encapsulates a 2-D point on the surface of the Earth described
+ * by a latitude and a longitude
  *
  * @author Doug Dodge
  */
@@ -26,22 +26,23 @@ public class Vertex implements Serializable {
     /**
      * Creates a new Vertex from a latitude and a longitude value
      *
-     * @param Lat The latitude of the point
-     * @param Lon The longitude of the point
+     * @param Lat
+     *            The latitude of the point
+     * @param Lon
+     *            The longitude of the point
      */
-    public Vertex( double Lat, double Lon )
-    {
-        lat = ValidateLat( Lat );
-        lon = ValidateLon( Lon );
+    public Vertex(double Lat, double Lon) {
+        lat = ValidateLat(Lat);
+        lon = ValidateLon(Lon);
     }
 
     /**
      * Copy Constructor for the Vertex object
      *
-     * @param v The Vertex to be copied
+     * @param v
+     *            The Vertex to be copied
      */
-    public Vertex( Vertex v )
-    {
+    public Vertex(Vertex v) {
         lat = v.lat;
         lon = v.lon;
     }
@@ -51,8 +52,7 @@ public class Vertex implements Serializable {
      *
      * @return The lat value
      */
-    public double getLat()
-    {
+    public double getLat() {
         return lat;
     }
 
@@ -61,48 +61,46 @@ public class Vertex implements Serializable {
      *
      * @return The lon value
      */
-    public double getLon()
-    {
+    public double getLon() {
         return lon;
     }
 
     /**
      * Sets the latitude of the Vertex
      *
-     * @param Lat The new lat value
+     * @param Lat
+     *            The new lat value
      */
-    public void setLat( double Lat )
-    {
-        lat = ValidateLat( Lat );
+    public void setLat(double Lat) {
+        lat = ValidateLat(Lat);
     }
 
     /**
      * Sets the longitude of the Vertex
      *
-     * @param Lon The new lon value
+     * @param Lon
+     *            The new lon value
      */
-    public void setLon( double Lon )
-    {
-        lon = ValidateLon( Lon );
+    public void setLon(double Lon) {
+        lon = ValidateLon(Lon);
     }
 
     /**
      * Determine whether two Vertex objects describe the same point.
      *
-     * @param o The Vertex to be tested
+     * @param o
+     *            The Vertex to be tested
      * @return true if the two Vertex objects describe the same point.
      */
-    public boolean equals( Object o )
-    {
-        if( o == this )
+    public boolean equals(Object o) {
+        if (o == this)
             return true;
-        if( o instanceof Vertex ) {
+        if (o instanceof Vertex) {
             // No need to check for null because instanceof handles that check
 
             Vertex tmp = (Vertex) o;
             return tmp.lat == lat && tmp.lon == lon;
-        }
-        else
+        } else
             return false;
     }
 
@@ -111,9 +109,8 @@ public class Vertex implements Serializable {
      *
      * @return The hash code
      */
-    public int hashCode()
-    {
-        return new Double( lat ).hashCode() ^ new Double( lon ).hashCode();
+    public int hashCode() {
+        return new Double(lat).hashCode() ^ new Double(lon).hashCode();
     }
 
     /**
@@ -121,25 +118,22 @@ public class Vertex implements Serializable {
      *
      * @return The String description.
      */
-    public String toString()
-    {
+    public String toString() {
         return "Lat = " + lat + ", Lon = " + lon;
     }
 
-    private double ValidateLat( double Lat )
-    {
-        if( Lat > 90 )
+    private double ValidateLat(double Lat) {
+        if (Lat > 90)
             Lat = 90;
-        if( Lat < -90 )
+        if (Lat < -90)
             Lat = -90;
         return Lat;
     }
 
-    private double ValidateLon( double Lon )
-    {
-//        while( Lon > 180 ) Lon -= 360;
+    private double ValidateLon(double Lon) {
+        //        while( Lon > 180 ) Lon -= 360;
 
-//        while( Lon < -180 ) Lon += 360;
+        //        while( Lon < -180 ) Lon += 360;
 
         return Lon;
     }
@@ -147,6 +141,3 @@ public class Vertex implements Serializable {
     private double lat;
     private double lon;
 }
-
-
-

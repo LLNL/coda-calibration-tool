@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,32 +17,43 @@ package llnl.gnem.core.gui.plotting.plotobject;
 import java.awt.Color;
 
 /**
- * Class that is used to create Symbol instances defined by the supplied SymbolStyle and other parameters.
+ * Class that is used to create Symbol instances defined by the supplied
+ * SymbolStyle and other parameters.
  */
 
 public class SymbolFactory {
-    private static final String classPackage = SymbolFactory.class.getPackage().getName() + ".";
 
     /**
-     * @param style    The type of symbol to create
-     * @param X        The X-center of the symbol in real-world coordinates
-     * @param Y        The Y-center of the symbol in real-world coordinates
-     * @param size     The size of the Symbol in mm
-     * @param fillC    The fill color for the symbol
-     * @param edgeC    The edge color for the symbol
-     * @param textC    The color of the text associated with the symbol
-     * @param text     The text string to be plotted with the symbol
-     * @param visible  The visibility of the symbol
-     * @param textVis  The visibility of the associated text
-     * @param fontsize The font size of the associated text.
-     * @return A fully constructed Symbol ready for use.
+     * @param style
+     *            The type of symbol to create
+     * @param X
+     *            The X-center of the symbol in real-world coordinates
+     * @param Y
+     *            The Y-center of the symbol in real-world coordinates
+     * @param size
+     *            The size of the Symbol in mm
+     * @param fillC
+     *            The fill color for the symbol
+     * @param edgeC
+     *            The edge color for the symbol
+     * @param textC
+     *            The color of the text associated with the symbol
+     * @param text
+     *            The text string to be plotted with the symbol
+     * @param visible
+     *            The visibility of the symbol
+     * @param textVis
+     *            The visibility of the associated text
+     * @param fontsize
+     *            The font size of the associated text.
+     * @return A fully constructed Symbol ready for use or null if there is no
+     *         concrete implementation of the symbol.
      */
-    public static Symbol createSymbol(SymbolStyle style, double X, double Y, double size, Color fillC, Color edgeC,
-                                      Color textC, String text, boolean visible, boolean textVis, double fontsize)
-    {
-     
-        try {
-            Symbol s = (Symbol) Class.forName(classPackage + style.toString()).newInstance();
+    public static Symbol createSymbol(SymbolStyle style, double X, double Y, double size, Color fillC, Color edgeC, Color textC, String text, boolean visible, boolean textVis, double fontsize) {
+
+        Symbol s = createSymbolOfStyle(style);
+
+        if (s != null) {
             s.setXcenter(X);
             s.setYcenter(Y);
             s.setSymbolSize(size);
@@ -53,22 +64,63 @@ public class SymbolFactory {
             s.setVisible(visible);
             s.setTextVisible(textVis);
             s.setFontSize(fontsize);
-            return s;
         }
-        catch (Exception e) {
-            return null;
-        }
-    }
-
-
-    public static Symbol createSymbol(SymbolDef symboldef) throws ClassNotFoundException, IllegalAccessException, InstantiationException
-    {
-        Symbol s = (Symbol) Class.forName(classPackage + symboldef.getStyle().toString()).newInstance();
-        s.setSymbolSize(symboldef.getSize());
-        s.setFillColor(symboldef.getFillColor());
-        s.setEdgeColor(symboldef.getEdgeColor());
         return s;
     }
 
+    /***
+     * @return A fully constructed Symbol ready for use or null if there is no
+     *         concrete implementation of the symbol.
+     */
+    public static Symbol createSymbol(SymbolDef symboldef) {
+        Symbol s = createSymbolOfStyle(symboldef.getStyle());
 
+        if (s != null) {
+            s.setSymbolSize(symboldef.getSize());
+            s.setFillColor(symboldef.getFillColor());
+            s.setEdgeColor(symboldef.getEdgeColor());
+        }
+        return s;
+    }
+
+    private static Symbol createSymbolOfStyle(SymbolStyle style) {
+        Symbol s = null;
+        if (style != null) {
+            switch (style) {
+            case CIRCLE:
+                s = new Circle();
+                break;
+            case SQUARE:
+                s = new Square();
+                break;
+            case DIAMOND:
+                s = new Diamond();
+                break;
+            case TRIANGLEUP:
+                s = new TriangleUp();
+                break;
+            case TRIANGLEDN:
+                s = new TriangleDn();
+                break;
+            case PLUS:
+                s = new Plus();
+                break;
+            case CROSS:
+                s = new Cross();
+                break;
+            case STAR5:
+                s = new Star5();
+                break;
+            case HEXAGON:
+                s = new Hexagon();
+                break;
+            case ERROR_BAR:
+                s = new ErrorBar();
+                break;
+            default:
+                break;
+            }
+        }
+        return s;
+    }
 }

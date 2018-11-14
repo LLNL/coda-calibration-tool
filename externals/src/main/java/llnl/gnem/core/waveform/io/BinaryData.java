@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -89,11 +89,7 @@ public abstract class BinaryData {
             byte c = in[ib++];
             byte d = in[ib++];
             if (swapBytes) {
-                setFloat(j,
-                        Float.intBitsToFloat(((a & 0xff))
-                                + ((b & 0xff) << 8)
-                                + ((c & 0xff) << 16)
-                                + ((d & 0xff) << 24)));
+                setFloat(j, Float.intBitsToFloat(((a & 0xff)) + ((b & 0xff) << 8) + ((c & 0xff) << 16) + ((d & 0xff) << 24)));
             } else {
                 setFloat(j, Float.intBitsToFloat(((a & 0xff) << 24) + ((b & 0xff) << 16) + ((c & 0xff) << 8) + (d & 0xff)));
             }
@@ -102,11 +98,11 @@ public abstract class BinaryData {
 
     public static BinaryData truncateTo(BinaryData source, int newLength) {
         if (source instanceof IntBinaryData) {
-            return new IntBinaryData((IntBinaryData)source, newLength);
+            return new IntBinaryData((IntBinaryData) source, newLength);
         } else if (source instanceof FloatBinaryData) {
-            return new FloatBinaryData((FloatBinaryData)source, newLength);
+            return new FloatBinaryData((FloatBinaryData) source, newLength);
         } else if (source instanceof DoubleBinaryData) {
-            return new DoubleBinaryData((DoubleBinaryData)source, newLength);
+            return new DoubleBinaryData((DoubleBinaryData) source, newLength);
         } else {
             throw new IllegalStateException("Unsupported BinaryData type!");
         }

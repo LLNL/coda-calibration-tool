@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -38,8 +38,6 @@ public class GeographicCoordinate implements Coordinate<GeographicCoordinate> {
         this.height = height;
     }
 
-    
-    
     public double getLat() {
         return lat;
     }
@@ -47,12 +45,12 @@ public class GeographicCoordinate implements Coordinate<GeographicCoordinate> {
     public double getLon() {
         return lon;
     }
-    
+
     @Override
     public double getElevation() {
         return height;
     }
-  
+
     /*
      * Returns distance between two coordinates in kilometers
      */
@@ -73,13 +71,13 @@ public class GeographicCoordinate implements Coordinate<GeographicCoordinate> {
     public double getBackAzimuth(GeographicCoordinate other) {
         return other.getForwardAzimuth(this);
     }
-    
+
     public double quickDistance(GeographicCoordinate other) {
         double dlat = other.getLat() - getLat();
         double dlon = other.getLon() - getLon();
         return (Math.abs(dlat) + Math.abs(dlon)) * CRUDE_DEG_TO_KM;
     }
-        
+
     @Override
     public String toString() {
         return String.format("(%f, %f, %f)", getLat(), getLon(), getElevation());

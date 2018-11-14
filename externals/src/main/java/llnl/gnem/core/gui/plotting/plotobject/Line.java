@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,14 +22,12 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.polygon.BinarySearch;
 import llnl.gnem.core.util.Pair;
 
-
 /**
  * A class that encapsulates a multi-segment line that can be rendered in a
  * JSubplot
  *
  * @author Doug Dodge
  */
-@SuppressWarnings({"AssignmentToNull", "ClassWithTooManyConstructors"})
 public class Line extends AbstractLine {
 
     private float[] xArray;
@@ -49,12 +47,18 @@ public class Line extends AbstractLine {
     /**
      * Constructor for the Line object
      *
-     * @param x The Xvalues
-     * @param y The Yvalues
-     * @param c The color of the Line
-     * @param m The PaintMode of the Line
-     * @param s The PenStyle of the Line
-     * @param w The width of the Line
+     * @param x
+     *            The Xvalues
+     * @param y
+     *            The Yvalues
+     * @param c
+     *            The color of the Line
+     * @param m
+     *            The PaintMode of the Line
+     * @param s
+     *            The PenStyle of the Line
+     * @param w
+     *            The width of the Line
      */
     public Line(float[] x, float[] y, Color c, PaintMode m, PenStyle s, int w) {
         super(c, m, s, w);
@@ -72,8 +76,10 @@ public class Line extends AbstractLine {
     /**
      * Constructor for the Line object
      *
-     * @param x The Xvalues
-     * @param y The Yvalues
+     * @param x
+     *            The Xvalues
+     * @param y
+     *            The Yvalues
      */
     public Line(float[] x, float[] y) {
         super();
@@ -91,13 +97,20 @@ public class Line extends AbstractLine {
     /**
      * Constructor for the Line object
      *
-     * @param Start The starting value of X
-     * @param Inc The X-increment
-     * @param y The Yvalues
-     * @param c The color of the Line
-     * @param m The PaintMode of the Line
-     * @param s The PenStyle of the Line
-     * @param w The width of the Line
+     * @param Start
+     *            The starting value of X
+     * @param Inc
+     *            The X-increment
+     * @param y
+     *            The Yvalues
+     * @param c
+     *            The color of the Line
+     * @param m
+     *            The PaintMode of the Line
+     * @param s
+     *            The PenStyle of the Line
+     * @param w
+     *            The width of the Line
      */
     public Line(double Start, double Inc, float[] y, Color c, PaintMode m, PenStyle s, int w) {
         super(Start, Inc, c, m, s, w);
@@ -111,9 +124,12 @@ public class Line extends AbstractLine {
     /**
      * Constructor for the Line object
      *
-     * @param Start The starting value of X
-     * @param Inc The X-increment
-     * @param y The Yvalues
+     * @param Start
+     *            The starting value of X
+     * @param Inc
+     *            The X-increment
+     * @param y
+     *            The Yvalues
      */
     public Line(double Start, double Inc, float[] y) {
         this(Start, Inc, y, 1);
@@ -126,12 +142,18 @@ public class Line extends AbstractLine {
     /**
      * Constructor for the Line object
      *
-     * @param x The Xvalues
-     * @param y The Yvalues
-     * @param c The color of the Line
-     * @param m The PaintMode of the Line
-     * @param s The PenStyle of the Line
-     * @param w The width of the Line
+     * @param x
+     *            The Xvalues
+     * @param y
+     *            The Yvalues
+     * @param c
+     *            The color of the Line
+     * @param m
+     *            The PaintMode of the Line
+     * @param s
+     *            The PenStyle of the Line
+     * @param w
+     *            The width of the Line
      */
     public Line(float[] x, float[] y, Color c, PaintMode m, PenStyle s, int w, float[] sigmaY) {
         super(0.0, 0.0, c, m, s, w, SymbolStyle.ERROR_BAR, sigmaY);

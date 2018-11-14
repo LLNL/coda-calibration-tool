@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,9 +17,10 @@ package gov.llnl.gnem.apps.coda.calibration.gui.util;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.CalibrationStatusEvent;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.CalibrationStatusEvent.Status;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Progress;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent.Status;
+import gov.llnl.gnem.apps.coda.common.gui.util.ProgressListener;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
 
 public class CalibrationProgressListener extends ProgressListener {
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -28,72 +29,123 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterConverter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.SharedFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
+import reactor.core.publisher.Mono;
 
 //TODO: This class needs a GUI to display a list of files it's attempting to load and process + pass/fail indicators
 @Component
 @ConfigurationProperties("coda.param.client")
 public class CodaParamLoadingController {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(CodaParamLoadingController.class);
 
-    private ParameterClient client;
+    private ParameterClient paramsClient;
+
+    private ReferenceEventClient refMwClient;
 
     private int maxBatching = 100;
 
     private List<FileToParameterConverter<?>> fileConverters;
 
+    private EventBus bus;
+
     @Autowired
-    public CodaParamLoadingController(List<FileToParameterConverter<?>> fileConverters, ParameterClient client) {
+    public CodaParamLoadingController(List<FileToParameterConverter<?>> fileConverters, ParameterClient paramsClient, ReferenceEventClient refMwClient, EventBus bus) {
         super();
         this.fileConverters = fileConverters;
-        this.client = client;
+        this.paramsClient = paramsClient;
+        this.refMwClient = refMwClient;
+        this.bus = bus;
+        if (paramsClient == null) {
+            throw new IllegalStateException("Unable to find implementation of Coda Param loding client");
+        }
+
+        if (refMwClient == null) {
+            throw new IllegalStateException("Unable to find implementation of Reference Event loding client");
+        }
     }
 
     public void loadFiles(List<File> files) {
-
         CompletableFuture.runAsync(() -> {
-            List<File> validFiles = files.stream().filter(f -> validPath(f.toPath())).collect(Collectors.toList());
-            fileConverters.stream().forEach(fileConverter -> fileConverter.convertFiles(validFiles).subscribe(result -> {
-                // TODO: Feedback to the user about failure causes!
-                if (result.isSuccess()) {
-                    Optional<?> res = result.getResultPayload();
-                    if (res.isPresent()) {
-                        if (res.get() instanceof SharedFrequencyBandParameters) {
-                            SharedFrequencyBandParameters sfb = (SharedFrequencyBandParameters) res.get();
-                            try {
-                                client.postSharedFrequencyBandParameters(sfb).retry(3).subscribe();
-                            } catch (JsonProcessingException ex) {
-                                log.trace(ex.getMessage(), ex);
-                            }
-                        } else if (res.get() instanceof MdacParametersPS) {
-                            MdacParametersPS entry = (MdacParametersPS) res.get();
-                            try {
-                                client.postPsParameters(entry).retry(3).subscribe();
-                            } catch (JsonProcessingException ex) {
-                                log.trace(ex.getMessage(), ex);
-                            }
-                        } else if (res.get() instanceof MdacParametersFI) {
-                            MdacParametersFI entry = (MdacParametersFI) res.get();
-                            try {
-                                client.postFiParameters(entry).retry(3).subscribe();
-                            } catch (JsonProcessingException ex) {
-                                log.trace(ex.getMessage(), ex);
-                            }
-                        }
-                    }
-                }
-            }));
+            if (fileConverters != null && !fileConverters.isEmpty()) {
+                List<File> validFiles = files.stream().filter(f -> validPath(f.toPath())).collect(Collectors.toList());
+                convertFiles(validFiles);
+                bus.post(new ParametersLoadedEvent());
+            }
         });
     }
 
+    protected void convertFiles(List<File> validFiles) {
+        fileConverters.stream().forEach(fileConverter -> fileConverter.convertFiles(validFiles).subscribe(result -> {
+            // TODO: Feedback to the user about failure causes!
+            if (result.isSuccess()) {
+                Optional<?> res = result.getResultPayload();
+                if (res.isPresent()) {
+                    if (res.get() instanceof SharedFrequencyBandParameters) {
+                        SharedFrequencyBandParameters sfb = (SharedFrequencyBandParameters) res.get();
+                        try {
+                            Mono<String> request = paramsClient.setSharedFrequencyBandParameter(sfb);
+                            if (request != null) {
+                                request.retry(3).subscribe();
+                            } else {
+                                log.error("Returned a null request from the parameter client while posting SharedFrequencyBandParameters {}", sfb);
+                            }
+                        } catch (JsonProcessingException ex) {
+                            log.trace(ex.getMessage(), ex);
+                        }
+                    } else if (res.get() instanceof MdacParametersPS) {
+                        MdacParametersPS entry = (MdacParametersPS) res.get();
+                        try {
+                            Mono<String> request = paramsClient.setPsParameter(entry);
+                            if (request != null) {
+                                request.retry(3).subscribe();
+                            } else {
+                                log.error("Returned a null request from the parameter client while posting MdacParametersPS {}", entry);
+                            }
+                        } catch (JsonProcessingException ex) {
+                            log.trace(ex.getMessage(), ex);
+                        }
+                    } else if (res.get() instanceof MdacParametersFI) {
+                        MdacParametersFI entry = (MdacParametersFI) res.get();
+                        try {
+                            Mono<String> request = paramsClient.setFiParameter(entry);
+                            if (request != null) {
+                                request.retry(3).subscribe();
+                            } else {
+                                log.error("Returned a null request from the parameter client while posting MdacParametersFI {}", entry);
+                            }
+                        } catch (JsonProcessingException ex) {
+                            log.trace(ex.getMessage(), ex);
+                        }
+                    } else if (res.get() instanceof ReferenceMwParameters) {
+                        ReferenceMwParameters entry = (ReferenceMwParameters) res.get();
+                        try {
+                            Mono<String> request = refMwClient.postReferenceEvents(Collections.singletonList(entry));
+                            if (request != null) {
+                                request.retry(3).subscribe();
+                            } else {
+                                log.error("Returned a null request from the parameter client while posting MdacParametersFI {}", entry);
+                            }
+                        } catch (JsonProcessingException ex) {
+                            log.trace(ex.getMessage(), ex);
+                        }
+                    }
+                }
+            }
+        }));
+    }
+
     private boolean validPath(Path p) {
-        Optional<FileToParameterConverter<?>> match = fileConverters.stream().filter(fc -> fc.getMatchingPattern().matches(p)).findAny();
+        Optional<FileToParameterConverter<?>> match = Optional.ofNullable(fileConverters).orElse(Collections.emptyList()).stream().filter(fc -> fc.getMatchingPattern().matches(p)).findAny();
         return match.isPresent();
     }
 

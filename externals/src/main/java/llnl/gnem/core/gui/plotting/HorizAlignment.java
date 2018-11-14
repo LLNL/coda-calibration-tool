@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,11 +14,11 @@
 */
 package llnl.gnem.core.gui.plotting;
 
-public enum HorizAlignment { LEFT ("left"), CENTER("center"), RIGHT("right)");
+public enum HorizAlignment {
+    LEFT("left"), CENTER("center"), RIGHT("right)");
     private final String name;
 
-    private HorizAlignment( String name )
-    {
+    private HorizAlignment(String name) {
         this.name = name;
     }
 
@@ -27,17 +27,12 @@ public enum HorizAlignment { LEFT ("left"), CENTER("center"), RIGHT("right)");
      *
      * @return The String description
      */
-@Override
-    public String toString()
-    {
+    @Override
+    public String toString() {
         return name;
     }
 
-   
-
-    public static HorizAlignment getHorizAlignment( String str )
-    {
+    public static HorizAlignment getHorizAlignment(String str) {
         return HorizAlignment.valueOf(str);
     }
 }
-

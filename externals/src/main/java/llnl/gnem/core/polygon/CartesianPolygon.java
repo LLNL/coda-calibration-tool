@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,19 +20,18 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import llnl.gnem.core.util.Geometry.NEZCoordinate;
 
-
 public class CartesianPolygon {
     private final ArrayList<Vector3D> vertices;
 
     public CartesianPolygon(ArrayList<NEZCoordinate> v) {
         vertices = new ArrayList<>();
-        for( NEZCoordinate coord : v){
+        for (NEZCoordinate coord : v) {
             vertices.add(coord.toVector3D());
         }
     }
-    
-    public void scale( double factor){
-        for( Vector3D v3d : vertices){
+
+    public void scale(double factor) {
+        for (Vector3D v3d : vertices) {
             v3d.scalarMultiply(factor);
         }
     }
@@ -70,11 +69,10 @@ public class CartesianPolygon {
         return (count % 2 == 1);
     }
 
-// ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
     public boolean contains(double x, double y) {
         return contains(new Vector3D(x, y, 0));
     }
-
 
     /*
      *  Given 3 Vertices p0, p1, p2 traveling from the 1st to the 2nd to the 3rd, are
@@ -115,7 +113,7 @@ public class CartesianPolygon {
         return (ccw11 * ccw12 <= 0 && ccw21 * ccw22 <= 0);
     }
 
-    public ArrayList<Vector3D>getVertices() {
+    public ArrayList<Vector3D> getVertices() {
         return new ArrayList<Vector3D>(vertices);
     }
 }

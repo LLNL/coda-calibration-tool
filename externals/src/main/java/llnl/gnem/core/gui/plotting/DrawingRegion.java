@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -28,7 +28,7 @@ import java.awt.Rectangle;
  * @author Doug Dodge
  */
 public class DrawingRegion {
-    
+
     private Rectangle box;
     private boolean drawBox;
     private boolean fillRegion;
@@ -38,6 +38,7 @@ public class DrawingRegion {
     private Color backgroundHighlightColor;
     private Color backgroundUnselectedColor;
     private int highlightDifferential = 10;
+
     /**
      * Constructor for the DrawingRegion object
      */
@@ -79,7 +80,8 @@ public class DrawingRegion {
     /**
      * Controls whether a box is drawn around the region
      *
-     * @param v true if a box should be rendered.
+     * @param v
+     *            true if a box should be rendered.
      */
     public void setDrawBox(boolean v) {
         drawBox = v;
@@ -99,7 +101,8 @@ public class DrawingRegion {
     /**
      * Control whether the interior of the region is brushed.
      *
-     * @param v true if the interior is to be brushed.
+     * @param v
+     *            true if the interior is to be brushed.
      */
     public void setFillRegion(boolean v) {
         fillRegion = v;
@@ -113,7 +116,7 @@ public class DrawingRegion {
     public Color getBackgroundColor() {
         return backgroundColor;
     }
-    
+
     public Color getUnselectedColor() {
         return backgroundUnselectedColor;
     }
@@ -121,7 +124,8 @@ public class DrawingRegion {
     /**
      * Sets the background Color of the DrawingRegion object
      *
-     * @param color The new background Color value
+     * @param color
+     *            The new background Color value
      */
     public void setBackgroundColor(Color color) {
         int red = color.getRed();
@@ -134,18 +138,16 @@ public class DrawingRegion {
             highlightRed = red + highlightDifferential;
         } else
             red -= highlightDifferential;
-        if( green + highlightDifferential < 256){
+        if (green + highlightDifferential < 256) {
             highlightGreen = green + highlightDifferential;
-        }
-        else
-        green -= highlightDifferential;
+        } else
+            green -= highlightDifferential;
 
-        if( blue + highlightDifferential < 256 ){
+        if (blue + highlightDifferential < 256) {
             highlightBlue = blue + highlightDifferential;
-        }
-        else
-        blue -= highlightDifferential;
-        backgroundColor = new Color(red,green,blue);
+        } else
+            blue -= highlightDifferential;
+        backgroundColor = new Color(red, green, blue);
         backgroundUnselectedColor = backgroundColor;
         backgroundHighlightColor = new Color(highlightRed, highlightGreen, highlightBlue);
 
@@ -163,7 +165,8 @@ public class DrawingRegion {
     /**
      * Sets the line Color of the DrawingRegion object
      *
-     * @param C The new line Color value
+     * @param C
+     *            The new line Color value
      */
     public void setLineColor(Color C) {
         lineColor = C;
@@ -181,17 +184,22 @@ public class DrawingRegion {
     /**
      * Sets the boxLine Width of the DrawingRegion object
      *
-     * @param v The new boxLine Width value
+     * @param v
+     *            The new boxLine Width value
      */
     public void setBoxLineWidth(int v) {
         boxLineWidth = v;
     }
 
     /**
-     * @param LeftMargin The left margin of the drawing region in pixels
-     * @param TopMargin  The top margin of the drawing region in pixels
-     * @param BoxHeight  The box height in pixels
-     * @param BoxWidth   The box width in pixels
+     * @param LeftMargin
+     *            The left margin of the drawing region in pixels
+     * @param TopMargin
+     *            The top margin of the drawing region in pixels
+     * @param BoxHeight
+     *            The box height in pixels
+     * @param BoxWidth
+     *            The box width in pixels
      */
     public void setRect(int LeftMargin, int TopMargin, int BoxHeight, int BoxWidth) {
         box = new Rectangle(LeftMargin, TopMargin, BoxWidth, BoxHeight);
@@ -200,8 +208,8 @@ public class DrawingRegion {
     /**
      * render this drawing region to the supplied graphics context
      *
-     * @param gin The graphics context on which to render the drawing
-     *            region
+     * @param gin
+     *            The graphics context on which to render the drawing region
      */
     public void render(Graphics gin) {
         if (!drawBox && !fillRegion)
@@ -215,29 +223,29 @@ public class DrawingRegion {
         }
         drawBox(gin);
     }
-    
+
     protected void drawBox(Graphics gin) {
         Graphics2D g = (Graphics2D) gin;
         g.setPaintMode();
-        
+
         if (drawBox) {
             g.setColor(lineColor);
             g.setStroke(new BasicStroke(boxLineWidth));
             g.draw(box);
         }
     }
-    
+
     protected Color getOffsetColor(int offset) {
         Color bg = getBackgroundColor();
         Color current = getUnselectedColor();
-        
+
         int red = offset(bg.getRed(), current.getRed(), offset);
         int green = offset(bg.getGreen(), current.getGreen(), offset);
         int blue = offset(bg.getBlue(), current.getBlue(), offset);
-        
+
         return new Color(red, green, blue);
     }
-    
+
     private int offset(int component, int current, int offset) {
         return (component - offset > 0) ? component - offset : current;
     }
@@ -250,15 +258,15 @@ public class DrawingRegion {
     }
 
     /**
-     * Allows the application to specify a different highlight differential than the default.
-     * Expected usage is to setHighlightDifferential and then call setBackgroundColor(Color color) to
-     * update the highlighted and unselected background colors.
+     * Allows the application to specify a different highlight differential than
+     * the default. Expected usage is to setHighlightDifferential and then call
+     * setBackgroundColor(Color color) to update the highlighted and unselected
+     * background colors.
      * 
      * @param highlightDifferential
      */
     public void setHighlightDifferential(int highlightDifferential) {
         this.highlightDifferential = highlightDifferential;
     }
-    
-}
 
+}

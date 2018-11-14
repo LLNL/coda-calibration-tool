@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -46,7 +46,8 @@ public class JWindowRegion extends PlotObject {
     }
 
     /**
-     * @param windowText the windowText to set
+     * @param windowText
+     *            the windowText to set
      */
     public void setWindowText(String windowText) {
         this.windowText = windowText;
@@ -60,7 +61,8 @@ public class JWindowRegion extends PlotObject {
     }
 
     /**
-     * @param showWindowText the showWindowText to set
+     * @param showWindowText
+     *            the showWindowText to set
      */
     public void setShowWindowText(boolean showWindowText) {
         this.showWindowText = showWindowText;
@@ -101,7 +103,8 @@ public class JWindowRegion extends PlotObject {
      * JWindowRegion object. The window is not immediately re-rendered through
      * this call. A separate call to render must be made.
      *
-     * @param v The new duration value (seconds)
+     * @param v
+     *            The new duration value (seconds)
      */
     public void setDuration(double v) {
         setDurationNoNotify(v);
@@ -128,7 +131,8 @@ public class JWindowRegion extends PlotObject {
      * Sets the color of the JWindowRegion object. This is the color displayed
      * when the window and associated pick are not in a selected state.
      *
-     * @param c The new color value
+     * @param c
+     *            The new color value
      */
     public void setColor(Color c) {
         color = c;
@@ -139,7 +143,8 @@ public class JWindowRegion extends PlotObject {
      * color displayed when the window and associated pick are in a selected
      * state.
      *
-     * @param c The new selectedColor value
+     * @param c
+     *            The new selectedColor value
      */
     public void setSelectedColor(Color c) {
         selectedColor = c;
@@ -148,7 +153,8 @@ public class JWindowRegion extends PlotObject {
     /**
      * Sets the visible attribute of the JWindowRegion object
      *
-     * @param v The new visible value
+     * @param v
+     *            The new visible value
      */
     @Override
     public void setVisible(boolean v) {
@@ -167,7 +173,8 @@ public class JWindowRegion extends PlotObject {
     /**
      * Description of the Method
      *
-     * @param pickPosition Description of the Parameter
+     * @param pickPosition
+     *            Description of the Parameter
      */
     public void MoveToAndRender(double pickPosition) {
         double oldPos = associatedPick.getXval();
@@ -191,10 +198,13 @@ public class JWindowRegion extends PlotObject {
      * method notifies any observers registered with its PickDataBridge, so if
      * called by an observer could result in inifinite recursion.
      *
-     * @param axis The JBasicPlot that owns this window
+     * @param axis
+     *            The JBasicPlot that owns this window
      * @param graphics
-     * @param dx The horizontal shift in data units
-     * @param dy The vertical shift in data units ( not used ).
+     * @param dx
+     *            The horizontal shift in data units
+     * @param dy
+     *            The vertical shift in data units ( not used ).
      */
     @Override
     public void ChangePosition(JBasicPlot axis, Graphics graphics, double dx, double dy) {
@@ -224,11 +234,14 @@ public class JWindowRegion extends PlotObject {
     /**
      * Constructor for the JWindowRegion object
      *
-     * @param associatedPick The pick that is attached to this JWindowRegion
-     * @param duration The duration of the window in seconds.
-     * @param visible Description of the Parameter
+     * @param associatedPick
+     *            The pick that is attached to this JWindowRegion
+     * @param duration
+     *            The duration of the window in seconds.
+     * @param visible
+     *            Description of the Parameter
      */
-    JWindowRegion(VPickLine associatedPick, double duration, boolean visible) {
+    public JWindowRegion(VPickLine associatedPick, double duration, boolean visible) {
         this.duration = duration;
         this.associatedPick = associatedPick;
         canDragY = false;
@@ -283,8 +296,10 @@ public class JWindowRegion extends PlotObject {
      * involves changing the color to and from the "newSelectionStatus" color to
      * the "normal" color.
      *
-     * @param newSelectionStatus true or false
-     * @param g The graphics context on which to render this window.
+     * @param newSelectionStatus
+     *            true or false
+     * @param g
+     *            The graphics context on which to render this window.
      */
     @Override
     public void setSelected(boolean newSelectionStatus, Graphics g) {
@@ -304,8 +319,10 @@ public class JWindowRegion extends PlotObject {
     /**
      * render this window to the supplied graphics context.
      *
-     * @param g The graphics context on which to render this window.
-     * @param axisIn The JSubplot that owns this window.
+     * @param g
+     *            The graphics context on which to render this window.
+     * @param axisIn
+     *            The JSubplot that owns this window.
      */
     @Override
     public void render(Graphics g, JBasicPlot axisIn) {
@@ -396,7 +413,6 @@ public class JWindowRegion extends PlotObject {
         return p;
     }
 
-    @SuppressWarnings({"UNUSED_SYMBOL"})
     private void ChangePositionNoNotify(JBasicPlot axisIn, double dx, double dy, Graphics graphics) {
         JSubplot axis = (JSubplot) axisIn;
         if (graphics == null) {

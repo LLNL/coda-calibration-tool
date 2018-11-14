@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,9 +14,10 @@
 */
 package llnl.gnem.core.metadata;
 
-import java.util.logging.Level;
+import java.util.Locale;
 
-import llnl.gnem.core.util.ApplicationLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -24,13 +25,13 @@ import llnl.gnem.core.util.ApplicationLogger;
  */
 public class Channel {
 
+    private static final Logger log = LoggerFactory.getLogger(Channel.class);
+
     private final BandCode band;
     private final InstrumentCode instrument;
     private final OrientationCode orientation;
 
-    public Channel(BandCode band,
-            InstrumentCode instrument,
-            OrientationCode code) {
+    public Channel(BandCode band, InstrumentCode instrument, OrientationCode code) {
         this.band = band;
         this.instrument = instrument;
         this.orientation = code;
@@ -39,21 +40,21 @@ public class Channel {
     public Channel(String chan) {
         if (chan.length() < 3) {
             String msg = String.format("Failed constructing Channel. Channel string must be at least 3-characters long! (Supplied = %s)", chan);
-            ApplicationLogger.getInstance().log(Level.WARNING, msg);
+            log.warn(msg);
             throw new IllegalArgumentException(msg);
         }
         try {
-            band = BandCode.valueOf(chan.substring(0, 1).toUpperCase());
+            band = BandCode.valueOf(chan.substring(0, 1).toUpperCase(Locale.ENGLISH));
         } catch (IllegalArgumentException ex) {
             throw new BandCodeException("Failed constructing channel because of invalid BAND code.", ex);
         }
 
         try {
-            instrument = InstrumentCode.valueOf(chan.substring(1, 2).toUpperCase());
+            instrument = InstrumentCode.valueOf(chan.substring(1, 2).toUpperCase(Locale.ENGLISH));
         } catch (IllegalArgumentException ex) {
             throw new InstrumentCodeException("Failed constructing channel because of invalid Instrument code.", ex);
         }
-        String ocode = chan.substring(2, 3).toUpperCase();
+        String ocode = chan.substring(2, 3).toUpperCase(Locale.ENGLISH);
         try {
             orientation = OrientationCode.getEnumValue(ocode);
         } catch (IllegalArgumentException ex) {

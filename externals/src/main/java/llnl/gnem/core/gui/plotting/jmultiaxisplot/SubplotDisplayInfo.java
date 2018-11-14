@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -26,13 +26,14 @@ class SubplotDisplayInfo {
     /**
      * Constructor for the SubplotDisplayInfo object
      *
-     * @param displayable Whether this JSubplot should be displayed
-     * @param current     The current axis limits for this JSubplot
+     * @param displayable
+     *            Whether this JSubplot should be displayed
+     * @param current
+     *            The current axis limits for this JSubplot
      */
-    public SubplotDisplayInfo( boolean displayable, ZoomLimits current )
-    {
+    public SubplotDisplayInfo(boolean displayable, ZoomLimits current) {
         this.displayable = displayable;
-        this.Limits = new ZoomLimits( current );
+        this.Limits = new ZoomLimits(current);
     }
 
     boolean displayable;
@@ -41,7 +42,6 @@ class SubplotDisplayInfo {
     public String toString() {
         return "SubplotDisplayInfo{" + "displayable=" + displayable + ", Limits=" + Limits + '}';
     }
+
     ZoomLimits Limits;
 }
-
-

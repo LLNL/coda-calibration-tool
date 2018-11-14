@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,13 +17,14 @@ package llnl.gnem.core.gui.waveform;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.Map.Entry;
 
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
 import llnl.gnem.core.gui.plotting.Legend;
@@ -46,11 +47,12 @@ import llnl.gnem.core.waveform.seismogram.TimeSeries.SeriesListener;
  */
 public abstract class SeismogramPlot<S extends SeismicSignal> extends WaveformPlot implements SeriesListener {
 
+    private static final long serialVersionUID = 1L;
     private List<S> seismograms;
     private Map<S, JSubplot> subplots;
     private final Map<String, Double> picks;
     private DisplayMode mode;
-    private Random random;
+    private SecureRandom random;
     private int alpha;
     private boolean showLegend;
     private final List<Color> primaryColors;
@@ -66,13 +68,13 @@ public abstract class SeismogramPlot<S extends SeismicSignal> extends WaveformPl
         subplots = new HashMap<>();
         picks = new HashMap<>();
         mode = DisplayMode.SEPARATE;
-        random = new Random();
+        random = new SecureRandom();
         alpha = 255;
         showLegend = false;
         addKeyListener(new PickModeListener());
         setZoomType(ZoomType.ZOOM_ALL);
 
-        Color[] predefined = {new Color(0x4169e1), Color.red, Color.green};
+        Color[] predefined = { new Color(0x4169e1), Color.red, Color.green };
         primaryColors = Arrays.asList(predefined);
     }
 
@@ -196,8 +198,8 @@ public abstract class SeismogramPlot<S extends SeismicSignal> extends WaveformPl
         setAllXlimits(0.0, maxLength);
 
         plotPicks();
-        for (JSubplot splot : legends.keySet()) {
-            splot.AddPlotObject(legends.get(splot));
+        for (Entry<JSubplot, Legend> entry : legends.entrySet()) {
+            entry.getKey().AddPlotObject(entry.getValue());
         }
 
         repaint();
@@ -210,8 +212,6 @@ public abstract class SeismogramPlot<S extends SeismicSignal> extends WaveformPl
 
             if (index < primaryColors.size()) {
                 return primaryColors.get(index);
-            } else {
-                random.setSeed(37);
             }
         }
 
@@ -232,12 +232,11 @@ public abstract class SeismogramPlot<S extends SeismicSignal> extends WaveformPl
     protected final Color getCorrectedColor(Color color) {
         return mode == DisplayMode.SEPARATE ? color : new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
     }
-   
 
     private void plotPicks() {
-        for (String phase : picks.keySet()) {
+        for (Entry<String, Double> phaseEntry : picks.entrySet()) {
             for (S seismogram : seismograms) {
-                plotPick(seismogram, phase, picks.get(phase));
+                plotPick(seismogram, phaseEntry.getKey(), phaseEntry.getValue());
             }
         }
     }
@@ -248,9 +247,7 @@ public abstract class SeismogramPlot<S extends SeismicSignal> extends WaveformPl
         Color pickColor = new Color(0xDC143C);
         double xValue = time - getTime(seismogram);
         double yValue = getValue(seismogram, time);
-        VPickLine vpl = new VPickLine(xValue, yValue, 150, phase,
-                pickColor, pickLineWidth, draggable, 12,
-                PickTextPosition.BOTTOM);
+        VPickLine vpl = new VPickLine(xValue, yValue, 150, phase, pickColor, pickLineWidth, draggable, 12, PickTextPosition.BOTTOM);
         vpl.setDraggable(false);
         vpl.setVisible(true);
 
@@ -314,5 +311,6 @@ public abstract class SeismogramPlot<S extends SeismicSignal> extends WaveformPl
     }
 
     protected abstract AbstractLine getLine(S seismogram, Color lineColor);
+
     protected abstract AbstractLine addLine(S seismogram, Color lineColor);
 }

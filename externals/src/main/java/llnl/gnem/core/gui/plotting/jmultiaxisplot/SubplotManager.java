@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -37,7 +37,8 @@ public class SubplotManager {
     /**
      * Constructor for the SubplotManager object
      *
-     * @param owner Reference to the JMultiAxisPlot that owns this subplot.
+     * @param owner
+     *            Reference to the JMultiAxisPlot that owns this subplot.
      */
     public SubplotManager(JMultiAxisPlot owner) {
         this.owner = owner;
@@ -61,7 +62,8 @@ public class SubplotManager {
     /**
      * Sets the spacing in mm between adjacent subplots
      *
-     * @param v The new spacing value
+     * @param v
+     *            The new spacing value
      */
     public void setplotSpacing(double v) {
         plotSpacing = v >= 0 ? v : 0.0;
@@ -103,7 +105,7 @@ public class SubplotManager {
      * Remove all subplots from the JMultiAxisPlot
      */
     public void clear() {
-        for (SubplotZoomData szd: subplots) {
+        for (SubplotZoomData szd : subplots) {
             JSubplot sp = szd.getSubplot();
             sp.Clear();
         }
@@ -113,7 +115,8 @@ public class SubplotManager {
     /**
      * Adds a new subplot to the SubplotManager object
      *
-     * @param p The subplot to be added to the SubplotManager
+     * @param p
+     *            The subplot to be added to the SubplotManager
      * @return A reference to the newly-added subplot
      */
     public JSubplot addSubplot(JSubplot p) {
@@ -124,9 +127,11 @@ public class SubplotManager {
     /**
      * Adds a new subplot to the SubplotManager object at a specific position
      *
-     * @param p The subplot to be added to the SubplotManager
-     * @param position The vertical position of the newly-added subplot (0-N
-     * with 0 at the top)
+     * @param p
+     *            The subplot to be added to the SubplotManager
+     * @param position
+     *            The vertical position of the newly-added subplot (0-N with 0
+     *            at the top)
      * @return A reference to the newly-added subplot
      */
     public JSubplot addSubplot(JSubplot p, int position) {
@@ -144,7 +149,8 @@ public class SubplotManager {
     /**
      * Move the input subplot up by one position in the JMultiAxisPlot.
      *
-     * @param p A reference to the subplot to be moved
+     * @param p
+     *            A reference to the subplot to be moved
      */
     public void MovePlotUp(JSubplot p) {
         int idx = getIndexOf(p);
@@ -158,7 +164,8 @@ public class SubplotManager {
     /**
      * Move the input subplot down by one position in the JMultiAxisPlot.
      *
-     * @param p A reference to the subplot to be moved
+     * @param p
+     *            A reference to the subplot to be moved
      */
     public void MovePlotDown(JSubplot p) {
         int idx = getIndexOf(p);
@@ -172,8 +179,10 @@ public class SubplotManager {
     /**
      * Move the input subplot to a new position in the JMultiAxisPlot.
      *
-     * @param p A reference to the subplot to be moved
-     * @param position The vertical position (0-N) to move to
+     * @param p
+     *            A reference to the subplot to be moved
+     * @param position
+     *            The vertical position (0-N) to move to
      */
     public void MovePlot(JSubplot p, int position) {
         int idx = getIndexOf(p);
@@ -187,7 +196,8 @@ public class SubplotManager {
     /**
      * remove the input subplot from the JMultiAxisPlot.
      *
-     * @param p A reference to the subplot to be removed
+     * @param p
+     *            A reference to the subplot to be removed
      */
     public void RemovePlot(JSubplot p) {
         int idx = getIndexOf(p);
@@ -200,7 +210,8 @@ public class SubplotManager {
     /**
      * Sets the polyLineUsage of the contained subplots
      *
-     * @param value The new polyLineUsage value
+     * @param value
+     *            The new polyLineUsage value
      */
     public void setPolyLineUsage(boolean value) {
         int N = subplots.size();
@@ -223,10 +234,13 @@ public class SubplotManager {
     /**
      * render all the contained subplots to the supplied graphics context
      *
-     * @param g The graphics context to use
-     * @param topMargin The position (in pixels) of the top of the plotting area
-     * in the JMultiAxisPlot object.
-     * @param height The height of the plotting area in pixels.
+     * @param g
+     *            The graphics context to use
+     * @param topMargin
+     *            The position (in pixels) of the top of the plotting area in
+     *            the JMultiAxisPlot object.
+     * @param height
+     *            The height of the plotting area in pixels.
      */
     public void Render(Graphics g, int topMargin, int height) {
         int N = getNumVisibleSubplots();
@@ -236,19 +250,21 @@ public class SubplotManager {
         int ps = owner.getUnitsMgr().getVertUnitsToPixels(plotSpacing);
         if (N == 1) {
             JSubplot p = getFirstDisplayableSubplot();
-            XAxis xaxis = p.getXaxis();
-            owner.getXaxis().setMin(xaxis.getMin());
-            owner.getXaxis().setMax(xaxis.getMax());
+            if (p != null) {
+                XAxis xaxis = p.getXaxis();
+                owner.getXaxis().setMin(xaxis.getMin());
+                owner.getXaxis().setMax(xaxis.getMax());
 
-            // If there is only one plot, then render its axis even if its visibility is
-            // set to false as long as the JMultiAxisPlot X-axis visibility is true.
-            boolean XAxisVisible = owner.getXaxis().getVisible();
-            boolean plotXaxisVisible = xaxis.getVisible();
-            if (XAxisVisible) {
-                xaxis.setVisible(true);
+                // If there is only one plot, then render its axis even if its visibility is
+                // set to false as long as the JMultiAxisPlot X-axis visibility is true.
+                boolean XAxisVisible = owner.getXaxis().getVisible();
+                boolean plotXaxisVisible = xaxis.getVisible();
+                if (XAxisVisible) {
+                    xaxis.setVisible(true);
+                }
+                p.Render(g, topMargin, height);
+                xaxis.setVisible(plotXaxisVisible);
             }
-            p.Render(g, topMargin, height);
-            xaxis.setVisible(plotXaxisVisible);
         } else {
             int subplotHeight = (height - (N + 1) * ps) / N;
             int idx = 0;
@@ -310,8 +326,10 @@ public class SubplotManager {
     /**
      * Sets the allXlimits attribute of the SubplotManager object
      *
-     * @param xmin The new allXlimits value
-     * @param xmax The new allXlimits value
+     * @param xmin
+     *            The new allXlimits value
+     * @param xmax
+     *            The new allXlimits value
      */
     void setAllXlimits(double xmin, double xmax) {
         for (SubplotZoomData szd : subplots) {
@@ -324,8 +342,10 @@ public class SubplotManager {
     /**
      * Description of the Method
      *
-     * @param xmin Description of the Parameter
-     * @param xmax Description of the Parameter
+     * @param xmin
+     *            Description of the Parameter
+     * @param xmax
+     *            Description of the Parameter
      */
     void ScaleAllTraces(double xmin, double xmax, boolean autoScaleY) {
         for (SubplotZoomData szd : subplots) {
@@ -340,10 +360,10 @@ public class SubplotManager {
             p.Scale(scale, centerOnZero);
         }
     }
-    
+
     public Stack<ZoomLimits> getZoomLimits(JSubplot p) {
         for (SubplotZoomData szd : subplots) {
-            if(szd.getSubplot() == p ){
+            if (szd.getSubplot() == p) {
                 return szd.getZoomLimits();
             }
         }
@@ -353,7 +373,8 @@ public class SubplotManager {
     /**
      * Description of the Method
      *
-     * @param zoomRect Description of the Parameter
+     * @param zoomRect
+     *            Description of the Parameter
      */
     public void zoomToBox(Rectangle zoomRect) {
         Area zoomArea = new Area(zoomRect);
@@ -366,19 +387,19 @@ public class SubplotManager {
                 Shape s1;
                 Area subplotbox;
                 DrawingRegion dr1;
-                if (p==null) 
+                if (p == null) {
                     continue;
-                dr1=p.getPlotRegion();
-                if (dr1==null)
+                }
+                dr1 = p.getPlotRegion();
+                if (dr1 == null) {
                     continue;
-                s1=dr1.getRect();
-                if (s1==null)
+                }
+                s1 = dr1.getRect();
+                if (s1 == null) {
                     continue;
-                subplotbox=new Area(s1);
-                if (subplotbox==null)
-                    continue;
-                
-                
+                }
+                subplotbox = new Area(s1);
+
                 subplotbox.intersect(zoomArea);
                 if (subplotbox.isEmpty()) {
                     XAxis ax = p.getXaxis();
@@ -572,15 +593,16 @@ public class SubplotManager {
         int top = p.getPlotTop();
         int height = p.getPlotHeight();
 
-        ct.initialize(xmin, xmax, LeftMargin, BoxWidth,
-                ymin, ymax, top, height);
+        ct.initialize(xmin, xmax, LeftMargin, BoxWidth, ymin, ymax, top, height);
     }
 
     /**
      * Gets the clickedObject attribute of the SubplotManager object
      *
-     * @param X Description of the Parameter
-     * @param Y Description of the Parameter
+     * @param X
+     *            Description of the Parameter
+     * @param Y
+     *            Description of the Parameter
      * @return The clickedObject value
      */
     PlotObject getClickedObject(int X, int Y) {
@@ -601,8 +623,10 @@ public class SubplotManager {
     /**
      * Gets the clickedSubplot attribute of the SubplotManager object
      *
-     * @param X Description of the Parameter
-     * @param Y Description of the Parameter
+     * @param X
+     *            Description of the Parameter
+     * @param Y
+     *            Description of the Parameter
      * @return The clickedSubplot value
      */
     public JSubplot getCurrentSubplot(int X, int Y) {
@@ -679,6 +703,7 @@ public class SubplotManager {
         }
         return -1;
     }
+
     private final JMultiAxisPlot owner;
     private final ArrayList<SubplotZoomData> subplots;
     private double plotSpacing;
@@ -690,5 +715,6 @@ public class SubplotManager {
     public void setShowALL(boolean showALL) {
         this.showALL = showALL;
     }
+
     private boolean showALL;
 }

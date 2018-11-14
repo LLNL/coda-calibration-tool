@@ -19,14 +19,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.util.Geometry.EModel;
 import llnl.gnem.core.util.Geometry.GeodeticCoordinate;
 
 public class SACHeader implements Closeable {
+
+    private static final Logger log = LoggerFactory.getLogger(SACHeader.class);
 
     public float a; // first arrival time
     public float az; // s-r azimuth, degrees
@@ -35,19 +38,19 @@ public class SACHeader implements Closeable {
     public float cmpaz; // component azimuth, degrees
     public float cmpinc; // component inclination, degrees
     // instance variables
-    public float delta;   // RF time increment, seconds
-    public float depmax;  // maximum amplitude
-    public float depmen;   // mean value
-    public float depmin;  // minimum amplitude
-    public float dist;       // s-r distance, km
-    public float e;       // RD final value, time
-    public float evdp;       // event depth
-    public float evel;       // event elevation
-    public float evla;   // event latitude
-    public float evlo;   // event longitude
-    public float f;   // event end sec < nz.
-    public float fmt;   // internal use
-    public float gcarc;    // s-r distance, degrees
+    public float delta; // RF time increment, seconds
+    public float depmax; // maximum amplitude
+    public float depmen; // mean value
+    public float depmin; // minimum amplitude
+    public float dist; // s-r distance, km
+    public float e; // RD final value, time
+    public float evdp; // event depth
+    public float evel; // event elevation
+    public float evla; // event latitude
+    public float evlo; // event longitude
+    public float f; // event end sec < nz.
+    public float fmt; // internal use
+    public float gcarc; // s-r distance, degrees
     public int idep;
     public int ievreg;
     public int ievtyp;
@@ -413,7 +416,8 @@ public class SACHeader implements Closeable {
     /**
      * reproduces the ch allt modifications to the time variables
      *
-     * @param value - the added time in seconds
+     * @param value
+     *            - the added time in seconds
      */
     public void chAllt(float value) {
         if (!isDefault(nzyear)) {
@@ -426,8 +430,10 @@ public class SACHeader implements Closeable {
     /**
      * Equivalent to the ch command in SAC
      *
-     * @param type : the header variable name
-     * @param value: a String version of the value being assigned to the header
+     * @param type
+     *            : the header variable name
+     * @param value:
+     *            a String version of the value being assigned to the header
      */
     public void changeHeader(String type, String value) {
         if (type.equals("stla")) {
@@ -486,9 +492,11 @@ public class SACHeader implements Closeable {
      * change the "t0" header to 100 2.) specific:e.g. 'ch Lg 100 ' will change
      * all picks labelled "Lg" to 100
      *
-     * @param type : the time pick header variable name
-     * @param value: a String version of the float value being assigned to the
-     * header
+     * @param type
+     *            : the time pick header variable name
+     * @param value:
+     *            a String version of the float value being assigned to the
+     *            header
      */
     public void changeTimePick(String type, String value) {
         // Time pick headers
@@ -547,7 +555,9 @@ public class SACHeader implements Closeable {
 
     @Override
     public void close() throws IOException {
-        stream.close();
+        if (stream != null) {
+            stream.close();
+        }
     }
 
     /**
@@ -566,7 +576,7 @@ public class SACHeader implements Closeable {
                 }
             }
 
-            nevid = (int) timet.getEpochTime();  // resulting evid will be the epochtime in seconds
+            nevid = (int) timet.getEpochTime(); // resulting evid will be the epochtime in seconds
         }
         return nevid;
     }
@@ -693,8 +703,8 @@ public class SACHeader implements Closeable {
      *
      * @param index
      *
-     * Object[] timepick = sfh.getTimePick(0); Float value = (Float)
-     * timepick[0]; String pickname = (String) timepick[1];
+     *            Object[] timepick = sfh.getTimePick(0); Float value = (Float)
+     *            timepick[0]; String pickname = (String) timepick[1];
      */
     public Object[] getTimePick(int index) {
         Object[] result = new Object[2];
@@ -713,8 +723,9 @@ public class SACHeader implements Closeable {
      *
      * e.g. float time = getTimePick("Pn");
      *
-     * @param phase the name of the phase searched for - kt[ii] must be the same
-     * - including capitalization
+     * @param phase
+     *            the name of the phase searched for - kt[ii] must be the same -
+     *            including capitalization
      * @return the pick time value, or the default value
      */
     public float getTimePick(String phase) {
@@ -1026,9 +1037,10 @@ public class SACHeader implements Closeable {
     /**
      * Equivalent to the lh command in SAC
      *
-     * @param type : the header variable name
+     * @param type
+     *            : the header variable name
      * @return result: a String version of the value being assigned to the
-     * header
+     *         header
      */
     public String listHeader(String type) {
         if (type.equals("all")) {
@@ -1077,7 +1089,7 @@ public class SACHeader implements Closeable {
         TimeT reftime = getReferenceTime();
 
         if (reftime == null) {
-            reftime = getOriginTime();           //todo these checks aren't totally consistent.
+            reftime = getOriginTime(); //todo these checks aren't totally consistent.
         }
         if (reftime == null) {
             reftime = new TimeT(begintime);
@@ -1156,12 +1168,13 @@ public class SACHeader implements Closeable {
     /**
      * Set the origin time relative to the sac file's reference time
      *
-     * @param origintime - a TimeT version of the event
+     * @param origintime
+     *            - a TimeT version of the event
      */
     public void setOriginTime(TimeT origintime) {
         TimeT reftime = getReferenceTime();
         if (reftime == null) {
-            reftime = origintime;              //todo these checks aren't totally consistent.
+            reftime = origintime; //todo these checks aren't totally consistent.
         }
         o = (float) origintime.subtract(reftime).getEpochTime();
     }
@@ -1177,11 +1190,12 @@ public class SACHeader implements Closeable {
     /**
      * Set the nz(date) fields based on a TimeT object
      *
-     * @param timet : The time as a TimeT object
+     * @param timet
+     *            : The time as a TimeT object
      */
     public void setTime(TimeT timet) {
         // changing the reference time value will affect all the relative time entries (b,e,o,t[] etc.)
-        TimeT referenceTime = getReferenceTime();  // can be null
+        TimeT referenceTime = getReferenceTime(); // can be null
 
         try {
             this.nzyear = timet.getYear();
@@ -1239,7 +1253,8 @@ public class SACHeader implements Closeable {
     /**
      * assign variables based on a treemap
      *
-     * @param variablemap contains all the variables that are not default valued
+     * @param variablemap
+     *            contains all the variables that are not default valued
      */
     public void setVariableMap(TreeMap<String, Object> variablemap) {
         Iterator iterator = variablemap.keySet().iterator();
@@ -1277,8 +1292,8 @@ public class SACHeader implements Closeable {
                 } else if (variable.equals("origintime")) {
                     setOriginTime((TimeT) value);
                 } //else if (variable.equals("referencetime")) setTime((TimeT) value);
-                // Note filetype, etc are text valued (e.g. "time")
-                // these get converted to the equivalent SAC integers using setItype()
+                  // Note filetype, etc are text valued (e.g. "time")
+                  // these get converted to the equivalent SAC integers using setItype()
                 else if (variable.equals("filetype")) {
                     iftype = setItype((String) value);
                 } else if (variable.equals("depvariabletype")) {
@@ -1429,7 +1444,7 @@ public class SACHeader implements Closeable {
                 } else if (variable.equals("unused27")) {
                     unused27 = (Integer) value;
                 } // Note logical variable "leven" is Boolean in the treemap
-                // gets converted to SAC's integer equivalent
+                  // gets converted to SAC's integer equivalent
                 else if (variable.equals("leven")) {
                     Boolean evenvalued = (Boolean) value;
                     if (evenvalued) {
@@ -1442,7 +1457,7 @@ public class SACHeader implements Closeable {
                 try {
                     changeHeader(variable, (String) value); // todo this is a patch - not optimal solution
                 } catch (Exception ee) {
-                    System.out.println(variable + " " + value + " problem");
+                    log.warn(variable + " " + value + " problem");
                 }
             }
         }
@@ -1472,7 +1487,7 @@ public class SACHeader implements Closeable {
         try {
             sacout.seek(0);
         } catch (IOException ex) {
-            Logger.getLogger(SACHeader.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex.getMessage(), ex);
             throw new IllegalStateException(ex.getMessage());
         }
 
@@ -1655,32 +1670,32 @@ public class SACHeader implements Closeable {
      */
     private void checkRequiredFields() {
         if (npts < 0) {
-            //System.out.println("Warning npts = " + npts + "\nbeing changed to npts = " + 0);
+            log.info("Warning npts = " + npts + "\nbeing changed to npts = " + 0);
             npts = 0;
         }
 
         if (nvhdr < 0) {
-            //System.out.println("Warning nvhdr = " + nvhdr + "\nbeing changed to nvhdr = " + 6);
+            log.info("Warning nvhdr = " + nvhdr + "\nbeing changed to nvhdr = " + 6);
             nvhdr = 6;
         }
 
         if (b == FLOATDEFAULT) {
-            //System.out.println("Warning b = " + b + "\nbeing changed to b = " + 0);
+            log.info("Warning b = " + b + "\nbeing changed to b = " + 0);
             b = 0.f;
         }
 
         if (iftype < 0) {
-            //System.out.println("Warning iftype = " + iftype + "\nbeing changed to iftype = 'itime'");
+            log.info("Warning iftype = " + iftype + "\nbeing changed to iftype = 'itime'");
             iftype = itime;
         }
 
         if (!(leven == 0) && !(leven == 1)) {
-            //System.out.println("Warning leven = " + leven + "\nbeing changed to leven = true");
+            log.info("Warning leven = " + leven + "\nbeing changed to leven = true");
             leven = 1;
         }
 
         if (delta == FLOATDEFAULT || delta == 0.f) {
-            //System.out.println("Warning delta = " + delta + "\nbeing changed to delta = " + 1);
+            log.info("Warning delta = " + delta + "\nbeing changed to delta = " + 1);
             delta = 1.f;
         }
 
@@ -1696,7 +1711,7 @@ public class SACHeader implements Closeable {
         DataInputStream bstream = new DataInputStream(new ByteArrayInputStream(headerImage));
         bstream.mark(SACHBYTES);
         bstream.skipBytes(4 * 76);
-        nvhdr = bstream.readInt();     // test nvhdr
+        nvhdr = bstream.readInt(); // test nvhdr
         bstream.reset();
 
         if (nvhdr >= 0 && nvhdr <= 6) {
@@ -1706,9 +1721,9 @@ public class SACHeader implements Closeable {
             swapBytes = true;
             bstream.close();
             byte abyte;
-            for (int i = 0; i < SACHSWAP; i += 4) {        // swapping method
-                abyte = headerImage[i];                            // per Phil Crotwell's
-                headerImage[i] = headerImage[i + 3];             // suggestion
+            for (int i = 0; i < SACHSWAP; i += 4) { // swapping method
+                abyte = headerImage[i]; // per Phil Crotwell's
+                headerImage[i] = headerImage[i + 3]; // suggestion
                 headerImage[i + 3] = abyte;
                 abyte = headerImage[i + 1];
                 headerImage[i + 1] = headerImage[i + 2];
@@ -1717,7 +1732,7 @@ public class SACHeader implements Closeable {
             bstream = new DataInputStream(new ByteArrayInputStream(headerImage));
         }
 
-//  now decode header
+        //  now decode header
         delta = bstream.readFloat();
         depmin = bstream.readFloat();
         depmax = bstream.readFloat();

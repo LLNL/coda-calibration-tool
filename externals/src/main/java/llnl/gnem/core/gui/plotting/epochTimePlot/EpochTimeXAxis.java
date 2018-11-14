@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -43,8 +43,8 @@ public class EpochTimeXAxis extends XAxis {
             type = tmv.getType();
             double val = min + tmv.getOffset();
             if (val >= minIn && val <= maxIn) {
-                if(fullyDecorateAxis || tmv.isMajor())
-                renderTick(g, min + tmv.getOffset(), tmv.getLabel(), tmv.isMajor(), HorizAlignment.CENTER);
+                if (fullyDecorateAxis || tmv.isMajor())
+                    renderTick(g, min + tmv.getOffset(), tmv.getLabel(), tmv.isMajor(), HorizAlignment.CENTER);
             }
         }
         String refString = String.format("%s (%s)", pe.getTime().toString(), type.toString());
@@ -55,6 +55,6 @@ public class EpochTimeXAxis extends XAxis {
         TickLabel refLabel = new TickLabel("", refString);
         TickValue tmv = new TickValue(0.0, refLabel, true, HorizAlignment.LEFT, TickTimeType.SECONDS);
         renderTick(g, time + tmv.getOffset(), tmv.getLabel(), tmv.isMajor(), tmv.getHorizAlignment());
-     }
+    }
 
 }

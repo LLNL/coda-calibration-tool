@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -39,27 +39,28 @@ public class PinnedText extends BasicText {
     /**
      * Constructor for the PinnedText object
      *
-     * @param xPos distance in mm from the x-pin edge
-     * @param yPos distance in mm from the y-pin edge
-     * @param text The text to render
-     * @param hp The horizontal edge to pin to
-     * @param vp The vertical edge to pin to
-     * @param fontName The name of the font used to render the text
-     * @param fontSize The fontSize
-     * @param textC The color of the text
-     * @param hAlign The horizontal alignment type
-     * @param vAlign The vertical alignment type
+     * @param xPos
+     *            distance in mm from the x-pin edge
+     * @param yPos
+     *            distance in mm from the y-pin edge
+     * @param text
+     *            The text to render
+     * @param hp
+     *            The horizontal edge to pin to
+     * @param vp
+     *            The vertical edge to pin to
+     * @param fontName
+     *            The name of the font used to render the text
+     * @param fontSize
+     *            The fontSize
+     * @param textC
+     *            The color of the text
+     * @param hAlign
+     *            The horizontal alignment type
+     * @param vAlign
+     *            The vertical alignment type
      */
-    public PinnedText(double xPos,
-            double yPos,
-            String text,
-            HorizPinEdge hp,
-            VertPinEdge vp,
-            String fontName,
-            double fontSize,
-            Color textC,
-            HorizAlignment hAlign,
-            VertAlignment vAlign) {
+    public PinnedText(double xPos, double yPos, String text, HorizPinEdge hp, VertPinEdge vp, String fontName, double fontSize, Color textC, HorizAlignment hAlign, VertAlignment vAlign) {
         super(text, fontName, fontSize, textC, hAlign, vAlign);
         xposition = xPos;
         yPosition = yPos;
@@ -70,9 +71,12 @@ public class PinnedText extends BasicText {
     /**
      * Constructor for the PinnedText object
      *
-     * @param x distance in mm from the x-pin edge
-     * @param y distance in mm from the y-pin edge
-     * @param text The text to render
+     * @param x
+     *            distance in mm from the x-pin edge
+     * @param y
+     *            distance in mm from the y-pin edge
+     * @param text
+     *            The text to render
      */
     public PinnedText(double x, double y, String text) {
         super(text);
@@ -85,8 +89,10 @@ public class PinnedText extends BasicText {
     /**
      * Description of the Method
      *
-     * @param g Description of the Parameter
-     * @param owner Description of the Parameter
+     * @param g
+     *            Description of the Parameter
+     * @param owner
+     *            Description of the Parameter
      */
     @Override
     public void render(Graphics g, JBasicPlot owner) {
@@ -120,6 +126,7 @@ public class PinnedText extends BasicText {
         // restore old color
         g2d.setColor(oldColor);
     }
+
     private double xposition;
     private double yPosition;
     private HorizPinEdge horizontalPinEdge;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,6 +22,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClien
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PeakVelocityMeasurementService;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Component
 @Primary
@@ -37,5 +38,16 @@ public class PeakVelocityLocalClient implements PeakVelocityClient {
     @Override
     public Flux<PeakVelocityMeasurement> getMeasuredPeakVelocities() {
         return Flux.fromIterable(service.findAll()).onErrorReturn(new PeakVelocityMeasurement());
+    }
+
+    @Override
+    public Flux<PeakVelocityMeasurement> getMeasuredPeakVelocitiesMetadata() {
+        return Flux.fromIterable(service.findAllMetadataOnly()).map(md -> new PeakVelocityMeasurement(md)).onErrorReturn(new PeakVelocityMeasurement());
+    }
+
+    @Override
+    public Mono<PeakVelocityMeasurement> getNoiseForWaveform(Long id) {
+        PeakVelocityMeasurement data = new PeakVelocityMeasurement(service.findByWaveformIdMetadataOnly(id));
+        return Mono.just(data);
     }
 }

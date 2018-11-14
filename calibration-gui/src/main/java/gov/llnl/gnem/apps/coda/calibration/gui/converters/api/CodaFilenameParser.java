@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,15 +14,10 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.converters.api;
 
-import java.util.Map;
+import gov.llnl.gnem.apps.coda.calibration.gui.converters.StackInfo;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 
 public interface CodaFilenameParser {
 
-    public Map<String, Object> parse(String name);
-
-    public Double getLowFrequency();
-
-    public Double getHighFrequency();
-
-    public String getDataType();
+    public Result<StackInfo> parse(String name);
 }

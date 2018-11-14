@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -37,8 +37,7 @@ import llnl.gnem.core.gui.plotting.transforms.CoordinateTransform;
  * consist of a geometric shape centered on user-supplied coordinates and
  * optional text centered under the shape.
  *
- * @author Doug Dodge
- * Will not inspect for: MagicNumber
+ * @author Doug Dodge Will not inspect for: MagicNumber
  */
 public abstract class Symbol extends PlotObject {
     public Symbol() {
@@ -58,9 +57,12 @@ public abstract class Symbol extends PlotObject {
     /**
      * Constructor for the Symbol object
      *
-     * @param X The X-center of the symbol in real-world coordinates
-     * @param Y The Y-center of the symbol in real-world coordinates
-     * @param size The size of the Symbol in mm
+     * @param X
+     *            The X-center of the symbol in real-world coordinates
+     * @param Y
+     *            The Y-center of the symbol in real-world coordinates
+     * @param size
+     *            The size of the Symbol in mm
      */
     public Symbol(double X, double Y, double size) {
         _Xcenter = X;
@@ -79,16 +81,26 @@ public abstract class Symbol extends PlotObject {
     /**
      * Constructor for the Symbol object
      *
-     * @param X The X-center of the symbol in real-world coordinates
-     * @param Y The Y-center of the symbol in real-world coordinates
-     * @param size The size of the Symbol in mm
-     * @param fillC The fill color for the symbol
-     * @param edgeC The edge color for the symbol
-     * @param textC The color of the text associated with the symbol
-     * @param text The text string to be plotted with the symbol
-     * @param visible The visibility of the symbol
-     * @param textVis The visibility of the associated text
-     * @param fontsize The font size of the associated text.
+     * @param X
+     *            The X-center of the symbol in real-world coordinates
+     * @param Y
+     *            The Y-center of the symbol in real-world coordinates
+     * @param size
+     *            The size of the Symbol in mm
+     * @param fillC
+     *            The fill color for the symbol
+     * @param edgeC
+     *            The edge color for the symbol
+     * @param textC
+     *            The color of the text associated with the symbol
+     * @param text
+     *            The text string to be plotted with the symbol
+     * @param visible
+     *            The visibility of the symbol
+     * @param textVis
+     *            The visibility of the associated text
+     * @param fontsize
+     *            The font size of the associated text.
      */
     public Symbol(double X, double Y, double size, Color fillC, Color edgeC, Color textC, String text, boolean visible, boolean textVis, double fontsize) {
         _Xcenter = X;
@@ -107,10 +119,7 @@ public abstract class Symbol extends PlotObject {
     @Override
     public void setSelected(boolean selected, Graphics g) {
         if (selected) {
-            edgeRenderColor = new Color(255 - _EdgeColor.getRed(),
-                    255 - _EdgeColor.getGreen(),
-                    255 - _EdgeColor.getBlue(),
-                    alpha);
+            edgeRenderColor = new Color(255 - _EdgeColor.getRed(), 255 - _EdgeColor.getGreen(), 255 - _EdgeColor.getBlue(), alpha);
         } else {
             edgeRenderColor = _EdgeColor;
         }
@@ -120,8 +129,10 @@ public abstract class Symbol extends PlotObject {
     /**
      * render this Symbol to the supplied graphics context
      *
-     * @param g The graphics context
-     * @param owner The JBasicPlot that owns this symbol
+     * @param g
+     *            The graphics context
+     * @param owner
+     *            The JBasicPlot that owns this symbol
      */
     @Override
     public void render(Graphics g, JBasicPlot owner) {
@@ -181,10 +192,14 @@ public abstract class Symbol extends PlotObject {
     /**
      * render the symbol (but not its text) to the graphics context
      *
-     * @param g The graphics context
-     * @param xcenter The X-center of the symbol in user-space coordinates
-     * @param ycenter The Y-center of the symbol in user-space coordinates
-     * @param symbolsize The size of the symbol in user-space (pixels)
+     * @param g
+     *            The graphics context
+     * @param xcenter
+     *            The X-center of the symbol in user-space coordinates
+     * @param ycenter
+     *            The Y-center of the symbol in user-space coordinates
+     * @param symbolsize
+     *            The size of the symbol in user-space (pixels)
      */
     public abstract void PaintSymbol(Graphics g, int xcenter, int ycenter, int symbolsize);
 
@@ -282,7 +297,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the xcenter attribute of the Symbol object
      *
-     * @param v The new xcenter value
+     * @param v
+     *            The new xcenter value
      */
     public void setXcenter(double v) {
         _Xcenter = v;
@@ -291,7 +307,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the ycenter attribute of the Symbol object
      *
-     * @param v The new ycenter value
+     * @param v
+     *            The new ycenter value
      */
     public void setYcenter(double v) {
         _Ycenter = v;
@@ -300,7 +317,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the symbolSize attribute of the Symbol object
      *
-     * @param v The new symbolSize value
+     * @param v
+     *            The new symbolSize value
      */
     public void setSymbolSize(double v) {
         _SymbolSize = v;
@@ -309,7 +327,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the fontSize attribute of the Symbol object
      *
-     * @param v The new fontSize value
+     * @param v
+     *            The new fontSize value
      */
     public void setFontSize(double v) {
         _FontSize = v;
@@ -318,7 +337,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the fillColor attribute of the Symbol object
      *
-     * @param v The new fillColor value
+     * @param v
+     *            The new fillColor value
      */
     public void setFillColor(Color v) {
         fillColor = new Color(v.getRed(), v.getGreen(), v.getBlue(), alpha);
@@ -327,7 +347,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the edgeColor attribute of the Symbol object
      *
-     * @param v The new edgeColor value
+     * @param v
+     *            The new edgeColor value
      */
     public void setEdgeColor(Color v) {
         _EdgeColor = v;
@@ -336,7 +357,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the textColor attribute of the Symbol object
      *
-     * @param v The new textColor value
+     * @param v
+     *            The new textColor value
      */
     public void setTextColor(Color v) {
         _TextColor = v;
@@ -345,7 +367,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the text attribute of the Symbol object
      *
-     * @param v The new text value
+     * @param v
+     *            The new text value
      */
     public void setText(String v) {
         _Text = v;
@@ -354,7 +377,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the visible attribute of the Symbol object
      *
-     * @param v The new visible value
+     * @param v
+     *            The new visible value
      */
     @Override
     public void setVisible(boolean v) {
@@ -364,7 +388,8 @@ public abstract class Symbol extends PlotObject {
     /**
      * Sets the textVisible attribute of the Symbol object
      *
-     * @param v The new textVisible value
+     * @param v
+     *            The new textVisible value
      */
     public void setTextVisible(boolean v) {
         _TextVisible = v;
@@ -373,10 +398,15 @@ public abstract class Symbol extends PlotObject {
     /**
      * Move this Symbol to a different place in the subplot
      *
-     * @param owner The JBasicPlot that owns this symbol
+     * @param owner
+     *            The JBasicPlot that owns this symbol
      * @param graphics
-     * @param dx The amount to move in the X-direction in real-world coordinates
-     * @param dy The amount to move in the Y-direction in real-world coordinates
+     * @param dx
+     *            The amount to move in the X-direction in real-world
+     *            coordinates
+     * @param dy
+     *            The amount to move in the Y-direction in real-world
+     *            coordinates
      */
     @Override
     public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy) {
@@ -419,10 +449,14 @@ public abstract class Symbol extends PlotObject {
     /**
      * render the Symbol's text to the supplied graphics context
      *
-     * @param g The graphics context
-     * @param x The symbol center X-coordinate in pixels
-     * @param y The symbol center Y-coordinate in pixels
-     * @param size The size of the symbol in pixels
+     * @param g
+     *            The graphics context
+     * @param x
+     *            The symbol center X-coordinate in pixels
+     * @param y
+     *            The symbol center Y-coordinate in pixels
+     * @param size
+     *            The size of the symbol in pixels
      */
     protected void PaintSymbolTextOnCanvas(Graphics g, int x, int y, int size) {
         Graphics2D g2d = (Graphics2D) g;
@@ -466,6 +500,7 @@ public abstract class Symbol extends PlotObject {
     public void setYcoordIntValue(int v) {
         _YpinCenter = v;
     }
+
     /**
      * The X-coordinate of the Symbol center in real-world coordinates
      */
@@ -520,10 +555,7 @@ public abstract class Symbol extends PlotObject {
 
     public void setAlpha(int alpha) {
         this.alpha = alpha;
-        _EdgeColor = new Color(_EdgeColor.getRed(),
-                _EdgeColor.getGreen(),
-                _EdgeColor.getBlue(),
-                alpha);
+        _EdgeColor = new Color(_EdgeColor.getRed(), _EdgeColor.getGreen(), _EdgeColor.getBlue(), alpha);
         setFillColor(getFillColor()); // Sets the alpha
 
     }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -35,27 +35,28 @@ import java.io.SequenceInputStream;
 import java.io.StringReader;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.logging.Level;
 
 import javax.swing.JFileChooser;
 
-import llnl.gnem.core.util.ApplicationLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import llnl.gnem.core.util.FileSystemException;
 
 /**
  * User: matzel Date: Oct 1, 2004 Time: 10:20:24 AM
  */
-public class FileManager
-{
+public class FileManager {
+
+    private static final Logger log = LoggerFactory.getLogger(FileManager.class);
 
     private static FileManager _instance = null;
 
-    public static FileManager getInstance()
-    {
-        if (_instance == null)
-        {
+    public static FileManager getInstance() {
+        if (_instance == null) {
             _instance = new FileManager();
         }
         return _instance;
@@ -68,51 +69,26 @@ public class FileManager
      * @param destFile
      *
      */
-    public static void copy(File srcFile, File destFile) throws IOException
-    {
-        FileChannel srcChannel = null;
-        FileChannel destChannel = null;
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        if (!srcFile.exists())
-        {
+    public static void copy(File srcFile, File destFile) throws IOException {
+        if (!srcFile.exists()) {
             String msg = String.format("Source file dir: (%s), dfile (%s) ", srcFile.getParent(), srcFile.getName());
             throw new FileSystemException(msg);
         }
-        try
-        {
-            fis = new FileInputStream(srcFile);
-            srcChannel = fis.getChannel();
-            fos = new FileOutputStream(destFile);
-            destChannel = fos.getChannel();
-            long size = srcChannel.size();
-            destChannel.transferFrom(srcChannel, 0, size);
-        }
-        catch (IOException e)
-        {
+        try {
+            try (FileInputStream fis = new FileInputStream(srcFile)) {
+                try (FileChannel srcChannel = fis.getChannel()) {
+                    try (FileOutputStream fos = new FileOutputStream(destFile)) {
+                        try (FileChannel destChannel = fos.getChannel()) {
+                            long size = srcChannel.size();
+                            destChannel.transferFrom(srcChannel, 0, size);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
             String msg = String.format("Copy failed: ", e.toString());
             throw new FileSystemException(msg);
 
-        }
-        finally
-        {
-            if (srcChannel != null)
-            {
-                srcChannel.close();
-            }
-            if (destChannel != null)
-            {
-                destChannel.close();
-            }
-
-            if (fis != null)
-            {
-                fis.close();
-            }
-            if (fos != null)
-            {
-                fos.close();
-            }
         }
     }
 
@@ -126,20 +102,18 @@ public class FileManager
      * concatenation utility that sequentially concatenates files together in
      * the order they are listed.
      *
-     * @param filelist - a vector of Files to concatenate
-     * @param outfile - the outputfile to write the concatenated set
+     * @param filelist
+     *            - a vector of Files to concatenate
+     * @param outfile
+     *            - the outputfile to write the concatenated set
      * @throws IOException
      */
-    public static void concatenate(Vector<File> filelist, File outfile) throws IOException
-    {
+    public static void concatenate(Vector<File> filelist, File outfile) throws IOException {
         ListOfFiles mylist = new ListOfFiles(filelist);
-        try (SequenceInputStream s = new SequenceInputStream(mylist);
-                FileOutputStream out = new FileOutputStream(outfile);)
-        {
+        try (SequenceInputStream s = new SequenceInputStream(mylist); FileOutputStream out = new FileOutputStream(outfile);) {
 
             int c;
-            while ((c = s.read()) != -1)
-            {
+            while ((c = s.read()) != -1) {
                 out.write(c);
             }
         }
@@ -152,14 +126,11 @@ public class FileManager
      * @return
      * @throws IOException
      */
-    public String readBuffer(String filename) throws IOException
-    {
+    public String readBuffer(String filename) throws IOException {
         String string, string2 = new String();
-        try (BufferedReader in = new BufferedReader(new FileReader(filename));)
-        {
+        try (BufferedReader in = new BufferedReader(new FileReader(filename));) {
 
-            while ((string = in.readLine()) != null)
-            {
+            while ((string = in.readLine()) != null) {
                 string2 += string + "\n";
             }
         }
@@ -168,152 +139,54 @@ public class FileManager
     }
 
     /**
-     * Read input by lines from the InputStream
-     *
-     * @throws IOException
-     */
-    public void readBufferedInput() throws IOException
-    {
-
-        try (BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));)
-        {
-            System.out.print("Enter a line: ");
-            System.out.println(stdin.readLine());
-        }
-    }
-
-    /**
-     * Read input from a string
-     *
-     * @param string
-     * @throws IOException
-     */
-    public void readString(String string) throws IOException
-    {
-        // 2. Input from memory
-        try (StringReader in2 = new StringReader(string);)
-        {
-            int c;
-            while ((c = in2.read()) != -1)
-            {
-                System.out.print((char) c);
-            }
-        }
-    }
-
-    /**
-     * Use a string tokenizer when reading a string
-     *
-     * @param string
-     * @throws IOException
-     */
-    public void readStringTokens(String string) throws IOException
-    {
-        try (StringReader in2 = new StringReader(string);)
-        {
-            StringTokenizer st = new StringTokenizer(string);
-            while (st.hasMoreTokens())
-            {
-                System.out.println(st.nextToken());
-            }
-        }
-    }
-
-    public DataInputStream readDataInputStream(String string) throws IOException
-    {
-        System.out.println("// 3. Formatted memory input");
-        DataInputStream datainputstream = null;
-        try
-        {
-            datainputstream = new DataInputStream(new ByteArrayInputStream(string.getBytes()));
-            while (true)
-            {
-                System.out.println((char) datainputstream.readByte());
-            }
-        }
-        catch (EOFException e)
-        {
-            System.err.println("End of stream");
-        }
-
-        return datainputstream;
-    }
-
-    public void writeBufferedOutput(String string) throws IOException
-    {
-        System.out.println("// 4. File output to IODemo.out");
-        try (BufferedReader bufferedreader = new BufferedReader(new StringReader(string));
-                PrintWriter printwriter = new PrintWriter(new BufferedWriter(new FileWriter("IODemo.out")));)
-        {
-            String s;
-            int lineCount = 1;
-            while ((s = bufferedreader.readLine()) != null)
-            {
-                printwriter.println(lineCount++ + ": " + s);
-            }
-
-        }
-        catch (EOFException e)
-        {
-            System.err.println("End of stream");
-        }
-    }
-
-    /**
      * Use JFileChooser to open a File using a generic statement
      */
-    public static File[] openFile()
-    {
+    public static File[] openFile() {
         return openFile("", null, null);
     }
 
     /**
      * Use a JFileChooser to open a File
      *
-     * @param type - the suffix type of file to open (e.g. "", "txt", "sac"...)
-     * @param directory - a File object pointing to the directory to start the
-     * search in
-     * @param component the Graphical Component used to call this procedure
-     * (e.g. "JFrame ...")
+     * @param type
+     *            - the suffix type of file to open (e.g. "", "txt", "sac"...)
+     * @param directory
+     *            - a File object pointing to the directory to start the search
+     *            in
+     * @param component
+     *            the Graphical Component used to call this procedure (e.g.
+     *            "JFrame ...")
      * @return the opened File Note for a generic case use openFile("", null,
-     * null)
+     *         null)
      */
-    public static File[] openFile(String type, File directory, Component component)
-    {
+    public static File[] openFile(String type, File directory, Component component) {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
 
         final String filetype = type;
 
-        if (directory != null)
-        {
+        if (directory != null) {
             chooser.setCurrentDirectory(directory);
-        }
-        else
-        {
+        } else {
             chooser.setCurrentDirectory(new File("."));
         }
 
-        chooser.setFileFilter(new javax.swing.filechooser.FileFilter()
-        {
+        chooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
 
             @Override
-            public boolean accept(File f)
-            {
-                String name = f.getAbsoluteFile().getName().toLowerCase();
+            public boolean accept(File f) {
+                String name = f.getAbsoluteFile().getName().toLowerCase(Locale.ENGLISH);
                 return name.endsWith(filetype) || f.isDirectory();
             }
 
             @Override
-            public String getDescription()
-            {
+            public String getDescription() {
                 return filetype;
             }
         });
 
         int r = chooser.showOpenDialog(component);
-        if (r != JFileChooser.APPROVE_OPTION)
-        {
+        if (r != JFileChooser.APPROVE_OPTION) {
             return null;
         }
 
@@ -325,51 +198,46 @@ public class FileManager
     /**
      * Use a JFileChooser to open a File
      *
-     * @param type - the suffix type of file to open (e.g. "", "txt", "sac"...)
-     * @param directory - a File object pointing to the directory to start the
-     * search in
-     * @param component the Graphical Component used to call this procedure
-     * (e.g. "JFrame ...")
+     * @param type
+     *            - the suffix type of file to open (e.g. "", "txt", "sac"...)
+     * @param directory
+     *            - a File object pointing to the directory to start the search
+     *            in
+     * @param component
+     *            the Graphical Component used to call this procedure (e.g.
+     *            "JFrame ...")
      * @param dialogtitle
      * @return the opened File Note for a generic case use openFile("", null,
-     * null)
+     *         null)
      */
-    public static File[] openFile(String type, File directory, Component component, String dialogtitle)
-    {
+    public static File[] openFile(String type, File directory, Component component, String dialogtitle) {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
         chooser.setDialogTitle(dialogtitle);
         final String filetype = type;
 
-        if (directory != null)
-        {
+        if (directory != null) {
             chooser.setCurrentDirectory(directory);
-        }
-        else
-        {
+        } else {
             chooser.setCurrentDirectory(new File("."));
         }
 
-        chooser.setFileFilter(new javax.swing.filechooser.FileFilter()
-        {
+        chooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
 
             @Override
-            public boolean accept(File f)
-            {
-                String name = f.getAbsoluteFile().getName().toLowerCase();
+            public boolean accept(File f) {
+                String name = f.getAbsoluteFile().getName().toLowerCase(Locale.ENGLISH);
                 return name.endsWith(filetype) || f.isDirectory();
             }
 
             @Override
-            public String getDescription()
-            {
+            public String getDescription() {
                 return filetype;
             }
         });
 
         int r = chooser.showOpenDialog(component);
-        if (r != JFileChooser.APPROVE_OPTION)
-        {
+        if (r != JFileChooser.APPROVE_OPTION) {
             return null;
         }
 
@@ -378,35 +246,28 @@ public class FileManager
         return files;
     }
 
-    public static File selectDirectory()
-    {
+    public static File selectDirectory() {
         return selectDirectory(null, null);
     }
 
-    public static File selectDirectory(File starting_directory, Component component)
-    {
+    public static File selectDirectory(File starting_directory, Component component) {
         return selectDirectory(starting_directory, component, "Select target directory");
     }
 
-    public static File selectDirectory(File starting_directory, Component component, String dialogtitle)
-    {
+    public static File selectDirectory(File starting_directory, Component component, String dialogtitle) {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle(dialogtitle);
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-        if (starting_directory != null)
-        {
+        if (starting_directory != null) {
             chooser.setCurrentDirectory(starting_directory);
-        }
-        else
-        {
+        } else {
             chooser.setCurrentDirectory(new File("."));
         }
 
         int r = chooser.showOpenDialog(component);
-        if (r == JFileChooser.APPROVE_OPTION)
-        {
+        if (r == JFileChooser.APPROVE_OPTION) {
             return chooser.getSelectedFile();
         }
 
@@ -416,45 +277,42 @@ public class FileManager
     /**
      * use JFileChooser to save a file
      *
-     * @param defaultfile - if not null- the working directory to save the file
-     * @param component - the Graphical Component used to call this procedure
-     * (e.g. "JFrame ...")
+     * @param defaultfile
+     *            - if not null- the working directory to save the file
+     * @param component
+     *            - the Graphical Component used to call this procedure (e.g.
+     *            "JFrame ...")
      * @return the File
      */
-    public static File saveFile(File defaultfile, Component component)
-    {
+    public static File saveFile(File defaultfile, Component component) {
         return saveFile(defaultfile, component, null);
     }
 
     /**
      * use JFileChooser to save a file
      *
-     * @param defaultfile - if not null- the working directory to save the file
-     * @param component - the Graphical Component used to call this procedure
-     * (e.g. "JFrame ...")
+     * @param defaultfile
+     *            - if not null- the working directory to save the file
+     * @param component
+     *            - the Graphical Component used to call this procedure (e.g.
+     *            "JFrame ...")
      * @return the File
      */
-    public static File saveFile(File defaultfile, Component component, String dialogtitle)
-    {
+    public static File saveFile(File defaultfile, Component component, String dialogtitle) {
         JFileChooser chooser = new JFileChooser();
 
         chooser.setDialogTitle(dialogtitle);
 
-        if (defaultfile != null)
-        {
-            if (defaultfile.isDirectory())
-            {
+        if (defaultfile != null) {
+            if (defaultfile.isDirectory()) {
                 chooser.setCurrentDirectory(defaultfile);
-            }
-            else
-            {
+            } else {
                 chooser.setSelectedFile(defaultfile);
             }
         }
 
         int r = chooser.showSaveDialog(component);
-        if (r != JFileChooser.APPROVE_OPTION)
-        {
+        if (r != JFileChooser.APPROVE_OPTION) {
             return null;
         }
 
@@ -466,17 +324,17 @@ public class FileManager
     /**
      * utility for making subdirectories
      *
-     * @param reference - references the parent directory - if reference is a
-     * file it's parent will be the parent directory
-     * @param subdirectory - the String denoting the desired subdirectory
+     * @param reference
+     *            - references the parent directory - if reference is a file
+     *            it's parent will be the parent directory
+     * @param subdirectory
+     *            - the String denoting the desired subdirectory
      * @return the subdirectory or null if unable to create it.
      *
-     * Note if the directory already exists this will return null
+     *         Note if the directory already exists this will return null
      */
-    public static File makeDirectory(File reference, String subdirectory)
-    {
-        try
-        {
+    public static File makeDirectory(File reference, String subdirectory) {
+        try {
             if (reference.isDirectory()) // if the reference is a directory - use it as the parent directory
             {
                 File newdirectory = new File(reference, subdirectory);
@@ -486,43 +344,30 @@ public class FileManager
                     if (newdirectory.isDirectory()) // check if it exists and is a directory
                     {
                         return newdirectory;
-                    }
-                    else
-                    {
+                    } else {
                         return null;
                     }
-                }
-                else
-                {
+                } else {
                     newdirectory.mkdir();
                     return newdirectory;
                 }
-            }
-            else //if the reference is a file, use its parent directory as the parent for the subdirectory
+            } else //if the reference is a file, use its parent directory as the parent for the subdirectory
             {
                 File newdirectory = new File(reference.getParentFile(), subdirectory);
 
                 // Todo Note below is redundant with above
-                if (newdirectory.exists())
-                {
-                    if (newdirectory.isDirectory())
-                    {
+                if (newdirectory.exists()) {
+                    if (newdirectory.isDirectory()) {
                         return newdirectory;
-                    }
-                    else
-                    {
+                    } else {
                         return null;
                     }
-                }
-                else
-                {
+                } else {
                     newdirectory.mkdir();
                     return newdirectory;
                 }
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             return null;
         }
     }
@@ -533,12 +378,11 @@ public class FileManager
      * @param newPathString
      * @return the File if created
      *
-     * usage: e.g. String newPath = path + File.separator + year +
-     * File.separator + jday + File.separator + hour;
-     * FileManager.mkdirs(newPath);
+     *         usage: e.g. String newPath = path + File.separator + year +
+     *         File.separator + jday + File.separator + hour;
+     *         FileManager.mkdirs(newPath);
      */
-    public static File mkdirs(String newPathString)
-    {
+    public static File mkdirs(String newPathString) {
         File result = new File(newPathString);
         return mkdirs(result);
     }
@@ -549,22 +393,15 @@ public class FileManager
      * @param newPath
      * @return the File if created
      */
-    public static File mkdirs(File newPath)
-    {
-        if (newPath.exists())
-        {
+    public static File mkdirs(File newPath) {
+        if (newPath.exists()) {
             return newPath;
-        }
-        else
-        {
+        } else {
             boolean wasCreated = newPath.mkdirs();
 
-            if (wasCreated)
-            {
+            if (wasCreated) {
                 return newPath;
-            }
-            else
-            {
+            } else {
                 throw new IllegalStateException("Could not create directory: " + newPath);
             }
         }
@@ -574,24 +411,17 @@ public class FileManager
      * @param file
      * @param stringbuffer
      */
-    public static void writeTextFile(File file, StringBuffer stringbuffer)
-    {
+    public static void writeTextFile(File file, StringBuffer stringbuffer) {
         // don't write a file if the stringbuffer is empty
-        if (stringbuffer.length() > 0)
-        {
+        if (stringbuffer.length() > 0) {
 
-            try (BufferedWriter out = new BufferedWriter(new FileWriter(file));)
-            {
+            try (BufferedWriter out = new BufferedWriter(new FileWriter(file));) {
                 out.write(stringbuffer.toString());
+            } catch (IOException e) {
+                log.warn("unable to write file: " + file.getAbsolutePath(), e);
             }
-            catch (IOException e)
-            {
-                ApplicationLogger.getInstance().log(Level.WARNING, "unable to write file: " + file.getAbsolutePath(), e);
-            }
-        }
-        else
-        {
-            System.out.println("Empty StringBuffer. " + file.getAbsolutePath() + " not written");
+        } else {
+            log.warn("Empty StringBuffer. " + file.getAbsolutePath() + " not written");
         }
     }
 
@@ -599,14 +429,14 @@ public class FileManager
      * Write a Text File Given a vector of String objects Each Vector element is
      * treated as a separate line of the file
      *
-     * @param file : the File to be written
-     * @param textrowvector : the vector of text strings to be written
+     * @param file
+     *            : the File to be written
+     * @param textrowvector
+     *            : the vector of text strings to be written
      */
-    public static void writeTextFile(File file, Vector<String> textrowvector)
-    {
+    public static void writeTextFile(File file, Vector<String> textrowvector) {
         StringBuffer sb = new StringBuffer();
-        for (int ii = 0; ii < textrowvector.size(); ii++)
-        {
+        for (int ii = 0; ii < textrowvector.size(); ii++) {
             String line = textrowvector.elementAt(ii) + "\n"; // note append a newline character to each element
             sb.append(line);
         }
@@ -616,24 +446,24 @@ public class FileManager
     /**
      * Utility to create a BufferedWriter for a text file
      *
-     * @param file the File being written to
+     * @param file
+     *            the File being written to
      * @return a BufferedWriter for writing to the File
      * @throws IOException
      */
-    public static BufferedWriter getBufferedWriter(File file) throws IOException
-    {
+    public static BufferedWriter getBufferedWriter(File file) throws IOException {
         return new BufferedWriter(new FileWriter(file));
     }
 
     /**
      * Utility to create a BufferedReader for a text file
      *
-     * @param file the File being read
+     * @param file
+     *            the File being read
      * @return a BufferedReader for writing to the File
      * @throws IOException
      */
-    public static BufferedReader getBufferedReader(File file) throws IOException
-    {
+    public static BufferedReader getBufferedReader(File file) throws IOException {
         return new BufferedReader(new FileReader(file));
     }
 
@@ -643,8 +473,7 @@ public class FileManager
      * @return a BufferedWriter for writing to the File
      * @throws IOException
      */
-    public static BufferedWriter getBufferedWriter(File directory, String filename) throws IOException
-    {
+    public static BufferedWriter getBufferedWriter(File directory, String filename) throws IOException {
         File file = new File(directory, filename);
         return new BufferedWriter(new FileWriter(file));
     }
@@ -652,32 +481,26 @@ public class FileManager
     /**
      * Utility to write a String to a text file
      *
-     * @param out - the BufferedWriter
-     * @param string - the String to be written
+     * @param out
+     *            - the BufferedWriter
+     * @param string
+     *            - the String to be written
      */
-    public static void write(BufferedWriter out, String string)
-    {
-        try
-        {
+    public static void write(BufferedWriter out, String string) {
+        try {
             out.write(string);
-        }
-        catch (IOException e)
-        {
-            ApplicationLogger.getInstance().log(Level.WARNING, "unable to write string", e);
+        } catch (IOException e) {
+            log.warn("unable to write string", e);
         }
     }
 
-    public static void writeLine(BufferedWriter out, String string)
-    {
-        try
-        {
+    public static void writeLine(BufferedWriter out, String string) {
+        try {
             out.write(string);
             out.newLine();
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
 
-            ApplicationLogger.getInstance().log(Level.WARNING, "unable to write string", e);
+            log.warn("unable to write string", e);
         }
 
     }
@@ -689,26 +512,21 @@ public class FileManager
      * @param file
      * @return a Vector of all the lines of the text file
      */
-    public static Vector<String> createTextRowVector(File file)
-    {
+    public static Vector<String> createTextRowVector(File file) {
         // this will be a vector collection of all the lines in the Text file
         Vector<String> textrowvector = new Vector<>();
 
-        try (BufferedReader breader = new BufferedReader(new FileReader(file));)
-        {
+        try (BufferedReader breader = new BufferedReader(new FileReader(file));) {
             String line;
             // 1. Reading input by lines:
-            while ((line = breader.readLine()) != null)
-            {
+            while ((line = breader.readLine()) != null) {
                 // create a Vector of all the lines in the amplitude measurement file
                 textrowvector.addElement(line);
             }
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             //leaving this setting to null, upstream users currently relying on that 'feature'.
             textrowvector = null;
-            ApplicationLogger.getInstance().log(Level.WARNING, "Exception thrown: " + file.getAbsolutePath(), e);
+            log.warn("Exception thrown: " + file.getAbsolutePath(), e);
         }
 
         return textrowvector;
@@ -721,26 +539,21 @@ public class FileManager
      * @param file
      * @return an ArrayList of all the lines of the text file
      */
-    public static ArrayList<String> createTextRowCollection(File file)
-    {
+    public static ArrayList<String> createTextRowCollection(File file) {
         // this will be a vector collection of all the lines in the Text file
         ArrayList<String> textrowlist = new ArrayList<>();
 
-        try (BufferedReader breader = new BufferedReader(new FileReader(file));)
-        {
+        try (BufferedReader breader = new BufferedReader(new FileReader(file));) {
             // 1. Reading input by lines:
 
             String line;
             // create a Vector of all the lines in the amplitude measurement file
-            while ((line = breader.readLine()) != null)
-            {
+            while ((line = breader.readLine()) != null) {
                 textrowlist.add(line);
             }
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             textrowlist = null;
-            ApplicationLogger.getInstance().log(Level.WARNING, "Exception thrown: " + file.getAbsolutePath(), e);
+            log.warn("Exception thrown: " + file.getAbsolutePath(), e);
         }
 
         return textrowlist;
@@ -752,13 +565,13 @@ public class FileManager
      *
      * e.g. ("this is a line") TO Vector("this", "is", "a", "line")
      *
-     * @param file a RandomAccessfile
+     * @param file
+     *            a RandomAccessfile
      * @return the Vector of the String tokens for the "next" line in the
-     * RandomAccessFile
+     *         RandomAccessFile
      * @throws IOException
      */
-    public static Vector<String> readLineStringTokens(RandomAccessFile file) throws IOException
-    {
+    public static Vector<String> readLineStringTokens(RandomAccessFile file) throws IOException {
         String s = file.readLine();
         Vector<String> tokens = getStringTokens(s);
         return tokens;
@@ -767,29 +580,27 @@ public class FileManager
     /**
      * skip a specific number of lines in a RandomAccessFile
      *
-     * @param file - the RandomAccessFile
-     * @param linesToSkip - an integer number of lines to skip
+     * @param file
+     *            - the RandomAccessFile
+     * @param linesToSkip
+     *            - an integer number of lines to skip
      * @return - the RandomAccessFile readline() String result for the last line
      * @throws IOException
      */
-    public static String skipLines(RandomAccessFile file, int linesToSkip) throws IOException
-    {
+    public static String skipLines(RandomAccessFile file, int linesToSkip) throws IOException {
         String result = null;
-        for (int ii = 0; ii < linesToSkip; ii++)
-        {
+        for (int ii = 0; ii < linesToSkip; ii++) {
             result = file.readLine();
         }
         return result;
     }
 
-    public static Vector<String> getStringTokens(String string)
-    {
+    public static Vector<String> getStringTokens(String string) {
         StringTokenizer st = new StringTokenizer(string);
         Vector<String> tokens = new Vector<>();
 
         int num = st.countTokens();
-        for (int ii = 0; ii < num; ii++)
-        {
+        for (int ii = 0; ii < num; ii++) {
             tokens.add(st.nextToken());
         }
         return tokens;
@@ -798,15 +609,13 @@ public class FileManager
     /**
      * This code strips the suffix from a file name
      */
-    public static String stripSuffix(File file)
-    {
+    public static String stripSuffix(File file) {
         StringBuffer result = new StringBuffer();
 
         String filename = file.getAbsolutePath();
         StringTokenizer tokenizer = new StringTokenizer(filename, ".", true);
         int ntokens = tokenizer.countTokens();
-        for (int ii = 0; ii < ntokens - 1; ii++)
-        {
+        for (int ii = 0; ii < ntokens - 1; ii++) {
             result.append(tokenizer.nextToken());
         }
 
@@ -819,19 +628,18 @@ public class FileManager
      *
      * fwrite(fid, nchars, 'int') fwrite(fid, chararray, 'int')
      *
-     * @param is the DataInputStream
+     * @param is
+     *            the DataInputStream
      * @return the String representation of the integer array
      */
-    public static String convertIntArrayToString(DataInputStream is) throws IOException
-    {
+    public static String convertIntArrayToString(DataInputStream is) throws IOException {
         String result = "";
 
         int nchars = is.readInt();
 
         int[] character = new int[nchars];
         char[] c = new char[nchars];
-        for (int ii = 0; ii < nchars; ii++)
-        {
+        for (int ii = 0; ii < nchars; ii++) {
             character[ii] = is.readInt();
             c[ii] = (char) (character[ii]);
         }
@@ -848,54 +656,48 @@ public class FileManager
      * nchars = fread(fid, 1, 'int') matlabstring = fread(fid, nchars, 'int
      * char')
      *
-     * @param string the original string
-     * @param os the DataOutputStream
+     * @param string
+     *            the original string
+     * @param os
+     *            the DataOutputStream
      */
-    public static void writeStringAsIntArray(String string, DataOutputStream os)
-    {
+    public static void writeStringAsIntArray(String string, DataOutputStream os) {
         char[] c = string.toCharArray();
         int nchars = c.length;
 
-        try
-        {
+        try {
             os.writeInt(nchars);
 
-            for (int ii = 0; ii < nchars; ii++)
-            {
+            for (int ii = 0; ii < nchars; ii++) {
                 int character = c[ii];
                 os.writeInt(character);
             }
-        }
-        catch (IOException e)
-        {
-            ApplicationLogger.getInstance().log(Level.WARNING, "Exception thrown...", e);
+        } catch (IOException e) {
+            log.warn("Exception thrown...", e);
         }
     }
 
     /**
      * List the files in a directory - limited by regex characters if defined
+     * 
      * @param regex
      * @param directory
-     * @return 
+     * @return
      */
-    public static ArrayList<String> listdirectory(String regex, File directory)
-    {
+    public static ArrayList<String> listdirectory(String regex, File directory) {
         FilenameFilter filter = new PatternFilter(regex);
         File[] filesAndDirs = directory.listFiles();
-        
+
         ArrayList<String> filtered = new ArrayList<>();
-        for (File file : filesAndDirs)
-        {
+        for (File file : filesAndDirs) {
             String parent = file.getParent();
             String name = file.getName();
-            if (filter.accept(new File(parent), name))
-            {
+            if (filter.accept(new File(parent), name)) {
                 filtered.add(file.getAbsolutePath());
             }
 
         }
         return filtered;
     }
-    
-    
+
 }

@@ -1,21 +1,52 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>coda-calibration</artifactId>
-	<version>1.0.3</version>
+	<version>1.0.4-SNAPSHOT</version>
 	<name>coda-calibration</name>
 
 	<packaging>pom</packaging>
 
 	<modules>
 		<module>externals</module>
+		<module>common-service</module>
+		<module>mapping</module>
+		<module>common-gui</module>
 		<module>calibration-service</module>
 		<module>calibration-gui</module>
 		<module>calibration-standalone</module>
+		<module>envelope-service</module>
+		<module>envelope-gui</module>
+		<module>envelope-standalone</module>
 	</modules>
+
+	<profiles>
+		<profile>
+			<id>full</id>
+			<properties>
+				<excludedGroups>none</excludedGroups>
+			</properties>
+		</profile>
+		<profile>
+			<id>check-in-ci</id>
+			<properties>
+				<excludedGroups>integration, gui</excludedGroups>
+			</properties>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+		<profile>
+			<id>nightly-ci</id>
+			<properties>
+				<excludedGroups>gui</excludedGroups>
+			</properties>
+		</profile>
+	</profiles>
 
 	<repositories>
 		<repository>
@@ -38,50 +69,195 @@
 		<java.product.version>8</java.product.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
-		<springlets.version>1.2.0.RC2</springlets.version>
-		<maven.compiler.plugin.version>3.6.1</maven.compiler.plugin.version>
-		<maven.javadoc.plugin.version>2.10.4</maven.javadoc.plugin.version>
-		<spring.boot.version>2.0.2.RELEASE</spring.boot.version>
+
+		<maven.compile.source>1.8</maven.compile.source>
+		<maven.compile.target>1.8</maven.compile.target>
+		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
+		<maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
+		<maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
+		<maven.shade.plugin.version>3.0.0</maven.shade.plugin.version>
+		<maven.jar.plugin.version>3.1.0</maven.jar.plugin.version>
+
+		<jfx.version>11</jfx.version>
+		<jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+		<springlets.version>1.2.0.RELEASE</springlets.version>
+		<spring.boot.version>2.1.0.RELEASE</spring.boot.version>
+		<reactor.version>Californium-SR2</reactor.version>
+
+		<javax.persistence.version>2.2.1</javax.persistence.version>
+		<org.apache.xmlgraphics.batik-script.version>1.10</org.apache.xmlgraphics.batik-script.version>
+		<xml.apis.ext.version>1.3.04</xml.apis.ext.version>
+		<xml.apis.version>1.4.01</xml.apis.version>
+		<geographiclib.java.version>1.49</geographiclib.java.version>
+
+		<!-- GUI Specific -->
+		<tyrus.standalone.client.version>1.13.1</tyrus.standalone.client.version>
+		<commons.compress.version>1.18</commons.compress.version>
+		<commons.math3.version>3.6.1</commons.math3.version>
+		<guava.version>27.0-jre</guava.version>
+		<failsafe.version>1.1.0</failsafe.version>
+
+		<!-- Testing -->
+		<spring.test.version>5.1.2.RELEASE</spring.test.version>
+		<junit.jupiter.version>5.3.1</junit.jupiter.version>
+		<mockito.version>2.23.0</mockito.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-base</artifactId>
+				<version>${jfx.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-fxml</artifactId>
+				<version>${jfx.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-web</artifactId>
+				<version>${jfx.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-swing</artifactId>
+				<version>${jfx.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-graphics</artifactId>
+				<version>${jfx.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-controls</artifactId>
+				<version>${jfx.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>javax.xml.bind</groupId>
+				<artifactId>jaxb-api</artifactId>
+				<version>${jaxb-api.version}</version>
+			</dependency>
+
+			<!-- Ours -->
+			<dependency>
 				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 				<artifactId>externals</artifactId>
-				<version>1.0.3</version>
+				<version>${project.version}</version>
 			</dependency>
+
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+				<artifactId>common-gui</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+				<artifactId>mapping</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+				<artifactId>common-application</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+				<artifactId>common-model</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+				<artifactId>common-repository</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+				<artifactId>common-service-api</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+				<artifactId>common-service-impl</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+				<artifactId>calibration-gui</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+				<artifactId>calibration-application</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+				<artifactId>calibration-model</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+				<artifactId>calibration-repository</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+				<artifactId>calibration-service-api</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+				<artifactId>calibration-integration</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+				<artifactId>calibration-service-impl</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+				<artifactId>envelope-gui</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+				<artifactId>envelope-application</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+				<artifactId>envelope-model</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+				<artifactId>envelope-repository</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+				<artifactId>envelope-service-api</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.llnl.gnem.apps.coda.envelope</groupId>
+				<artifactId>envelope-service-impl</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<!-- End Ours -->
+
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-starter-parent</artifactId>
 				<version>${spring.boot.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-				<artifactId>model</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-				<artifactId>repository</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-				<artifactId>service.api</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-				<artifactId>integration</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-				<artifactId>service.impl</artifactId>
-				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.springlets</groupId>
@@ -108,14 +284,130 @@
 				<artifactId>springlets-boot-starter-web</artifactId>
 				<version>${springlets.version}</version>
 			</dependency>
+
+			<dependency>
+				<groupId>org.eclipse.persistence</groupId>
+				<artifactId>javax.persistence</artifactId>
+				<version>${javax.persistence.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.apache.xmlgraphics</groupId>
+				<artifactId>batik-anim</artifactId>
+				<version>${org.apache.xmlgraphics.batik-script.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.xmlgraphics</groupId>
+				<artifactId>batik-svggen</artifactId>
+				<version>${org.apache.xmlgraphics.batik-script.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.xmlgraphics</groupId>
+				<artifactId>batik-transcoder</artifactId>
+				<version>${org.apache.xmlgraphics.batik-script.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.xmlgraphics</groupId>
+				<artifactId>batik-awt-util</artifactId>
+				<version>${org.apache.xmlgraphics.batik-script.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>xml-apis</groupId>
+				<artifactId>xml-apis</artifactId>
+				<version>${xml.apis.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>xml-apis</groupId>
+				<artifactId>xml-apis-ext</artifactId>
+				<version>${xml.apis.ext.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.xmlgraphics</groupId>
+				<artifactId>batik-util</artifactId>
+				<version>${org.apache.xmlgraphics.batik-script.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.xmlgraphics</groupId>
+				<artifactId>batik-dom</artifactId>
+				<version>${org.apache.xmlgraphics.batik-script.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>net.sf.geographiclib</groupId>
+				<artifactId>GeographicLib-Java</artifactId>
+				<version>${geographiclib.java.version}</version>
+			</dependency>
+
+			<!-- GUI Dependencies -->
+			<dependency>
+				<groupId>io.projectreactor</groupId>
+				<artifactId>reactor-bom</artifactId>
+				<version>${reactor.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.glassfish.tyrus.bundles</groupId>
+				<artifactId>tyrus-standalone-client</artifactId>
+				<version>${tyrus.standalone.client.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-compress</artifactId>
+				<version>${commons.compress.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-math3</artifactId>
+				<version>${commons.math3.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>${guava.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>net.jodah</groupId>
+				<artifactId>failsafe</artifactId>
+				<version>${failsafe.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-test</artifactId>
+				<version>${spring.test.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.junit.jupiter</groupId>
+				<artifactId>junit-jupiter-api</artifactId>
+				<version>${junit.jupiter.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.junit.jupiter</groupId>
+				<artifactId>junit-jupiter-params</artifactId>
+				<version>${junit.jupiter.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.junit.jupiter</groupId>
+				<artifactId>junit-jupiter-engine</artifactId>
+				<version>${junit.jupiter.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-core</artifactId>
+				<version>${mockito.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-junit-jupiter</artifactId>
+				<version>${mockito.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<build>
 		<pluginManagement>
 			<plugins>
-
-				<!-- Compiler plugin -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
@@ -134,11 +426,16 @@
 					<version>${maven.javadoc.plugin.version}</version>
 				</plugin>
 
-				<!-- Surefire plugin configuration -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.20</version>
+					<version>${maven.surefire.plugin.version}</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>${maven.jar.plugin.version}</version>
 				</plugin>
 
 				<plugin>

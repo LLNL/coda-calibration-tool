@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -16,17 +16,15 @@ package llnl.gnem.core.gui.plotting;
 
 import java.io.Serializable;
 
-
 /**
  * A type-safe enum to represent horizontal pinning of text objects.
  *
  * @author Doug Dodge
  */
-public class HorizPinEdge implements Serializable{
+public class HorizPinEdge implements Serializable {
     private final String name;
 
-    private HorizPinEdge( String name )
-    {
+    private HorizPinEdge(String name) {
         this.name = name;
     }
 
@@ -35,28 +33,25 @@ public class HorizPinEdge implements Serializable{
      *
      * @return The String description
      */
-    public String toString()
-    {
+    public String toString() {
         return name;
     }
 
     /**
      * Text is pinned horizontally relative to the left edge of the axis
      */
-    public final static HorizPinEdge LEFT = new HorizPinEdge( "left" );
+    public final static HorizPinEdge LEFT = new HorizPinEdge("left");
     /**
      * Text is pinned horizontally relative to the right edge of the axis
      */
-    public final static HorizPinEdge RIGHT = new HorizPinEdge( "right" );
+    public final static HorizPinEdge RIGHT = new HorizPinEdge("right");
 
-    public static HorizPinEdge getHorizPinEdge( String str )
-    {
-        if( str.equals( "left" ))
+    public static HorizPinEdge getHorizPinEdge(String str) {
+        if (str.equals("left"))
             return LEFT;
-        else if( str.equals( "right" ))
+        else if (str.equals("right"))
             return RIGHT;
         else
-            throw new IllegalArgumentException( "Invalid type name: " + str );
+            throw new IllegalArgumentException("Invalid type name: " + str);
     }
 }
-

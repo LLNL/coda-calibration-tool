@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,10 +14,19 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import gov.llnl.gnem.apps.coda.common.mapping.MapProperties;
+import gov.llnl.gnem.apps.coda.common.mapping.WMSLayerDescriptor;
+
 @Component
+@Configuration
 @ConfigurationProperties("app")
 public class AppProperties {
 
@@ -25,6 +34,7 @@ public class AppProperties {
     private Integer height = 800;
     private Integer width = 600;
     private Boolean debugEnabled = false;
+    private List<WMSLayerDescriptor> wmsLayers = new ArrayList<>();
 
     public Boolean getDebugEnabled() {
         return debugEnabled;
@@ -56,5 +66,18 @@ public class AppProperties {
 
     public void setWidth(Integer width) {
         this.width = width;
+    }
+
+    public List<WMSLayerDescriptor> getWmsLayers() {
+        return wmsLayers;
+    }
+
+    public void setWmsLayers(List<WMSLayerDescriptor> wmsLayers) {
+        this.wmsLayers = wmsLayers;
+    }
+
+    @Bean
+    public MapProperties getMapProperties() {
+        return new MapProperties().setLayers(wmsLayers);
     }
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -16,10 +16,10 @@ package llnl.gnem.core.gui.plotting.jmultiaxisplot;
 
 import llnl.gnem.core.gui.plotting.ZoomLimits;
 
-
 /**
- * Class containing a JSubplot and a subregion within the JSubplot. Used for passing
- * selection messages from the JMultiAxisPlot MouseListener to interested observers.
+ * Class containing a JSubplot and a subregion within the JSubplot. Used for
+ * passing selection messages from the JMultiAxisPlot MouseListener to
+ * interested observers.
  *
  * @author Doug Dodge
  */
@@ -27,11 +27,12 @@ public class SubplotSelectionRegion {
     /**
      * Constructor for the SubplotSelectionRegion object
      *
-     * @param p      The JSubplot
-     * @param region The selected region within this subplot
+     * @param p
+     *            The JSubplot
+     * @param region
+     *            The selected region within this subplot
      */
-    public SubplotSelectionRegion( JSubplot p, ZoomLimits region )
-    {
+    public SubplotSelectionRegion(JSubplot p, ZoomLimits region) {
         this.p = p;
         this.region = region;
     }
@@ -41,8 +42,7 @@ public class SubplotSelectionRegion {
      *
      * @return The subplot value
      */
-    public JSubplot getSubplot()
-    {
+    public JSubplot getSubplot() {
         return p;
     }
 
@@ -51,13 +51,10 @@ public class SubplotSelectionRegion {
      *
      * @return The selected Region
      */
-    public ZoomLimits getSelectedRegion()
-    {
+    public ZoomLimits getSelectedRegion() {
         return region;
     }
 
     private JSubplot p;
     private ZoomLimits region;
 }
-
-

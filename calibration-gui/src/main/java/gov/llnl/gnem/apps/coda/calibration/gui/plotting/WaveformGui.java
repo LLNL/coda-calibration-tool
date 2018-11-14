@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -25,9 +25,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.WaveformClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.events.WaveformSelectionEvent;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
+import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
+import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXML;
@@ -51,12 +54,19 @@ public class WaveformGui {
     private WaveformClient waveformClient;
     private ShapeMeasurementClient shapeClient;
     private ParameterClient paramsClient;
+    private PeakVelocityClient peakVelocityClient;
+    private GeoMap map;
+    private IconFactory iconFactory;
 
     @Autowired
-    public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, EventBus bus) {
+    public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, PeakVelocityClient peakVelocityClient, GeoMap map, IconFactory iconFactory,
+            EventBus bus) {
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
+        this.peakVelocityClient = peakVelocityClient;
+        this.map = map;
+        this.iconFactory = iconFactory;
         bus.register(this);
         Platform.runLater(() -> {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/WaveformGui.fxml"));
@@ -67,6 +77,14 @@ public class WaveformGui {
                 root = fxmlLoader.load();
                 scene = new Scene(root);
                 stage.setScene(scene);
+
+                stage.setOnHiding(e -> {
+                    hide();
+                });
+
+                stage.setOnShowing(e -> {
+                    show();
+                });
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -90,7 +108,7 @@ public class WaveformGui {
     @FXML
     public void initialize() {
         SwingUtilities.invokeLater(() -> {
-            waveformPlot = new CodaWaveformPlot("", waveformClient, shapeClient, paramsClient);
+            waveformPlot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient, map, iconFactory);
             waveformPlotNode.setContent(waveformPlot);
         });
     }
@@ -98,12 +116,18 @@ public class WaveformGui {
     public void hide() {
         Platform.runLater(() -> {
             stage.hide();
+            if (waveformPlot != null) {
+                waveformPlot.setVisible(false);
+            }
         });
     }
 
     public void show() {
         Platform.runLater(() -> {
             stage.show();
+            if (waveformPlot != null) {
+                waveformPlot.setVisible(true);
+            }
             stage.toFront();
         });
     }

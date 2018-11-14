@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -16,7 +16,6 @@ package llnl.gnem.core.util;
 
 import java.io.PrintStream;
 import java.io.Serializable;
-
 
 /**
  * The Epoch class encapsulates the concept of a time interval such as an
@@ -59,8 +58,10 @@ public class Epoch implements Serializable, Comparable {
      * Constructor for the Epoch object
      *
      * @param t1
-     * @param t2 The end of the Epoch Note: if T2 is less than T1 their order
-     * will be reversed in the constructor so that the epoch duration is GTEQ 0.
+     * @param t2
+     *            The end of the Epoch Note: if T2 is less than T1 their order
+     *            will be reversed in the constructor so that the epoch duration
+     *            is GTEQ 0.
      */
     public Epoch(TimeT t1, TimeT t2) {
         setUpEpoch(t1, t2);
@@ -69,9 +70,12 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Constructor for the Epoch object
      *
-     * @param t1 The start of the Epoch
-     * @param t2 The end of the Epoch Note: if T2 is less than T1 their order
-     * will be reversed in the constructor so that the epoch duration is GTEQ 0.
+     * @param t1
+     *            The start of the Epoch
+     * @param t2
+     *            The end of the Epoch Note: if T2 is less than T1 their order
+     *            will be reversed in the constructor so that the epoch duration
+     *            is GTEQ 0.
      */
     public Epoch(double t1, double t2) {
         setUpEpoch(new TimeT(t1), new TimeT(t2));
@@ -80,7 +84,8 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Copy constructor for the Epoch object
      *
-     * @param that input Epoch to be copied into new object
+     * @param that
+     *            input Epoch to be copied into new object
      */
     public Epoch(Epoch that) {
         start = new TimeT(that.start);
@@ -91,7 +96,8 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Determine whether an instant in time falls within this Epoch
      *
-     * @param aTime The instant in time to be checked (a TimeT)
+     * @param aTime
+     *            The instant in time to be checked (a TimeT)
      * @return true if the instant is within this Epoch, false otherwise.
      */
     public boolean ContainsTime(TimeT aTime) {
@@ -105,27 +111,31 @@ public class Epoch implements Serializable, Comparable {
      * cause the Epoch to become empty if both Start and End round to the same
      * values.
      *
-     * @param timeResolution An input value that should be one of the values
-     * from Epoch.TimeResolution.
+     * @param timeResolution
+     *            An input value that should be one of the values from
+     *            Epoch.TimeResolution.
      */
     public void RoundEpochBoundaries(TimeResolution timeResolution) {
         switch (timeResolution) {
-            case DAY: {
-                start = start.roundToDay();
-                end = end.roundToDay();
-                break;
-            }
-            case HOUR:
-                start = start.roundToHour();
-                end = end.roundToHour();
-                break;
-            case MIN:
-                start = start.roundToMin();
-                end = end.roundToMin();
-                break;
-            case SEC:
-                start = start.roundToSec();
-                end = end.roundToSec();
+        case DAY: {
+            start = start.roundToDay();
+            end = end.roundToDay();
+            break;
+        }
+        case HOUR:
+            start = start.roundToHour();
+            end = end.roundToHour();
+            break;
+        case MIN:
+            start = start.roundToMin();
+            end = end.roundToMin();
+            break;
+        case SEC:
+            start = start.roundToSec();
+            end = end.roundToSec();
+            break;
+        default:
+            throw new IllegalStateException("Encountered unxpected time resolution - " + timeResolution + " - trying to round epoch boundaries. This should never happen.");
         }
     }
 
@@ -168,7 +178,8 @@ public class Epoch implements Serializable, Comparable {
      * compare the timeResolution field, so two Epoch objects can compare true
      * even when their timeResolutions differ.
      *
-     * @param o Input Object putatively a Epoch
+     * @param o
+     *            Input Object putatively a Epoch
      * @return true if o is a Epoch with matching fields.
      */
     @Override
@@ -206,7 +217,8 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Sets the end time of this Epoch object
      *
-     * @param end The new (TimeT) end value
+     * @param end
+     *            The new (TimeT) end value
      */
     public void setEndtime(TimeT end) {
         this.end = end;
@@ -216,9 +228,10 @@ public class Epoch implements Serializable, Comparable {
      * Return an Epoch that is the intersection of this Epoch with the input
      * Epoch
      *
-     * @param other The input Epoch to be intersected with this Epoch
+     * @param other
+     *            The input Epoch to be intersected with this Epoch
      * @return The result Epoch which is the intersection result.. The Epoch
-     * will be empty if the intersection is empty.
+     *         will be empty if the intersection is empty.
      */
     public Epoch getIntersection(Epoch other) {
         Epoch tmp = new Epoch();
@@ -274,7 +287,7 @@ public class Epoch implements Serializable, Comparable {
      * Return the length of this Epoch in days
      *
      * @return A double value which is the length of this Epoch in days (
-     * including fractional parts of a day).
+     *         including fractional parts of a day).
      */
     public double getLengthInDays() {
         return getLengthInSeconds() / TimeT.SECPERDAY;
@@ -341,7 +354,8 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Sets the start time of this Epoch object
      *
-     * @param start The new (TimeT) start value
+     * @param start
+     *            The new (TimeT) start value
      */
     public void setTime(TimeT start) {
         this.start = start;
@@ -350,7 +364,8 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Sets the timeResolution attribute of the Epoch object
      *
-     * @param resolution The new timeResolution value
+     * @param resolution
+     *            The new timeResolution value
      */
     public void setTimeResolution(TimeResolution resolution) {
 
@@ -377,7 +392,8 @@ public class Epoch implements Serializable, Comparable {
     }
 
     /**
-     * @param e Description of the Parameter
+     * @param e
+     *            Description of the Parameter
      * @return Description of the Return Value
      */
     public Epoch intersection(Epoch e) {
@@ -387,7 +403,8 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Determine whether the input epoch intersects this Epoch
      *
-     * @param e Input Epoch to be tested
+     * @param e
+     *            Input Epoch to be tested
      * @return true if the input Epoch intersects this Epoch, false otherwise
      */
     public boolean intersects(Epoch e) {
@@ -410,9 +427,10 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Return true if this Epoch is a subset of the input Epoch
      *
-     * @param E The input Epoch
+     * @param E
+     *            The input Epoch
      * @return true if this Epoch is a subset of the input Epoch, false
-     * otherwise.
+     *         otherwise.
      */
     public boolean isSubset(Epoch E) {
         return (E.start.le(start) && E.end.ge(end));
@@ -421,9 +439,10 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Return true if this Epoch is a superset of the input Epoch
      *
-     * @param E The input Epoch
+     * @param E
+     *            The input Epoch
      * @return true if this Epoch is a superset of the input Epoch, false
-     * otherwise.
+     *         otherwise.
      */
     public boolean isSuperset(Epoch E) {
         return (start.le(E.start) && end.ge(E.end));
@@ -433,9 +452,10 @@ public class Epoch implements Serializable, Comparable {
      * Determines the length in seconds of the overlap between the input Epoch
      * and this Epoch.
      *
-     * @param I The input Epoch to be compared with this Epoch
+     * @param I
+     *            The input Epoch to be compared with this Epoch
      * @return The overlap length in seconds. If there is no overlap, the return
-     * value is 0.0.
+     *         value is 0.0.
      */
     public double overlapAmount(Epoch I) {
         Epoch tmp = getIntersection(I);
@@ -445,7 +465,8 @@ public class Epoch implements Serializable, Comparable {
     /**
      * Use the object's toString method to print into a PrintStream
      *
-     * @param ps The input PrintStream
+     * @param ps
+     *            The input PrintStream
      */
     public void print(PrintStream ps) {
         ps.print(toString());
@@ -455,7 +476,7 @@ public class Epoch implements Serializable, Comparable {
      * Return a string describing the state of the object
      *
      * @return A String showing the Epoch start and end times, formatted
-     * according to the time resolution.
+     *         according to the time resolution.
      */
     @Override
     public String toString() {
@@ -466,16 +487,16 @@ public class Epoch implements Serializable, Comparable {
 
     private String TimeString(TimeT T, TimeResolution resolution) {
         switch (resolution) {
-            case DAY:
-                return T.toString("yyyy/DDD");
-            case HOUR:
-                return T.toString("yyyy/DDD-HH");
-            case MIN:
-                return T.toString("yyyy/DDD-HH:mm");
-            case SEC:
-                return T.toString("yyyy/DDD-HH:mm:ss");
-            default:
-                return T.toString("yyyy/DDD-HH:mm:ss.SSS");
+        case DAY:
+            return T.toString("yyyy/DDD");
+        case HOUR:
+            return T.toString("yyyy/DDD-HH");
+        case MIN:
+            return T.toString("yyyy/DDD-HH:mm");
+        case SEC:
+            return T.toString("yyyy/DDD-HH:mm:ss");
+        default:
+            return T.toString("yyyy/DDD-HH:mm:ss.SSS");
         }
     }
 

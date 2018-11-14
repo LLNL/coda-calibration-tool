@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -32,28 +32,30 @@ import java.util.stream.Collectors;
 import javax.swing.SwingUtilities;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.mapping.api.Icon.IconTypes;
-import gov.llnl.gnem.apps.coda.calibration.gui.mapping.api.IconFactory;
-import gov.llnl.gnem.apps.coda.calibration.gui.mapping.api.Location;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.NumberFormatFactory;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.Station;
+import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
+import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.embed.swing.SwingNode;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.StackPane;
 import llnl.gnem.core.gui.plotting.MouseOverPlotObject;
 import llnl.gnem.core.gui.plotting.PaintMode;
 import llnl.gnem.core.gui.plotting.PenStyle;
@@ -66,7 +68,6 @@ import llnl.gnem.core.gui.plotting.plotobject.Square;
 import llnl.gnem.core.gui.plotting.plotobject.Symbol;
 import llnl.gnem.core.gui.plotting.plotobject.TriangleDn;
 import llnl.gnem.core.gui.plotting.plotobject.TriangleUp;
-import llnl.gnem.core.util.SeriesMath;
 import llnl.gnem.core.util.Geometry.EModel;
 
 @Component
@@ -89,9 +90,6 @@ public class PathController {
     private ComboBox<Station> station2ComboBox;
 
     @FXML
-    StackPane mapParent;
-
-    @FXML
     SwingNode stationPlotSwingNode;
 
     @FXML
@@ -99,7 +97,7 @@ public class PathController {
 
     private SpectraClient spectraMeasurementClient;
 
-    private gov.llnl.gnem.apps.coda.calibration.gui.mapping.api.Map mapImpl;
+    private GeoMap mapImpl;
 
     private IconFactory iconFactory;
 
@@ -108,7 +106,7 @@ public class PathController {
     private Tooltip stationPlotTooltip;
 
     @Autowired
-    public PathController(SpectraClient spectraMeasurementClient, gov.llnl.gnem.apps.coda.calibration.gui.mapping.api.Map mapImpl, IconFactory iconFactory) {
+    public PathController(SpectraClient spectraMeasurementClient, GeoMap mapImpl, IconFactory iconFactory) {
         super();
         this.spectraMeasurementClient = spectraMeasurementClient;
         this.mapImpl = mapImpl;
@@ -178,9 +176,7 @@ public class PathController {
         frequencyBandComboBox.setCellFactory(fb -> getFBCell());
         frequencyBandComboBox.setButtonCell(getFBCell());
         frequencyBandComboBox.valueProperty().addListener(e -> {
-            plotPaths();
-            plotBeforeAfter();
-            plotSd();
+            refreshView();
         });
 
         station1ComboBox.setCellFactory(station -> getStationCell());
@@ -189,10 +185,8 @@ public class PathController {
         station2ComboBox.setCellFactory(station -> getStationCell());
         station2ComboBox.setButtonCell(getStationCell());
 
-        station1ComboBox.valueProperty().addListener(e -> plotBeforeAfter());
-        station2ComboBox.valueProperty().addListener(e -> plotBeforeAfter());
-
-        mapImpl.attach(mapParent);
+        station1ComboBox.valueProperty().addListener(e -> refreshView());
+        station2ComboBox.valueProperty().addListener(e -> refreshView());
     }
 
     private ListCell<Station> getStationCell() {
@@ -219,25 +213,19 @@ public class PathController {
         };
     }
 
-    @FXML
-    private void reloadData(ActionEvent e) {
-        reloadData();
-    }
-
     private void reloadData() {
-        mapImpl.clearIcons();
         measurementsFreqBandMap.clear();
         stations.clear();
         station1ComboBox.getItems().clear();
         station2ComboBox.getItems().clear();
 
         frequencyBandComboBox.getItems().clear();
-        measurementsFreqBandMap.putAll(spectraMeasurementClient.getMeasuredSpectra()
-                                                               .filter(Objects::nonNull)
-                                                               .filter(spectra -> spectra.getWaveform() != null)
-                                                               .toStream()
-                                                               .collect(Collectors.groupingBy(spectra -> new FrequencyBand(spectra.getWaveform().getLowFrequency(),
-                                                                                                                           spectra.getWaveform().getHighFrequency()))));
+        measurementsFreqBandMap.putAll(
+                spectraMeasurementClient.getMeasuredSpectra()
+                                        .filter(Objects::nonNull)
+                                        .filter(spectra -> spectra.getWaveform() != null)
+                                        .toStream()
+                                        .collect(Collectors.groupingBy(spectra -> new FrequencyBand(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency()))));
 
         stations.addAll(measurementsFreqBandMap.values().parallelStream().flatMap(List::parallelStream).map(spectra -> spectra.getWaveform().getStream().getStation()).collect(Collectors.toList()));
 
@@ -250,35 +238,67 @@ public class PathController {
         station2ComboBox.getItems().addAll(stations);
         station2ComboBox.getSelectionModel().selectFirst();
 
+        refreshView();
+    }
+
+    public void refreshView() {
         plotPaths();
         plotBeforeAfter();
         plotSd();
     }
 
     private void plotPaths() {
+        mapImpl.clearIcons();
         if (measurementsFreqBandMap != null && !measurementsFreqBandMap.isEmpty()) {
-            mapImpl.clearIcons();
             SwingUtilities.invokeLater(() -> {
                 List<SpectraMeasurement> measurements = measurementsFreqBandMap.get(frequencyBandComboBox.getSelectionModel().getSelectedItem());
                 if (measurements != null) {
-                    mapImpl.addIcons(measurements.parallelStream()
-                                                 .filter(meas -> meas.getWaveform() != null && meas.getWaveform().getStream() != null)
-                                                 .map(meas -> meas.getWaveform().getStream().getStation())
-                                                 .filter(Objects::nonNull)
-                                                 .distinct()
-                                                 .map(station -> iconFactory.newIcon(IconTypes.TRIANGLE_UP, new Location(station.getLatitude(), station.getLongitude()), station.getStationName()))
-                                                 .collect(Collectors.toSet()));
+                    Map<Station, List<Event>> stationToEvents = measurements.parallelStream()
+                                                                            .filter(meas -> meas.getWaveform() != null && meas.getWaveform().getStream() != null)
+                                                                            .map(meas -> meas.getWaveform())
+                                                                            .filter(Objects::nonNull)
+                                                                            .distinct()
+                                                                            .collect(
+                                                                                    Collectors.groupingBy(
+                                                                                            w -> w.getStream().getStation(),
+                                                                                                HashMap::new,
+                                                                                                Collectors.mapping(w -> w.getEvent(), Collectors.toList())));
 
-                    mapImpl.addIcons(measurements.parallelStream()
-                                                 .filter(meas -> meas.getWaveform() != null)
-                                                 .map(meas -> meas.getWaveform().getEvent())
-                                                 .filter(Objects::nonNull)
-                                                 .map(event -> iconFactory.newIcon(new Location(event.getLatitude(), event.getLongitude()), event.getEventId()))
-                                                 .collect(Collectors.toSet()));
+                    mapImpl.addIcons(stationToEvents.keySet().stream().distinct().map(station -> {
+                        Icon icon;
+                        if (station.equals(station1ComboBox.getSelectionModel().getSelectedItem()) || station.equals(station2ComboBox.getSelectionModel().getSelectedItem())) {
+                            icon = iconFactory.newIcon(IconTypes.TRIANGLE_UP, new Location(station.getLatitude(), station.getLongitude()), station.getStationName(), IconStyles.FOCUSED);
+                        } else {
+                            icon = iconFactory.newIcon(IconTypes.TRIANGLE_UP, new Location(station.getLatitude(), station.getLongitude()), station.getStationName(), IconStyles.BACKGROUND);
+                        }
+                        return icon;
+                    }).collect(Collectors.toSet()));
 
+                    mapImpl.addIcons(
+                            stationToEvents.values()
+                                           .stream()
+                                           .flatMap(
+                                                   events -> events.stream()
+                                                                   .map(
+                                                                           event -> iconFactory.newIcon(
+                                                                                   event.getEventId(),
+                                                                                       IconTypes.CIRCLE,
+                                                                                       new Location(event.getLatitude(), event.getLongitude()),
+                                                                                       event.getEventId())))
+                                           .distinct()
+                                           .collect(Collectors.toSet()));
+
+                    //TODO: Map API updates for drawing Geometry and clearable geometry need to happen for this part.
+                    //                    mapImpl.addIcons(stationToEvents.entrySet().stream().flatMap(entry -> {
+                    //                        Station station = entry.getKey();
+                    //                        return entry.getValue()
+                    //                                    .stream()
+                    //                                    .map(event -> (Icon) iconFactory.newIcon(IconTypes.LINE,
+                    //                                                                             new Location(station.getLatitude(), station.getLongitude()),
+                    //                                                                             new Location(event.getLatitude(), event.getLongitude())));
+                    //                    }).collect(Collectors.toList()));
                 }
             });
-
         }
     }
 
@@ -316,11 +336,9 @@ public class PathController {
                                     if (!beforeStatsStaPair.containsKey(staPair)) {
                                         beforeStatsStaPair.put(staPair, beforeStats);
                                         afterStatsStaPair.put(staPair, afterStats);
-                                        distanceStaPair.put(staPair,
-                                                            EModel.getDistanceWGS84(firstStation.getLatitude(),
-                                                                                    firstStation.getLongitude(),
-                                                                                    secondStation.getLatitude(),
-                                                                                    secondStation.getLongitude()));
+                                        distanceStaPair.put(
+                                                staPair,
+                                                    EModel.getDistanceWGS84(firstStation.getLatitude(), firstStation.getLongitude(), secondStation.getLatitude(), secondStation.getLongitude()));
                                     } else {
                                         beforeStats = beforeStatsStaPair.get(staPair);
                                         afterStats = afterStatsStaPair.get(staPair);
@@ -345,29 +363,13 @@ public class PathController {
                         if (Double.isNaN(staPairEntry.getValue().getStandardDeviation()) || staPairEntry.getValue().getStandardDeviation() == 0.0) {
                             continue;
                         }
-                        String staPairDisplayName = staPair.getFirst().getStationName() + " " + staPair.getSecond().getStationName();
-                        Square plotObj = new Square(distanceStaPair.get(staPair),
-                                                    staPairEntry.getValue().getStandardDeviation(),
-                                                    4.0,
-                                                    Color.RED,
-                                                    Color.RED,
-                                                    Color.RED,
-                                                    staPairDisplayName,
-                                                    true,
-                                                    false,
-                                                    0);
+                        String staPairDisplayName = staPair.getLeft().getStationName() + " " + staPair.getRight().getStationName();
+                        Square plotObj = new Square(distanceStaPair.get(
+                                staPair), staPairEntry.getValue().getStandardDeviation(), 4.0, Color.RED, Color.RED, Color.RED, staPairDisplayName, true, false, 0);
                         plotObj.setText(staPairDisplayName + " " + staPairEntry.getValue().getN());
 
-                        Circle plotObj2 = new Circle(distanceStaPair.get(staPair),
-                                                     afterStatsStaPair.get(staPair).getStandardDeviation(),
-                                                     4.0,
-                                                     Color.BLUE,
-                                                     Color.BLUE,
-                                                     Color.BLUE,
-                                                     staPairDisplayName,
-                                                     true,
-                                                     false,
-                                                     0);
+                        Circle plotObj2 = new Circle(distanceStaPair.get(
+                                staPair), afterStatsStaPair.get(staPair).getStandardDeviation(), 4.0, Color.BLUE, Color.BLUE, Color.BLUE, staPairDisplayName, true, false, 0);
                         plotObj2.setText(staPairDisplayName + " " + afterStatsStaPair.get(staPair).getN());
 
                         if (xmax == null) {
@@ -406,10 +408,9 @@ public class PathController {
                     }
                     String labelText;
                     if (xmax != null) {
-                        plot.SetAxisLimits(xmin - (xmin * .1) - .1, xmax + (xmax * .1) + .1, ymin - (ymin * .1) - .1, ymax + (ymax * .1) + .1);
+                        plot.setAxisLimits(xmin - (xmin * .1) - .1, xmax + (xmax * .1) + .1, ymin - (ymin * .1) - .1, ymax + (ymax * .1) + .1);
                         labelText = "StdDev(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + " StdDev(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation());
-                    }
-                    else {
+                    } else {
                         labelText = "";
                     }
                     sdPlot.getXaxis().setVisible(false);
@@ -524,7 +525,7 @@ public class PathController {
                     double paddedXmin = xmin - (xmin * .1);
                     double paddedXmax = xmax + (xmax * .1);
                     if (xmax != null) {
-                        plot.SetAxisLimits(paddedXmin, paddedXmax, paddedXmin, paddedXmax);
+                        plot.setAxisLimits(paddedXmin, paddedXmax, paddedXmin, paddedXmax);
                     }
                     int points = 50;
                     double dx = (plot.getXaxis().getMax()) / (points - 1);
@@ -535,17 +536,26 @@ public class PathController {
                     Line line = new Line(xy, xy, Color.black, PaintMode.COPY, PenStyle.DASH, 2);
 
                     plot.AddPlotObject(line, 1);
-                    
+
                     if (stationDistance == null) {
                         stationDistance = 0.0;
                     }
-                    String labelText = "StdDev(Before) = " + dfmt2.format(beforeStats.getStandardDeviation()) + " StdDev(After) = " + dfmt2.format(afterStats.getStandardDeviation())
-                            + " Station Distance " + dfmt2.format(stationDistance) + " (km)";
+                    String labelText = "StdDev(Before) = "
+                            + dfmt2.format(beforeStats.getStandardDeviation())
+                            + " StdDev(After) = "
+                            + dfmt2.format(afterStats.getStandardDeviation())
+                            + " Station Distance "
+                            + dfmt2.format(stationDistance)
+                            + " (km)";
                     stationPlot.getXaxis().setVisible(false);
                     stationPlot.getXaxis().setLabelText(labelText);
                     stationPlot.getXaxis().setVisible(true);
                 }
             });
         }
+    }
+
+    public void update() {
+        reloadData();
     }
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,6 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -22,9 +24,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Component
 public class PeakVelocityWebClient implements PeakVelocityClient {
+
+    private static final Logger log = LoggerFactory.getLogger(PeakVelocityWebClient.class);
 
     private WebClient client;
 
@@ -40,6 +45,26 @@ public class PeakVelocityWebClient implements PeakVelocityClient {
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(PeakVelocityMeasurement.class))
+                     .onErrorReturn(new PeakVelocityMeasurement());
+    }
+
+    @Override
+    public Flux<PeakVelocityMeasurement> getMeasuredPeakVelocitiesMetadata() {
+        return client.get()
+                     .uri("/peak-velocity-measurements/metadata")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(PeakVelocityMeasurement.class))
+                     .onErrorReturn(new PeakVelocityMeasurement());
+    }
+
+    @Override
+    public Mono<PeakVelocityMeasurement> getNoiseForWaveform(Long id) {
+        return client.get()
+                     .uri("/peak-velocity-measurements/metadata-by-id/" + id)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMap(response -> response.bodyToMono(PeakVelocityMeasurement.class))
                      .onErrorReturn(new PeakVelocityMeasurement());
     }
 }

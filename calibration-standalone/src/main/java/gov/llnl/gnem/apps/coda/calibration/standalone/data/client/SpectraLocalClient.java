@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -23,9 +23,9 @@ import org.springframework.stereotype.Component;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SpectraMeasurementService;
+import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

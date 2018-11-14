@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,23 +17,27 @@ package llnl.gnem.core.util;
 import java.io.IOException;
 import java.util.List;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * User: dodge1
- * Date: Feb 18, 2004
- * Time: 1:02:20 PM
+ * User: dodge1 Date: Feb 18, 2004 Time: 1:02:20 PM
  */
 public class Utility {
+    private static final Logger log = LoggerFactory.getLogger(Utility.class);
 
     /**
-     * Given a Vector of Strings, return a Single String which is a comma-separated, list of single-qouted Strings
-     * one for each element in the Vector. For example. If the input Vector contains the Strings
-     * "Hello" and "World", this method will return the String "'Hello', 'World'"
+     * Given a Vector of Strings, return a Single String which is a
+     * comma-separated, list of single-qouted Strings one for each element in
+     * the Vector. For example. If the input Vector contains the Strings "Hello"
+     * and "World", this method will return the String "'Hello', 'World'"
      *
-     * @param str A vector containing Strings that are to be returned in a single-quoted list
-     * @return The String containing a comma-separated, single-quoted list of Strings
+     * @param str
+     *            A vector containing Strings that are to be returned in a
+     *            single-quoted list
+     * @return The String containing a comma-separated, single-quoted list of
+     *         Strings
      */
     public static String getQuotedList(List<String> str) {
         StringBuilder sb = new StringBuilder();
@@ -79,7 +83,7 @@ public class Utility {
             try {
                 testInternetAccess(quitOnFailure);
             } catch (IOException ex) {
-                Logger.getLogger(Utility.class.getName()).log(Level.SEVERE, null, ex);
+                log.error(ex.getMessage(), ex);
             }
 
         }
@@ -91,10 +95,13 @@ public class Utility {
 
     /**
      * Method to round a double value to the given precision
-     * @param val The value to be rounded.
-     * @param precision The number of decimal places to round to.
-     * Will not inspect for: MagicNumber
-     * @return  The rounded value.
+     * 
+     * @param val
+     *            The value to be rounded.
+     * @param precision
+     *            The number of decimal places to round to. Will not inspect
+     *            for: MagicNumber
+     * @return The rounded value.
      */
     public static double round(double val, int precision) {
 
@@ -107,15 +114,21 @@ public class Utility {
     }
 
     /**
-     * Returns the coefficients of a straight line fit to the data in input arrays
-     * x and y between the points idx1 through idx2 inclusive.
-     * @param x A double array containing the x-values.
-     * @param y A double array containing the y-values.
-     * @param idx1  The index of the first element in the section to be fitted.
-     * @param idx2 The index of the last element to include in the fit.
-     * @return A Pair object whose first object is the intercept as a Double and whose second object
-     * is the slope as a Double. If the data being fit define a vertical line, the
-     * slope object will have the value Double.MAX_VALUE.
+     * Returns the coefficients of a straight line fit to the data in input
+     * arrays x and y between the points idx1 through idx2 inclusive.
+     * 
+     * @param x
+     *            A double array containing the x-values.
+     * @param y
+     *            A double array containing the y-values.
+     * @param idx1
+     *            The index of the first element in the section to be fitted.
+     * @param idx2
+     *            The index of the last element to include in the fit.
+     * @return A Pair object whose first object is the intercept as a Double and
+     *         whose second object is the slope as a Double. If the data being
+     *         fit define a vertical line, the slope object will have the value
+     *         Double.MAX_VALUE.
      */
     public static Pair getLineCoefficients(double[] x, double[] y, int idx1, int idx2) {
         int n = x.length;
@@ -131,9 +144,6 @@ public class Utility {
         if (idx2 < idx1 + 1) {
             throw new IllegalArgumentException("Index 2 must be at least one greater than index 1!");
         }
-
-
-
 
         // First determine the slope and intercept of the best fitting line...
         int nSamps = idx2 - idx1 + 1;
@@ -158,6 +168,9 @@ public class Utility {
             SSXY += tmp1 * tmp2;
         }
         double B1 = Double.MAX_VALUE;
+        if (SSX == 0.0) {
+            SSX = 1;
+        }
         if (SSX > Double.MIN_VALUE) {
             B1 = SSXY / SSX;
         }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -38,7 +38,6 @@ import llnl.gnem.core.gui.plotting.plotobject.SymbolStyle;
  *
  * @author Doug Dodge
  */
-@SuppressWarnings({"MagicNumber"})
 public class Legend extends PlotObject {
     private List<String> labels;
     private List<AbstractLine> lines;
@@ -48,7 +47,7 @@ public class Legend extends PlotObject {
     private VertPinEdge _VertAlign;
     private double _Xoff;
     private double _Yoff;
-    
+
     public Legend(String fontName, double fontSize, HorizPinEdge hAlign, VertPinEdge vAlign, double xoff, double yoff) {
         this(new ArrayList<String>(), new ArrayList<Line>(), fontName, fontSize, hAlign, vAlign, xoff, yoff);
     }
@@ -56,16 +55,22 @@ public class Legend extends PlotObject {
     /**
      * Constructor for the Legend object
      *
-     * @param text A Vector of Strings, one for each Line in the Subplot,
-     * ordered the same as the creation order of the Lines.
+     * @param text
+     *            A Vector of Strings, one for each Line in the Subplot, ordered
+     *            the same as the creation order of the Lines.
      * @param lines
-     * @param fontName The name of the font used to display the Strings in the
-     * legend
-     * @param fontSize The size of the font used to display the legend strings.
-     * @param hAlign The horizontal alignment of the legend ( LEFT, RIGHT )
-     * @param vAlign The vertical alignment of the legend (TOP, BOTTOM)
-     * @param xoff The horizontal distance in mm from the horizontal pin edge
-     * @param yoff The vertical distance in mm from the vertical pin edge
+     * @param fontName
+     *            The name of the font used to display the Strings in the legend
+     * @param fontSize
+     *            The size of the font used to display the legend strings.
+     * @param hAlign
+     *            The horizontal alignment of the legend ( LEFT, RIGHT )
+     * @param vAlign
+     *            The vertical alignment of the legend (TOP, BOTTOM)
+     * @param xoff
+     *            The horizontal distance in mm from the horizontal pin edge
+     * @param yoff
+     *            The vertical distance in mm from the vertical pin edge
      */
     public Legend(List<String> text, List<Line> lines, String fontName, double fontSize, HorizPinEdge hAlign, VertPinEdge vAlign, double xoff, double yoff) {
         labels = new ArrayList<String>(text);
@@ -77,12 +82,12 @@ public class Legend extends PlotObject {
         _Xoff = xoff;
         _Yoff = yoff;
     }
-    
+
     public void addLabeledLine(String label, AbstractLine line) {
         labels.add(label);
         lines.add(line);
     }
-    
+
     public void clear() {
         labels.clear();
         lines.clear();
@@ -96,8 +101,10 @@ public class Legend extends PlotObject {
     /**
      * render this Legend to the supplied graphics context
      *
-     * @param g The graphics context
-     * @param owner The JSubplot that owns this Legend
+     * @param g
+     *            The graphics context
+     * @param owner
+     *            The JSubplot that owns this Legend
      */
     @Override
     public void render(Graphics g, JBasicPlot owner) {
@@ -180,15 +187,11 @@ public class Legend extends PlotObject {
         if (line.getSymbolStyle() != SymbolStyle.NONE) {
             Symbol s;
             if (line.getSymbolStyle() == SymbolStyle.ERROR_BAR) {
-                s = new ErrorBar(0.0, 0.0, line.getSymbolSize(), 0.35, 0.35,
-                        2.0, line.getSymbolFillColor(), line.getSymbolEdgeColor(),
-                        Color.black, "", true, false, 10.0);
+                s = new ErrorBar(0.0, 0.0, line.getSymbolSize(), 0.35, 0.35, 2.0, line.getSymbolFillColor(), line.getSymbolEdgeColor(), Color.black, "", true, false, 10.0);
                 s.setOwner(getOwner());
 
             } else {
-                s = SymbolFactory.createSymbol(line.getSymbolStyle(), 0.0, 0.0, line.getSymbolSize(),
-                        line.getSymbolFillColor(), line.getSymbolEdgeColor(),
-                        Color.black, "", true, false, 10.0);
+                s = SymbolFactory.createSymbol(line.getSymbolStyle(), 0.0, 0.0, line.getSymbolSize(), line.getSymbolFillColor(), line.getSymbolEdgeColor(), Color.black, "", true, false, 10.0);
             }
 
             if (s != null) {

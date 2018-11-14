@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,9 +20,5 @@ package llnl.gnem.core.metadata;
  */
 public enum InstrumentType {
 
-    SEISMOMETER, TILT_METER, CREEP_METER, CALIBRATION_INPUT, 
-    PRESSURE, TEST_POINT, MAGNETOMETER, HUMIDITY, ROTATIONAL_SENSOR, 
-    TEMPERATURE, WATER_CURRENT, GEOPHONE, ELECTRIC_POTENTIAL, RAINFALL, 
-    LINEAR_STRAIN, TIDE, BOLOMETER, VOLUMETRIC_STRAIN, WIND, DERIVED, 
-    NON_SPECIFIC, SYNTHESIZED_BEAM
+    SEISMOMETER, TILT_METER, CREEP_METER, CALIBRATION_INPUT, PRESSURE, TEST_POINT, MAGNETOMETER, HUMIDITY, ROTATIONAL_SENSOR, TEMPERATURE, WATER_CURRENT, GEOPHONE, ELECTRIC_POTENTIAL, RAINFALL, LINEAR_STRAIN, TIDE, BOLOMETER, VOLUMETRIC_STRAIN, WIND, DERIVED, NON_SPECIFIC, SYNTHESIZED_BEAM
 }

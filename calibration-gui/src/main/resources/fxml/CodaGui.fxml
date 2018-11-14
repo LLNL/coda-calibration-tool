@@ -1,76 +1,134 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CodaGui.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
+<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
 	<children>
-		<MenuBar VBox.vgrow="NEVER">
-			<menus>
-				<Menu mnemonicParsing="false" text="File">
-					<items>
-						<MenuItem fx:id="importWaveforms" mnemonicParsing="false" onAction="#openWaveformLoadingWindow" text="Import Stack Files..." />
-						<MenuItem fx:id="importWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectoryLoadingWindow" text="Import Stack Directory..." />
-						<MenuItem fx:id="importRefEvents" mnemonicParsing="false" onAction="#openReferenceEventLoadingWindow" text="Import Reference Events..." />
-						<MenuItem mnemonicParsing="false" onAction="#openCodaParamWindow" text="Import Coda Param..." />
-						<MenuItem mnemonicParsing="false" onAction="#openMdacPsWindow" text="Import MDAC Ps File..." />
-						<MenuItem mnemonicParsing="false" onAction="#openMdacFiWindow" text="Import MDAC Fi File..." />
-                  <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem fx:id="exportWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectorySavingWindow" text="Export Waveforms..." />
-					</items>
-				</Menu>
-				<Menu mnemonicParsing="false" text="Calibration">
-					<items>
-						<MenuItem fx:id="importCodaParams" mnemonicParsing="false" onAction="#runCalibration" text="Run Calibration" />
-						<MenuItem mnemonicParsing="false" onAction="#runAutoPickingCalibration" text="Run Calibration (Auto Pick)" />
-					</items>
-				</Menu>
-				<Menu mnemonicParsing="false" text="Window">
-					<items>
-						<MenuItem mnemonicParsing="false" onAction="#openFailureReportDisplay" text="View Load Failures" />
-					</items>
-				</Menu>
+		<GridPane VBox.vgrow="NEVER">
+			<columnConstraints>
+				<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+				<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+				<ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+			</columnConstraints>
+			<rowConstraints>
+				<RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+			</rowConstraints>
+			<children>
+				<MenuBar>
+					<menus>
+						<Menu mnemonicParsing="false" text="File">
+							<items>
+								<MenuItem fx:id="importWaveforms" mnemonicParsing="false" onAction="#openWaveformLoadingWindow" text="Import Stack Files..." />
+								<MenuItem fx:id="importWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectoryLoadingWindow" text="Import Stack Directory..." />
+								<MenuItem mnemonicParsing="false" onAction="#openCodaJsonParamWindow" text="Import Coda Param..." />
+								<Menu mnemonicParsing="false" text="Import Legacy Param Formats">
+									<items>
+										<MenuItem fx:id="importRefEvents" mnemonicParsing="false" onAction="#openReferenceEventLoadingWindow" text="Import Reference Events..." />
+										<MenuItem mnemonicParsing="false" onAction="#openCodaParamWindow" text="Import Coda Param..." />
+										<MenuItem mnemonicParsing="false" onAction="#openMdacPsWindow" text="Import MDAC Ps File..." />
+										<MenuItem mnemonicParsing="false" onAction="#openMdacFiWindow" text="Import MDAC Fi File..." />
+									</items>
+								</Menu>
+								<SeparatorMenuItem mnemonicParsing="false" />
+								<MenuItem mnemonicParsing="false" onAction="#openCalibrationDataSavingWindow" text="Export Calibration..." />
+								<MenuItem fx:id="exportWaveformDir1" mnemonicParsing="false" onAction="#openWaveformDirectorySavingWindow" text="Export Waveforms..." />
+							</items>
+						</Menu>
+						<Menu mnemonicParsing="false" text="Calibration">
+							<items>
+								<MenuItem fx:id="importCodaParams" mnemonicParsing="false" onAction="#runCalibration" text="Run Calibration" />
+								<MenuItem mnemonicParsing="false" onAction="#runAutoPickingCalibration" text="Run Calibration (Auto Pick)" />
+							</items>
+						</Menu>
+						<Menu mnemonicParsing="false" text="Window">
+							<items>
+								<MenuItem mnemonicParsing="false" onAction="#openFailureReportDisplay" text="View Load Failures" />
+							</items>
+						</Menu>
 
-				<Menu mnemonicParsing="false" text="Data">
-					<items>
-						<MenuItem fx:id="clearData" mnemonicParsing="false" onAction="#clearData" text="Clear All" />
-					</items>
-				</Menu>
-			</menus>
-		</MenuBar>
-		<TabPane side="LEFT" VBox.vgrow="ALWAYS">
-			<tabs>
-				<Tab closable="false" text="Data">
-					<content>
-						<fx:include fx:id="data" source="Data.fxml" />
-					</content>
-				</Tab>
-				<Tab closable="false" text="Parameters">
-					<content>
-						<fx:include fx:id="parameters" source="Parameters.fxml" />
-					</content>
-				</Tab>
-				<Tab closable="false" text="Shape">
-					<content>
-						<fx:include fx:id="shape" source="Shape.fxml" />
-					</content>
-				</Tab>
-				<Tab closable="false" text="Path">
-					<content>
-						<fx:include fx:id="path" source="Path.fxml" />
-					</content>
-				</Tab>
-				<Tab closable="false" text="Site">
-					<content>
-						<fx:include fx:id="site" source="Site.fxml" />
-					</content>
-				</Tab>
-			</tabs>
-		</TabPane>
+						<Menu mnemonicParsing="false" text="Data">
+							<items>
+								<MenuItem fx:id="clearData" mnemonicParsing="false" onAction="#clearData" text="Clear All" />
+							</items>
+						</Menu>
+					</menus>
+					<opaqueInsets>
+						<Insets />
+					</opaqueInsets>
+					<padding>
+						<Insets bottom="6.0" />
+					</padding>
+				</MenuBar>
+				<Pane styleClass="menu-bar" GridPane.columnIndex="1">
+					<GridPane.margin>
+						<Insets />
+					</GridPane.margin>
+				</Pane>
+				<GridPane styleClass="menu-bar" GridPane.columnIndex="2" GridPane.halignment="RIGHT">
+					<columnConstraints>
+						<ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" minWidth="10.0" />
+						<ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="30.0" />
+						<ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" />
+					</columnConstraints>
+					<rowConstraints>
+						<RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+					</rowConstraints>
+					<children>
+						<Button fx:id="refreshButton" alignment="CENTER" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#refreshTab" prefHeight="27.0" prefWidth="100.0" text="Refresh" GridPane.columnIndex="2">
+							<GridPane.margin>
+								<Insets />
+							</GridPane.margin>
+						</Button>
+						<Button fx:id="showMapButton" alignment="CENTER_RIGHT" maxWidth="70.0" minHeight="25.0" minWidth="70.0" mnemonicParsing="false" onAction="#showMapWindow" prefWidth="70.0" text="Map" />
+					</children>
+				</GridPane>
+			</children>
+		</GridPane>
+		<BorderPane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+			<center>
+				<TabPane side="LEFT" BorderPane.alignment="CENTER">
+					<tabs>
+						<Tab fx:id="dataTab" closable="false" text="Data">
+							<content>
+								<fx:include fx:id="data" source="Data.fxml" />
+							</content>
+						</Tab>
+						<Tab fx:id="paramTab" closable="false" text="Parameters">
+							<content>
+								<fx:include fx:id="parameters" source="Parameters.fxml" />
+							</content>
+						</Tab>
+						<Tab fx:id="shapeTab" closable="false" text="Shape">
+							<content>
+								<fx:include fx:id="shape" source="Shape.fxml" />
+							</content>
+						</Tab>
+						<Tab fx:id="pathTab" closable="false" text="Path">
+							<content>
+								<fx:include fx:id="path" source="Path.fxml" />
+							</content>
+						</Tab>
+						<Tab fx:id="siteTab" closable="false" text="Site">
+							<content>
+								<fx:include fx:id="site" source="Site.fxml" />
+							</content>
+						</Tab>
+					</tabs>
+				</TabPane>
+			</center>
+		</BorderPane>
 	</children>
 </VBox>

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -18,6 +18,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,23 +39,28 @@ import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.events.WaveformSelectionEvent;
-import gov.llnl.gnem.apps.coda.calibration.gui.plotting.LabeledPlotPoint;
-import gov.llnl.gnem.apps.coda.calibration.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
-import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SymbolStyleMapFactory;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
+import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
+import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
+import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
+import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
+import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
+import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
@@ -139,12 +145,18 @@ public class SiteController {
 
     private Map<String, PlotPoint> symbolStyleMap;
 
+    private GeoMap mapImpl;
+
+    private IconFactory iconFactory;
+
     @Autowired
-    private SiteController(SpectraClient spectraClient, ReferenceEventClient referenceEventClient, EventBus bus, SymbolStyleMapFactory styleFactory) {
+    private SiteController(SpectraClient spectraClient, ReferenceEventClient referenceEventClient, SymbolStyleMapFactory styleFactory, GeoMap map, IconFactory iconFactory, EventBus bus) {
         this.spectraClient = spectraClient;
         this.referenceEventClient = referenceEventClient;
-        this.bus = bus;
         this.symbolStyleMapFactory = styleFactory;
+        this.mapImpl = map;
+        this.bus = bus;
+        this.iconFactory = iconFactory;
     }
 
     @FXML
@@ -157,9 +169,9 @@ public class SiteController {
 
                 @Override
                 public void update(Observable observable, Object obj) {
-                    if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).me.getID() == MouseEvent.MOUSE_RELEASED) {
+                    if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).getMouseEvent().getID() == MouseEvent.MOUSE_RELEASED) {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
-                        PlotObject po = poc.po;
+                        PlotObject po = poc.getPlotObject();
                         if (po != null && po instanceof Symbol) {
                             SpectraMeasurement spectra = rawSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
                             if (spectra != null) {
@@ -176,9 +188,9 @@ public class SiteController {
 
                 @Override
                 public void update(Observable observable, Object obj) {
-                    if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).me.getID() == MouseEvent.MOUSE_RELEASED) {
+                    if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).getMouseEvent().getID() == MouseEvent.MOUSE_RELEASED) {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
-                        PlotObject po = poc.po;
+                        PlotObject po = poc.getPlotObject();
                         if (po != null && po instanceof Symbol) {
                             SpectraMeasurement spectra = pathSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
                             if (spectra != null) {
@@ -196,9 +208,9 @@ public class SiteController {
 
                 @Override
                 public void update(Observable observable, Object obj) {
-                    if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).me.getID() == MouseEvent.MOUSE_RELEASED) {
+                    if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).getMouseEvent().getID() == MouseEvent.MOUSE_RELEASED) {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
-                        PlotObject po = poc.po;
+                        PlotObject po = poc.getPlotObject();
                         if (po != null && po instanceof Symbol) {
                             SpectraMeasurement spectra = siteSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
                             if (spectra != null) {
@@ -228,7 +240,7 @@ public class SiteController {
 
         evidCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.equals(oldValue)) {
-                plotSpectra();
+                refreshView();
             }
         });
 
@@ -237,31 +249,23 @@ public class SiteController {
 
         mwCol.setCellValueFactory(x -> Bindings.createDoubleBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(ReferenceMwParameters::getRefMw).orElseGet(() -> 0.0)).asObject());
 
-        stressDropCol.setCellValueFactory(x -> Bindings.createDoubleBinding(() -> Optional.ofNullable(x)
-                                                                                          .map(CellDataFeatures::getValue)
-                                                                                          .map(ReferenceMwParameters::getStressDropInMpa)
-                                                                                          .orElseGet(() -> 0.0))
-                                                       .asObject());
+        stressDropCol.setCellValueFactory(
+                x -> Bindings.createDoubleBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(ReferenceMwParameters::getStressDropInMpa).orElseGet(() -> 0.0)).asObject());
 
-        measuredEvidCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                            .map(CellDataFeatures::getValue)
-                                                                                            .map(MeasuredMwParameters::getEventId)
-                                                                                            .orElseGet(String::new)));
+        measuredEvidCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwParameters::getEventId).orElseGet(String::new)));
         measuredEvidCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
-        measuredMwCol.setCellValueFactory(x -> Bindings.createDoubleBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwParameters::getMw).orElseGet(() -> 0.0))
-                                                       .asObject());
+        measuredMwCol.setCellValueFactory(
+                x -> Bindings.createDoubleBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwParameters::getMw).orElseGet(() -> 0.0)).asObject());
 
-        measuredStressDropCol.setCellValueFactory(x -> Bindings.createDoubleBinding(() -> Optional.ofNullable(x)
-                                                                                                  .map(CellDataFeatures::getValue)
-                                                                                                  .map(MeasuredMwParameters::getStressDropInMpa)
-                                                                                                  .orElseGet(() -> 0.0))
-                                                               .asObject());
+        measuredStressDropCol.setCellValueFactory(
+                x -> Bindings.createDoubleBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwParameters::getStressDropInMpa).orElseGet(() -> 0.0)).asObject());
 
         iconCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(pp -> {
-            ImageView imView = new ImageView(SwingFXUtils.toFXImage(SymbolFactory.createSymbol(pp.getStyle(), 0, 0, 2, pp.getColor(), pp.getColor(), pp.getColor(), "", true, false, 10.0)
-                                                                                 .getBufferedImage(256),
-                                                                    null));
+            ImageView imView = new ImageView(SwingFXUtils.toFXImage(
+                    SymbolFactory.createSymbol(pp.getStyle(), 0, 0, 2, pp.getColor(), pp.getColor(), pp.getColor(), "", true, false, 10.0).getBufferedImage(256),
+                        null));
             imView.setFitHeight(12);
             imView.setFitWidth(12);
             return imView;
@@ -272,7 +276,7 @@ public class SiteController {
         refEventTable.setItems(referenceMwParameters);
         measuredEventTable.setItems(measuredMwParameters);
         iconTable.setItems(stationSymbols);
-        
+
         iconCol.prefWidthProperty().bind(iconTable.widthProperty().multiply(0.3));
         stationCol.prefWidthProperty().bind(iconTable.widthProperty().multiply(0.7));
     }
@@ -298,11 +302,27 @@ public class SiteController {
             rawPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.TRUE);
             pathPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathCorrected), Boolean.TRUE);
             sitePlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.TRUE, referenceSpectra, theoreticalSpectra);
+            mapImpl.addIcons(mapMeasurements(filteredMeasurements));
         } else {
             rawPlot.plotXYdata(toPlotPoints(spectralMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.FALSE);
             pathPlot.plotXYdata(toPlotPoints(spectralMeasurements, SpectraMeasurement::getPathCorrected), Boolean.FALSE);
             sitePlot.plotXYdata(toPlotPoints(spectralMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.FALSE);
+            mapImpl.addIcons(mapMeasurements(spectralMeasurements));
         }
+    }
+
+    private Collection<Icon> mapMeasurements(List<SpectraMeasurement> filteredMeasurements) {
+        return filteredMeasurements.stream().map(meas -> meas.getWaveform()).filter(Objects::nonNull).flatMap(w -> {
+            List<Icon> icons = new ArrayList<>();
+            if (w.getStream() != null && w.getStream().getStation() != null) {
+                Station station = w.getStream().getStation();
+                icons.add(iconFactory.newIcon(IconTypes.TRIANGLE_UP, new Location(station.getLatitude(), station.getLongitude()), station.getStationName()));
+            }
+            if (w.getEvent() != null) {
+                icons.add(iconFactory.newIcon(w.getEvent().getEventId(), IconTypes.CIRCLE, new Location(w.getEvent().getLatitude(), w.getEvent().getLongitude()), w.getEvent().getEventId()));
+            }
+            return icons.stream();
+        }).collect(Collectors.toList());
     }
 
     private void clearSpectraPlots() {
@@ -318,11 +338,13 @@ public class SiteController {
     private Map<Point2D.Double, SpectraMeasurement> mapSpectraToPoint(List<SpectraMeasurement> spectralMeasurements, Function<SpectraMeasurement, Double> func) {
         return spectralMeasurements.stream()
                                    .filter(spectra -> !func.apply(spectra).equals(0.0))
-                                   .collect(Collectors.toMap(spectra -> new Point2D.Double(Math.log10(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency())),
-                                                                                           func.apply(spectra)),
-                                                             Function.identity(),
-                                                             (a, b) -> b,
-                                                             HashMap::new));
+                                   .collect(
+                                           Collectors.toMap(
+                                                   spectra -> new Point2D.Double(Math.log10(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency())),
+                                                                                 func.apply(spectra)),
+                                                       Function.identity(),
+                                                       (a, b) -> b,
+                                                       HashMap::new));
     }
 
     private List<PlotPoint> toPlotPoints(List<SpectraMeasurement> spectralMeasurements, Function<SpectraMeasurement, Double> func) {
@@ -337,12 +359,7 @@ public class SiteController {
         return lowFrequency + (highFrequency - lowFrequency) / 2.;
     }
 
-    @FXML
-    private void reloadData(ActionEvent e) {
-        requestData();
-    }
-
-    private void requestData() {
+    private void reloadData() {
         clearSpectraPlots();
 
         referenceMwParameters.clear();
@@ -356,11 +373,12 @@ public class SiteController {
         evids.clear();
         evids.add("All");
 
-        spectralMeasurements.addAll(spectraClient.getMeasuredSpectra()
-                                                 .filter(Objects::nonNull)
-                                                 .filter(spectra -> spectra.getWaveform() != null && spectra.getWaveform().getEvent() != null && spectra.getWaveform().getStream() != null)
-                                                 .toStream()
-                                                 .collect(Collectors.toList()));
+        spectralMeasurements.addAll(
+                spectraClient.getMeasuredSpectra()
+                             .filter(Objects::nonNull)
+                             .filter(spectra -> spectra.getWaveform() != null && spectra.getWaveform().getEvent() != null && spectra.getWaveform().getStream() != null)
+                             .toStream()
+                             .collect(Collectors.toList()));
 
         symbolStyleMap = symbolStyleMapFactory.build(spectralMeasurements, new Function<SpectraMeasurement, String>() {
             @Override
@@ -371,5 +389,14 @@ public class SiteController {
         stationSymbols.addAll(symbolStyleMap.entrySet().stream().map(e -> new LabeledPlotPoint(e.getKey(), e.getValue())).collect(Collectors.toList()));
 
         evids.addAll(spectralMeasurements.stream().map(spec -> spec.getWaveform().getEvent().getEventId()).distinct().sorted(new MaybeNumericStringComparator()).collect(Collectors.toList()));
+    }
+
+    public void refreshView() {
+        mapImpl.clearIcons();
+        plotSpectra();
+    }
+
+    public void update() {
+        reloadData();
     }
 }

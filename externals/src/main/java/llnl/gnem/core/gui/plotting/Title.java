@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,7 +20,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-
 /**
  * Class that is responsible for managing a horizontally-centered title string
  * that can be drawn on the top of a plot.
@@ -40,23 +39,27 @@ public class Title {
     /**
      * Default Constructor for the Title object
      */
-    public Title()
-    {
+    public Title() {
     }
 
     /**
      * Constructor for the Title object
      *
-     * @param text     The title text
-     * @param fontname The name of the font in which the title will be rendered
-     * @param c        The color with which to render the title
-     * @param size     The font size to use when rendering the title
-     * @param v        Controls whether the title is visible
-     * @param off      The vertical offset in mm of the title from the top of the
-     *                 plot.
+     * @param text
+     *            The title text
+     * @param fontname
+     *            The name of the font in which the title will be rendered
+     * @param c
+     *            The color with which to render the title
+     * @param size
+     *            The font size to use when rendering the title
+     * @param v
+     *            Controls whether the title is visible
+     * @param off
+     *            The vertical offset in mm of the title from the top of the
+     *            plot.
      */
-    public Title( String text, String fontname, Color c, int size, boolean v, double off )
-    {
+    public Title(String text, String fontname, Color c, int size, boolean v, double off) {
         this.text = text;
         this.fontName = fontname;
         this.color = c;
@@ -70,18 +73,17 @@ public class Title {
      *
      * @return The color value
      */
-    public Color getColor()
-    {
+    public Color getColor() {
         return color;
     }
 
     /**
      * Sets the color attribute of the Title object
      *
-     * @param v The new color value
+     * @param v
+     *            The new color value
      */
-    public void setColor( Color v )
-    {
+    public void setColor(Color v) {
         color = v;
     }
 
@@ -95,7 +97,8 @@ public class Title {
 
     /**
      *
-     * @param font to set
+     * @param font
+     *            to set
      */
     public void setFont(Font font) {
         fontName = font.getName();
@@ -108,18 +111,17 @@ public class Title {
      *
      * @return The fontName value
      */
-    public String getFontName()
-    {
+    public String getFontName() {
         return fontName;
     }
 
     /**
      * Sets the fontName attribute of the Title object
      *
-     * @param v The new fontName value
+     * @param v
+     *            The new fontName value
      */
-    public void setFontName( String v )
-    {
+    public void setFontName(String v) {
         fontName = v;
     }
 
@@ -128,18 +130,17 @@ public class Title {
      *
      * @return The fontSize value
      */
-    public int getFontSize()
-    {
+    public int getFontSize() {
         return fontSize;
     }
 
     /**
      * Sets the fontSize attribute of the Title object
      *
-     * @param v The new fontSize value
+     * @param v
+     *            The new fontSize value
      */
-    public void setFontSize( int v )
-    {
+    public void setFontSize(int v) {
         fontSize = v >= 1 ? v : 1;
     }
 
@@ -148,18 +149,17 @@ public class Title {
      *
      * @return The offset value
      */
-    public double getOffset()
-    {
+    public double getOffset() {
         return offset;
     }
 
     /**
      * Sets the offset attribute of the Title object
      *
-     * @param v The new offset value
+     * @param v
+     *            The new offset value
      */
-    public void setOffset( double v )
-    {
+    public void setOffset(double v) {
         offset = v;
     }
 
@@ -168,18 +168,17 @@ public class Title {
      *
      * @return The text value
      */
-    public String getText()
-    {
+    public String getText() {
         return text;
     }
 
     /**
      * Sets the text attribute of the Title object
      *
-     * @param v The new text value
+     * @param v
+     *            The new text value
      */
-    public void setText( String v )
-    {
+    public void setText(String v) {
         text = v;
     }
 
@@ -188,57 +187,57 @@ public class Title {
      *
      * @return The visible value
      */
-    public boolean getVisible()
-    {
+    public boolean getVisible() {
         return visible;
     }
-
-
 
     /**
      * Sets the visible attribute of the Title object
      *
-     * @param v The new visible value
+     * @param v
+     *            The new visible value
      */
-    public void setVisible( boolean v )
-    {
+    public void setVisible(boolean v) {
         visible = v;
     }
 
     /**
      * render the title on the supplied graphics context
      *
-     * @param g          The graphics context on which to render the title
-     * @param LeftMargin The left margin of the plot in pixels
-     * @param TopMargin  The top margin of the plot in pixels
-     * @param BoxWidth   The plot width in pixels
-     * @param unitsMgr   The Units Manager of the containing axis that will be
-     *                   used for computing offsets.
+     * @param g
+     *            The graphics context on which to render the title
+     * @param LeftMargin
+     *            The left margin of the plot in pixels
+     * @param TopMargin
+     *            The top margin of the plot in pixels
+     * @param BoxWidth
+     *            The plot width in pixels
+     * @param unitsMgr
+     *            The Units Manager of the containing axis that will be used for
+     *            computing offsets.
      */
-    public void Render( Graphics g, int LeftMargin, int TopMargin, int BoxWidth, DrawingUnits unitsMgr )
-    {
-        if( !visible || text == null || text.length() < 1 )
+    public void Render(Graphics g, int LeftMargin, int TopMargin, int BoxWidth, DrawingUnits unitsMgr) {
+        if (!visible || text == null || text.length() < 1)
             return;
         int xpos = LeftMargin + BoxWidth / 2;
-        int ypos = TopMargin - unitsMgr.getVertUnitsToPixels( offset );
+        int ypos = TopMargin - unitsMgr.getVertUnitsToPixels(offset);
         Graphics2D g2d = (Graphics2D) g;
         // Save old font and color
         Font oldFont = g2d.getFont();
         Color oldColor = g2d.getColor();
 
         // Create new font and color
-        g2d.setColor( color );
-        g2d.setFont( new Font( fontName, Font.PLAIN, fontSize ) );
+        g2d.setColor(color);
+        g2d.setFont(new Font(fontName, Font.PLAIN, fontSize));
 
         // Layout and render text
         FontMetrics fm = g2d.getFontMetrics();
-        int advance = fm.stringWidth( text );
-        g2d.drawString( text, xpos - advance / 2, ypos - fm.getMaxAscent() );
+        int advance = fm.stringWidth(text);
+        g2d.drawString(text, xpos - advance / 2, ypos - fm.getMaxAscent());
 
         // restore old values
-        g2d.setColor( oldColor );
-        g2d.setFont( oldFont );
+        g2d.setColor(oldColor);
+        g2d.setFont(oldFont);
     }
 
 }
-

@@ -1,24 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.3</version>
+		<version>1.0.4-SNAPSHOT</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>calibration-standalone</artifactId>
 	<name>calibration-standalone</name>
-
 	<packaging>jar</packaging>
-
-	<properties>
-		<java.version>1.8</java.version>
-		<maven-compiler-version>3.6.1</maven-compiler-version>
-		<springlets.version>1.2.0.RC2</springlets.version>
-	</properties>
 
 	<build>
 		<plugins>
@@ -33,7 +27,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.0.2</version>
 				<configuration>
 					<archive>
 						<manifest>
@@ -72,19 +65,15 @@
 		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 			<artifactId>calibration-gui</artifactId>
-			<version>1.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-			<artifactId>application</artifactId>
-			<version>1.0.3</version>
+			<artifactId>calibration-application</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
@@ -95,8 +84,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-params</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -107,17 +106,14 @@
 		<dependency>
 			<groupId>org.glassfish.tyrus.bundles</groupId>
 			<artifactId>tyrus-standalone-client</artifactId>
-			<version>1.13.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<version>1.14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
-			<version>3.6.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -136,22 +132,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-			<artifactId>service.impl</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-			<artifactId>service.api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-			<artifactId>repository</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-			<artifactId>model</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

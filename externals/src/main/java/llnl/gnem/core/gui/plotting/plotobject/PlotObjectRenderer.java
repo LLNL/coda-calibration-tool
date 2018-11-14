@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,28 +20,24 @@ import llnl.gnem.core.gui.plotting.JBasicPlot;
 import llnl.gnem.core.gui.plotting.JPlotContainer;
 
 /**
- * User: dodge1
- * Date: Jun 8, 2005
- * Time: 1:26:22 PM
+ * User: dodge1 Date: Jun 8, 2005 Time: 1:26:22 PM
  */
 public class PlotObjectRenderer implements Runnable {
-        private PlotObject obj;
+    private PlotObject obj;
 
-        public PlotObjectRenderer( PlotObject obj )
-        {
-            this.obj = obj;
-        }
+    public PlotObjectRenderer(PlotObject obj) {
+        this.obj = obj;
+    }
 
-        public void run()
-        {
-            JBasicPlot plot = obj.getOwner();
-            if( plot != null ){
-                JPlotContainer container = plot.getOwner();
-                if( container != null ){
-                    Graphics g = container.getGraphics();
-                    if( g != null )
-                        obj.render( g, plot );
-                }
+    public void run() {
+        JBasicPlot plot = obj.getOwner();
+        if (plot != null) {
+            JPlotContainer container = plot.getOwner();
+            if (container != null) {
+                Graphics g = container.getGraphics();
+                if (g != null)
+                    obj.render(g, plot);
             }
         }
     }
+}

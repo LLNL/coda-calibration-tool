@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,9 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui;
 
-import java.awt.Toolkit;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
@@ -25,7 +23,6 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import javax.annotation.PostConstruct;
-import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +31,13 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
 
+import com.google.common.eventbus.EventBus;
+
+import gov.llnl.gnem.apps.coda.calibration.gui.events.CalibrationStageShownEvent;
+import gov.llnl.gnem.apps.coda.common.gui.SimpleGuiPreloader;
+import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -46,13 +49,18 @@ import javafx.stage.Stage;
 import reactor.core.publisher.Hooks;
 
 @SpringBootApplication
+@ComponentScan("gov.llnl.gnem.apps.coda.common.mapping")
+@ComponentScan("gov.llnl.gnem.apps.coda.common.gui")
+@ComponentScan("gov.llnl.gnem.apps.coda.calibration.gui")
 public class GuiApplication extends Application {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(GuiApplication.class);
 
     private ConfigurableApplicationContext springContext;
 
     private Stage primaryStage;
+
+    private EventBus bus;
 
     @PostConstruct
     void started() {
@@ -62,35 +70,26 @@ public class GuiApplication extends Application {
     public GuiApplication() {
     }
 
-    public GuiApplication(ConfigurableApplicationContext springContext) {
+    public GuiApplication(ConfigurableApplicationContext springContext, EventBus bus) {
         this.springContext = springContext;
+        this.bus = bus;
     }
 
     public static void main(String[] args) {
         String preloaderName = System.getProperty("javafx.preloader");
         if (preloaderName == null) {
-            System.setProperty("javafx.preloader", CodaGuiPreloader.class.getName());
+            System.setProperty("javafx.preloader", SimpleGuiPreloader.class.getName());
         }
         launch(GuiApplication.class, args);
     }
 
     @Override
     public void init() throws Exception {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                Class util = Class.forName("com.apple.eawt.Application");
-                Method getApplication = util.getMethod("getApplication", new Class[0]);
-                Object application = getApplication.invoke(util);
-                Class params[] = new Class[1];
-                params[0] = java.awt.Image.class;
-                Method setDockIconImage = util.getMethod("setDockIconImage", params);
-                URL url = this.getClass().getResource("/coda_256x256.png");
-                java.awt.Image image = Toolkit.getDefaultToolkit().getImage(url);
-                setDockIconImage.invoke(application, image);
-            } catch (Exception e) {
-            }
-        });
+        CommonGuiUtils.setIcon(this.getClass(), "/coda_256x256.png");
         springContext = new SpringApplicationBuilder(GuiApplication.class).bannerMode(Mode.OFF).web(WebApplicationType.NONE).headless(false).run();
+        if (bus == null) {
+            bus = springContext.getBean(EventBus.class);
+        }
     }
 
     @Override
@@ -101,6 +100,7 @@ public class GuiApplication extends Application {
         primaryStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/coda_128x128.png")));
         primaryStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/coda_256x256.png")));
         primaryStage.setOnCloseRequest((evt) -> Platform.exit());
+        primaryStage.setOnShown((evt) -> bus.post(new CalibrationStageShownEvent()));
 
         AppProperties props = springContext.getBean(AppProperties.class);
 
@@ -119,12 +119,13 @@ public class GuiApplication extends Application {
                 Manifest mf = new Manifest(new URL(manifestPath).openStream());
                 Attributes atts = mf.getMainAttributes();
                 // Put this info in the log to help with analysis
-                log.info("Version:{} Commit:{} Branch:{} By:{} at {}",
-                         atts.getValue("Implementation-Version"),
-                         atts.getValue("Implementation-Build"),
-                         atts.getValue("Build-Branch"),
-                         atts.getValue("Built-By"),
-                         atts.getValue("Build-Timestamp"));
+                log.info(
+                        "Version:{} Commit:{} Branch:{} By:{} at {}",
+                            atts.getValue("Implementation-Version"),
+                            atts.getValue("Implementation-Build"),
+                            atts.getValue("Build-Branch"),
+                            atts.getValue("Built-By"),
+                            atts.getValue("Build-Timestamp"));
                 // Update the title bar
                 baseTitle += " Built at " + atts.getValue("Build-Timestamp");
             } else {

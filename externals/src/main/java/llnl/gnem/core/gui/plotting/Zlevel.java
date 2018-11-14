@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -25,93 +25,78 @@ import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
 import llnl.gnem.core.gui.plotting.plotobject.Symbol;
 
 /**
- * User: dodge1
- * Date: Feb 14, 2006
+ * User: dodge1 Date: Feb 14, 2006
  */
 public class Zlevel {
     private Vector<PlotObject> objects;
     private boolean selectable = true;
     private boolean visible = true;
 
-    public Zlevel()
-    {
+    public Zlevel() {
         objects = new Vector<>();
     }
 
-    public synchronized void clear()
-    {
+    public synchronized void clear() {
         objects.clear();
     }
 
-    public synchronized void add( PlotObject obj )
-    {
-        objects.add( obj );
+    public synchronized void add(PlotObject obj) {
+        objects.add(obj);
     }
 
-    public synchronized boolean remove( PlotObject obj )
-    {
-        return objects.remove( obj );
+    public synchronized boolean remove(PlotObject obj) {
+        return objects.remove(obj);
     }
 
-    public synchronized Vector<PlotObject> getObjects()
-    {
+    public synchronized Vector<PlotObject> getObjects() {
         return objects;
     }
 
-    public boolean isSelectable()
-    {
+    public boolean isSelectable() {
         return selectable;
     }
 
-    public void setSelectable( boolean selectable )
-    {
+    public void setSelectable(boolean selectable) {
         this.selectable = selectable;
     }
 
-    public boolean isVisible()
-    {
+    public boolean isVisible() {
         return visible;
     }
 
-    public void setVisible( boolean visible )
-    {
+    public void setVisible(boolean visible) {
         this.visible = visible;
     }
 
-    public synchronized PlotObject getHotObject( int x, int y )
-    {
-        if( isSelectable() ){  // If this level is selectable...
-            for ( ListIterator<PlotObject> i = objects.listIterator( objects.size() ); i.hasPrevious(); ){
+    public synchronized PlotObject getHotObject(int x, int y) {
+        if (isSelectable()) { // If this level is selectable...
+            for (ListIterator<PlotObject> i = objects.listIterator(objects.size()); i.hasPrevious();) {
                 PlotObject obj = i.previous();
-                if( obj.isSelectable() && obj.PointInside( x, y ) )
+                if (obj.isSelectable() && obj.PointInside(x, y))
                     return obj;
-                else{
-                    PlotObject po = obj.getSubObjectContainingPoint( x, y );
-                    if( po != null )
+                else {
+                    PlotObject po = obj.getSubObjectContainingPoint(x, y);
+                    if (po != null)
                         return po;
                 }
             }
             return null;
-        }
-        else
+        } else
             return null;
 
     }
 
-    public synchronized void setLevelSymbolAlpha( int alpha )
-    {
-        for ( ListIterator<PlotObject> i = objects.listIterator( objects.size() ); i.hasPrevious(); ){
+    public synchronized void setLevelSymbolAlpha(int alpha) {
+        for (ListIterator<PlotObject> i = objects.listIterator(objects.size()); i.hasPrevious();) {
             PlotObject obj = i.previous();
-            if( obj instanceof Symbol ){
+            if (obj instanceof Symbol) {
                 Symbol s = (Symbol) obj;
-                s.setAlpha( alpha );
+                s.setAlpha(alpha);
             }
         }
     }
 
-
-    public synchronized int getLineCount()
-    {
+    public synchronized int getLineCount() {
         int count = 0;
 
         for (Object object : objects) {
@@ -122,8 +107,7 @@ public class Zlevel {
         return count;
     }
 
-    public synchronized Vector<Line> getLines()
-    {
+    public synchronized Vector<Line> getLines() {
         Vector<Line> result = new Vector<Line>();
         for (Object object : objects) {
             PlotObject obj = (PlotObject) object;
@@ -133,8 +117,7 @@ public class Zlevel {
         return result;
     }
 
-    public synchronized void setPolyLineUsage( boolean value )
-    {
+    public synchronized void setPolyLineUsage(boolean value) {
         for (Object object : objects) {
             PlotObject obj = (PlotObject) object;
             if (obj instanceof Line) {
@@ -144,53 +127,46 @@ public class Zlevel {
         }
     }
 
-
-    public synchronized void clearSelectionRegions()
-    {
+    public synchronized void clearSelectionRegions() {
         for (Object object : objects) {
             PlotObject obj = (PlotObject) object;
             obj.clearSelectionRegion();
         }
     }
 
-
-    synchronized void renderVisiblePlotObjects( Graphics g, JBasicPlot owner )
-    {
-        for ( Object o : objects ){
+    synchronized void renderVisiblePlotObjects(Graphics g, JBasicPlot owner) {
+        for (Object o : objects) {
             PlotObject obj = (PlotObject) o;
-            obj.render( g, owner );
+            obj.render(g, owner);
         }
     }
 
-    public synchronized void clearText()
-    {
+    public synchronized void clearText() {
         Iterator<PlotObject> it = objects.iterator();
-        while( it.hasNext() ){
+        while (it.hasNext()) {
             PlotObject obj = it.next();
-            if( obj instanceof BasicText ){
+            if (obj instanceof BasicText) {
                 it.remove();
             }
         }
     }
 
-    public synchronized boolean contains( PlotObject po )
-    {
-        for ( Object o : objects ){
+    public synchronized boolean contains(PlotObject po) {
+        for (Object o : objects) {
             PlotObject obj = (PlotObject) o;
-            if( obj == po )
+            if (obj == po)
                 return true;
         }
         return false;
     }
 
-    public synchronized Vector<PlotObject> getVisiblePlotObjects()
-    {
+    public synchronized Vector<PlotObject> getVisiblePlotObjects() {
         Vector<PlotObject> result = new Vector<PlotObject>();
-        for ( Object o : objects ){
+        for (Object o : objects) {
             PlotObject obj = (PlotObject) o;
-            if( obj.isVisible() )
+            if (obj.isVisible())
                 //noinspection unchecked
-                result.add( obj );
+                result.add(obj);
         }
         return result;
     }

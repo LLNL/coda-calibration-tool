@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -23,15 +23,15 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersFiService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersPsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SiteFrequencyBandParametersService;
+import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -54,8 +54,14 @@ public class ParameterLocalClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postSharedFrequencyBandParameters(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
+    public Mono<String> setSharedFrequencyBandParameter(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
         return Mono.just(Optional.ofNullable(sharedParamsService.update(parameters)).orElse(new SharedFrequencyBandParameters()).toString());
+    }
+
+    @Override
+    public Mono<String> removeSharedFrequencyBandParameter(SharedFrequencyBandParameters parameters) {
+        sharedParamsService.delete(parameters);
+        return Mono.empty();
     }
 
     @Override
@@ -64,7 +70,7 @@ public class ParameterLocalClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postSiteSpecificFrequencyBandParameters(SiteFrequencyBandParameters parameters) throws JsonProcessingException {
+    public Mono<String> setSiteSpecificFrequencyBandParameter(SiteFrequencyBandParameters parameters) throws JsonProcessingException {
         return Mono.just(siteParamsService.save(parameters).toString());
     }
 
@@ -74,8 +80,14 @@ public class ParameterLocalClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postPsParameters(MdacParametersPS parameters) throws JsonProcessingException {
+    public Mono<String> setPsParameter(MdacParametersPS parameters) throws JsonProcessingException {
         return Mono.just(mdacPsService.update(parameters).toString());
+    }
+
+    @Override
+    public Mono<String> removePsParameter(MdacParametersPS parameters) {
+        mdacPsService.delete(parameters);
+        return Mono.empty();
     }
 
     @Override
@@ -84,8 +96,14 @@ public class ParameterLocalClient implements ParameterClient {
     }
 
     @Override
-    public Mono<String> postFiParameters(MdacParametersFI parameters) throws JsonProcessingException {
+    public Mono<String> setFiParameter(MdacParametersFI parameters) throws JsonProcessingException {
         return Mono.just(mdacFiService.update(parameters).toString());
+    }
+
+    @Override
+    public Mono<String> removeFiParameter(MdacParametersFI parameters) {
+        mdacFiService.delete(parameters);
+        return Mono.empty();
     }
 
     @Override

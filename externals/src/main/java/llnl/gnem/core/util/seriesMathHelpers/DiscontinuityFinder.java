@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -48,7 +48,6 @@ public class DiscontinuityFinder {
             return result;
         }
 
-
         int idx = maxExtremum.getIndex();
         Iterator<Extremum> it = extremes.iterator();
         while (it.hasNext()) {
@@ -59,7 +58,6 @@ public class DiscontinuityFinder {
                 it.remove();
             }
         }
-
 
         Collection<Extremum> tmp = new ArrayList<>();
 
@@ -182,7 +180,6 @@ public class DiscontinuityFinder {
         }
     }
 
-
     public static DiscontinuityCollection findDiscontinuities(float[] data, double sampRate, int winLength, double factor) {
         DiscontinuityCollection result = new DiscontinuityCollection();
         if (data.length < 2 * winLength + 1) {
@@ -192,8 +189,7 @@ public class DiscontinuityFinder {
         SeriesMath.setMaximumRange(tmp, 1.0e5);
         tmp = SeriesMath.getFirstDifference(tmp);
         tmp = SeriesMath.arrayMultiply(tmp, tmp);
-        
-        
+
         double avg = SeriesMath.getMean(tmp);
         double var = SeriesMath.getVariance(tmp);
         double std = Math.sqrt(var);

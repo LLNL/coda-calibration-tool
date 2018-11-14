@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -41,7 +41,6 @@ public class PlotPresentationPrefs implements Serializable {
     private final PickPrefs pickPrefs;
     private final PickPrefs predPickPrefs;
 
-
     public PlotPresentationPrefs() {
         borderPrefs = new DrawingRegionPrefs();
         plotRegionPrefs = new DrawingRegionPrefs();
@@ -75,7 +74,8 @@ public class PlotPresentationPrefs implements Serializable {
     }
 
     /**
-     * @param maxSymbolsToPlot the maxSymbolsToPlot to set
+     * @param maxSymbolsToPlot
+     *            the maxSymbolsToPlot to set
      */
     public void setMaxSymbolsToPlot(int maxSymbolsToPlot) {
         this.maxSymbolsToPlot = maxSymbolsToPlot;
@@ -89,7 +89,8 @@ public class PlotPresentationPrefs implements Serializable {
     }
 
     /**
-     * @param limitPlottedSymbols the limitPlottedSymbols to set
+     * @param limitPlottedSymbols
+     *            the limitPlottedSymbols to set
      */
     public void setLimitPlottedSymbols(boolean limitPlottedSymbols) {
         this.limitPlottedSymbols = limitPlottedSymbols;
@@ -103,7 +104,8 @@ public class PlotPresentationPrefs implements Serializable {
     }
 
     /**
-     * @param plotLineSymbols the plotLineSymbols to set
+     * @param plotLineSymbols
+     *            the plotLineSymbols to set
      */
     public void setPlotLineSymbols(boolean plotLineSymbols) {
         this.plotLineSymbols = plotLineSymbols;
@@ -146,7 +148,8 @@ public class PlotPresentationPrefs implements Serializable {
     }
 
     /**
-     * @param titleColor the titleColor to set
+     * @param titleColor
+     *            the titleColor to set
      */
     public void setTitleColor(Color titleColor) {
         borderPrefs.setFontColor(titleColor);
@@ -188,7 +191,6 @@ public class PlotPresentationPrefs implements Serializable {
         Font newFont = new Font(fontName, fontStyle, titleFontSize);
         setTitleFont(newFont);
     }
-
 
     public void setPlotTracesAtSameScale(boolean enabled) {
         this.plotTracesAtSameScale = enabled;

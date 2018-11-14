@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -29,8 +29,7 @@ import llnl.gnem.core.polygon.BasePolygon;
 import llnl.gnem.core.polygon.Vertex;
 
 /**
- * Created by: dodge1
- * Date: Jan 6, 2005
+ * Created by: dodge1 Date: Jan 6, 2005
  */
 public class JPolygon extends PlotObject {
     private Point2D[] vertices;
@@ -72,8 +71,10 @@ public class JPolygon extends PlotObject {
     /**
      * The constructor for BasePolygon
      *
-     * @param points An array of Vertex objects that collectively define the polygons
-     *               vertices. This constructor creates a polygon with a blue interior and black edges.
+     * @param points
+     *            An array of Vertex objects that collectively define the
+     *            polygons vertices. This constructor creates a polygon with a
+     *            blue interior and black edges.
      */
     public JPolygon(Point2D[] points) {
         vertices = points;
@@ -82,7 +83,8 @@ public class JPolygon extends PlotObject {
     /**
      * Sets the color of the polygon interior.
      *
-     * @param c The new interior color
+     * @param c
+     *            The new interior color
      */
     public void setFillColor(Color c) {
         FillColor = c;
@@ -93,14 +95,18 @@ public class JPolygon extends PlotObject {
     }
 
     /**
-     * Renders this polygon with the current graphics context. As currently implemented,
-     * if any part of the polygon is outside the axis limits, the polygon will not be rendered.
-     * This behavior was chosen because for Azimuthal equal-area Coordinate Transforms, objects
-     * at or near 180 degrees from the origin are distorted to fill the entire plot region.
-     * If only the offending vertices are clipped, the polygon may become unrecognizable in shape.
+     * Renders this polygon with the current graphics context. As currently
+     * implemented, if any part of the polygon is outside the axis limits, the
+     * polygon will not be rendered. This behavior was chosen because for
+     * Azimuthal equal-area Coordinate Transforms, objects at or near 180
+     * degrees from the origin are distorted to fill the entire plot region. If
+     * only the offending vertices are clipped, the polygon may become
+     * unrecognizable in shape.
      *
-     * @param g     The graphics context on which to render this polygon.
-     * @param owner The JBasicPlot on which this polygon is being rendered.
+     * @param g
+     *            The graphics context on which to render this polygon.
+     * @param owner
+     *            The JBasicPlot on which this polygon is being rendered.
      */
     @Override
     public void render(Graphics g, JBasicPlot owner) {
@@ -132,7 +138,7 @@ public class JPolygon extends PlotObject {
         }
         if (isEdgeVisible()) {
             g2d.setColor(EdgeColor);
-            g2d.setStroke( getPenStyle().getStroke( width ) );
+            g2d.setStroke(getPenStyle().getStroke(width));
             g2d.draw(path);
         }
         addToRegion(path);
@@ -164,32 +170,27 @@ public class JPolygon extends PlotObject {
         this.width = width;
     }
 
-    public Vertex[] getVertices()
-    {
+    public Vertex[] getVertices() {
         Vertex[] result = new Vertex[vertices.length];
-        for( int j = 0; j < vertices.length; ++j ){
-            result[j] = new Vertex(vertices[j].getX(), vertices[j].getY() );
+        for (int j = 0; j < vertices.length; ++j) {
+            result[j] = new Vertex(vertices[j].getX(), vertices[j].getY());
         }
         return result;
     }
 
-    public PenStyle getPenStyle()
-    {
+    public PenStyle getPenStyle() {
         return penStyle;
     }
 
-    public void setPenStyle(PenStyle penStyle)
-    {
+    public void setPenStyle(PenStyle penStyle) {
         this.penStyle = penStyle;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 }

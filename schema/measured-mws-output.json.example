@@ -1,0 +1,14 @@
+{
+    "schemaVersion": 1,
+    "type": "llnl/coda-calibration-tool",
+    "measured-events": [
+        {
+            "eventId": "0331199924",
+            "datetime": "2011-12-03T10:15:30Z",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "mw": 3.3,
+            "stressDropInMpa": 0.7
+        }
+    ]
+}

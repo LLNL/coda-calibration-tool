@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -25,8 +25,7 @@ import llnl.gnem.core.gui.plotting.transforms.Coordinate;
 import llnl.gnem.core.gui.plotting.transforms.CoordinateTransform;
 
 /**
- * Created by dodge1
- * Date: Feb 7, 2008
+ * Created by dodge1 Date: Feb 7, 2008
  */
 public class PositionMarker extends PlotObject {
 
@@ -36,8 +35,7 @@ public class PositionMarker extends PlotObject {
     private double outerSize;
     private Color color;
 
-    public PositionMarker()
-    {
+    public PositionMarker() {
         xCenter = 0.5;
         yCenter = 0.5;
         innerSize = 5.0;
@@ -45,16 +43,17 @@ public class PositionMarker extends PlotObject {
         setColor(Color.red);
     }
 
-
     /**
      * Constructor for the Symbol object
-     *
-     * @param X    The X-center of the symbol in real-world coordinates
-     * @param Y    The Y-center of the symbol in real-world coordinates
-     * @param size The innerSize of the Symbol in mm
+     * 
+     * @param X
+     *            The X-center of the symbol in real-world coordinates
+     * @param Y
+     *            The Y-center of the symbol in real-world coordinates
+     * @param size
+     *            The innerSize of the Symbol in mm
      */
-    public PositionMarker(double X, double Y, double size, double outerSize)
-    {
+    public PositionMarker(double X, double Y, double size, double outerSize) {
         xCenter = X;
         yCenter = Y;
         this.innerSize = size;
@@ -62,8 +61,7 @@ public class PositionMarker extends PlotObject {
         setColor(Color.red);
     }
 
-    public PositionMarker(double X, double Y, double innerSize, double outerSize, Color color)
-    {
+    public PositionMarker(double X, double Y, double innerSize, double outerSize, Color color) {
         xCenter = X;
         yCenter = Y;
         this.innerSize = innerSize;
@@ -71,21 +69,23 @@ public class PositionMarker extends PlotObject {
         setColor(color);
     }
 
-    public void setSelected(boolean selected, Graphics g)
-    {
+    @Override
+    public void setSelected(boolean selected, Graphics g) {
     }
-
 
     /**
      * render this Symbol to the supplied graphics context
      *
-     * @param g     The graphics context
-     * @param owner The JBasicPlot that owns this symbol
+     * @param g
+     *            The graphics context
+     * @param owner
+     *            The JBasicPlot that owns this symbol
      */
-    public void render(Graphics g, JBasicPlot owner)
-    {
-        if (g == null || !visible || owner == null || !owner.getCanDisplay())
+    @Override
+    public void render(Graphics g, JBasicPlot owner) {
+        if (g == null || !visible || owner == null || !owner.getCanDisplay()) {
             return;
+        }
         Graphics2D g2d = (Graphics2D) g;
 
         CoordinateTransform ct = owner.getCoordinateTransform();
@@ -102,9 +102,7 @@ public class PositionMarker extends PlotObject {
         paintIt(g, xcenter, ycenter, inner, outer);
     }
 
-
-    public void paintIt(Graphics g, int x, int y, int inner, int outer)
-    {
+    public void paintIt(Graphics g, int x, int y, int inner, int outer) {
         int width = 3;
         Graphics2D g2d = (Graphics2D) g;
         g2d.setColor(color);
@@ -120,8 +118,7 @@ public class PositionMarker extends PlotObject {
      *
      * @return The xcenter value
      */
-    public double getXcenter()
-    {
+    public double getXcenter() {
         return xCenter;
     }
 
@@ -130,8 +127,7 @@ public class PositionMarker extends PlotObject {
      *
      * @return The ycenter value
      */
-    public double getYcenter()
-    {
+    public double getYcenter() {
         return yCenter;
     }
 
@@ -140,85 +136,86 @@ public class PositionMarker extends PlotObject {
      *
      * @return The symbolSize value
      */
-    public double getSymbolSize()
-    {
+    public double getSymbolSize() {
         return innerSize;
     }
-
 
     /**
      * Gets the color attribute of the Symbol object
      *
      * @return The color value
      */
-    public Color getColor()
-    {
+    public Color getColor() {
         return color;
     }
-
 
     /**
      * Sets the xcenter attribute of the Symbol object
      *
-     * @param v The new xcenter value
+     * @param v
+     *            The new xcenter value
      */
-    public void setXcenter(double v)
-    {
+    public void setXcenter(double v) {
         xCenter = v;
     }
 
     /**
      * Sets the ycenter attribute of the Symbol object
      *
-     * @param v The new ycenter value
+     * @param v
+     *            The new ycenter value
      */
-    public void setYcenter(double v)
-    {
+    public void setYcenter(double v) {
         yCenter = v;
     }
 
     /**
      * Sets the symbolSize attribute of the Symbol object
      *
-     * @param v The new symbolSize value
+     * @param v
+     *            The new symbolSize value
      */
-    public void setSymbolSize(double v)
-    {
+    public void setSymbolSize(double v) {
         innerSize = v;
     }
-
 
     /**
      * Sets the color attribute of the Symbol object
      *
-     * @param v The new color value
+     * @param v
+     *            The new color value
      */
-    public void setColor(Color v)
-    {
+    public void setColor(Color v) {
         color = v;
     }
-
 
     /**
      * Move this Symbol to a different place in the subplot
      *
-     * @param owner    The JBasicPlot that owns this symbol
+     * @param owner
+     *            The JBasicPlot that owns this symbol
      * @param graphics
-     * @param dx       The amount to move in the X-direction in real-world coordinates
-     * @param dy       The amount to move in the Y-direction in real-world coordinates
+     * @param dx
+     *            The amount to move in the X-direction in real-world
+     *            coordinates
+     * @param dy
+     *            The amount to move in the Y-direction in real-world
+     *            coordinates
      */
-    public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy)
-    {
+    @Override
+    public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy) {
         if (graphics == null) {
             graphics = owner.getOwner().getGraphics();
         }
         Graphics2D g2d = (Graphics2D) graphics;
         g2d.clip(owner.getPlotRegion().getRect());
         render(graphics, owner);
-        if (canDragX)
+        if (canDragX) {
             xCenter += dx;
-        if (canDragY)
+        }
+        if (canDragY) {
             yCenter += dy;
+        }
         render(graphics, owner);
     }
 
@@ -227,8 +224,8 @@ public class PositionMarker extends PlotObject {
      *
      * @return The String description
      */
-    public String toString()
-    {
+    @Override
+    public String toString() {
         StringBuffer s = new StringBuffer(" Symbol at (");
         NumberFormat f = NumberFormat.getInstance();
         f.setMaximumFractionDigits(5);
@@ -239,15 +236,11 @@ public class PositionMarker extends PlotObject {
         return s.toString();
     }
 
-
-    public double getOuterSize()
-    {
+    public double getOuterSize() {
         return outerSize;
     }
 
-    public void setOuterSize(double outerSize)
-    {
+    public void setOuterSize(double outerSize) {
         this.outerSize = outerSize;
     }
 }
-

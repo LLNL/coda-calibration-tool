@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,8 +17,7 @@ package llnl.gnem.core.gui.plotting.jmultiaxisplot;
 import llnl.gnem.core.gui.plotting.Limits;
 
 /**
- * Created by: dodge1
- * Date: Jan 27, 2005
+ * Created by: dodge1 Date: Jan 27, 2005
  */
 public class PanMagnifierManager {
     private static double LOG_MAX_MAGNIFICATION = 2.6;
@@ -31,14 +30,7 @@ public class PanMagnifierManager {
     private double logMagnificationFactor;
     private double dataRange;
 
-
-    public PanMagnifierManager( int windowTop,
-                                int windowHeight,
-                                int startY,
-                                double startYMin,
-                                double startYMax,
-                                double yStart )
-    {
+    public PanMagnifierManager(int windowTop, int windowHeight, int startY, double startYMin, double startYMax, double yStart) {
         this.windowTop = windowTop;
         this.startY = startY;
         this.startOffset = startY - windowTop;
@@ -48,25 +40,23 @@ public class PanMagnifierManager {
         dataRange = startYMax - startYMin;
     }
 
-    public Limits getCurrentYLimits( int currentYPixelValue )
-    {
+    public Limits getCurrentYLimits(int currentYPixelValue) {
         int currentOffset = currentYPixelValue - windowTop;
         int deviation = startOffset - currentOffset;
-        double magnification = Math.pow( 10.0, logMagnificationFactor * deviation );
+        double magnification = Math.pow(10.0, logMagnificationFactor * deviation);
         double newRange = dataRange / magnification;
         double yMin = yStart - newRange / 2;
         double yMax = yStart + newRange / 2;
-        return new Limits( yMin, yMax );
+        return new Limits(yMin, yMax);
     }
 
-    public double getMagnification( int currentYPixelValue )
-    {
+    public double getMagnification(int currentYPixelValue) {
         double logMagnification = 1.0;
-        double denominator = ( startY - windowTop );
-        if( denominator != 0 )
-            logMagnification = LOG_SCALE_FACTOR * ( startY - currentYPixelValue ) / denominator;
-        if( logMagnification < -LOG_SCALE_FACTOR )
+        double denominator = (startY - windowTop);
+        if (denominator != 0)
+            logMagnification = LOG_SCALE_FACTOR * (startY - currentYPixelValue) / denominator;
+        if (logMagnification < -LOG_SCALE_FACTOR)
             logMagnification = -LOG_SCALE_FACTOR;
-        return Math.pow( 10.0, logMagnification );
+        return Math.pow(10.0, logMagnification);
     }
 }

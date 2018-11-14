@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -24,21 +24,23 @@ public class ZoomLimits {
     /**
      * Constructor for the ZoomLimits object
      *
-     * @param xmin Minimum limit for the X-axis
-     * @param xmax Maximum limit for the X-axis
-     * @param ymin Minimum limit for the Y-axis
-     * @param ymax Maximum limit for the Y-axis
+     * @param xmin
+     *            Minimum limit for the X-axis
+     * @param xmax
+     *            Maximum limit for the X-axis
+     * @param ymin
+     *            Minimum limit for the Y-axis
+     * @param ymax
+     *            Maximum limit for the Y-axis
      */
-    public ZoomLimits( double xmin, double xmax, double ymin, double ymax )
-    {
+    public ZoomLimits(double xmin, double xmax, double ymin, double ymax) {
         this.xmin = xmin;
         this.xmax = xmax;
         this.ymin = ymin;
         this.ymax = ymax;
     }
 
-    public ZoomLimits(Limits xlimits, Limits ylimits)
-    {
+    public ZoomLimits(Limits xlimits, Limits ylimits) {
         xmin = xlimits.getMin();
         xmax = xlimits.getMax();
         ymin = ylimits.getMin();
@@ -53,10 +55,10 @@ public class ZoomLimits {
     /**
      * Copy Constructor for the ZoomLimits object
      *
-     * @param orig ZoomLimits object to copy
+     * @param orig
+     *            ZoomLimits object to copy
      */
-    public ZoomLimits( ZoomLimits orig )
-    {
+    public ZoomLimits(ZoomLimits orig) {
         this.xmin = orig.xmin;
         this.xmax = orig.xmax;
         this.ymin = orig.ymin;
@@ -80,5 +82,3 @@ public class ZoomLimits {
      */
     public double ymax;
 }
-
-

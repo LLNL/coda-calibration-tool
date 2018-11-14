@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<parent>
+		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+		<artifactId>coda-calibration</artifactId>
+		<version>1.0.4-SNAPSHOT</version>
+	</parent>
+
+	<groupId>gov.llnl.gnem.apps.coda.common</groupId>
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>common-service</artifactId>
+	<name>common-service</name>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>common-model</module>
+		<module>common-repository</module>
+		<module>common-service-api</module>
+		<module>common-service-impl</module>
+		<module>common-application</module>
+	</modules>
+</project>

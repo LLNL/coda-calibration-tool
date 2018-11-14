@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,13 +15,11 @@
 package llnl.gnem.core.waveform.merge;
 
 /**
- * Created by dodge1
- * Date: May 6, 2010
+ * Created by dodge1 Date: May 6, 2010
  */
-public class MergeException extends Exception{
+public class MergeException extends Exception {
 
-    public MergeException( String message )
-    {
+    public MergeException(String message) {
         super(message);
     }
 }

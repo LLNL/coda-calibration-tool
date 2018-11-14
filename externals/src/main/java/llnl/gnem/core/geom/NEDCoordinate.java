@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -49,8 +49,8 @@ public class NEDCoordinate extends CartesianCoordinate {
 
         RealMatrix ecefToNEDRotationMatrix = getECEFToNEDRotationMatrix(origin);
 
-        RealVector ecefPositionVector = new ArrayRealVector(new double[]{ecefPosition.getX(), ecefPosition.getY(), ecefPosition.getZ()});
-        RealVector ecefOriginVector = new ArrayRealVector(new double[]{ecefOrigin.getX(), ecefOrigin.getY(), ecefOrigin.getZ()});
+        RealVector ecefPositionVector = new ArrayRealVector(new double[] { ecefPosition.getX(), ecefPosition.getY(), ecefPosition.getZ() });
+        RealVector ecefOriginVector = new ArrayRealVector(new double[] { ecefOrigin.getX(), ecefOrigin.getY(), ecefOrigin.getZ() });
 
         RealVector ecefDifferenceVector = ecefPositionVector.subtract(ecefOriginVector);
         double[] nedPositionCoordinate = ecefToNEDRotationMatrix.operate(ecefDifferenceVector).toArray();
@@ -60,9 +60,10 @@ public class NEDCoordinate extends CartesianCoordinate {
 
     /**
      *
-     * @param origin the reference point for the local NED frame
+     * @param origin
+     *            the reference point for the local NED frame
      * @return the Direction Cosine Matrix for converting
-     * Earth-Centered-Earth-Fixed (ECEF) to North-East-Down (NED)
+     *         Earth-Centered-Earth-Fixed (ECEF) to North-East-Down (NED)
      */
     private static RealMatrix getECEFToNEDRotationMatrix(GeographicCoordinate origin) {
         RealMatrix rotationMatrix = new BlockRealMatrix(3, 3);

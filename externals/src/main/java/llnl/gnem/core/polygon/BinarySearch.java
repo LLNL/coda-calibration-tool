@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,26 +15,19 @@
 package llnl.gnem.core.polygon;
 
 /**
- * User: dodge1
- * Date: Jul 26, 2005
- * Time: 12:02:27 PM
+ * User: dodge1 Date: Jul 26, 2005 Time: 12:02:27 PM
  */
 public class BinarySearch {
 
-   public static int[] bounds( final double[] array, final double value )
-   {
-       return range( array, value, value );
-   }
-
-
-    public static int[] bounds( final float[] array, final float value )
-    {
-        return range( array, value, value );
+    public static int[] bounds(final double[] array, final double value) {
+        return range(array, value, value);
     }
 
+    public static int[] bounds(final float[] array, final float value) {
+        return range(array, value, value);
+    }
 
-    static public int[] range( final double[] array, final double floor, final double ceiling )
-    {
+    static public int[] range(final double[] array, final double floor, final double ceiling) {
         final int[] answer = new int[2];
         int high;
         int low;
@@ -43,9 +36,9 @@ public class BinarySearch {
         // work on floor
         high = array.length;
         low = -1;
-        while( high - low > 1 ){
-            probe = ( high + low ) >> 1;
-            if( array[probe] < floor )
+        while (high - low > 1) {
+            probe = (high + low) >> 1;
+            if (array[probe] < floor)
                 low = probe;
             else
                 high = probe;
@@ -55,9 +48,9 @@ public class BinarySearch {
         // work on ceiling
         high = array.length;
         low = -1;
-        while( high - low > 1 ){
-            probe = ( high + low ) >> 1;
-            if( array[probe] > ceiling )
+        while (high - low > 1) {
+            probe = (high + low) >> 1;
+            if (array[probe] > ceiling)
                 high = probe;
             else
                 low = probe;
@@ -66,9 +59,7 @@ public class BinarySearch {
         return answer;
     }
 
-
-    static public int[] range( final float[] array, final float floor, final float ceiling )
-    {
+    static public int[] range(final float[] array, final float floor, final float ceiling) {
         final int[] answer = new int[2];
         int high;
         int low;
@@ -77,9 +68,9 @@ public class BinarySearch {
         // work on floor
         high = array.length;
         low = -1;
-        while( high - low > 1 ){
-            probe = ( high + low ) >> 1;
-            if( array[probe] < floor )
+        while (high - low > 1) {
+            probe = (high + low) >> 1;
+            if (array[probe] < floor)
                 low = probe;
             else
                 high = probe;
@@ -89,9 +80,9 @@ public class BinarySearch {
         // work on ceiling
         high = array.length;
         low = -1;
-        while( high - low > 1 ){
-            probe = ( high + low ) >> 1;
-            if( array[probe] > ceiling )
+        while (high - low > 1) {
+            probe = (high + low) >> 1;
+            if (array[probe] > ceiling)
                 high = probe;
             else
                 low = probe;
@@ -99,7 +90,5 @@ public class BinarySearch {
         answer[1] = high;
         return answer;
     }
-
-
 
 }

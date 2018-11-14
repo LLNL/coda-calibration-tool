@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -21,24 +21,24 @@ package llnl.gnem.core.geom;
 public class Location<T extends Coordinate> implements Comparable<Location> {
     private final T coord;
     private final String name;
-    
+
     public Location(T coord) {
         this(coord, coord.toString());
     }
-    
+
     public Location(T coord, String name) {
         this.coord = coord;
         this.name = name;
     }
-    
+
     public T getCoordinate() {
         return coord;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public double getDistance(Location<T> other) {
         return coord.getDistance(other.coord);
     }
@@ -47,7 +47,7 @@ public class Location<T extends Coordinate> implements Comparable<Location> {
     public int compareTo(Location other) {
         return name.compareTo(other.name);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

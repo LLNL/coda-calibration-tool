@@ -1,0 +1,46 @@
+{
+    "schemaVersion": 1,
+    "type": "llnl/coda-calibration-tool",
+    "bands":[
+        {"lowFreqHz":0.02 ,"highFreqHz":0.03,"minWindowLengthSec":100,"maxWindowLengthSec":1000,"snrThresholdAboveNoiseLog10":0.5,"measurementTimeSec":100.0,"velocity0":0,"velocity1":0,"velocity2":0,"beta0":0,"beta1":0,"beta2":0,"gamma0":0,"gamma1":0,"gamma2":0,"s1":0,"s2":0,"xc":0,"xt":0,"q":0},        
+        {"lowFreqHz":0.03 ,"highFreqHz":0.05,"minWindowLengthSec":100,"maxWindowLengthSec":800, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":0.05 ,"highFreqHz":0.1, "minWindowLengthSec":75, "maxWindowLengthSec":600, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":0.1,  "highFreqHz":0.2, "minWindowLengthSec":75, "maxWindowLengthSec":550, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":0.2,  "highFreqHz":0.3, "minWindowLengthSec":50, "maxWindowLengthSec":550, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":0.3,  "highFreqHz":0.5, "minWindowLengthSec":50, "maxWindowLengthSec":500, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":0.5,  "highFreqHz":0.7, "minWindowLengthSec":50, "maxWindowLengthSec":500, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":0.7,  "highFreqHz":1.0, "minWindowLengthSec":40, "maxWindowLengthSec":450, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":1.0,  "highFreqHz":1.5, "minWindowLengthSec":40, "maxWindowLengthSec":450, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":1.5,  "highFreqHz":2.0, "minWindowLengthSec":40, "maxWindowLengthSec":400, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":2.0,  "highFreqHz":3.0, "minWindowLengthSec":40, "maxWindowLengthSec":400, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":3.0,  "highFreqHz":4.0, "minWindowLengthSec":40, "maxWindowLengthSec":400, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":4.0,  "highFreqHz":6.0, "minWindowLengthSec":40, "maxWindowLengthSec":400, "snrThresholdAboveNoiseLog10":0.5},
+        {"lowFreqHz":6.0,  "highFreqHz":8.0, "minWindowLengthSec":40, "maxWindowLengthSec":350, "snrThresholdAboveNoiseLog10":0.5}
+    ],
+    "mdac-fi": {
+        "alphaR":   5000,                   
+        "alphas":   6000,     
+        "betas":    3500,   
+        "betaR":    2900, 
+        "sigma":    0.3,    
+        "delSigma": 0.0,       
+        "psi":      0.25,  
+        "delPsi":   0.0,     
+        "zeta":     1.0,   
+        "m0ref":    10000000000000000,                       
+        "radPatP":  0.44,      
+        "radPatS":  0.6,         
+        "rhor":     2500,   
+        "rhos":     2700                   
+    },
+    "mdac-ps": [
+        {"phase":"Pn","q0":210,"delQ0":0,"gamma0":0.65,"delGamma0":0,"u0":7900,"eta":1.1,"delEta":0,"distCrit":0.001,"snr":2},
+        {"phase":"Pg","q0":190,"delQ0":0,"gamma0":0.45,"delGamma0":0,"u0":6000,"eta":0.5,"delEta":0,"distCrit":100,  "snr":2},
+        {"phase":"Sn","q0":590,"delQ0":0,"gamma0":0.55,"delGamma0":0,"u0":4500,"eta":1.1,"delEta":0,"distCrit":0.001,"snr":2},
+        {"phase":"Lg","q0":200,"delQ0":0,"gamma0":0.54,"delGamma0":0,"u0":3500,"eta":0.5,"delEta":0,"distCrit":100,  "snr":2}
+    ],
+    "reference-events": [
+        { "eventId" : "0331199924", "refMw" : 3.0 },
+        { "eventId" : "0401199924", "refMw" : 5.0,  "stressDropInMpa": 0.7 }
+    ]
+}

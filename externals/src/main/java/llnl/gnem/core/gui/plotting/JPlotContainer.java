@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -22,6 +22,7 @@ import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -39,6 +40,8 @@ import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.print.PrintTranscoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Element;
 import org.w3c.dom.svg.SVGDocument;
@@ -50,9 +53,8 @@ import llnl.gnem.core.gui.plotting.transforms.CoordinateTransform;
  * plot (JBasicPlot). The principal function of this class is to manage the
  * layout of the JBasicPlot and to render its border and background
  */
-@SuppressWarnings({"StaticMethodOnlyUsedInOneClass"})
 public abstract class JPlotContainer extends JPanel {
-
+    private static final Logger log = LoggerFactory.getLogger(JPlotContainer.class);
     private static final double DEFAULT_OFFSET = 17.0;
     private static final double DEFAULT_WIDTH = 16.0;
     protected CoordinateTransform coordTransform;
@@ -71,8 +73,8 @@ public abstract class JPlotContainer extends JPanel {
     // must be used immediately after being obtained.
     protected int left;
     protected int top;
-    protected int width;
-    protected int height;
+    protected int plotWidth;
+    protected int plotHeight;
     protected Title title = null;
     protected DrawingUnits unitsMgr = null;
     protected Graphics ActiveGraphics;
@@ -105,7 +107,8 @@ public abstract class JPlotContainer extends JPanel {
     /**
      * Called by the graphics system when this component must be updated.
      *
-     * @param g The graphics context on which to render the component.
+     * @param g
+     *            The graphics context on which to render the component.
      */
     @Override
     public void paintComponent(Graphics g) {
@@ -182,7 +185,8 @@ public abstract class JPlotContainer extends JPanel {
      * distance in millimeters from the left edge of the container of the
      * JPlotContainer to the left edge of the JPlotContainer left margin.
      *
-     * @param v The new horizontal Offset value.
+     * @param v
+     *            The new horizontal Offset value.
      */
     public void setHorizontalOffset(double v) {
         HorizontalOffset = v;
@@ -193,7 +197,8 @@ public abstract class JPlotContainer extends JPanel {
      * the distance in millimeters from the top of the container holding the
      * JPlotContainer to the top of the top margin of the JPlotContainer.
      *
-     * @param v The new verticalOffset value
+     * @param v
+     *            The new verticalOffset value
      */
     public void setVerticalOffset(double v) {
         VerticalOffset = v;
@@ -202,7 +207,8 @@ public abstract class JPlotContainer extends JPanel {
     /**
      * Sets the height of the plot interior in millimeters.
      *
-     * @param v The new box Height value
+     * @param v
+     *            The new box Height value
      */
     public void setBoxHeight(double v) {
         BoxHeight = v;
@@ -211,7 +217,8 @@ public abstract class JPlotContainer extends JPanel {
     /**
      * Sets the width of the plot interior in millimeters
      *
-     * @param v The new box Width value
+     * @param v
+     *            The new box Width value
      */
     public void setBoxWidth(double v) {
         BoxWidth = v;
@@ -243,7 +250,7 @@ public abstract class JPlotContainer extends JPanel {
      * @return The plotWidth value
      */
     public int getPlotWidth() {
-        return width;
+        return plotWidth;
     }
 
     /**
@@ -252,7 +259,7 @@ public abstract class JPlotContainer extends JPanel {
      * @return The plotHeight value
      */
     public int getPlotHeight() {
-        return height;
+        return plotHeight;
     }
 
     /**
@@ -267,7 +274,8 @@ public abstract class JPlotContainer extends JPanel {
     /**
      * Sets the width (in mm) of the plot border
      *
-     * @param v The new borderWidth value
+     * @param v
+     *            The new borderWidth value
      */
     public void setBorderWidth(double v) {
         borderWidth = v;
@@ -281,7 +289,8 @@ public abstract class JPlotContainer extends JPanel {
      * a bounding rectangle. To control whether the border is drawn or not, use
      * the ShowBorder method.
      *
-     * @param v The new showBorder value
+     * @param v
+     *            The new showBorder value
      */
     public void setShowBorder(boolean v) {
         showBorder = v;
@@ -354,8 +363,11 @@ public abstract class JPlotContainer extends JPanel {
         // UTF-8 encoding.
         boolean useCSS = true; // we want to use CSS style attributes
         OutputStream stream = new FileOutputStream(file);
-        Writer out = new OutputStreamWriter(stream, "UTF-8");
-        svgGenerator.stream(out, useCSS);
+        try (Writer out = new OutputStreamWriter(stream, "UTF-8")) {
+            svgGenerator.stream(out, useCSS);
+        } catch (IOException e) {
+            log.error("Unable to write file {}", file.getAbsolutePath(), e);
+        }
 
         // put the settings back to optimal screen quality
         revertSvgExportSettings();
@@ -486,7 +498,7 @@ public abstract class JPlotContainer extends JPanel {
         }
 
         PrinterJob pjob = PrinterJob.getPrinterJob();
-        pjob.setPrintable(new ImagePrintable(pjob, new PageFormat(),images));
+        pjob.setPrintable(new ImagePrintable(pjob, new PageFormat(), images));
         pjob.setJobName("Print Current plot");
         pjob.setCopies(1);
 

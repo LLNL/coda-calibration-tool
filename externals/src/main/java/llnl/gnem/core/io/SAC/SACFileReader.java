@@ -15,11 +15,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import llnl.gnem.core.io.FileDataSource;
 import llnl.gnem.core.signalprocessing.Sequence;
 import llnl.gnem.core.util.TimeT;
 
 public class SACFileReader extends FileDataSource {
+
+    private static final Logger log = LoggerFactory.getLogger(SACFileReader.class);
 
     // instance variables
     public SACHeader header;
@@ -45,12 +50,7 @@ public class SACFileReader extends FileDataSource {
             station = (header.kstnm).trim();
             channel = (header.kcmpnm).trim();
             samplingRate = 1.0 / ((double) header.delta);
-            timeT = new TimeT(header.nzyear,
-                    header.nzjday,
-                    header.nzhour,
-                    header.nzmin,
-                    header.nzsec,
-                    header.nzmsec);
+            timeT = new TimeT(header.nzyear, header.nzjday, header.nzhour, header.nzmin, header.nzsec, header.nzmsec);
             foff = 4 * WORDS_IN_HEADER;
             timeT = timeT.add((double) header.b);
             startTime = timeT.getEpochTime();
@@ -76,12 +76,7 @@ public class SACFileReader extends FileDataSource {
             station = (header.kstnm).trim();
             channel = (header.kcmpnm).trim();
             samplingRate = 1.0 / ((double) header.delta);
-            timeT = new TimeT(header.nzyear,
-                    header.nzjday,
-                    header.nzhour,
-                    header.nzmin,
-                    header.nzsec,
-                    header.nzmsec);
+            timeT = new TimeT(header.nzyear, header.nzjday, header.nzhour, header.nzmin, header.nzsec, header.nzmsec);
             foff = 4 * WORDS_IN_HEADER;
             timeT = timeT.add((double) header.b);
             startTime = timeT.getEpochTime();
@@ -97,6 +92,7 @@ public class SACFileReader extends FileDataSource {
             throw new IllegalStateException(e.getMessage());
         }
     }
+
     private static final int WORDS_IN_HEADER = 158;
 
     public float[] getAllSamples() {
@@ -115,24 +111,23 @@ public class SACFileReader extends FileDataSource {
             boolean legitFormat = false;
             switch (format) {
 
-                // calculate #bytes to read and allocate buffer space as appropriate
-                case CSS_S4:
-                case CSS_T4:
-                case CSS_F4:
+            // calculate #bytes to read and allocate buffer space as appropriate
+            case CSS_S4:
+            case CSS_T4:
+            case CSS_F4:
 
-                    numBytesToRead = numSamplesToRead * 4;
-                    legitFormat = true;
-                    break;
+                numBytesToRead = numSamplesToRead * 4;
+                legitFormat = true;
+                break;
 
-                case CSS_S3:
+            case CSS_S3:
 
-                    numBytesToRead = numSamplesToRead * 3;
-                    legitFormat = true;
-                    break;
+                numBytesToRead = numSamplesToRead * 3;
+                legitFormat = true;
+                break;
 
-                default:
-
-                    System.err.println("io.FileDataSource:  unsupported format " + format);
+            default:
+                log.warn("io.FileDataSource:  unsupported format " + format);
 
             }
 
@@ -151,71 +146,64 @@ public class SACFileReader extends FileDataSource {
             // perform appropriate read
             switch (format) {
 
-                case CSS_S4:
+            case CSS_S4:
 
-                    for (int i = 0; i < numSamplesToRead; i++) {
-                        dataArray[i + offset] = (float) dis.readInt();
+                for (int i = 0; i < numSamplesToRead; i++) {
+                    dataArray[i + offset] = (float) dis.readInt();
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
+                break;
+
+            case CSS_T4:
+
+                for (int i = 0; i < numSamplesToRead; i++) {
+                    dataArray[i + offset] = dis.readFloat();
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
+                break;
+
+            case CSS_S3:
+
+                ib = 0;
+                for (int i = 0; i < numSamplesToRead; i++) {
+
+                    if ((0x80 & buffer[ib]) == 0x80) {
+                        dataArray[i + offset] = (float) (((0xff) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
+                    } else {
+                        dataArray[i + offset] = (float) (((0x00) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
                     }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
-                    break;
 
-                case CSS_T4:
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
 
-                    for (int i = 0; i < numSamplesToRead; i++) {
-                        dataArray[i + offset] = dis.readFloat();
-                    }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
-                    break;
+                break;
 
-                case CSS_S3:
+            case CSS_F4:
 
-                    ib = 0;
-                    for (int i = 0; i < numSamplesToRead; i++) {
+                ib = 0;
+                for (int i = 0; i < numSamplesToRead; i++) {
+                    dataArray[i + offset] = Float.intBitsToFloat( // float conversion
+                            ((buffer[ib++] & 0xff)) + // per Phil Crotwell's
+                                    ((buffer[ib++] & 0xff) << 8) + // suggestion
+                                    ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 24));
+                }
+                numSamplesRemaining -= numSamplesToRead;
+                nextSample += numSamplesToRead;
 
-                        if ((0x80 & buffer[ib]) == 0x80) {
-                            dataArray[i + offset] = (float) (((0xff) << 24)
-                                    + ((buffer[ib++] & 0xff) << 16)
-                                    + ((buffer[ib++] & 0xff) << 8)
-                                    + ((buffer[ib++] & 0xff)));
-                        } else {
-                            dataArray[i + offset] = (float) (((0x00) << 24)
-                                    + ((buffer[ib++] & 0xff) << 16)
-                                    + ((buffer[ib++] & 0xff) << 8)
-                                    + ((buffer[ib++] & 0xff)));
-                        }
+                break;
 
-                    }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
+            default:
 
-                    break;
-
-                case CSS_F4:
-
-                    ib = 0;
-                    for (int i = 0; i < numSamplesToRead; i++) {
-                        dataArray[i + offset] = Float.intBitsToFloat( // float conversion
-                                ((buffer[ib++] & 0xff)) + // per Phil Crotwell's
-                                ((buffer[ib++] & 0xff) << 8) + // suggestion
-                                ((buffer[ib++] & 0xff) << 16)
-                                + ((buffer[ib++] & 0xff) << 24));
-                    }
-                    numSamplesRemaining -= numSamplesToRead;
-                    nextSample += numSamplesToRead;
-
-                    break;
-
-                default:
-
-                    System.err.println("io.FileDataSource:  unsupported format");
+                log.warn("io.FileDataSource:  unsupported format");
 
             }
             dis.close();
 
         } catch (IOException ioe) {
-            System.err.println("io.FileDataSource  " + ioe.getMessage());
+            log.warn("io.FileDataSource  " + ioe.getMessage());
         }
         return dataArray;
     }
@@ -226,17 +214,17 @@ public class SACFileReader extends FileDataSource {
 
     public int getNumPtsRemaining() {
         return (int) numSamplesRemaining;
-    }       // legacy
+    } // legacy
 
     public TimeT getStartTime() {
         return timeT;
     }
 
-    public void readFloatArray(float[] samples) {                             // legacy
+    public void readFloatArray(float[] samples) { // legacy
         getData(samples, 0, samples.length);
     }
 
-    public Sequence readSequence(int nPtsRequested) {                         // legacy
+    public Sequence readSequence(int nPtsRequested) { // legacy
         int n = Math.min(nPtsRequested, (int) numSamplesRemaining);
         float[] seqv = new float[n];
         getData(seqv, 0, n);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -19,36 +19,28 @@ import java.awt.event.KeyEvent;
 import llnl.gnem.core.gui.plotting.MouseMode;
 
 /**
- * Created by: dodge1
- * Date: Dec 21, 2004
+ * Created by: dodge1 Date: Dec 21, 2004
  */
 public class DefaultControlKeyMapper implements ControlKeyMapper {
-    public MouseMode getMouseMode( int keyCode )
-    {
-        if( keyCode == KeyEvent.VK_SHIFT ){
-            return ( MouseMode.PAN );
-        }
-        else if( keyCode == KeyEvent.VK_ESCAPE ){
-            return ( MouseMode.ZOOM_ONLY );
-        }
-        else if( keyCode == KeyEvent.VK_CONTROL ){
-            return ( MouseMode.CONTROL_SELECT );
-        }
-        else if( keyCode == KeyEvent.VK_ALT ){
-            return ( MouseMode.SELECT_REGION );
-        }
-        else
+    public MouseMode getMouseMode(int keyCode) {
+        if (keyCode == KeyEvent.VK_SHIFT) {
+            return (MouseMode.PAN);
+        } else if (keyCode == KeyEvent.VK_ESCAPE) {
+            return (MouseMode.ZOOM_ONLY);
+        } else if (keyCode == KeyEvent.VK_CONTROL) {
+            return (MouseMode.CONTROL_SELECT);
+        } else if (keyCode == KeyEvent.VK_ALT) {
+            return (MouseMode.SELECT_REGION);
+        } else
             return null;
 
     }
 
-    public boolean isDeleteKey( int keyCode )
-    {
+    public boolean isDeleteKey(int keyCode) {
         return keyCode == KeyEvent.VK_DELETE;
     }
 
-    public boolean isControlKey( int keyCode )
-    {
+    public boolean isControlKey(int keyCode) {
         return keyCode == KeyEvent.VK_CONTROL;
     }
 }

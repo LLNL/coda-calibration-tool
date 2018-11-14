@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -23,16 +23,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
-import java.util.logging.Level;
 
-import org.apache.commons.math3.complex.Complex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 
-import llnl.gnem.core.util.ApplicationLogger;
+import llnl.gnem.core.signalprocessing.filter.ButterworthFilter;
+import llnl.gnem.core.signalprocessing.filter.IIRFilter;
 import llnl.gnem.core.util.Epoch;
 import llnl.gnem.core.util.PairT;
+import llnl.gnem.core.util.Passband;
 import llnl.gnem.core.util.SeriesMath;
 import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.util.randomNumbers.RandomAlgorithm;
@@ -48,7 +51,7 @@ import llnl.gnem.core.waveform.merge.MergeException;
  * User: dodge1 Date: Mar 23, 2006
  */
 public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneable, SeismicSignal {
-
+    private static final Logger log = LoggerFactory.getLogger(TimeSeries.class);
     private float[] data;
     private final Collection<Epoch> dataGaps; // TODO these are not being properly updated for in-place modifications
     private final Collection<TimeSeries.SeriesListener> listeners;
@@ -174,14 +177,6 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     }
 
-    private static double[] getAbsValues(Complex[] spectrum) {
-        double[] result = new double[spectrum.length];
-        for (int j = 0; j < result.length; ++j) {
-            result[j] = spectrum[j].abs();
-        }
-        return result;
-    }
-
     private static double getWindowPeakToPeak(float[] data, int idx, int Nsamps) {
         float min = Float.MAX_VALUE;
         float max = -min;
@@ -292,7 +287,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void AddScalar(double value) {
-        SeriesMath.AddScalar(data, value);
+        SeriesMath.addScalar(data, value);
         onModify();
     }
 
@@ -339,7 +334,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void MultiplyScalar(double value) {
-        SeriesMath.MultiplyScalar(data, value);
+        SeriesMath.multiplyScalar(data, value);
         onModify();
     }
 
@@ -348,7 +343,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void RemoveMean() {
-        SeriesMath.RemoveMean(data);
+        SeriesMath.removeMean(data);
         onModify();
     }
 
@@ -406,7 +401,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void Smooth(int halfwidth) {
-        data = SeriesMath.MeanSmooth(data, halfwidth);//TODO note the SeriesMath.MeanSmooth() method should replace data with the smoothed version, but this isn't happening. Fix
+        data = SeriesMath.meanSmooth(data, halfwidth);//TODO note the SeriesMath.MeanSmooth() method should replace data with the smoothed version, but this isn't happening. Fix
         onModify();
     }
 
@@ -444,7 +439,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void Taper(double TaperPercent) {
-        SeriesMath.Taper(data, TaperPercent);
+        SeriesMath.taper(data, TaperPercent);
         onModify();
     }
 
@@ -526,8 +521,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     public TimeSeries append(TimeSeries other) {
         if (!rateIsComparable(other)) {
-            String msg = String.format("Seismograms have different sample rates! (%s)  -  (%s)", this.toString(), other.toString());
-            ApplicationLogger.getInstance().log(Level.WARNING, msg);
+            log.warn("Seismograms have different sample rates! {} - {}", this.toString(), other.toString());
         }
         double expectedAppendeeStart = this.getEndtime().getEpochTime() + getDelta();
         double actualAppendeeStart = other.getTimeAsDouble();
@@ -759,7 +753,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void differentiate() {
-        SeriesMath.Differentiate(data, samprate);
+        SeriesMath.differentiate(data, samprate);
         onModify();
     }
 
@@ -771,6 +765,10 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
             }
         };
         return intersect(other, f);
+    }
+
+    public void Envelope() {
+        this.data = SeriesMath.envelope(data);
     }
 
     @Override
@@ -815,6 +813,31 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
                 bestSample = 0.0f;
             }
         }
+    }
+
+    @Override
+    public void filter(double lc, double hc) {
+        filter(lc, hc, false);
+    }
+
+    @Override
+    public void filter(double lc, double hc, boolean twoPass) {
+        filter(2, Passband.BAND_PASS, lc, hc, twoPass);
+    }
+
+    @Override
+    public void filter(int order, Passband passband, double cutoff1, double cutoff2, boolean two_pass) {
+        double dt = 1.0 / samprate;
+        IIRFilter filt = new ButterworthFilter(order, passband, cutoff1, cutoff2, dt);
+        filt.initialize();
+        filt.filter(data);
+        if (two_pass) {
+            SeriesMath.reverseArray(data);
+            filt.initialize();
+            filt.filter(data);
+            SeriesMath.reverseArray(data);
+        }
+        onModify();
     }
 
     @Override
@@ -1427,16 +1450,22 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         switch (norm) {
         case EXTREMUM:
             doNormalize(SeriesMath.getExtremum(data));
+            break;
         case MEAN:
             doNormalize(SeriesMath.getMean(SeriesMath.abs(data)));
+            break;
         case MIN:
             doNormalize(-1 * SeriesMath.getMin(data));
+            break;
         case MAX:
             doNormalize(SeriesMath.getMax(data));
+            break;
         case DELTA:
             doNormalize(SeriesMath.getMax(data) - SeriesMath.getMin(data));
+            break;
         case RMS:
             doNormalize(SeriesMath.getRMS(data));
+            break;
         }
     }
 
@@ -1463,7 +1492,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         } catch (Exception e) {
             try {
                 // attempt to parse as a Norm type
-                TimeSeries.Norm type = TimeSeries.Norm.valueOf(value.toUpperCase());
+                TimeSeries.Norm type = TimeSeries.Norm.valueOf(value.toUpperCase(Locale.ENGLISH));
                 normalize(type);
             } catch (Exception ee) {
             }
@@ -1534,7 +1563,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void removeTrend() {
-        SeriesMath.RemoveTrend(data);
+        SeriesMath.removeTrend(data);
         onModify();
     }
 
@@ -1551,7 +1580,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public void reverse() {
-        SeriesMath.ReverseArray(data);
+        SeriesMath.reverseArray(data);
         onModify();
     }
 
@@ -1571,7 +1600,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         double myRange = myMax - myMin;
         double requiredRange = max - min;
         double scale = requiredRange / myRange;
-        SeriesMath.MultiplyScalar(data, scale);
+        SeriesMath.multiplyScalar(data, scale);
         onModify();
     }
 
@@ -1873,17 +1902,14 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     public enum Norm {
-
         EXTREMUM, MEAN, MIN, MAX, DELTA, RMS
     }
 
     public interface SeriesListener {
-
         public void dataChanged(float[] data);
     }
 
     protected interface BivariateFunction {
-
         public double eval(double x, double y);
     }
 }

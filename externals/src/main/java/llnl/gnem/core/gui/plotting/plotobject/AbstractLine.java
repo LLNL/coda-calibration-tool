@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -70,7 +70,7 @@ public abstract class AbstractLine extends PlotObject {
     public AbstractLine() {
         this(Color.blue, PaintMode.COPY, PenStyle.SOLID, 1);
     }
-    
+
     public AbstractLine(double start, double increment) {
         this(start, increment, Color.blue, PaintMode.COPY, PenStyle.SOLID, 1);
     }
@@ -78,10 +78,14 @@ public abstract class AbstractLine extends PlotObject {
     /**
      * Constructor for the Line object
      *
-     * @param c The color of the Line
-     * @param m The PaintMode of the Line
-     * @param s The PenStyle of the Line
-     * @param w The width of the Line
+     * @param c
+     *            The color of the Line
+     * @param m
+     *            The PaintMode of the Line
+     * @param s
+     *            The PenStyle of the Line
+     * @param w
+     *            The width of the Line
      */
     public AbstractLine(Color c, PaintMode m, PenStyle s, int w) {
         this(0.0, 0.0, c, m, s, w);
@@ -93,7 +97,7 @@ public abstract class AbstractLine extends PlotObject {
 
     public AbstractLine(double start, double increment, Color c, PaintMode m, PenStyle s, int w, SymbolStyle symbol, float[] sigmaY) {
         this.start = start;
-        if(increment < 0){
+        if (increment < 0) {
             throw new IllegalArgumentException("Increment must be non-negative!");
         }
         this.increment = increment;
@@ -125,7 +129,8 @@ public abstract class AbstractLine extends PlotObject {
     /**
      * Sets the color of this line.
      *
-     * @param c The color to use.
+     * @param c
+     *            The color to use.
      */
     public void setColor(final Color c) {
         color = c;
@@ -152,7 +157,8 @@ public abstract class AbstractLine extends PlotObject {
     }
 
     /**
-     * @param maxSymbolsToPlot the maxSymbolsToPlot to set
+     * @param maxSymbolsToPlot
+     *            the maxSymbolsToPlot to set
      */
     public void setMaxSymbolsToPlot(int maxSymbolsToPlot) {
         this.maxSymbolsToPlot = maxSymbolsToPlot;
@@ -166,7 +172,8 @@ public abstract class AbstractLine extends PlotObject {
     }
 
     /**
-     * @param limitPlottedSymbols the limitPlottedSymbols to set
+     * @param limitPlottedSymbols
+     *            the limitPlottedSymbols to set
      */
     public void setLimitPlottedSymbols(boolean limitPlottedSymbols) {
         this.limitPlottedSymbols = limitPlottedSymbols;
@@ -180,7 +187,8 @@ public abstract class AbstractLine extends PlotObject {
     }
 
     /**
-     * @param plotLineSymbols the plotLineSymbols to set
+     * @param plotLineSymbols
+     *            the plotLineSymbols to set
      */
     public void setPlotLineSymbols(boolean plotLineSymbols) {
         this.plotLineSymbols = plotLineSymbols;
@@ -197,7 +205,7 @@ public abstract class AbstractLine extends PlotObject {
         public void run() {
             Graphics g = owner.getOwner().getGraphics();
             if (g != null) {
-                Render(g, owner, retainSelectionRegion);
+                renderLine(g, owner, retainSelectionRegion);
             }
 
         }
@@ -239,7 +247,8 @@ public abstract class AbstractLine extends PlotObject {
      * selection. Higher numbers provide better resolution in picking, but
      * increase the rendering time.
      *
-     * @param nseg The new value
+     * @param nseg
+     *            The new value
      */
     public void setNumRegionSegments(int nseg) {
         _NumRegionSegments = nseg;
@@ -261,7 +270,8 @@ public abstract class AbstractLine extends PlotObject {
      * low-density pixels of the screen to the high-density of the printer, and
      * the resolution will be poor.
      *
-     * @param v The new value
+     * @param v
+     *            The new value
      */
     public void setPolylineUsage(boolean v) {
         _UsePolyline = v;
@@ -270,15 +280,17 @@ public abstract class AbstractLine extends PlotObject {
     /**
      * render the line to the supplied graphics context
      *
-     * @param g The graphics context
-     * @param owner The JSubplot that owns this Line
+     * @param g
+     *            The graphics context
+     * @param owner
+     *            The JSubplot that owns this Line
      */
     @Override
     public synchronized void render(Graphics g, JBasicPlot owner) {
-        Render(g, owner, false);
+        renderLine(g, owner, false);
     }
 
-    public synchronized void Render(Graphics g, JBasicPlot owner, boolean retainOldSelectionRegion) {
+    public synchronized void renderLine(Graphics g, JBasicPlot owner, boolean retainOldSelectionRegion) {
 
         if (!isVisible() || g == null || owner == null) {
             return;
@@ -318,7 +330,7 @@ public abstract class AbstractLine extends PlotObject {
             createSelectionRegion();
         }
     }
-    
+
     protected void updateCoordinateTransform(CoordinateTransform coordTransform) {
         this.coordTransform = coordTransform;
     }
@@ -339,9 +351,9 @@ public abstract class AbstractLine extends PlotObject {
         }
         return new Point2D.Double(Ymin, Ymax);
     }
-    
+
     public abstract int getXSize();
-    
+
     public abstract int getYSize();
 
     public abstract double getXDataMin();
@@ -355,7 +367,8 @@ public abstract class AbstractLine extends PlotObject {
     /**
      * Gets the minimum value from the input float array
      *
-     * @param V The array to be measured
+     * @param V
+     *            The array to be measured
      * @return The minimum value from the array.
      */
     public static double getDataMin(float[] V) {
@@ -370,7 +383,8 @@ public abstract class AbstractLine extends PlotObject {
     /**
      * Gets the maximum value from the input float array
      *
-     * @param V The array to be measured
+     * @param V
+     *            The array to be measured
      * @return The maximum value from the array.
      */
     public static double getDataMax(float[] V) {
@@ -397,10 +411,13 @@ public abstract class AbstractLine extends PlotObject {
     /**
      * Shift this line to a different place in the JBasicPlot
      *
-     * @param owner The JBasicPlot that owns this Line
+     * @param owner
+     *            The JBasicPlot that owns this Line
      * @param graphics
-     * @param dx The amount to shift in the X-direction (real-world)
-     * @param dy The amount to shift in the Y-direction (real-world)
+     * @param dx
+     *            The amount to shift in the X-direction (real-world)
+     * @param dy
+     *            The amount to shift in the Y-direction (real-world)
      */
     @Override
     public void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy) {
@@ -510,7 +527,6 @@ public abstract class AbstractLine extends PlotObject {
             return;
         }
 
-
         int[] xPoints = new int[Npts];
         int[] yPoints = new int[Npts];
 
@@ -554,7 +570,7 @@ public abstract class AbstractLine extends PlotObject {
         if (pixelPoints.size() < 2) {
             return;
         }
-        if(!this.isSelectable()){
+        if (!this.isSelectable()) {
             return;
         }
 
@@ -576,7 +592,6 @@ public abstract class AbstractLine extends PlotObject {
             }
         }
 
-
         pixelPoints.clear();
     }
 
@@ -588,10 +603,11 @@ public abstract class AbstractLine extends PlotObject {
         if (Npts < 2) {
             return;
         }
-        
-        if( !plotLineSymbols)return;
-        
-        if( limitPlottedSymbols && Npts > maxSymbolsToPlot){
+
+        if (!plotLineSymbols)
+            return;
+
+        if (limitPlottedSymbols && Npts > maxSymbolsToPlot) {
             return;
         }
         int inc = Math.max(Npts / MAX_POINTS_TO_PLOT, 1);
@@ -604,8 +620,7 @@ public abstract class AbstractLine extends PlotObject {
                 s = new ErrorBar(xval, getYValue(j), SymbolSize, sigmaY[j], 2.0);
                 s.setOwner(owner);
             } else {
-                s = SymbolFactory.createSymbol(symbolStyle, xval, getYValue(j), SymbolSize, SymbolFillColor,
-                        SymbolEdgeColor, Color.black, "", true, false, 10.0);
+                s = SymbolFactory.createSymbol(symbolStyle, xval, getYValue(j), SymbolSize, SymbolFillColor, SymbolEdgeColor, Color.black, "", true, false, 10.0);
             }
 
             if (s != null) {
@@ -617,7 +632,7 @@ public abstract class AbstractLine extends PlotObject {
     }
 
     protected abstract double getXValue(int i);
-    
+
     protected abstract double getYValue(int i);
 
     private void SafeRegionRender(Graphics2D g2d) {
@@ -755,7 +770,7 @@ public abstract class AbstractLine extends PlotObject {
             owner.initializeCoordinateTransform();
 
             renderColor = selected ? selectedColor : color;
-            Render(g, owner, true);
+            renderLine(g, owner, true);
             this.selected = selected;
         }
     }

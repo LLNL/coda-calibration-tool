@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -70,7 +70,8 @@ public abstract class PlotObject {
     /**
      * Sets the visible attribute of the PlotObject
      *
-     * @param v The new visible value
+     * @param v
+     *            The new visible value
      */
     public void setVisible(boolean v) {
         visible = v;
@@ -79,8 +80,10 @@ public abstract class PlotObject {
     /**
      * Renders the object to the supplied graphics context
      *
-     * @param g The graphics context
-     * @param owner The JBasicPlot that owns this object
+     * @param g
+     *            The graphics context
+     * @param owner
+     *            The JBasicPlot that owns this object
      */
     abstract public void render(Graphics g, JBasicPlot owner);
 
@@ -106,10 +109,13 @@ public abstract class PlotObject {
     /**
      * Move this object to a new position in the subplot
      *
-     * @param owner The JBasicPlot that owns this plot object
+     * @param owner
+     *            The JBasicPlot that owns this plot object
      * @param graphics
-     * @param dx Amount to shift in the x-direction (real-world coordinates)
-     * @param dy Amount to shift in the y-direction (real-world coordinates)
+     * @param dx
+     *            Amount to shift in the x-direction (real-world coordinates)
+     * @param dy
+     *            Amount to shift in the y-direction (real-world coordinates)
      */
     public abstract void ChangePosition(JBasicPlot owner, Graphics graphics, double dx, double dy);
 
@@ -136,8 +142,10 @@ public abstract class PlotObject {
      * Returns true if the point in user-space described by the input values is
      * inside this plot object. Used for hit-testing
      *
-     * @param x x-value in user-space coordinates
-     * @param y y-value in user-space coordinates
+     * @param x
+     *            x-value in user-space coordinates
+     * @param y
+     *            y-value in user-space coordinates
      * @return true if the point is inside this plot object
      */
     public boolean PointInside(int x, int y) {
@@ -193,7 +201,8 @@ public abstract class PlotObject {
     /**
      * Sets the ability of this object to be dragged in the x-direction
      *
-     * @param v The new canDragX value
+     * @param v
+     *            The new canDragX value
      */
     public void setCanDragX(boolean v) {
         canDragX = v;
@@ -211,7 +220,8 @@ public abstract class PlotObject {
     /**
      * Sets the ability of this object to be dragged in the y-direction
      *
-     * @param v The new canDragY value
+     * @param v
+     *            The new canDragY value
      */
     public void setCanDragY(boolean v) {
         canDragY = v;

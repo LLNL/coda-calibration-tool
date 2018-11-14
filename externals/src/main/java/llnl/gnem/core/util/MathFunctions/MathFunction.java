@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,31 +14,39 @@
 */
 package llnl.gnem.core.util.MathFunctions;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is for general math functions not available in java.Math
  *
  * User: matzel Date: Aug 2, 2006 Time: 4:05:28 PM
  */
-public class MathFunction
-{
+public class MathFunction {
+
+    private static final Logger log = LoggerFactory.getLogger(MathFunction.class);
+
+    private static final SecureRandom rng = new SecureRandom();
 
     /**
      * The Heavyside step function H(x) = 0.0 when x < 0 = 0.5 when x == 0 = 1.0
      * when x > 0
      *
-     * @param value the original value
+     * @param value
+     *            the original value
      * @return Heavyside(value)
      */
-    public static double Heaviside(double value)
-    {
-        if (value < 0)
+    public static double Heaviside(double value) {
+        if (value < 0) {
             return 0;
-        else if (value == 0)
+        } else if (value == 0) {
             return 0.5;
-        else
+        } else {
             return 1;
+        }
     }
 
     /**
@@ -46,21 +54,18 @@ public class MathFunction
      *
      * e.g. 5 ==> 4, 100 ==> 128, 2==>2 etc.
      *
-     * @param num a long valued variable
+     * @param num
+     *            a long valued variable
      * @return the nearest power of 2 greater than num
      */
-    public static long closestPowerOf2(long num)
-    {
-        if (num < 0)
-        {
+    public static long closestPowerOf2(long num) {
+        if (num < 0) {
             return 0;
-        }
-        else
-        {
+        } else {
             String bits = Long.toBinaryString(num);
             int exp = bits.length() - bits.indexOf("1");
-            long larger = (long) Math.pow(2, exp);        // next power of 2 greater than num
-            long lower = (long) Math.pow(2, exp - 1);    // previous power of 2 less than num
+            long larger = (long) Math.pow(2, exp); // next power of 2 greater than num
+            long lower = (long) Math.pow(2, exp - 1); // previous power of 2 less than num
 
             return (larger - num) > (num - lower) ? lower : larger;
         }
@@ -71,20 +76,17 @@ public class MathFunction
      *
      * e.g. 5 ==> 8, 100 ==> 128, 2==>2 etc.
      *
-     * @param num a long valued variable
+     * @param num
+     *            a long valued variable
      * @return the nearest power of 2 greater than num
      */
-    public static long nextPowerOf2(long num)
-    {
-        if (num < 0)
-        {
+    public static long nextPowerOf2(long num) {
+        if (num < 0) {
             return 0;
-        }
-        else
-        {
+        } else {
             String bits = Long.toBinaryString(num);
             int exp = bits.length() - bits.indexOf("1");
-            return (long) Math.pow(2, exp);        // next power of 2 greater than num
+            return (long) Math.pow(2, exp); // next power of 2 greater than num
         }
     }
 
@@ -93,11 +95,11 @@ public class MathFunction
      *
      * e.g. 5 ==> 8, 100 ==> 128, 2==>2 etc.
      *
-     * @param num an integer
+     * @param num
+     *            an integer
      * @return the smallest power of 2 greater than num
      */
-    public static int nextPowerOf2(int num)
-    {
+    public static int nextPowerOf2(int num) {
         return (int) nextPowerOf2((long) num);
     }
 
@@ -106,11 +108,11 @@ public class MathFunction
      *
      * e.g. 5 ==> 4, 100 ==> 128, 2==>2 etc.
      *
-     * @param num an integer
+     * @param num
+     *            an integer
      * @return the closest power of 2
      */
-    public static int closestPowerOf2(int num)
-    {
+    public static int closestPowerOf2(int num) {
         return (int) closestPowerOf2((long) num);
     }
 
@@ -125,8 +127,7 @@ public class MathFunction
      * z) { Complex Hnz = Jnz + imag*Ynz; return Hnz; }
      *
      * public static Complex Hankel2(int n, double z) { Complex Hnz = Jnz -
-     * imag*Ynz; return Hnz;
-     }
+     * imag*Ynz; return Hnz; }
      */
     /**
      * The Euler Gamma function (ref: functions.wolfram.com)
@@ -137,8 +138,7 @@ public class MathFunction
      *
      * |Arg(z)| < pi /\ (|z| --> inf.)
      */
-    public static double Gamma(double z)
-    {
+    public static double Gamma(double z) {
         double sqrt2PI = Math.sqrt(2 * Math.PI);
         double zz2 = Math.pow(z, z - 0.5); // z^(z-0.5)
         double ez = Math.exp(-z); // e^(-z)
@@ -154,16 +154,16 @@ public class MathFunction
         double z10 = z9 * z;
 
         //
-        double o1 = 1 / 12 * z;
-        double o2 = 1 / 288 * z2;
-        double o3 = -139 / 51840 * z3;
-        double o4 = -571 / 2488320 * z4;
-        double o5 = 163879 / 209018880 * z5;
-        double o6 = 5246819 / 75246796800. * z6;
-        double o7 = -534703531 / 902961561600. * z7;
-        double o8 = -4483131259. / 86684309913600. * z8;
-        double o9 = 432261921612371. / 514904800886784000. * z9;
-        double o10 = 1 / z10;// inexact term
+        double o1 = 1d / 12d * z;
+        double o2 = 1d / 288d * z2;
+        double o3 = -139d / 51840d * z3;
+        double o4 = -571d / 2488320d * z4;
+        double o5 = 163879d / 209018880d * z5;
+        double o6 = 5246819d / 75246796800d * z6;
+        double o7 = -534703531d / 902961561600d * z7;
+        double o8 = -4483131259d / 86684309913600d * z8;
+        double o9 = 432261921612371d / 514904800886784000d * z9;
+        double o10 = 1d / z10;// inexact term
 
         double terms = o1 + o2 + o3 + o4 + o5 + o6 + o7 + o8 + o9 + o10;
         double gamma = sqrt2PI * zz2 * ez * terms;
@@ -171,26 +171,25 @@ public class MathFunction
         return gamma;
     }
 
-    public static double factorial(double z)
-    {
+    public static double factorial(double z) {
         return Gamma(z + 1);
     }
 
     /**
      * the factorial of an integer
      */
-    public static double factorial(int n) throws Exception
-    {
-        if (n < 0)
+    public static double factorial(int n) throws Exception {
+        if (n < 0) {
             throw new Exception("result is infinity");
+        }
 
-        if (n == 0)
+        if (n == 0) {
             return 1;
+        }
 
         double result = 1.;
 
-        for (int ii = 1; ii <= n; ii++)
-        {
+        for (int ii = 1; ii <= n; ii++) {
             result = result * ii;
         }
 
@@ -202,15 +201,17 @@ public class MathFunction
      *
      * //todo verify the conditionals
      */
-    public static double binomial(int n, int k) throws Exception
-    {
-        if (k < 0)
+    public static double binomial(int n, int k) throws Exception {
+        if (k < 0) {
             return 0;
-        if (k > n)
+        }
+        if (k > n) {
             return 0;
+        }
 
-        if (k == 0)
+        if (k == 0) {
             return 1;
+        }
 
         double result = factorial(n) / (factorial(k) * factorial(n - k));
         return result;
@@ -221,27 +222,23 @@ public class MathFunction
      *
      * erf(z) = 2/sqrt(PI) * SUM(k = 0:inf) [ -1^k * z^(2k+1) / (k!*(2k+1)) ]
      */
-    public static double erf(double z)
-    {
+    public static double erf(double z) {
         int kmax = 10;//todo decide on a reasonable cutoff point
 
-        if (z == 0)
+        if (z == 0) {
             return 0;
+        }
 
         double sqrtPI2 = 2. / Math.sqrt(Math.PI);
         double powerseries = 0;
 
-        for (int k = 0; k < kmax; k++)
-        {
-            try
-            {
-                double numerator = Math.pow(-1, k) * Math.pow(z, 2 * k + 1);
-                double denominator = factorial(k) * (2 * k + 1);
+        for (int k = 0; k < kmax; k++) {
+            try {
+                double numerator = Math.pow(-1, k) * Math.pow(z, 2d * k + 1d);
+                double denominator = factorial(k) * (2d * k + 1d);
                 powerseries = powerseries + numerator / denominator;
-            }
-            catch (Exception e)
-            {
-                System.out.println("you should never reach this exception: erf(z)");
+            } catch (Exception e) {
+                log.warn("you should never reach this exception: erf(z)");
             }
         }
 
@@ -253,13 +250,15 @@ public class MathFunction
      * Routine to reproduce the results of the SAC codes linrng_v function
      * (linrng.c)
      *
-     * @param value - the actual value
-     * @param min - the minimum value
-     * @param max - the maximum value
+     * @param value
+     *            - the actual value
+     * @param min
+     *            - the minimum value
+     * @param max
+     *            - the maximum value
      * @return - true if the value falls between the minimum and the maximum
      */
-    public static boolean isBetween(double value, double min, double max)
-    {
+    public static boolean isBetween(double value, double min, double max) {
         return (value >= min && value <= max);
     }
 
@@ -270,9 +269,8 @@ public class MathFunction
      * @param high
      * @return
      */
-    public static double randomBetween(double low, double high)
-    {
-        double random = Math.random();// gives a value between 0. and 1.
+    public static double randomBetween(double low, double high) {
+        double random = rng.nextDouble();
 
         double scale = high - low;
 
@@ -288,13 +286,14 @@ public class MathFunction
      *
      * A.B = |A||B| cos(theta)
      *
-     * @param vectorA : the first N-dimensional vector
-     * @param vectorB : the second N-dimensional vector
+     * @param vectorA
+     *            : the first N-dimensional vector
+     * @param vectorB
+     *            : the second N-dimensional vector
      * @return cos(theta)
      *
      */
-    public Double getCosineTheta(ArrayList<Double> vectorA, ArrayList<Double> vectorB)
-    {
+    public Double getCosineTheta(ArrayList<Double> vectorA, ArrayList<Double> vectorB) {
         Double AdotB = dotprod(vectorA, vectorB);
         Double normA = L2norm(vectorA);
         Double normB = L2norm(vectorB);
@@ -303,20 +302,15 @@ public class MathFunction
         return costheta;
     }
 
-    public Double dotprod(ArrayList<Double> vectorA, ArrayList<Double> vectorB)
-    {
+    public Double dotprod(ArrayList<Double> vectorA, ArrayList<Double> vectorB) {
         Double result = 0.;
 
-        if (vectorA.size() == vectorB.size())
-        {
-            for (int index = 0; index < vectorA.size(); index++)
-            {
+        if (vectorA.size() == vectorB.size()) {
+            for (int index = 0; index < vectorA.size(); index++) {
                 Double elementproduct = vectorA.get(index) * vectorB.get(index);
                 result = result + elementproduct;
             }
-        }
-        else
-        {
+        } else {
             return null;
         }
 
@@ -330,11 +324,9 @@ public class MathFunction
      * @param ndimensionalvector
      * @return
      */
-    public static double L2norm(ArrayList<Double> ndimensionalvector)
-    {
+    public static double L2norm(ArrayList<Double> ndimensionalvector) {
         double sumofsquares = 0;
-        for (Double element : ndimensionalvector)
-        {
+        for (Double element : ndimensionalvector) {
             double squarevalue = element * element;
             sumofsquares = sumofsquares + squarevalue;
         }

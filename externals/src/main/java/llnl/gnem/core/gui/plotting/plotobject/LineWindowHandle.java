@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -27,30 +27,27 @@ import llnl.gnem.core.gui.plotting.transforms.Coordinate;
 import llnl.gnem.core.gui.plotting.transforms.CoordinateTransform;
 
 /**
- * User: dodge1
- * Date: Jul 22, 2005
- * Time: 4:34:57 PM
+ * User: dodge1 Date: Jul 22, 2005 Time: 4:34:57 PM
  */
 public class LineWindowHandle extends PlotObject {
     /**
-     * Gets the data value (real-world value) currently represented by this LineWindowHandle
-     * object.
+     * Gets the data value (real-world value) currently represented by this
+     * LineWindowHandle object.
      *
      * @return The data value
      */
-    public double getXval()
-    {
+    public double getXval() {
         return xval;
     }
 
     /**
-     * Gets the draggable attribute of the LineWindowHandle object. This attribute controls
-     * whether the user can move the pick by dragging with the mouse.
+     * Gets the draggable attribute of the LineWindowHandle object. This
+     * attribute controls whether the user can move the pick by dragging with
+     * the mouse.
      *
      * @return The draggable value
      */
-    public boolean getDraggable()
-    {
+    public boolean getDraggable() {
         return canDragX;
     }
 
@@ -59,8 +56,7 @@ public class LineWindowHandle extends PlotObject {
      *
      * @return The color value
      */
-    public Color getColor()
-    {
+    public Color getColor() {
         return color;
     }
 
@@ -69,19 +65,17 @@ public class LineWindowHandle extends PlotObject {
      *
      * @return The width value in pixels
      */
-    public int getWidth()
-    {
+    public int getWidth() {
         return width;
     }
-
 
     /**
      * Sets the (unselected) color of the LineWindowHandle object
      *
-     * @param v The new color value
+     * @param v
+     *            The new color value
      */
-    public void setColor( Color v )
-    {
+    public void setColor(Color v) {
         color = v;
         renderColor = color;
     }
@@ -89,151 +83,157 @@ public class LineWindowHandle extends PlotObject {
     /**
      * Sets the (selected) Color of the LineWindowHandle object
      *
-     * @param v The new selected Color value
+     * @param v
+     *            The new selected Color value
      */
-    public void setSelectedColor( Color v )
-    {
+    public void setSelectedColor(Color v) {
         selectedColor = v;
     }
 
     /**
      * Sets the width in pixels of the LineWindowHandle object
      *
-     * @param v The new width value
+     * @param v
+     *            The new width value
      */
-    public void setWidth( int v )
-    {
+    public void setWidth(int v) {
         width = v;
     }
 
-
     /**
-     * Change the position of this object within its owning subplot by an amount specified
-     * by the input values.
+     * Change the position of this object within its owning subplot by an amount
+     * specified by the input values.
      *
-     * @param axisIn   The JBasicPlot that owns this LineWindowHandle
+     * @param axisIn
+     *            The JBasicPlot that owns this LineWindowHandle
      * @param graphics
-     * @param dx       The change in x-value (real-world coordinates)
-     * @param dy       The change in y-value (real-world coordinates)
+     * @param dx
+     *            The change in x-value (real-world coordinates)
+     * @param dy
+     *            The change in y-value (real-world coordinates)
      */
-    public void ChangePosition( JBasicPlot axisIn, Graphics graphics, double dx, double dy )
-    {
-        if( !canDragX )
+    @Override
+    public void ChangePosition(JBasicPlot axisIn, Graphics graphics, double dx, double dy) {
+        if (!canDragX) {
             return;
+        }
 
-        dx = applyWindowLimits( dx );
+        dx = applyWindowLimits(dx);
 
         JSubplot axis = (JSubplot) axisIn;
-        if( graphics == null ){
+        if (graphics == null) {
             graphics = axis.getOwner().getGraphics();
-            graphics.setXORMode( Color.white );
+            graphics.setXORMode(Color.white);
         }
-        render( graphics, axis );
+        render(graphics, axis);
 
-        setXval( getXval() + dx );
+        setXval(getXval() + dx);
 
-        owningWindow.windowHandleWasMoved( this, axisIn );
-        render( graphics, axis );
+        owningWindow.windowHandleWasMoved(this, axisIn);
+        render(graphics, axis);
     }
 
-    private double applyWindowLimits( double dx )
-    {
+    private double applyWindowLimits(double dx) {
         double currentX = getXval();
         double tmpPos = currentX + dx;
 
         double minLimit = owningWindow.getMinimumLimit();
-        if( tmpPos < minLimit ){
+        if (tmpPos < minLimit) {
             dx = currentX - minLimit;
         }
 
         double maxLimit = owningWindow.getMaximumLimit();
-        if( tmpPos > maxLimit ){
+        if (tmpPos > maxLimit) {
             dx = maxLimit - currentX;
         }
 
-        dx = owningWindow.limitWindowCrush( this, dx );
+        dx = owningWindow.limitWindowCrush(this, dx);
         return dx;
     }
 
-
     /**
-     * Sets the selected state of the LineWindowHandle object. This causes a re-rendering
-     * to either the default color or to the selected color depending on the value
-     * of the selected parameter.
+     * Sets the selected state of the LineWindowHandle object. This causes a
+     * re-rendering to either the default color or to the selected color
+     * depending on the value of the selected parameter.
      *
-     * @param selected The new selected value
-     * @param g        The graphics context on which the LineWindowHandle is being rendered.
+     * @param selected
+     *            The new selected value
+     * @param g
+     *            The graphics context on which the LineWindowHandle is being
+     *            rendered.
      */
-    public void setSelected( boolean selected, Graphics g )
-    {
-        if( this.selected != selected ){
+    @Override
+    public void setSelected(boolean selected, Graphics g) {
+        if (this.selected != selected) {
 
-            render( g, owner );
+            render(g, owner);
             renderColor = selected ? selectedColor : color;
-            render( g, owner );
+            render(g, owner);
             this.selected = selected;
         }
     }
 
-    public void setColorImmediate( Color v )
-    {
-        if( color == v )
+    public void setColorImmediate(Color v) {
+        if (color == v) {
             return;
+        }
 
-        PlotObjectRenderer por = new PlotObjectRenderer( this );
-        setColor( v );
+        PlotObjectRenderer por = new PlotObjectRenderer(this);
+        setColor(v);
         por.run();
     }
 
-
-    public void setSelected( boolean selected )
-    {
-        setSelected( selected, this.getOwner().getOwner().getGraphics() );
+    public void setSelected(boolean selected) {
+        setSelected(selected, this.getOwner().getOwner().getGraphics());
     }
 
     /**
-     * render this LineWindowHandle object and its contained PlotObjects to the supplied graphics
-     * context.
+     * render this LineWindowHandle object and its contained PlotObjects to the
+     * supplied graphics context.
      *
-     * @param g     The graphics context on which to render the LineWindowHandle object
-     * @param owner The JSubplot object that owns this LineWindowHandle.
+     * @param g
+     *            The graphics context on which to render the LineWindowHandle
+     *            object
+     * @param owner
+     *            The JSubplot object that owns this LineWindowHandle.
      */
-    public synchronized void render( Graphics g, JBasicPlot owner )
-    {
-        if( !isVisible() || g == null || owner == null || !owner.getCanDisplay() )
+    @Override
+    public synchronized void render(Graphics g, JBasicPlot owner) {
+        if (!isVisible() || g == null || owner == null || !owner.getCanDisplay()) {
             return;
+        }
 
         Rectangle windowRect = owningWindow.getBoundingRect();
-        if( windowRect == null )
+        if (windowRect == null) {
             return;
+        }
 
         int top = windowRect.y;
         int height = windowRect.height;
 
         Graphics2D g2d = (Graphics2D) g;
         Rectangle rect = owner.getPlotRegion().getRect();
-        g2d.clip( rect );
+        g2d.clip(rect);
         // Remove any pre-existing regions before creating new...
         region.clear();
-        g2d.setColor( renderColor );
-        g2d.setStroke( new BasicStroke( width ) );
+        g2d.setColor(renderColor);
+        g2d.setStroke(new BasicStroke(width));
         CoordinateTransform ct = owner.getCoordinateTransform();
-        Coordinate coord = new Coordinate( 0.0, 0.0, getXval(), 0.0 );
-        ct.WorldToPlot( coord );
+        Coordinate coord = new Coordinate(0.0, 0.0, getXval(), 0.0);
+        ct.WorldToPlot(coord);
         int xpos = (int) coord.getX();
         int bottom = top + height;
-        g.drawLine( xpos, bottom, xpos, top );
+        g.drawLine(xpos, bottom, xpos, top);
 
         // create a selection region
         int tol = 3;
-        addToRegion( new Rectangle2D.Double( xpos - tol, top, 2 * tol, bottom - top ) );
+        addToRegion(new Rectangle2D.Double(xpos - tol, top, 2 * tol, bottom - top));
 
     }
 
-    public LineWindowHandle( LineWindow owningWindow, double xval )
-    {
+    public LineWindowHandle(LineWindow owningWindow, double xval) {
         this.owningWindow = owningWindow;
-        this.setXval( xval );
+        this.setXval(xval);
         color = Color.black;
         renderColor = color;
         selectedColor = Color.red;
@@ -242,15 +242,13 @@ public class LineWindowHandle extends PlotObject {
         canDragX = true;
     }
 
-    public void startingDragOperation()
-    {
+    public void startingDragOperation() {
         xvalAtDragStart = xval;
     }
 
-    public void finishedDragOperation()
-    {
+    public void finishedDragOperation() {
         double dx = xval - xvalAtDragStart;
-        owningWindow.windowHandleMoveComplete( this, dx );
+        owningWindow.windowHandleMoveComplete(this, dx);
     }
 
     private LineWindow owningWindow;
@@ -262,10 +260,7 @@ public class LineWindowHandle extends PlotObject {
     private boolean selected;
     private double xvalAtDragStart = 0;
 
-    public void setXval( double xval )
-    {
+    public void setXval(double xval) {
         this.xval = xval;
     }
 }
-
-

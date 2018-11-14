@@ -1,31 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="parameters" maxHeight="1.7976931348623157E308"
-	maxWidth="1.7976931348623157E308" stylesheets="@CodaGui.css"
-	xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController">
+<StackPane fx:id="parameters" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController">
 	<children>
-		<VBox>
+		<VBox StackPane.alignment="CENTER_RIGHT">
 			<children>
-				<ToolBar prefHeight="40.0" prefWidth="200.0" VBox.vgrow="NEVER">
-					<items>
-						<Pane prefWidth="20.0" />
-						<Button fx:id="refreshBtn" mnemonicParsing="false"
-							onAction="#reloadData" styleClass="material-icons" text=""
-							textAlignment="RIGHT" />
-						<Pane prefWidth="20.0" />
-						<Button fx:id="exportBtn" mnemonicParsing="false" onAction="#exportData"
-							styleClass="material-icons" text="&#xE2C4;" textAlignment="RIGHT" />
-					</items>
-				</ToolBar>
 				<TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
 					<tabs>
 						<Tab closable="false" text="Coda Parameters">

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -65,13 +65,14 @@ public abstract class JBasicPlot {
     /**
      * Changes the CoordinateTransform used by this plot.
      *
-     * @param ct The new CoordinateTransform to use.
+     * @param ct
+     *            The new CoordinateTransform to use.
      */
     public void setCoordinateTransform(CoordinateTransform ct) {
         coordTransform = ct;
     }
 
-    void Render(Graphics g, int top, int height) {
+    public void Render(Graphics g, int top, int height) {
     }
 
     /**
@@ -79,7 +80,8 @@ public abstract class JBasicPlot {
      * the plot can be unzoomed. There is no practical limit to the number of
      * zoom levels available.
      *
-     * @param state An object holding the new axis limits to be used
+     * @param state
+     *            An object holding the new axis limits to be used
      */
     public abstract void ZoomIn(ZoomState state);
 
@@ -124,7 +126,8 @@ public abstract class JBasicPlot {
     /**
      * Sets the visible attribute of the JBasicPlot object
      *
-     * @param v The new visible value
+     * @param v
+     *            The new visible value
      */
     public void setVisible(boolean v) {
         visible = v;
@@ -145,7 +148,7 @@ public abstract class JBasicPlot {
      * hidden because of a zoom operation, this returns false.
      *
      * @return true if the plot is within the displayable part of the
-     * JMultiAxisPlot
+     *         JMultiAxisPlot
      */
     public boolean getCanDisplay() {
         return canDisplay;
@@ -238,7 +241,8 @@ public abstract class JBasicPlot {
     /**
      * Adds a new plot object (Line, Text, Symbol, Legend, etc) to this subplot.
      *
-     * @param obj The reference to the object being added.
+     * @param obj
+     *            The reference to the object being added.
      * @return A reference to the newly-added object.
      */
     public synchronized PlotObject AddPlotObject(PlotObject obj) {
@@ -248,8 +252,10 @@ public abstract class JBasicPlot {
     /**
      * Adds a PlotObject to the plot at the requested zlevel.
      *
-     * @param obj The reference to the object being added.
-     * @param level the zlevel at which to place the object.
+     * @param obj
+     *            The reference to the object being added.
+     * @param level
+     *            the zlevel at which to place the object.
      * @return A reference to the newly-added object.
      */
     public synchronized PlotObject AddPlotObject(PlotObject obj, int level) {
@@ -269,8 +275,9 @@ public abstract class JBasicPlot {
     /**
      * Remove a PlotObject from the plot.
      *
-     * @param po The PlotObject to be removed. If the object is not found, no
-     * action is taken.
+     * @param po
+     *            The PlotObject to be removed. If the object is not found, no
+     *            action is taken.
      * @return true if the object was found and removed
      */
     public synchronized boolean DeletePlotObject(PlotObject po) {
@@ -281,8 +288,10 @@ public abstract class JBasicPlot {
      * Gets a plot object whose Shape selection object intersects the x-Y input
      * value. Returns null if no object was selected.
      *
-     * @param x The x-pixel value.
-     * @param y The Y-pixel value
+     * @param x
+     *            The x-pixel value.
+     * @param y
+     *            The Y-pixel value
      * @return the selected object (or null if nothing selected).
      */
     public synchronized PlotObject getHotObject(int x, int y) {
@@ -315,7 +324,8 @@ public abstract class JBasicPlot {
      * the screen, but gives low-resolution printer plots. To render to the
      * printer, set this parameter to false.
      *
-     * @param value The new polyLineUsage value
+     * @param value
+     *            The new polyLineUsage value
      */
     public synchronized void setPolyLineUsage(boolean value) {
         zorderManager.setPolyLineUsage(value);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,27 +15,22 @@
 package llnl.gnem.core.gui.plotting;
 
 /**
- * User: dodge1
- * Date: Jun 10, 2005
- * Time: 5:09:16 PM
+ * User: dodge1 Date: Jun 10, 2005 Time: 5:09:16 PM
  */
 public class PanInfo {
     private PanStyle panStyle;
     private boolean isComplete;
 
-    public PanInfo( PanStyle style, boolean isComplete )
-    {
+    public PanInfo(PanStyle style, boolean isComplete) {
         panStyle = style;
         this.isComplete = isComplete;
     }
 
-    public PanStyle getPanStyle()
-    {
+    public PanStyle getPanStyle() {
         return panStyle;
     }
 
-    public boolean isComplete()
-    {
+    public boolean isComplete() {
         return isComplete;
     }
 }

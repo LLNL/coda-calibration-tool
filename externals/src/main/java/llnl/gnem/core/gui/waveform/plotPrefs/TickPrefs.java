@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -24,7 +24,7 @@ import llnl.gnem.core.gui.plotting.TickDir;
  *
  * @author dodge1
  */
-public class TickPrefs implements Serializable{
+public class TickPrefs implements Serializable {
     private boolean visible = true;
     private TickDir direction = TickDir.IN;
     private String fontName = "Arial";
@@ -32,7 +32,6 @@ public class TickPrefs implements Serializable{
     private int fontStyle = Font.PLAIN;
     private Color color = Color.black;
     static final long serialVersionUID = -6254132982942263566L;
-
 
     /**
      * @return the direction
@@ -42,7 +41,8 @@ public class TickPrefs implements Serializable{
     }
 
     /**
-     * @param direction the direction to set
+     * @param direction
+     *            the direction to set
      */
     public void setDirection(TickDir direction) {
         this.direction = direction;
@@ -58,7 +58,8 @@ public class TickPrefs implements Serializable{
 
     /**
      *
-     * @param font to set
+     * @param font
+     *            to set
      */
     public void setFont(Font font) {
         fontName = font.getName();
@@ -71,39 +72,40 @@ public class TickPrefs implements Serializable{
     }
 
     /**
-     * @param color the color to set
+     * @param color
+     *            the color to set
      */
     public void setFontColor(Color color) {
         this.color = color;
     }
 
-//    /**
-//     * @return the fontName
-//     */
-//    public String getFontName() {
-//        return fontName;
-//    }
+    //    /**
+    //     * @return the fontName
+    //     */
+    //    public String getFontName() {
+    //        return fontName;
+    //    }
 
-//    /**
-//     * @param fontName the fontName to set
-//     */
-//    public void setFontName(String fontName) {
-//        this.fontName = fontName;
-//    }
+    //    /**
+    //     * @param fontName the fontName to set
+    //     */
+    //    public void setFontName(String fontName) {
+    //        this.fontName = fontName;
+    //    }
 
-//    /**
-//     * @return the fontSize
-//     */
-//    public int getFontSize() {
-//        return fontSize;
-//    }
+    //    /**
+    //     * @return the fontSize
+    //     */
+    //    public int getFontSize() {
+    //        return fontSize;
+    //    }
 
-//    /**
-//     * @param fontSize the fontSize to set
-//     */
-//    public void setFontSize(int fontSize) {
-//        this.fontSize = fontSize;
-//    }
+    //    /**
+    //     * @param fontSize the fontSize to set
+    //     */
+    //    public void setFontSize(int fontSize) {
+    //        this.fontSize = fontSize;
+    //    }
 
     /**
      * @return the visible
@@ -113,7 +115,8 @@ public class TickPrefs implements Serializable{
     }
 
     /**
-     * @param visible the visible to set
+     * @param visible
+     *            the visible to set
      */
     public void setVisible(boolean visible) {
         this.visible = visible;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,15 +17,13 @@ package llnl.gnem.core.gui.plotting.plotobject;
 import javax.swing.ImageIcon;
 
 /**
- * Created by dodge1
- * Date: Mar 31, 2010
+ * Created by dodge1 Date: Mar 31, 2010
  */
 public class MarginButtonIconGroup {
 
     private final ImageIcon[] images;
 
-    public MarginButtonIconGroup( ImageIcon image0, ImageIcon image1, ImageIcon image2, ImageIcon image3)
-    {
+    public MarginButtonIconGroup(ImageIcon image0, ImageIcon image1, ImageIcon image2, ImageIcon image3) {
         images = new ImageIcon[4];
         images[0] = image0;
         images[1] = image1;
@@ -33,8 +31,7 @@ public class MarginButtonIconGroup {
         images[3] = image3;
     }
 
-    public ImageIcon getIcon(int idx )
-    {
+    public ImageIcon getIcon(int idx) {
         return images[idx];
     }
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -18,18 +18,16 @@ import java.text.NumberFormat;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.MaybeNumericStringComparator;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.Station;
+import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
+import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -42,7 +40,7 @@ import javafx.scene.control.TableView;
 @Component
 public class SiteBandController {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(SiteBandController.class);
 
     private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
 
@@ -78,49 +76,49 @@ public class SiteBandController {
     @FXML
     public void initialize() {
 
-        stationCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                       .map(CellDataFeatures::getValue)
-                                                                                       .map(SiteFrequencyBandParameters::getStation)
-                                                                                       .filter(Objects::nonNull)
-                                                                                       .map(Station::getStationName)
-                                                                                       .filter(Objects::nonNull)
-                                                                                       .orElseGet(String::new)));
+        stationCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(
+                        () -> Optional.ofNullable(x)
+                                      .map(CellDataFeatures::getValue)
+                                      .map(SiteFrequencyBandParameters::getStation)
+                                      .filter(Objects::nonNull)
+                                      .map(Station::getStationName)
+                                      .filter(Objects::nonNull)
+                                      .orElseGet(String::new)));
 
-        siteLowFreqCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                           .map(CellDataFeatures::getValue)
-                                                                                           .map(SiteFrequencyBandParameters::getLowFrequency)
-                                                                                           .filter(Objects::nonNull)
-                                                                                           .map(dfmt2::format)
-                                                                                           .orElseGet(String::new)));
+        siteLowFreqCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(
+                        () -> Optional.ofNullable(x)
+                                      .map(CellDataFeatures::getValue)
+                                      .map(SiteFrequencyBandParameters::getLowFrequency)
+                                      .filter(Objects::nonNull)
+                                      .map(dfmt2::format)
+                                      .orElseGet(String::new)));
         siteLowFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
-        
 
-        siteHighFreqCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                            .map(CellDataFeatures::getValue)
-                                                                                            .map(SiteFrequencyBandParameters::getHighFrequency)
-                                                                                            .filter(Objects::nonNull)
-                                                                                            .map(dfmt2::format)
-                                                                                            .orElseGet(String::new)));
+        siteHighFreqCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(
+                        () -> Optional.ofNullable(x)
+                                      .map(CellDataFeatures::getValue)
+                                      .map(SiteFrequencyBandParameters::getHighFrequency)
+                                      .filter(Objects::nonNull)
+                                      .map(dfmt2::format)
+                                      .orElseGet(String::new)));
         siteHighFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
-        siteCorrectionCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
-                                                                                              .map(CellDataFeatures::getValue)
-                                                                                              .map(SiteFrequencyBandParameters::getSiteTerm)
-                                                                                              .filter(Objects::nonNull)
-                                                                                              .map(dfmt2::format)
-                                                                                              .orElseGet(String::new)));
+        siteCorrectionCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(
+                        () -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(SiteFrequencyBandParameters::getSiteTerm).filter(Objects::nonNull).map(dfmt2::format).orElseGet(String::new)));
 
         codaSiteTableView.setItems(siteFbData);
     }
 
-    @PostConstruct
-    private void onSpringStartupFinished() {
-        requestData();
-    }
-
     protected void requestData() {
         siteFbData.clear();
-        client.getSiteSpecificFrequencyBandParameters().filter(Objects::nonNull).filter(value -> null != value.getId()).subscribe(value -> siteFbData.add(value),
-                                                                                                                                  err -> log.trace(err.getMessage(), err));
+        client.getSiteSpecificFrequencyBandParameters()
+              .filter(Objects::nonNull)
+              .filter(value -> null != value.getId())
+              .doOnComplete(() -> codaSiteTableView.sort())
+              .subscribe(value -> siteFbData.add(value), err -> log.trace(err.getMessage(), err));
     }
 }

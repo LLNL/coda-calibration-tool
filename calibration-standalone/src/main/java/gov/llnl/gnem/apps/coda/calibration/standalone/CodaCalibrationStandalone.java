@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,9 +14,6 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.standalone;
 
-import java.awt.Toolkit;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -27,26 +24,31 @@ import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+
+import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.CalibrationApplication;
-import gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiPreloader;
 import gov.llnl.gnem.apps.coda.calibration.gui.GuiApplication;
+import gov.llnl.gnem.apps.coda.common.gui.SimpleGuiPreloader;
+import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.stage.Stage;
 
 @SpringBootApplication
-@EnableAutoConfiguration
+@ComponentScan("gov.llnl.gnem.apps.coda")
 public class CodaCalibrationStandalone extends Application {
 
     private static final Logger log = LoggerFactory.getLogger(CodaCalibrationStandalone.class);
     private static volatile ConfigurableApplicationContext springContext;
     private static String[] initialArgs;
+    private EventBus bus;
 
     @PostConstruct
     void started() {
@@ -58,7 +60,7 @@ public class CodaCalibrationStandalone extends Application {
             initialArgs = args;
             String preloaderName = System.getProperty("javafx.preloader");
             if (preloaderName == null) {
-                System.setProperty("javafx.preloader", CodaGuiPreloader.class.getName());
+                System.setProperty("javafx.preloader", SimpleGuiPreloader.class.getName());
             }
             final CountDownLatch latch = new CountDownLatch(1);
             SwingUtilities.invokeLater(() -> {
@@ -79,20 +81,6 @@ public class CodaCalibrationStandalone extends Application {
 
     @Override
     public void init() throws Exception {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                Class util = Class.forName("com.apple.eawt.Application");
-                Method getApplication = util.getMethod("getApplication", new Class[0]);
-                Object application = getApplication.invoke(util);
-                Class params[] = new Class[1];
-                params[0] = java.awt.Image.class;
-                Method setDockIconImage = util.getMethod("setDockIconImage", params);
-                URL url = this.getClass().getResource("/coda_256x256.png");
-                java.awt.Image image = Toolkit.getDefaultToolkit().getImage(url);
-                setDockIconImage.invoke(application, image);
-            } catch (Exception e) {
-            }
-        });
         setContext(new SpringApplicationBuilder(CalibrationApplication.class).headless(false).run(initialArgs));
     }
 
@@ -102,12 +90,14 @@ public class CodaCalibrationStandalone extends Application {
         }
 
         springContext = context;
+        bus = springContext.getBean(EventBus.class);
         return springContext;
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        new GuiApplication(springContext).start(primaryStage);
+        CommonGuiUtils.setIcon(this.getClass(), "/coda_256x256.png");
+        new GuiApplication(springContext, bus).start(primaryStage);
     }
 
     @Override

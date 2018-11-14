@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,33 +15,28 @@
 package llnl.gnem.core.gui.plotting.jmultiaxisplot;
 
 /**
- * Created by: dodge1
- * Date: Dec 3, 2004
+ * Created by: dodge1 Date: Dec 3, 2004
  */
 public class PickMovedState {
     private final JSubplot sp;
     private final VPickLine vpl;
     private final double start;
 
-    public PickMovedState( VPickLine vpl, JSubplot sp, double start )
-    {
+    public PickMovedState(VPickLine vpl, JSubplot sp, double start) {
         this.sp = sp;
         this.vpl = vpl;
         this.start = start;
     }
 
-    public VPickLine getPickLine()
-    {
+    public VPickLine getPickLine() {
         return vpl;
     }
 
-    public JSubplot getSubplot()
-    {
+    public JSubplot getSubplot() {
         return sp;
     }
 
-    public double getDeltaT()
-    {
+    public double getDeltaT() {
         return vpl.getXval() - start;
     }
 }

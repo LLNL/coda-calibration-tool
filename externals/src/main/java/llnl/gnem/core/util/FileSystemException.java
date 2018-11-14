@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -17,13 +17,12 @@ package llnl.gnem.core.util;
 import java.io.IOException;
 
 /**
- * Created to fill in for java.nio.file.FileSystemException unitl we start using 1.7 when the nio package becomes available.
- * Created by dodge1
- * Date: Apr 26, 2010
+ * Created to fill in for java.nio.file.FileSystemException unitl we start using
+ * 1.7 when the nio package becomes available. Created by dodge1 Date: Apr 26,
+ * 2010
  */
 public class FileSystemException extends IOException {
-    public FileSystemException( String message )
-    {
+    public FileSystemException(String message) {
         super(message);
     }
 }

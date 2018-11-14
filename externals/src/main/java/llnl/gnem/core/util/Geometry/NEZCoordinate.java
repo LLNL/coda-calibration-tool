@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -102,7 +102,7 @@ public class NEZCoordinate {
     }
 
     public Vector3D toVector3D() {
-       return new Vector3D(xNorthKm, yEastKm,zDownKm);
+        return new Vector3D(xNorthKm, yEastKm, zDownKm);
     }
 
 }

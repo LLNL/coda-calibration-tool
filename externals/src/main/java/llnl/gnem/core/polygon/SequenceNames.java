@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,8 +15,8 @@
 package llnl.gnem.core.polygon;
 
 public class SequenceNames {
-	private static final String SCHEMA = TableNames.SCHEMA;
+    private static final String SCHEMA = TableNames.SCHEMA;
 
-	public static final String POLYSETID = SCHEMA+".POLYSETID";
-	public static final String POLYID = SCHEMA+".POLYID";
+    public static final String POLYSETID = SCHEMA + ".POLYSETID";
+    public static final String POLYID = SCHEMA + ".POLYID";
 }

@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<parent>
+		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
+		<artifactId>coda-calibration</artifactId>
+		<version>1.0.4-SNAPSHOT</version>
+	</parent>
+
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>calibration-service</artifactId>
 	<name>calibration-service</name>
 	<packaging>pom</packaging>
 
-	<parent>
-		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
-		<artifactId>coda-calibration</artifactId>
-		<version>1.0.3</version>
-	</parent>
-
 	<modules>
-		<module>model</module>
-		<module>repository</module>
-		<module>integration</module>
-		<module>service-api</module>
-		<module>service-impl</module>
-		<module>application</module>
+		<module>calibration-model</module>
+		<module>calibration-repository</module>
+		<module>calibration-integration</module>
+		<module>calibration-service-api</module>
+		<module>calibration-service-impl</module>
+		<module>calibration-application</module>
 	</modules>
 </project>

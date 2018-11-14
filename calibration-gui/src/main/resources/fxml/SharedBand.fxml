@@ -1,60 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.StackPane?>
 
-<StackPane fx:id="sharedBand" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CodaGui.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.SharedBandController">
+<StackPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.SharedBandController">
 	<children>
 		<ScrollPane fitToHeight="true" fitToWidth="true">
 			<content>
 				<TableView fx:id="codaSharedTableView" editable="true" tableMenuButtonVisible="true">
 					<columns>
-						<TableColumn fx:id="freqCol11" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Frequency">
+						<TableColumn prefWidth="75.0" text="Frequency">
 							<columns>
-								<TableColumn fx:id="lowFreqCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Low" />
-								<TableColumn fx:id="highFreqCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="High" />
+								<TableColumn fx:id="lowFreqCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Low" />
+								<TableColumn fx:id="highFreqCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="High" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="freqCol12" editable="false" prefWidth="75.0" text="Velocity">
+						<TableColumn editable="false" prefWidth="75.0" text="Velocity">
 							<columns>
 								<TableColumn fx:id="v0Col" prefWidth="75.0" text="V0" />
 								<TableColumn fx:id="v1Col" prefWidth="75.0" text="V1" />
 								<TableColumn fx:id="v2Col" prefWidth="75.0" text="V2" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="freqCol131" editable="false" prefWidth="75.0" text="Beta">
+						<TableColumn editable="false" prefWidth="75.0" text="Beta">
 							<columns>
 								<TableColumn fx:id="b0Col" prefWidth="75.0" text="B0" />
 								<TableColumn fx:id="b1Col" prefWidth="75.0" text="B1" />
 								<TableColumn fx:id="b2Col" prefWidth="75.0" text="B2" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="freqCol135" editable="false" prefWidth="75.0" text="Gamma">
+						<TableColumn editable="false" prefWidth="75.0" text="Gamma">
 							<columns>
 								<TableColumn fx:id="g0Col" prefWidth="75.0" text="G0" />
 								<TableColumn fx:id="g1Col" prefWidth="75.0" text="G1" />
 								<TableColumn fx:id="g2Col" prefWidth="75.0" text="G2" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="lengthCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Length (Sec)">
+						<TableColumn prefWidth="75.0" text="Length (Sec)">
 							<columns>
-								<TableColumn fx:id="minLengthCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Min" />
-								<TableColumn fx:id="maxLengthCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Max" />
+								<TableColumn fx:id="minLengthCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Min" />
+								<TableColumn fx:id="maxLengthCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Max" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="minSnrCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Minimum SNR" visible="false" />
+						<TableColumn fx:id="minSnrCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Minimum SNR" visible="false" />
 						<TableColumn fx:id="s1Col" editable="false" prefWidth="75.0" text="S1" visible="false" />
 						<TableColumn fx:id="s2Col" editable="false" prefWidth="75.0" text="S2" visible="false" />
 						<TableColumn editable="false" prefWidth="75.0" text="XC" visible="false" fx:id="xcCol" />
 						<TableColumn editable="false" prefWidth="75.0" text="XT" visible="false" fx:id="xtCol" />
 						<TableColumn fx:id="qCol" editable="false" prefWidth="75.0" text="Q" visible="false" />
-						<TableColumn fx:id="measureTimeCol" onEditCancel="#reloadTable" onEditCommit="#postUpdate" prefWidth="75.0" text="Measurement Time (s)" visible="false" />
+						<TableColumn fx:id="measureTimeCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Measurement Time (s)" visible="false" />
 					</columns>
 					<columnResizePolicy>
 						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
 					</columnResizePolicy>
+               <contextMenu>
+                  <ContextMenu fx:id="paramTableContextMenu">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#removeBands" text="Remove Band(s)" />
+                        <MenuItem mnemonicParsing="false" onAction="#clearTable" text="Clear Table" />
+                    </items>
+                  </ContextMenu>
+               </contextMenu>
 				</TableView>
 			</content>
 		</ScrollPane>

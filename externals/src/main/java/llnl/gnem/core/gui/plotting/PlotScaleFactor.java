@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,19 +15,16 @@
 package llnl.gnem.core.gui.plotting;
 
 /**
- * User: dodge1
- * Date: Jun 10, 2005
- * Time: 9:10:25 AM
+ * User: dodge1 Date: Jun 10, 2005 Time: 9:10:25 AM
  */
 public class PlotScaleFactor {
     private double factor;
-    public PlotScaleFactor( double v )
-    {
+
+    public PlotScaleFactor(double v) {
         factor = v;
     }
 
-    public double getFactor()
-    {
+    public double getFactor() {
         return factor;
     }
 }

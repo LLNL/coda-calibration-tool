@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -24,7 +24,7 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.PickTextPosition;
  *
  * @author dodge1
  */
-public class PickPrefs implements Serializable{
+public class PickPrefs implements Serializable {
 
     private double height;
     private double heightInMillimeters; // Used for picks in record-section views.
@@ -45,13 +45,7 @@ public class PickPrefs implements Serializable{
         penStyle = PenStyle.SOLID;
     }
 
-    public PickPrefs(double pickHeight,
-            double pickHeightInMillimeters,
-            Color pickColor,
-            int pickWidth,
-            int pickTextSize,
-            PickTextPosition position,
-            PenStyle penStyle) {
+    public PickPrefs(double pickHeight, double pickHeightInMillimeters, Color pickColor, int pickWidth, int pickTextSize, PickTextPosition position, PenStyle penStyle) {
         this.height = pickHeight;
         this.heightInMillimeters = pickHeightInMillimeters;
         this.color = pickColor;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -51,7 +52,13 @@ public class ReferenceEventWebClient implements ReferenceEventClient {
 
     @Override
     public Mono<String> postReferenceEvents(List<ReferenceMwParameters> refEvents) throws JsonProcessingException {
-        return client.post().uri("/reference-events/batch").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(refEvents).exchange().map(resp -> resp.toString());
+        return client.post()
+                     .uri("/reference-events/batch")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(refEvents)
+                     .exchange()
+                     .flatMap(resp -> resp.bodyToMono(String.class));
     }
 
     @Override
@@ -62,6 +69,11 @@ public class ReferenceEventWebClient implements ReferenceEventClient {
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(MeasuredMwParameters.class))
                      .onErrorReturn(new MeasuredMwParameters());
+    }
+
+    @Override
+    public Mono<Event> getEvent(String eventId) {
+        return client.get().uri("/events/" + eventId).accept(MediaType.APPLICATION_JSON).exchange().flatMap(response -> response.bodyToMono(Event.class)).onErrorReturn(new Event());
     }
 
 }

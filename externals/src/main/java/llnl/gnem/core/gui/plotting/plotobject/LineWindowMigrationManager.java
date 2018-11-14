@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,16 +15,14 @@
 package llnl.gnem.core.gui.plotting.plotobject;
 
 /**
- * User: dodge1
- * Date: Aug 1, 2005
- * Time: 9:41:09 AM
+ * User: dodge1 Date: Aug 1, 2005 Time: 9:41:09 AM
  */
 public interface LineWindowMigrationManager {
 
-    void startTimeChanged( LineWindow window, double dt );
+    void startTimeChanged(LineWindow window, double dt);
 
-    void endTimeChanged( LineWindow window, double dt );
+    void endTimeChanged(LineWindow window, double dt);
 
-    void windowWasMoved( LineWindow window, double dt );
+    void windowWasMoved(LineWindow window, double dt);
 
 }

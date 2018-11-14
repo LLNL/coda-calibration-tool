@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -21,31 +21,34 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 
-public class ListOfFiles implements Enumeration<FileInputStream>
-{
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ListOfFiles implements Enumeration<FileInputStream> {
+    private static final Logger log = LoggerFactory.getLogger(ListOfFiles.class);
     private String[] listOfFiles;
     private int current = 0;
 
     /**
      * creates a list of files given an Array of Strings
+     * 
      * @param listOfFiles
      */
-    public ListOfFiles(String[] listOfFiles)
-    {
+    public ListOfFiles(String[] listOfFiles) {
         this.listOfFiles = listOfFiles;
     }
 
     /**
      * creates a list of the file paths for a Vector of File objects
-     * @param list - a Vector of File objects
+     * 
+     * @param list
+     *            - a Vector of File objects
      */
-    public ListOfFiles(Vector<File> list)
-    {
+    public ListOfFiles(Vector<File> list) {
         int size = list.size();
-        String [] listarray = new String[size];
+        String[] listarray = new String[size];
 
-        for (int ii = 0; ii < listarray.length; ii++)
-        {
+        for (int ii = 0; ii < listarray.length; ii++) {
             listarray[ii] = list.elementAt(ii).getAbsolutePath();
         }
 
@@ -53,32 +56,26 @@ public class ListOfFiles implements Enumeration<FileInputStream>
     }
 
     @Override
-    public boolean hasMoreElements()
-    {
+    public boolean hasMoreElements() {
         if (current < listOfFiles.length)
-                return true;
+            return true;
         else
-                return false;
+            return false;
     }
 
     @Override
-    public FileInputStream nextElement()   
-    {
+    public FileInputStream nextElement() {
         FileInputStream in = null;
 
         if (!hasMoreElements())
             throw new NoSuchElementException("No more files.");
-        else
-        {
+        else {
             String nextElement = listOfFiles[current];
             current++;
-            try
-            {
+            try {
                 in = new FileInputStream(nextElement);
-            }
-            catch (FileNotFoundException e)
-            {
-                System.err.println("ListOfFiles: Can't open " + nextElement);
+            } catch (FileNotFoundException e) {
+                log.warn("ListOfFiles: Can't open {}", nextElement, e);
             }
         }
         return in;

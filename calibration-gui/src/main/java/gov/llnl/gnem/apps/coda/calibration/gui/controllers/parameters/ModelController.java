@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -24,14 +25,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.util.CellBindingUtils;
+import gov.llnl.gnem.apps.coda.calibration.gui.util.TimeLatchedGetSet;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.MdacDataChangeEvent;
+import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellEditEvent;
@@ -40,7 +45,7 @@ import javafx.scene.control.TableView;
 @Component
 public class ModelController {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(ModelController.class);
 
     @FXML
     private TableView<MdacParametersFI> fiTableView;
@@ -125,14 +130,32 @@ public class ModelController {
 
     private ParameterClient client;
 
-    @Autowired
-    public ModelController(ParameterClient client) {
-        this.client = client;
-    }
+    private EventBus bus;
 
-    @FXML
-    private void reloadTable(Event e) {
-        requestData();
+    private TimeLatchedGetSet scheduler;
+
+    @Autowired
+    public ModelController(ParameterClient client, EventBus bus) {
+        this.client = client;
+        this.bus = bus;
+        this.bus.register(this);
+
+        this.scheduler = new TimeLatchedGetSet(() -> requestData(), () -> {
+            fiData.forEach(p -> {
+                try {
+                    client.setFiParameter(p).subscribe();
+                } catch (JsonProcessingException e1) {
+                    log.error(e1.getMessage(), e1);
+                }
+            });
+            psData.forEach(p -> {
+                try {
+                    client.setPsParameter(p).subscribe();
+                } catch (JsonProcessingException e1) {
+                    log.error(e1.getMessage(), e1);
+                }
+            });
+        });
     }
 
     @PostConstruct
@@ -141,33 +164,35 @@ public class ModelController {
     }
 
     @FXML
-    private void postUpdate(CellEditEvent<?, ?> e) {
-        fiData.forEach(p -> {
-            try {
-                client.postFiParameters(p);
-            } catch (JsonProcessingException e1) {
-                log.error(e1.getMessage(), e1);
-            }
-        });
+    private void postUpdate(CellEditEvent<?, ?> event) {
+        scheduler.set();
+    }
 
-        psData.forEach(p -> {
-            try {
-                client.postPsParameters(p);
-            } catch (JsonProcessingException e1) {
-                log.error(e1.getMessage(), e1);
-            }
-        });
-        fiData.clear();
-        psData.clear();
-        requestData();
+    @Subscribe
+    private void updateNotification(MdacDataChangeEvent event) {
+        scheduler.get();
     }
 
     protected void requestData() {
         fiData.clear();
         psData.clear();
 
-        client.getFiParameters().filter(Objects::nonNull).filter(value -> null != value.getId()).subscribe(value -> fiData.add(value), err -> log.trace(err.getMessage(), err));
-        client.getPsParameters().filter(Objects::nonNull).filter(value -> null != value.getId()).subscribe(value -> psData.add(value), err -> log.trace(err.getMessage(), err));
+        client.getFiParameters()
+              .filter(Objects::nonNull)
+              .filter(value -> null != value.getId())
+              .doOnComplete(() -> fiTableView.sort())
+              .subscribe(value -> fiData.add(value), err -> log.trace(err.getMessage(), err));
+
+        client.getPsParameters()
+              .filter(Objects::nonNull)
+              .filter(value -> null != value.getId())
+              .doOnComplete(() -> psTableView.sort())
+              .subscribe(value -> psData.add(value), err -> log.trace(err.getMessage(), err));
+
+        Platform.runLater(() -> {
+            Optional.ofNullable(fiTableView).ifPresent(v -> v.refresh());
+            Optional.ofNullable(psTableView).ifPresent(v -> v.refresh());
+        });
     }
 
     @FXML

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -18,7 +18,7 @@ import java.io.File;
 import java.nio.file.PathMatcher;
 import java.util.List;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import reactor.core.publisher.Flux;
 
 public interface FileToParameterConverter<T> {
