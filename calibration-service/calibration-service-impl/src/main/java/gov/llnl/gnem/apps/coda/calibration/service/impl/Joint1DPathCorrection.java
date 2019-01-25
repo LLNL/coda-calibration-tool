@@ -37,13 +37,8 @@ import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.optim.univariate.BrentOptimizer;
-import org.apache.commons.math3.optim.univariate.SearchInterval;
-import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
-import org.apache.commons.math3.optim.univariate.UnivariateOptimizer;
-import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 import org.apache.commons.math3.random.MersenneTwister;
-import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +49,6 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.PathCalibrationMeasureme
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PathCalibrationMeasurementService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PathCalibrationService;
-import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.PathCostFunctionResult;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -73,7 +67,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     // How many different randomized starting parameter guesses to use when
     // trying to optimize
-    private static final int STARTING_POINTS = 5;
+    private static final int STARTING_POINTS = 10;
 
     // Optimization terms common to a frequency band fit: p1,p2,q,xcross,xtrans
     private static final int NUM_TERMS = 4;
@@ -81,8 +75,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     private static final int Q_IDX = 1;
     private static final int XCROSS_IDX = 2;
     private static final int XTRANS_IDX = 3;
-    private static final double TOLERANCE = 0.001;
-    private static final Double EPS_DEFAULT = 5.0;
+    private static final double TOLERANCE = 0.0001;
 
     private static final double XTRANS_MAX = 0.04;
     private static final double XTRANS_MIN = -10.0;
@@ -95,7 +88,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     private static final double SITE_MAX = 10.0;
     private static final double SITE_MIN = -10.0;
 
-    private static final int POP_SIZE = 10;
+    private static final int POP_SIZE = 20;
 
     // Evids actually potentially need meta-data about p1,p2,q,xt,xc,etc per
     // evid in the future but for now they are common values for 1D.
@@ -106,8 +99,6 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     private double xcross = Math.log10(500.0);
     private double vphase = 3.5;
 
-    private Map<FrequencyBand, Double> epsMap = new HashMap<>();
-
     private final double efact = Math.log10(Math.E);
     private PathCalibrationMeasurementService pathCalibrationMeasurementService;
 
@@ -115,24 +106,6 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     public Joint1DPathCorrection(SpectraCalculator spectraCalc, PathCalibrationMeasurementService pathCalibrationMeasurementService) {
         this.spectraCalc = spectraCalc;
         this.pathCalibrationMeasurementService = pathCalibrationMeasurementService;
-
-        // FIXME: Accept this as input
-        this.epsMap.put(new FrequencyBand(0.02, 0.03), 8.0);
-        this.epsMap.put(new FrequencyBand(0.03, 0.05), 8.0);
-        this.epsMap.put(new FrequencyBand(0.05, 0.1), 5.0);
-        this.epsMap.put(new FrequencyBand(0.1, 0.2), 5.0);
-        this.epsMap.put(new FrequencyBand(0.2, 0.3), 5.0);
-        this.epsMap.put(new FrequencyBand(0.3, 0.5), 5.0);
-        this.epsMap.put(new FrequencyBand(0.5, 0.7), 5.5);
-        this.epsMap.put(new FrequencyBand(0.7, 1.0), 5.8);
-        this.epsMap.put(new FrequencyBand(1.0, 1.5), 5.6);
-        this.epsMap.put(new FrequencyBand(1.5, 2.0), 5.4);
-        this.epsMap.put(new FrequencyBand(2.0, 3.0), 5.5);
-        this.epsMap.put(new FrequencyBand(3.0, 4.0), 5.3);
-        this.epsMap.put(new FrequencyBand(4.0, 6.0), 6.3);
-        this.epsMap.put(new FrequencyBand(6.0, 8.0), 6.3);
-        this.epsMap.put(new FrequencyBand(8.0, 10.0), 6.0);
-        this.epsMap.put(new FrequencyBand(10.0, 15.0), 2.0);
     }
 
     @Override
@@ -220,14 +193,14 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                     optimizationLowBounds[i] = SITE_MIN;
                     optimizationHighBounds[i] = SITE_MAX;
                 }
-                
+
                 double[] sigmaArray = new double[optimizationParams.length];
                 for (int i = 0; i < sigmaArray.length; i++) {
                     sigmaArray[i] = 1.;
                 }
 
                 // starting residual
-                Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, (1.0 / 2.0));
+                Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, 2.0);
 
                 PointValuePair optimizedResult = IntStream.range(0, STARTING_POINTS).parallel().mapToObj(i -> {
                     ConvergenceChecker<PointValuePair> convergenceChecker = new SimpleValueChecker(TOLERANCE, TOLERANCE);
@@ -236,13 +209,14 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                     MultivariateFunction prediction = new ESHPathMultivariate(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand);
                     PointValuePair opt = null;
                     try {
-                        opt = optimizer.optimize(new MaxEval(1000000),
-                                                 new ObjectiveFunction(prediction),
-                                                 GoalType.MINIMIZE,
-                                                 new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
-                                                 new InitialGuess(perturbParams(optimizationLowBounds, optimizationHighBounds)),
-                                                 new CMAESOptimizer.PopulationSize(POP_SIZE),
-                                                 new CMAESOptimizer.Sigma(sigmaArray));
+                        opt = optimizer.optimize(
+                                new MaxEval(1000000),
+                                    new ObjectiveFunction(prediction),
+                                    GoalType.MINIMIZE,
+                                    new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
+                                    new InitialGuess(perturbParams(optimizationLowBounds, optimizationHighBounds)),
+                                    new CMAESOptimizer.PopulationSize(POP_SIZE),
+                                    new CMAESOptimizer.Sigma(sigmaArray));
                     } catch (TooManyEvaluationsException e) {
                     }
                     return opt;
@@ -256,8 +230,8 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 }
 
                 // final residual
-                PathCostFunctionResult finalResults = costFunctionFull(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams);
-                Double finalResidual = Math.pow(finalResults.getCost() / totalDataCount, (1.0 / 2.0));
+                Double finalResults = costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams);
+                Double finalResidual = Math.pow(finalResults / totalDataCount, 2.0);
 
                 PathCalibrationMeasurement measurement = new PathCalibrationMeasurement();
                 measurement.setInitialResidual(initialResidual);
@@ -349,18 +323,10 @@ public class Joint1DPathCorrection implements PathCalibrationService {
      */
     public double costFunction(Map<Event, Map<Station, SpectraMeasurement>> evidStaData, Map<Event, Map<Station, Double>> dataMap, Map<Event, Map<Station, Double>> distanceMap,
             Map<Station, Integer> stationIdxMap, FrequencyBand frequencyBand, double[] optimizationParams) {
-        return costFunctionFull(evidStaData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams).getCost();
-    }
-
-    public PathCostFunctionResult costFunctionFull(Map<Event, Map<Station, SpectraMeasurement>> evidStaData, Map<Event, Map<Station, Double>> dataMap, Map<Event, Map<Station, Double>> distanceMap,
-            Map<Station, Integer> stationIdxMap, FrequencyBand frequencyBand, double[] optimizationParams) {
-
         Map<Event, Map<Station, Double>> localDataMap = new HashMap<>();
-        Map<Event, Map<Station, Double>> residuals = new HashMap<>();
-        Map<Event, Map<Station, Double>> siteCorrections = new HashMap<>();
 
-        double rsum = 0.0;
-        double f0 = Math.sqrt(frequencyBand.getLowFrequency() * frequencyBand.getHighFrequency());
+        double cost = 0.0;
+        double freq0 = Math.sqrt(frequencyBand.getLowFrequency() * frequencyBand.getHighFrequency());
 
         for (Entry<Event, Map<Station, SpectraMeasurement>> evidEntry : evidStaData.entrySet()) {
             Event evid = evidEntry.getKey();
@@ -374,114 +340,26 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 double q = Math.pow(10.0, optimizationParams[Q_IDX]);
                 double xcross = Math.pow(10.0, optimizationParams[XCROSS_IDX]);
                 double xtrans = Math.pow(10.0, Math.pow(10.0, optimizationParams[XTRANS_IDX]));
-                double pdat = site + spectraCalc.log10ESHcorrection(p1, p2, xcross, xtrans, del) - del * Math.PI * f0 * efact / (q * vphase);
+                double pdat = site + spectraCalc.log10ESHcorrection(p1, p2, xcross, xtrans, del) - del * Math.PI * freq0 * efact / (q * vphase);
                 double adjustedVal = dataMap.get(evid).get(entry.getKey()) - pdat;
                 dataVec.add(adjustedVal);
                 if (!localDataMap.containsKey(evid)) {
                     localDataMap.put(evid, new HashMap<Station, Double>());
                 }
                 localDataMap.get(evid).put(entry.getKey(), adjustedVal);
-
-                if (!siteCorrections.containsKey(evid)) {
-                    siteCorrections.put(evid, new HashMap<Station, Double>());
-                }
-                siteCorrections.get(evid).put(entry.getKey(), site);
             }
 
             if (dataVec.size() > 1) {
-                double dmed = lpMean(ArrayUtils.toPrimitive(dataVec.toArray(new Double[0])));
-                for (Entry<Station, SpectraMeasurement> entry : stationMapData.entrySet()) {
-                    rsum = rsum + Math.pow(Math.abs(localDataMap.get(evid).get(entry.getKey()) - dmed), 2.0);
-                    if (!residuals.containsKey(evid)) {
-                        residuals.put(evid, new HashMap<Station, Double>());
-                    }
-                    residuals.get(evid).put(entry.getKey(), localDataMap.get(evid).get(entry.getKey()) - dmed);
+                double huberDel = .5d;
+                double median = new DescriptiveStatistics(ArrayUtils.toPrimitive(dataVec.toArray(new Double[0]))).getPercentile(50d);
+                for (Entry<Station, SpectraMeasurement> entry1 : stationMapData.entrySet()) {
+                    double diff = Math.abs(localDataMap.get(evid).get(entry1.getKey()) - median);
+                    cost = cost + (Math.pow(huberDel, 2.0) + (Math.sqrt(1d + Math.pow(diff / huberDel, 2.0)) - 1d));
                 }
             }
         }
+        return cost;
 
-        List<Double> dataVec = new ArrayList<>(optimizationParams.length);
-        for (int i = 0; i < optimizationParams.length - NUM_TERMS; i++) {
-            dataVec.add(optimizationParams[i + NUM_TERMS]);
-        }
-
-        double smed = lpMean(ArrayUtils.toPrimitive(dataVec.toArray(new Double[0])));
-
-        Double eps = epsMap.get(frequencyBand);
-        if (eps == null) {
-            eps = EPS_DEFAULT;
-        }
-
-        rsum = rsum + smed * smed * eps * ((double) dataVec.size()) * 10.0;
-
-        for (int i = 0; i < optimizationParams.length - NUM_TERMS; i++) {
-            // range penalties
-            double xlog = optimizationParams[P1_IDX];
-            if (xlog > P1_MAX) {
-                rsum = rsum + 1000.0 * Math.pow(xlog - P1_MAX, 2);
-            } else if (xlog < P1_MIN) {
-                rsum = rsum + 1000.0 * Math.pow(P1_MIN - xlog, 2);
-            }
-
-            xlog = optimizationParams[Q_IDX];
-            if (xlog > Q_MAX) {
-                rsum = rsum + 1000.0 * Math.pow(xlog - Q_MAX, 2);
-            } else if (xlog < Q_MIN) {
-                rsum = rsum + 1000.0 * Math.pow(-Q_MIN - xlog, 2);
-            }
-
-            xlog = optimizationParams[XCROSS_IDX];
-            if (xlog > XCROSS_MAX) {
-                rsum = rsum + 1000.0 * Math.pow(xlog - XCROSS_MAX, 2);
-            } else if (xlog < XCROSS_MIN) {
-                rsum = rsum + 1000.0 * Math.pow(XCROSS_MIN - xlog, 2);
-            }
-
-            xlog = optimizationParams[XTRANS_IDX];
-            if (xlog > XTRANS_MAX) {
-                rsum = rsum + 1000.0 * Math.pow(xlog - XTRANS_MAX, 2);
-            } else if (xlog < XTRANS_MIN) {
-                rsum = rsum + 1000.0 * Math.pow(XTRANS_MIN - xlog, 2);
-            }
-
-            // site range penalties -10 to 10
-            double site = optimizationParams[i];
-            if (site > SITE_MAX) {
-                rsum = rsum + 1000.0 * Math.pow(site - SITE_MAX, 2);
-            } else if (site < SITE_MIN) {
-                rsum = rsum + 1000.0 * Math.pow(SITE_MIN - site, 2);
-            }
-        }
-
-        return new PathCostFunctionResult(residuals, rsum, smed, siteCorrections);
-    }
-
-    private double lpMean(final double[] values) {
-        double mean;
-        double xmin = StatUtils.min(values);
-        double xmax = StatUtils.max(values);
-        double xstart = (xmin + xmax) / 2.0;
-        if (values.length < 2) {
-            mean = xmin;
-        } else if (values.length == 2 || xmin == xmax) {
-            mean = xstart;
-        } else {
-            UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
-            UnivariatePointValuePair result = optimizer.optimize(new UnivariateObjectiveFunction(x -> xlpSum(values, x)),
-                                                                 new MaxEval(10000),
-                                                                 GoalType.MINIMIZE,
-                                                                 new SearchInterval(xmin, xmax, xstart));
-            mean = result.getPoint();
-        }
-        return mean;
-    }
-
-    private double xlpSum(double[] x, double x0) {
-        double sum = 0.0;
-        for (int i = 0; i < x.length; i++) {
-            sum = sum + Math.pow(Math.abs(x[i] - x0), 2.0);
-        }
-        return sum;
     }
 
     private double[] perturbParams(double[] optimizationLowBounds, double[] optimizationHighBounds) {

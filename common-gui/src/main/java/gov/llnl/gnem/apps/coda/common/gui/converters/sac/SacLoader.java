@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -134,8 +135,8 @@ public class SacLoader implements FileToWaveformConverter {
             try {
                 channel = new Channel(chan);
             } catch (Exception ex) {
-                return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): SAC header variable KCMPNM (%s) does not meet FDSN requirements!", fileName, chan),
-                                                                              ex));
+                return exceptionalResult(
+                        new LightweightIllegalStateException(String.format("Error parsing (%s): SAC header variable KCMPNM (%s) does not meet FDSN requirements!", fileName, chan), ex));
             }
 
             Date beginTime = Optional.ofNullable(header.getBeginTime().getMilliseconds()).map(time -> Date.from(Instant.ofEpochMilli(time))).orElse(null);
@@ -171,9 +172,11 @@ public class SacLoader implements FileToWaveformConverter {
             }
             double stationLongitude = header.stlo;
 
-            String dataType = StringUtils.trimToEmpty((String) header.getVariableMap().get("depvariabletype"));
+            String dataType = StringUtils.trimToEmpty((String) header.getVariableMap().get("depvariabletype")).toLowerCase(Locale.ENGLISH);
             if (dataType.startsWith("acc")) {
                 dataType = ACCELERATION;
+            } else if (dataType.startsWith("vel")) {
+                dataType = VELOCITY;
             } else if (dataType.startsWith("dis")) {
                 dataType = DISPLACEMENT;
             } else {
@@ -184,16 +187,16 @@ public class SacLoader implements FileToWaveformConverter {
             }
 
             String dataUnits = "";
-            if (dataType.equals(ACCELERATION)) {
+            if (dataType.equalsIgnoreCase(ACCELERATION)) {
                 dataUnits = NM_PER_S_S;
-            } else if (dataType.equals(VELOCITY)) {
+            } else if (dataType.equalsIgnoreCase(VELOCITY)) {
                 dataUnits = NM_PER_S;
-            } else if (dataType.equals(DISPLACEMENT)) {
+            } else if (dataType.equalsIgnoreCase(DISPLACEMENT)) {
                 dataUnits = NM;
             } else {
-                dataType = StringUtils.trimToEmpty(header.kuser1);
-                if (dataType.isEmpty() || SACHeader.isDefault(dataType)) {
-                    dataType = UNKNOWN_VAL;
+                dataUnits = StringUtils.trimToEmpty(header.kuser1);
+                if (dataUnits.isEmpty() || SACHeader.isDefault(dataUnits)) {
+                    dataUnits = UNKNOWN_VAL;
                 }
             }
 
@@ -215,18 +218,21 @@ public class SacLoader implements FileToWaveformConverter {
             return new Result<>(true,
                                 new Waveform().setBeginTime(beginTime)
                                               .setEndTime(endTime)
-                                              .setStream(new Stream().setChannelName(chan)
-                                                                     .setBandName(channel.getBandCode().name())
-                                                                     .setOrientation(channel.getOrientationCode().name())
-                                                                     .setInstrument(channel.getInstrumentCode().name())
-                                                                     .setStation(new Station().setStationName(stationName)
-                                                                                              .setLatitude(stationLatitude)
-                                                                                              .setLongitude(stationLongitude)
-                                                                                              .setNetworkName(networkName)))
-                                              .setEvent(new Event().setEventId(evid)
-                                                                   .setLatitude(eventLatitude)
-                                                                   .setLongitude(eventLongitude)
-                                                                   .setOriginTime(Date.from(Instant.ofEpochMilli(originTime.getMilliseconds()))))
+                                              .setStream(
+                                                      new Stream().setChannelName(chan)
+                                                                  .setBandName(channel.getBandCode().name())
+                                                                  .setOrientation(channel.getOrientationCode().name())
+                                                                  .setInstrument(channel.getInstrumentCode().name())
+                                                                  .setStation(
+                                                                          new Station().setStationName(stationName)
+                                                                                       .setLatitude(stationLatitude)
+                                                                                       .setLongitude(stationLongitude)
+                                                                                       .setNetworkName(networkName)))
+                                              .setEvent(
+                                                      new Event().setEventId(evid)
+                                                                 .setLatitude(eventLatitude)
+                                                                 .setLongitude(eventLongitude)
+                                                                 .setOriginTime(Date.from(Instant.ofEpochMilli(originTime.getMilliseconds()))))
                                               .setSegment(segment)
                                               .setSegmentType(dataType)
                                               .setSegmentUnits(dataUnits)
@@ -268,12 +274,14 @@ public class SacLoader implements FileToWaveformConverter {
 
         if (value < minVal || value > maxVal) {
             validation.getErrors()
-                      .add(new LightweightIllegalStateException(String.format("Error parsing (%s): SAC header variable %s must be between %f and %f! Actual value is %f",
-                                                                              fileName,
-                                                                              headerName,
-                                                                              minVal,
-                                                                              maxVal,
-                                                                              value)));
+                      .add(
+                              new LightweightIllegalStateException(String.format(
+                                      "Error parsing (%s): SAC header variable %s must be between %f and %f! Actual value is %f",
+                                          fileName,
+                                          headerName,
+                                          minVal,
+                                          maxVal,
+                                          value)));
         }
 
         if (validation.getErrors().isEmpty()) {
@@ -332,7 +340,7 @@ public class SacLoader implements FileToWaveformConverter {
         return acceptFilter;
     }
 
-    private String getOrCreateEvid(SACHeader header) {
+    public String getOrCreateEvid(SACHeader header) {
         int evid = 0;
         Double time = 0d;
         if (header.getOriginTime() != null) {

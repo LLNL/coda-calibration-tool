@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.data.client.api;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,7 +28,11 @@ public interface WaveformClient {
 
     public Mono<Waveform> getWaveformFromId(Long id);
 
-    public Mono<SyntheticCoda> getSyntheticFromId(Long id);
+    public Mono<SyntheticCoda> getSyntheticFromWaveformId(Long id);
+    
+    public Flux<Waveform> getWaveformsFromIds(Collection<Long> ids);
+
+    public Flux<SyntheticCoda> getSyntheticsFromWaveformIds(Collection<Long> ids);
 
     public Mono<Waveform> postWaveform(Waveform segment) throws JsonProcessingException;
 

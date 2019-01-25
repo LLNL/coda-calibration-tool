@@ -14,10 +14,14 @@
 */
 package gov.llnl.gnem.apps.coda.common.mapping.api;
 
+import java.util.function.BiConsumer;
+
 public interface Icon {
 
+    public static final String FOCUS_TAG = "!!";
+
     public enum IconTypes {
-        DEFAULT, CIRCLE, TRIANGLE_UP, LINE
+        DEFAULT, CIRCLE, TRIANGLE_UP
     }
 
     public enum IconStyles {
@@ -35,4 +39,8 @@ public interface Icon {
     public IconStyles getStyle();
 
     public String getFriendlyName();
+
+    public Icon setIconSelectionCallback(BiConsumer<Boolean, String> callback);
+
+    public BiConsumer<Boolean, String> getIconSelectionCallback();
 }

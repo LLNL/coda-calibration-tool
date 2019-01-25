@@ -15,13 +15,17 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.awt.Color;
+import java.awt.geom.Point2D;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
+import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
 import llnl.gnem.core.gui.plotting.Legend;
@@ -33,6 +37,7 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.PlotProperties;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.TickScaleFunc;
 import llnl.gnem.core.gui.plotting.plotobject.Line;
+import llnl.gnem.core.gui.plotting.plotobject.Symbol;
 import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
 
 /**
@@ -60,6 +65,8 @@ public class SpectralPlot extends JMultiAxisPlot {
     private double defaultXMax = 1.;
     private double defaultYMin = 19.0;
     private double defaultYMax = 27.0;
+
+    private final Map<Point2D.Double, List<Symbol>> symbolMap = new HashMap<>();
 
     public SpectralPlot() {
         super();
@@ -106,6 +113,8 @@ public class SpectralPlot extends JMultiAxisPlot {
         jsubplot.getPlotRegion().setDrawBox(true);
         jsubplot.getPlotRegion().setBackgroundColor(new Color(0.96F, 0.96F, 0.96F));
         jsubplot.getYaxis().setLabelText("Y-axis label");
+
+        properties.setSymbolSize(3.5d);
     }
 
     public void clearPlot() {
@@ -148,6 +157,7 @@ public class SpectralPlot extends JMultiAxisPlot {
      */
     public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend, Spectra... spectra) {
 
+        symbolMap.clear();
         // line based legends for trending
         Legend legend = new Legend(getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.RIGHT, VertPinEdge.TOP, 5, 5);
 
@@ -299,10 +309,28 @@ public class SpectralPlot extends JMultiAxisPlot {
      */
     public final void plotXYdata(List<PlotPoint> data) {
         if (data != null) {
-            data.stream()
-                .peek(p -> rescalePlot(p.getX(), p.getY()))
-                .map(v -> SymbolFactory.createSymbol(v.getStyle(), v.getX(), v.getY(), properties.getSymbolSize(), v.getColor(), properties.getSymbolEdgeColor(), v.getColor(), "", true, false, 10.0))
-                .forEach(jsubplot::AddPlotObject);
+            data.stream().peek(p -> rescalePlot(p.getX(), p.getY())).map(v -> {
+                String label;
+                if (v instanceof LabeledPlotPoint) {
+                    label = ((LabeledPlotPoint) v).getLabel();
+                } else {
+                    label = "";
+                }
+                Symbol symbol = SymbolFactory.createSymbol(
+                        v.getStyle(),
+                            v.getX(),
+                            v.getY(),
+                            properties.getSymbolSize(),
+                            v.getColor(),
+                            properties.getSymbolEdgeColor(),
+                            v.getColor(),
+                            label,
+                            true,
+                            false,
+                            10.0);
+                symbolMap.computeIfAbsent(new Point2D.Double(v.getX(), v.getY()), key -> new ArrayList<>()).add(symbol);
+                return symbol;
+            }).forEach(jsubplot::AddPlotObject);
         }
     }
 
@@ -384,5 +412,33 @@ public class SpectralPlot extends JMultiAxisPlot {
 
     public void setDefaultXMax(double defaultXMax) {
         this.defaultXMax = defaultXMax;
+    }
+
+    public void selectPoint(Point2D.Double xyPoint) {
+        List<Symbol> symbols = symbolMap.get(xyPoint);
+        if (symbols != null) {
+            symbols.forEach(symbol -> {
+                symbol.setEdgeColor(symbol.getFillColor());
+                symbol.setFillColor(Color.YELLOW);
+                symbol.setSymbolSize(symbol.getSymbolSize() * 1.25);
+                jsubplot.DeletePlotObject(symbol);
+                jsubplot.AddPlotObject(symbol, 1000);
+            });
+        }
+        repaint();
+    }
+
+    public void deselectPoint(Point2D.Double xyPoint) {
+        List<Symbol> symbols = symbolMap.get(xyPoint);
+        if (symbols != null) {
+            symbols.forEach(symbol -> {
+                symbol.setFillColor(symbol.getEdgeColor());
+                symbol.setEdgeColor(Color.BLACK);
+                symbol.setSymbolSize(symbol.getSymbolSize() / 1.25);
+                jsubplot.DeletePlotObject(symbol);
+                jsubplot.AddPlotObject(symbol);
+            });
+        }
+        repaint();
     }
 }

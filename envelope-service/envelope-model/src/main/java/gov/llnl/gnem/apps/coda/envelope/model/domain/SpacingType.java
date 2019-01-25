@@ -15,7 +15,7 @@
 package gov.llnl.gnem.apps.coda.envelope.model.domain;
 
 public enum SpacingType {
-    LINEAR("linear");//, LOG_LINEAR("log-linear"), HALF_OCTAVE("half-octave");
+    LOG("log"), LINEAR("linear");//, HALF_OCTAVE("half-octave");
 
     private String phase;
 

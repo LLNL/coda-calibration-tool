@@ -123,6 +123,22 @@ public class Waveform {
         this.setAssociatedPicks(waveform.getAssociatedPicks());
     }
 
+    public Waveform(Long id, Long version, Event event, Stream stream, Date beginTime, Date endTime, String segmentType, String segmentUnits, Double lowFrequency, Double highFrequency,
+            Double sampleRate) {
+        super();
+        this.id = id;
+        this.version = version;
+        this.event = event;
+        this.stream = stream;
+        this.beginTime = beginTime;
+        this.endTime = endTime;
+        this.segmentType = segmentType;
+        this.segmentUnits = segmentUnits;
+        this.lowFrequency = lowFrequency;
+        this.highFrequency = highFrequency;
+        this.sampleRate = sampleRate;
+    }
+
     public Long getId() {
         return id;
     }

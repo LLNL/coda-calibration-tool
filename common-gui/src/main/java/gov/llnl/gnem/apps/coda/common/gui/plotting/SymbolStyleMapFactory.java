@@ -69,15 +69,12 @@ public class SymbolStyleMapFactory {
             nextStyle = SymbolStyle.TRIANGLEDN;
             break;
         case 5:
-            nextStyle = SymbolStyle.PLUS;
-            break;
-        case 6:
             nextStyle = SymbolStyle.CROSS;
             break;
-        case 7:
+        case 6:
             nextStyle = SymbolStyle.STAR5;
             break;
-        case 8:
+        case 7:
             nextStyle = SymbolStyle.HEXAGON;
             break;
         default:
@@ -90,8 +87,9 @@ public class SymbolStyleMapFactory {
     public <T, R> Map<R, PlotPoint> build(List<T> values, Function<T, R> keyProvider) {
         Map<R, PlotPoint> styles = new HashMap<>();
         AtomicInteger i = new AtomicInteger(0);
-        //Is the JIT going to do what I expect here? Let's find out...
-        values.stream().sequential().forEach(v -> styles.putIfAbsent(keyProvider.apply(v), new PlotPoint(null, null, nextSymbol(), getSpacedOutColour(i.getAndIncrement(), values.size()))));
+        long keyCount = values.stream().map(v -> keyProvider.apply(v)).distinct().count();
+        //Is the JIT going to do what I expect here? Let's find out...        
+        values.stream().sequential().forEach(v -> styles.putIfAbsent(keyProvider.apply(v), new PlotPoint(null, null, nextSymbol(), getSpacedOutColour(i.getAndIncrement(), (int) keyCount))));
         return styles;
     }
 }

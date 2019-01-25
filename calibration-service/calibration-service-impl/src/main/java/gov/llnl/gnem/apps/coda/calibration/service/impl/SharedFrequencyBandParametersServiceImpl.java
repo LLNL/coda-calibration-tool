@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.BandParametersDataChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.repository.SharedFrequencyBandParametersRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.SyntheticRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -32,11 +34,14 @@ import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 public class SharedFrequencyBandParametersServiceImpl implements SharedFrequencyBandParametersService {
 
     private SharedFrequencyBandParametersRepository sharedFrequencyBandParametersRepository;
+    private SyntheticRepository syntheticsRepository;
     private NotificationService notificationService;
 
     @Autowired
-    public SharedFrequencyBandParametersServiceImpl(SharedFrequencyBandParametersRepository sharedFrequencyBandParametersRepository, NotificationService notificationService) {
-        setSharedFrequencyBandParametersRepository(sharedFrequencyBandParametersRepository);
+    public SharedFrequencyBandParametersServiceImpl(SharedFrequencyBandParametersRepository sharedFrequencyBandParametersRepository, SyntheticRepository syntheticsRepository,
+            NotificationService notificationService) {
+        this.sharedFrequencyBandParametersRepository = sharedFrequencyBandParametersRepository;
+        this.syntheticsRepository = syntheticsRepository;
         this.notificationService = notificationService;
     }
 
@@ -49,29 +54,27 @@ public class SharedFrequencyBandParametersServiceImpl implements SharedFrequency
     }
 
     @Override
-    @Transactional
     public void delete(SharedFrequencyBandParameters sharedFrequencyBandParameters) {
+        syntheticsRepository.deleteBySharedFrequencyBandParametersId(sharedFrequencyBandParameters.getId());
         getSharedFrequencyBandParametersRepository().delete(sharedFrequencyBandParameters);
         notificationService.post(new BandParametersDataChangeEvent());
     }
 
     @Override
-    @Transactional
     public List<SharedFrequencyBandParameters> save(Iterable<SharedFrequencyBandParameters> entities) {
         notificationService.post(new BandParametersDataChangeEvent());
         return getSharedFrequencyBandParametersRepository().saveAll(entities);
     }
 
     @Override
-    @Transactional
     public void delete(Iterable<Long> ids) {
         List<SharedFrequencyBandParameters> toDelete = getSharedFrequencyBandParametersRepository().findAllById(ids);
+        syntheticsRepository.deleteInBatchBySharedFrequencyBandParametersIds(toDelete.stream().map(sfb -> sfb.getId()).collect(Collectors.toList()));
         getSharedFrequencyBandParametersRepository().deleteInBatch(toDelete);
         notificationService.post(new BandParametersDataChangeEvent());
     }
 
     @Override
-    @Transactional
     public SharedFrequencyBandParameters save(SharedFrequencyBandParameters entity) {
         notificationService.post(new BandParametersDataChangeEvent());
         return getSharedFrequencyBandParametersRepository().save(entity);

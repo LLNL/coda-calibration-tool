@@ -59,10 +59,11 @@ public class CodaSNREndTimePicker implements EndTimePicker {
                 obs.addValue(waveform[i]);
                 spike.addValue(waveform[i]);
                 if (obs.getN() >= windowSize) {
-                    if (obs.getMean() - minimumSnr <= noise || spike.getMean() > (obs.getMean() + 1d)) {
+                    //TODO: .5 is a WAG on a data set, should try to find a better formulation that takes into account things like sample rate, window,  and overall SNR
+                    if (obs.getMean() - minimumSnr <= noise || spike.getMean() > (obs.getMean() + .5d)) {
                         break;
                     } else {
-                        snrTimePick = (double) (i-spike.getN()) / sampleRate;
+                        snrTimePick = (i - spike.getN()) / sampleRate;
                     }
                 }
             }

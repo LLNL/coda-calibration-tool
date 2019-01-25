@@ -31,9 +31,9 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.converters.sac.CodaFilenameParserImpl;
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.sac.CodaStackedSacFileLoader;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.CodaSNREndTimePicker;
+import gov.llnl.gnem.apps.coda.common.gui.converters.sac.CodaFilenameParserImpl;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacLoader;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
@@ -45,7 +45,7 @@ public class AssessAutopicker {
     private final static Logger log = LoggerFactory.getLogger(AssessAutopicker.class);
     private static CodaSNREndTimePicker picker = new CodaSNREndTimePicker();
     private static CodaStackedSacFileLoader loader = new CodaStackedSacFileLoader(new SacLoader(), new CodaFilenameParserImpl());
-    private static WaveformToTimeSeriesConverter converter = new WaveformToTimeSeriesConverter();   
+    private static WaveformToTimeSeriesConverter converter = new WaveformToTimeSeriesConverter();
 
     public static void main(String[] args) {
         List<File> files = null;
@@ -64,8 +64,9 @@ public class AssessAutopicker {
                                          .filter(Objects::nonNull)
                                          .filter(r -> r.getResultPayload() != null && r.getResultPayload().isPresent())
                                          .map(r -> r.getResultPayload().get())
-                                         .filter(w -> w.getAssociatedPicks() != null
-                                                 && w.getAssociatedPicks().stream().filter(pick -> PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickType())).findAny().isPresent())
+                                         .filter(
+                                                 w -> w.getAssociatedPicks() != null
+                                                         && w.getAssociatedPicks().stream().filter(pick -> PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickType())).findAny().isPresent())
                                          .collectList()
                                          .block(Duration.ofSeconds(10l));
 
@@ -73,16 +74,16 @@ public class AssessAutopicker {
         waveforms.forEach(w -> {
             TimeSeries series = converter.convert(w);
             TimeSeries halfSeries = converter.convert(w);
-            halfSeries.cut(0, (halfSeries.getNsamp()-1)/2);
+            halfSeries.cut(0, (halfSeries.getNsamp() - 1) / 2);
             Double maxTime = halfSeries.getMaxTime()[0];
-            
+
             double startTime = series.getTime().getEpochTime() + maxTime;
-            double stopTime = picker.getEndTime(series.getData(), series.getSamprate(), startTime, series.getIndexForTime(startTime), 0, 300, 0.0);
+            double stopTime = picker.getEndTime(series.getData(), series.getSamprate(), startTime, series.getIndexForTime(startTime), 0, 1200, 0.0);
             if (new TimeT(stopTime).gt(new TimeT(startTime))) {
                 stopTime = stopTime + series.getTime().subtractD(new TimeT(w.getEvent().getOriginTime()));
             }
             double autoPickedTime = new TimeT(stopTime).subtractD(new TimeT(startTime));
-            
+
             double humanPickedTime = w.getAssociatedPicks()
                                       .stream()
                                       .filter(pick -> PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickType()))

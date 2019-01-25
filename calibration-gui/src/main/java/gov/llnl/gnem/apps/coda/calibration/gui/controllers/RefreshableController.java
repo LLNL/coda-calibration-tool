@@ -12,29 +12,10 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.gui.converters;
+package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
-public class StackInfo {
+public interface RefreshableController {
 
-    private Double lowFreq;
-    private Double highFreq;
-    private String dataType;
+    Runnable getRefreshFunction();
 
-    public StackInfo(Double lowFreq, Double highFreq, String dataType) {
-        this.lowFreq = lowFreq;
-        this.highFreq = highFreq;
-        this.dataType = dataType;
-    }
-
-    public Double getLowFrequency() {
-        return lowFreq;
-    }
-
-    public Double getHighFrequency() {
-        return highFreq;
-    }
-
-    public String getDataType() {
-        return dataType;
-    }
 }

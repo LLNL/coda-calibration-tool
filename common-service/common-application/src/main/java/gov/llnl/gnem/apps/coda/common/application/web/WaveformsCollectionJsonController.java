@@ -16,7 +16,6 @@ package gov.llnl.gnem.apps.coda.common.application.web;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
@@ -34,8 +33,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import gov.llnl.gnem.apps.coda.common.model.domain.Event;
-import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 
@@ -60,7 +57,6 @@ public class WaveformsCollectionJsonController {
      */
     @PostMapping(value = "/query/all", name = "getByExampleAllMatching")
     public ResponseEntity<?> getByExampleAllMatching(@RequestBody Waveform waveform, BindingResult result) {
-
         List<Waveform> waveforms = getWaveformService().getByExampleAllMatching(waveform);
         return ResponseEntity.ok(waveforms);
     }
@@ -74,13 +70,22 @@ public class WaveformsCollectionJsonController {
 
     @GetMapping(value = "/query/unique-by-event-station", name = "getAllStacks")
     public ResponseEntity<?> getUniqueEventStationStacks() {
+        return ResponseEntity.ok(getWaveformService().getUniqueEventStationStacks());
+    }
 
-        List<Object[]> eventStations = getWaveformService().getUniqueEventStationStacks();
-        List<Waveform> waveforms = eventStations.parallelStream()
-                                                .filter(evSta -> evSta.length >= 2)
-                                                .map(evSta -> new Waveform().setEvent((Event) evSta[0]).setStream((Stream) evSta[1]))
-                                                .collect(Collectors.toList());
-        return ResponseEntity.ok(waveforms);
+    /**
+     * 
+     * @param ids
+     * @return ResponseEntity
+     */
+    @GetMapping(value = "/batch/{ids}", name = "getBatch")
+    public ResponseEntity<?> getBatch(@PathVariable("ids") Collection<Long> ids) {
+        List<Waveform> data = getWaveformService().findAll(ids);
+        if (data != null && !data.isEmpty()) {
+            return ResponseEntity.ok().body(data);
+        } else {
+            return ResponseEntity.noContent().build();
+        }
     }
 
     /**
@@ -91,13 +96,10 @@ public class WaveformsCollectionJsonController {
      */
     @PostMapping(value = "/batch/{sessionId}", name = "createBatch")
     public ResponseEntity<?> createBatch(@PathVariable Long sessionId, @Valid @RequestBody Collection<Waveform> waveforms, BindingResult result) {
-
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
-
         getWaveformService().update(sessionId, waveforms);
-
         return ResponseEntity.ok().build();
     }
 
@@ -109,13 +111,10 @@ public class WaveformsCollectionJsonController {
      */
     @PutMapping(value = "/batch/{sessionId}", name = "updateBatch")
     public ResponseEntity<?> updateBatch(@PathVariable Long sessionId, @Valid @RequestBody Collection<Waveform> waveforms, BindingResult result) {
-
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
-
         getWaveformService().update(sessionId, waveforms);
-
         return ResponseEntity.ok().build();
     }
 
@@ -126,9 +125,7 @@ public class WaveformsCollectionJsonController {
      */
     @DeleteMapping(value = "/batch/{ids}", name = "deleteBatch")
     public ResponseEntity<?> deleteBatch(@PathVariable("ids") Collection<Long> ids) {
-
         getWaveformService().delete(ids);
-
         return ResponseEntity.ok().build();
     }
 

@@ -14,51 +14,13 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.plotting;
 
-import java.awt.Color;
-
-import llnl.gnem.core.gui.plotting.plotobject.SymbolStyle;
-
-public class LabeledPlotPoint {
+public class LabeledPlotPoint extends PlotPoint {
 
     private String label;
-    private PlotPoint point;
 
     public LabeledPlotPoint(String label, PlotPoint point) {
-        super();
+        super(point.getX(), point.getY(), point.getStyle(), point.getColor());
         this.label = label;
-        this.point = point;
-    }
-
-    public Double getX() {
-        return point.getX();
-    }
-
-    public void setX(Double x) {
-        point.setX(x);
-    }
-
-    public Double getY() {
-        return point.getY();
-    }
-
-    public void setY(Double y) {
-        point.setY(y);
-    }
-
-    public SymbolStyle getStyle() {
-        return point.getStyle();
-    }
-
-    public void setStyle(SymbolStyle style) {
-        point.setStyle(style);
-    }
-
-    public Color getColor() {
-        return point.getColor();
-    }
-
-    public void setColor(Color color) {
-        point.setColor(color);
     }
 
     public String getLabel() {
@@ -67,49 +29,6 @@ public class LabeledPlotPoint {
 
     public void setLabel(String label) {
         this.label = label;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((label == null) ? 0 : label.hashCode());
-        result = prime * result + ((point == null) ? 0 : point.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        LabeledPlotPoint other = (LabeledPlotPoint) obj;
-        if (label == null) {
-            if (other.label != null) {
-                return false;
-            }
-        } else if (!label.equals(other.label)) {
-            return false;
-        }
-        if (point == null) {
-            if (other.point != null) {
-                return false;
-            }
-        } else if (!point.equals(other.point)) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "LabledPlotPoint [label=" + label + ", point=" + point + "]";
     }
 
 }

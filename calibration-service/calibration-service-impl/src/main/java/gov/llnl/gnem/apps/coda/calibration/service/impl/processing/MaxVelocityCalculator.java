@@ -51,6 +51,7 @@ public class MaxVelocityCalculator {
     public Collection<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
         return waveforms.stream().parallel().map(rawWaveform -> {
             TimeSeries waveform = converter.convert(rawWaveform);
+            double median = waveform.getMedian();
             double distance = EModel.getDistanceWGS84(
                     rawWaveform.getEvent().getLatitude(),
                         rawWaveform.getEvent().getLongitude(),
@@ -59,6 +60,7 @@ public class MaxVelocityCalculator {
             TimeT origintime = new TimeT(rawWaveform.getEvent().getOriginTime());
             TimeT starttime;
             TimeT endtime;
+
             if (distance >= 300) {
                 starttime = origintime.add(distance / groupVelocity1Greater300);
                 endtime = origintime.add(distance / groupVelocity2Greater300);
@@ -69,8 +71,6 @@ public class MaxVelocityCalculator {
 
             // The envelope is in log10.
             try {
-                TimeSeries noise = WaveformUtils.getNoiseWindow(distance, origintime, waveform);
-                double noiseamp = Math.abs(noise.getMean());
 
                 // cut the coda window portion of the seismograms
                 waveform.cut(starttime, endtime);
@@ -93,11 +93,11 @@ public class MaxVelocityCalculator {
                 double velocity = distance / peakS[0];
 
                 // the envelope noise is in log10 units.
-                double snrPeak = peakS[1] - noiseamp;
+                double snrPeak = peakS[1] - median;
                 return new PeakVelocityMeasurement().setWaveform(rawWaveform)
-                                                    .setNoiseStartSecondsFromOrigin(noise.getTimeAsDouble())
-                                                    .setNoiseEndSecondsFromOrigin(noise.getEndtimeAsDouble())
-                                                    .setNoiseLevel(noiseamp)
+                                                    .setNoiseStartSecondsFromOrigin(0d)
+                                                    .setNoiseEndSecondsFromOrigin(20d)
+                                                    .setNoiseLevel(median)
                                                     .setSnr(snrPeak)
                                                     .setVelocity(velocity)
                                                     .setDistance(distance)

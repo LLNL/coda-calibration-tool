@@ -16,15 +16,11 @@ package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.awt.Color;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,12 +32,6 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClien
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
-import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
-import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -49,9 +39,10 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
+import llnl.gnem.core.gui.plotting.HorizAlignment;
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
-import llnl.gnem.core.gui.plotting.Legend;
 import llnl.gnem.core.gui.plotting.PenStyle;
+import llnl.gnem.core.gui.plotting.VertAlignment;
 import llnl.gnem.core.gui.plotting.VertPinEdge;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.PickMovedState;
@@ -59,6 +50,7 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.VPickLine;
 import llnl.gnem.core.gui.plotting.plotobject.AbstractLine;
 import llnl.gnem.core.gui.plotting.plotobject.JDataRectangle;
 import llnl.gnem.core.gui.plotting.plotobject.Line;
+import llnl.gnem.core.gui.plotting.plotobject.PinnedText;
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
 import llnl.gnem.core.gui.waveform.SeriesPlot;
 import llnl.gnem.core.util.SeriesMath;
@@ -82,12 +74,6 @@ public class CodaWaveformPlot extends SeriesPlot {
 
     private PeakVelocityClient velocityClient;
 
-    private GeoMap mapImpl;
-
-    private IconFactory iconFactory;
-
-    private List<Icon> mappedIcons = new ArrayList<>();
-
     private enum PLOT_ORDERING {
         BACKGROUND(0), NOISE_BOX(1), WAVEFORM(2), NOISE_LINE(3), SHAPE_FIT(4), MODEL_FIT(5), PICKS(6);
 
@@ -102,15 +88,12 @@ public class CodaWaveformPlot extends SeriesPlot {
         }
     }
 
-    public CodaWaveformPlot(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramClient, PeakVelocityClient velocityClient, GeoMap map, IconFactory iconFactory,
-            TimeSeries... seismograms) {
+    public CodaWaveformPlot(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramClient, PeakVelocityClient velocityClient, TimeSeries... seismograms) {
         super("Time (seconds from origin)", seismograms);
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramClient = paramClient;
         this.velocityClient = velocityClient;
-        this.mapImpl = map;
-        this.iconFactory = iconFactory;
     }
 
     private static final long serialVersionUID = 1L;
@@ -134,9 +117,6 @@ public class CodaWaveformPlot extends SeriesPlot {
         pickLineMap.clear();
 
         if (waveform != null && waveform.getSegment() != null && waveform.getBeginTime() != null) {
-            mapImpl.removeIcons(mappedIcons);
-            mappedIcons = new ArrayList<>();
-            mappedIcons.addAll(mapWaveform(waveform));
             final TimeT beginTime = new TimeT(waveform.getBeginTime());
             final float[] waveformSegment = doublesToFloats(waveform.getSegment());
             final TimeSeries rawSeries = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
@@ -144,18 +124,26 @@ public class CodaWaveformPlot extends SeriesPlot {
 
             JSubplot subplot = this.getSubplot(rawSeries);
             subplot.setYlimits(subplot.getYaxis().getMin() - 1.0, subplot.getYaxis().getMax() + 1.0);
-            Legend legend = new Legend(getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.RIGHT, VertPinEdge.TOP, 5, 5);
-            legend.addLabeledLine(
-                    waveform.getStream().getStation().getStationName() + "_" + waveform.getEvent().getEventId() + "_" + waveform.getLowFrequency() + "_" + waveform.getHighFrequency(),
-                        new Line(0, rawSeries.getDelta(), rawSeries.getData(), 1));
-            subplot.AddPlotObject(legend);
-
             Station station = waveform.getStream().getStation();
             Event event = waveform.getEvent();
 
             double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
             double baz = EModel.getBAZ(station.getLatitude(), station.getLongitude(), event.getLatitude(), event.getLongitude());
-            getTitle().setText("Distance: " + dfmt4.format(distance) + "km BAz: " + dfmt4.format(baz) + "° ");
+            String labelText = waveform.getEvent().getEventId()
+                    + "_"
+                    + waveform.getStream().getStation().getStationName()
+                    + "_"
+                    + waveform.getLowFrequency()
+                    + "_"
+                    + waveform.getHighFrequency()
+                    + "; Distance: "
+                    + dfmt4.format(distance)
+                    + "km BAz: "
+                    + dfmt4.format(baz)
+                    + "° ";
+
+            PinnedText legend = createLegend(labelText);
+            PlotObject legendRef = subplot.AddPlotObject(legend);
 
             List<WaveformPick> picks = waveform.getAssociatedPicks();
             if (picks != null) {
@@ -179,14 +167,15 @@ public class CodaWaveformPlot extends SeriesPlot {
                     try {
                         TimeSeries interpolatedSeries = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
                         interpolatedSeries.interpolate(1.0);
-                        float[] fitSegment = new float[interpolatedSeries.getData().length];
+                        float[] interpolatedData = interpolatedSeries.getData();
+                        float[] fitSegment = new float[interpolatedData.length];
 
                         double gamma = shape.getMeasuredGamma();
                         double beta = shape.getMeasuredBeta();
                         double intercept = shape.getMeasuredIntercept();
 
                         int timeShift = (int) (new TimeT(shape.getMeasuredTime()).subtractD(beginTime) - 0.5);
-                        for (int i = 0; i < interpolatedSeries.getData().length; i++) {
+                        for (int i = 0; i < interpolatedData.length; i++) {
                             fitSegment[i] = (float) (intercept - gamma * Math.log10(i + 1) + beta * (i + 1));
                         }
 
@@ -202,14 +191,15 @@ public class CodaWaveformPlot extends SeriesPlot {
             paramClient.getSharedFrequencyBandParametersForFrequency(new FrequencyBand(waveform.getLowFrequency(), waveform.getHighFrequency())).subscribe(params -> {
                 if (params != null) {
                     try {
-                        velocityClient.getNoiseForWaveform(waveform.getId()).checkpoint().single().subscribe(measurement -> {
+                        velocityClient.getNoiseForWaveform(waveform.getId()).subscribe(measurement -> {
                             if (measurement != null && measurement.getNoiseEndSecondsFromOrigin() != 0.0) {
                                 int lineLength = (int) (waveform.getSegment().length / waveform.getSampleRate()) + 10;
-                                int timeStart = (int) (new TimeT(measurement.getNoiseStartSecondsFromOrigin()).subtractD(beginTime) - 0.5);
-                                int timeEnd = (int) (new TimeT(measurement.getNoiseEndSecondsFromOrigin()).subtractD(beginTime) - 0.5);
-                                subplot.AddPlotObject(createRectangle(timeStart, timeEnd, -FULL_LENGTH, FULL_LENGTH, PINK_HALF_TRANS), PLOT_ORDERING.NOISE_BOX.getZOrder());
+                                //                                int timeStart = (int) (new TimeT(measurement.getNoiseStartSecondsFromOrigin()).subtractD(beginTime) - 0.5);
+                                //                                int timeEnd = (int) (new TimeT(measurement.getNoiseEndSecondsFromOrigin()).subtractD(beginTime) - 0.5);
+                                //                                subplot.AddPlotObject(createRectangle(timeStart, timeEnd, -FULL_LENGTH, FULL_LENGTH, PINK_HALF_TRANS), PLOT_ORDERING.NOISE_BOX.getZOrder());
                                 subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel(), lineLength, LIGHT_RED, PenStyle.DASH), PLOT_ORDERING.NOISE_LINE.getZOrder());
                                 subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel() + params.getMinSnr(), lineLength, LIGHT_RED, PenStyle.SOLID), PLOT_ORDERING.NOISE_LINE.getZOrder());
+                                repaint();
                             }
                         });
 
@@ -257,8 +247,10 @@ public class CodaWaveformPlot extends SeriesPlot {
                                 int timeShift = (int) (startTime.subtractD(beginTime) - 0.5);
                                 double median = diffSeis.getMedian();
 
-                                getTitle().setText(getTitle().getText() + "Shift: " + dfmt4.format(median));
+                                subplot.DeletePlotObject(legendRef);
+                                subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
                                 subplot.AddPlotObject(createLine(timeShift, median, synthSeries, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                                repaint();
                             }
                         }
 
@@ -266,23 +258,14 @@ public class CodaWaveformPlot extends SeriesPlot {
                         log.warn(e.getMessage(), e);
                     }
                 }
+
                 repaint();
             });
         }
     }
 
-    private Collection<Icon> mapWaveform(Waveform waveform) {
-        return Stream.of(waveform).filter(Objects::nonNull).flatMap(w -> {
-            List<Icon> icons = new ArrayList<>();
-            if (w.getStream() != null && w.getStream().getStation() != null) {
-                Station station = w.getStream().getStation();
-                icons.add(iconFactory.newIcon(IconTypes.TRIANGLE_UP, new Location(station.getLatitude(), station.getLongitude()), station.getStationName(), IconStyles.FOCUSED));
-            }
-            if (w.getEvent() != null) {
-                icons.add(iconFactory.newIcon(IconTypes.CIRCLE, new Location(w.getEvent().getLatitude(), w.getEvent().getLongitude()), w.getEvent().getEventId(), IconStyles.FOCUSED));
-            }
-            return icons.stream();
-        }).collect(Collectors.toList());
+    private PinnedText createLegend(String text) {
+        return new PinnedText(5d, 5d, text, HorizPinEdge.RIGHT, VertPinEdge.TOP, getTitle().getFontName(), getTitle().getFontSize(), Color.black, HorizAlignment.RIGHT, VertAlignment.TOP);
     }
 
     //Only used for Waveforms
@@ -355,15 +338,5 @@ public class CodaWaveformPlot extends SeriesPlot {
             xfloats[i] = x[i].floatValue();
         }
         return xfloats;
-    }
-
-    @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
-        if (visible) {
-            mapImpl.addIcons(mappedIcons);
-        } else {
-            mapImpl.removeIcons(mappedIcons);
-        }
     }
 }

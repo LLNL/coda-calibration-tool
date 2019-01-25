@@ -14,20 +14,19 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.events;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WaveformSelectionEvent {
-    private Long waveformID;
+    private List<Long> waveformIDs = new ArrayList<>();
 
-    public WaveformSelectionEvent(Long waveformID) {
-        super();
-        this.waveformID = waveformID;
+    public WaveformSelectionEvent(Long... ids) {        
+        for (Long id : ids) {
+            waveformIDs.add(id);
+        }
     }
 
-    public Long getWaveformID() {
-        return waveformID;
-    }
-
-    public WaveformSelectionEvent setWaveformID(Long waveformID) {
-        this.waveformID = waveformID;
-        return this;
+    public List<Long> getWaveformIDs() {
+        return waveformIDs;
     }
 }

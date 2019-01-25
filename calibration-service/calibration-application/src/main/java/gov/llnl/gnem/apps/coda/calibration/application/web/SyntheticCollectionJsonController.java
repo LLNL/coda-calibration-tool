@@ -14,6 +14,10 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.application.web;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,26 +41,50 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import io.springlets.web.NotFoundException;
 
 @RestController
-@RequestMapping(value = "/api/v1/synthetics/{id}", name = "SyntheticCodasItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
-public class SyntheticItemJsonController {
+@RequestMapping(value = "/api/v1/synthetics", name = "SyntheticCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+public class SyntheticCollectionJsonController {
 
     private SyntheticService syntheticService;
 
     @Autowired
-    public SyntheticItemJsonController(SyntheticService syntheticService) {
+    public SyntheticCollectionJsonController(SyntheticService syntheticService) {
         this.syntheticService = syntheticService;
     }
 
-    @ModelAttribute
-    public SyntheticCoda getSyntheticCoda(@PathVariable("id") Long id) {
-        SyntheticCoda synthetic = syntheticService.findOne((Long) id);
+    /**
+     * 
+     * @param ids
+     * @return ResponseEntity
+     */
+    @GetMapping(value = "/batch/{ids}", name = "getBatch")
+    public ResponseEntity<?> getBatch(@PathVariable("ids") Collection<Long> ids) {
+        List<SyntheticCoda> data = new ArrayList<>(ids.size());
+        for (Long id : ids) {
+            SyntheticCoda synthetic = syntheticService.findOne(id);
+            if (synthetic == null) {
+                synthetic = syntheticService.findOneByWaveformId(id);
+                if (synthetic != null) {
+                    data.add(synthetic);
+                }
+            }
+        }
+        if (!data.isEmpty()) {
+            return ResponseEntity.ok().body(data);
+        } else {
+            throw new NotFoundException(String.format("SyntheticCoda with identifiers '%s' not found", ids));
+        }
+    }
+
+    @GetMapping(value = "/single/{id}", name = "getSyntheticCoda")
+    public ResponseEntity<?> getSyntheticCoda(@PathVariable("id") Long id) {
+        SyntheticCoda synthetic = syntheticService.findOne(id);
         if (synthetic == null) {
-            synthetic = syntheticService.findOneByWaveformId((Long) id);
+            synthetic = syntheticService.findOneByWaveformId(id);
             if (synthetic == null) {
                 throw new NotFoundException(String.format("SyntheticCoda with identifier '%s' not found", id));
             }
         }
-        return synthetic;
+        return ResponseEntity.ok().body(synthetic);
     }
 
     @GetMapping(name = "show")
@@ -65,7 +93,7 @@ public class SyntheticItemJsonController {
     }
 
     public static UriComponents showURI(SyntheticCoda synthetic) {
-        return MvcUriComponentsBuilder.fromMethodCall(MvcUriComponentsBuilder.on(SyntheticItemJsonController.class).show(synthetic)).buildAndExpand(synthetic.getId()).encode();
+        return MvcUriComponentsBuilder.fromMethodCall(MvcUriComponentsBuilder.on(SyntheticCollectionJsonController.class).show(synthetic)).buildAndExpand(synthetic.getId()).encode();
     }
 
     @PutMapping(name = "update")

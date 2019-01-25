@@ -43,7 +43,7 @@ import llnl.gnem.core.util.TimeT;
 @Component
 public class SacExporter {
     private static final String SEP = "_";
-    private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
+    private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
 
     private static final Logger log = LoggerFactory.getLogger(SacExporter.class);
 
@@ -87,6 +87,16 @@ public class SacExporter {
                     header.kevnm = w.getEvent().getEventId();
                     header.evla = (float) w.getEvent().getLatitude();
                     header.evlo = (float) w.getEvent().getLongitude();
+                    String depType = w.getSegmentType();
+                    if (depType != null && !depType.trim().isEmpty()) {
+                        if (depType.toLowerCase(Locale.ENGLISH).startsWith("dis")) {
+                            header.idep = 6;
+                        } else if (depType.toLowerCase(Locale.ENGLISH).startsWith("vel")) {
+                            header.idep = 7;
+                        } else if (depType.toLowerCase(Locale.ENGLISH).startsWith("acc")) {
+                            header.idep = 8;
+                        }
+                    }
                     float[] sequence = new Sequence(ArrayUtils.toPrimitive(w.getSegment())).getArray();
                     header.npts = sequence.length;
                     header.write(os);
@@ -130,6 +140,15 @@ public class SacExporter {
             Stream stream = w.getStream();
             Event ev = w.getEvent();
 
+            String segType = w.getSegmentType();
+            if (segType != null && !segType.isEmpty()) {
+                if (segType.length() > 3) {
+                    segType = segType.substring(0, 3);
+                }
+                segType = segType.toUpperCase();
+            } else {
+                segType = "UNK";
+            }
             Station sta = stream.getStation();
             String name = sta.getStationName()
                     + SEP
@@ -137,11 +156,11 @@ public class SacExporter {
                     + SEP
                     + ev.getEventId()
                     + SEP
-                    + dfmt2.format(w.getLowFrequency())
+                    + dfmt4.format(w.getLowFrequency())
                     + SEP
-                    + dfmt2.format(w.getHighFrequency())
+                    + dfmt4.format(w.getHighFrequency())
                     + SEP
-                    + w.getSegmentType()
+                    + segType
                     + SEP
                     + ".env";
             return name.toUpperCase(Locale.ENGLISH);

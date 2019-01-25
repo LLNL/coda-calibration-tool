@@ -76,7 +76,7 @@ public class SyntheticCoda implements Serializable {
     @DateTimeFormat(style = "M-")
     private Date endTime;
 
-    @ManyToOne(optional = false, cascade = { CascadeType.MERGE })
+    @ManyToOne(optional = false)
     private SharedFrequencyBandParameters sourceModel;
 
     private Double measuredV;

@@ -45,6 +45,7 @@ public class WaveformUtils {
      *             envelope (predicted start > end of the recorded waveform,
      *             etc.)
      */
+    //FIXME: This mean value calculation is fundamentally not generalizable across frequency bands and regions and needs to be updated.
     public static TimeSeries getNoiseWindow(double distance, TimeT origintime, TimeSeries segment) {
 
         TimeSeries result1 = new TimeSeries(segment);

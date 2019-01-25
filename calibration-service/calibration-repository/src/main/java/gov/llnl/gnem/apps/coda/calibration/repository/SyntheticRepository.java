@@ -14,6 +14,9 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.repository;
 
+import java.util.Collection;
+
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,4 +29,15 @@ public interface SyntheticRepository extends DetachableJpaRepository<SyntheticCo
 
     @Query("select synth from SyntheticCoda synth where synth.sourceWaveform.id = :id")
     public SyntheticCoda findByWaveformId(@Param("id") Long id);
+
+    @Query("select synth from SyntheticCoda synth where synth.sourceWaveform.id in :ids")
+    public Collection<SyntheticCoda> findByWaveformIds(@Param("ids") Collection<Long> ids);
+
+    @Modifying
+    @Query("delete from SyntheticCoda synth where synth.sourceModel.id = :id")
+    public void deleteBySharedFrequencyBandParametersId(@Param("id") Long id);
+
+    @Modifying
+    @Query("delete from SyntheticCoda synth where synth.sourceModel.id in :ids")
+    public void deleteInBatchBySharedFrequencyBandParametersIds(@Param("ids") Collection<Long> ids);
 }

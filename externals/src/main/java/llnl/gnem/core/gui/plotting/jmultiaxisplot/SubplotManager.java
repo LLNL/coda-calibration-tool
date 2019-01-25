@@ -268,18 +268,20 @@ public class SubplotManager {
         } else {
             int subplotHeight = (height - (N + 1) * ps) / N;
             int idx = 0;
-            for (SubplotZoomData szd : subplots) {
-                if (szd.isVisible()) {
-                    int top = subplotHeight * idx + (idx + 1) * ps + topMargin;
-                    JSubplot p = szd.getSubplot();
-                    if (showALL) {
-                        p.setShowALL(true);
+            synchronized (subplots) {
+                for (SubplotZoomData szd : subplots) {
+                    if (szd.isVisible()) {
+                        int top = subplotHeight * idx + (idx + 1) * ps + topMargin;
+                        JSubplot p = szd.getSubplot();
+                        if (showALL) {
+                            p.setShowALL(true);
+                        }
+                        p.Render(g, top, subplotHeight);
+                        if (showALL) {
+                            p.setShowALL(false);
+                        }
+                        ++idx;
                     }
-                    p.Render(g, top, subplotHeight);
-                    if (showALL) {
-                        p.setShowALL(false);
-                    }
-                    ++idx;
                 }
             }
         }

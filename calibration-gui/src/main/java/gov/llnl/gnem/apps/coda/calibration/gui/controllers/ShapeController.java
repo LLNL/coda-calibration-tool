@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,15 +37,14 @@ import com.google.common.eventbus.EventBus;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
+import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
-import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -63,7 +64,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 
 @Component
-public class ShapeController {
+public class ShapeController implements MapListeningController, RefreshableController {
 
     private enum SHAPE_DATA_TYPE {
         VELOCITY, BETA, GAMMA
@@ -71,17 +72,18 @@ public class ShapeController {
 
     private static final double VEL_Y_MIN = 0;
     private static final double VEL_Y_MAX = 6;
-    private static final double BETA_Y_MIN = -0.06;
+    private static final double BETA_Y_MIN = -0.12;
     private static final double BETA_Y_MAX = 0.01;
     private static final double GAMMA_Y_MIN = 0.0;
     private static final double GAMMA_Y_MAX = 3.5;
     private static final int XAXIS_MIN = 0;
-    private static final int XAXIS_MAX = 1600;
+    private static final int XAXIS_MAX = 5000;
     private static final double LINE_SEGMENTS = 250.0;
 
     private Map<FrequencyBand, List<PeakVelocityMeasurement>> velocityDistancePairsFreqMap = new HashMap<>();
     private Map<FrequencyBand, List<ShapeMeasurement>> shapeDistancePairsFreqMap = new HashMap<>();
     private Map<FrequencyBand, SharedFrequencyBandParameters> modelCurveMap = new TreeMap<>();
+    private EventStaFreqStringComparator eventStaFreqComparator = new EventStaFreqStringComparator();
 
     @FXML
     private StackPane shape;
@@ -110,20 +112,72 @@ public class ShapeController {
     private Series<Number, Number> modelCurveSeries = new Series<>(modelData);
 
     private ObservableList<Data<Number, Number>> pointData = FXCollections.observableArrayList();
+    private ObservableList<Data<Number, Number>> selectedData = FXCollections.observableArrayList();
+    private ObservableList<Data<Number, Number>> highlightedData = FXCollections.observableArrayList();
     private Series<Number, Number> pointSeries = new Series<>(pointData);
+    private Series<Number, Number> selectedSeries = new Series<>(selectedData);
+    private Series<Number, Number> highlightedSeries = new Series<>(highlightedData);
     private ObservableList<Series<Number, Number>> series = FXCollections.observableArrayList();
     private EventBus bus;
     private GeoMap mapImpl;
-    private IconFactory iconFactory;
+    private MapPlottingUtilities iconFactory;
+    private Map<String, List<Data<Number, Number>>> pointMap = new HashMap<>();
+
+    private final BiConsumer<Boolean, String> eventSelectionCallback;
+    private final BiConsumer<Boolean, String> stationSelectionCallback;
+    private FrequencyBand selectedBand;
 
     @Autowired
-    private ShapeController(ParameterClient paramClient, PeakVelocityClient velocityClient, ShapeMeasurementClient shapeClient, GeoMap map, IconFactory iconFactory, EventBus bus) {
+    private ShapeController(ParameterClient paramClient, PeakVelocityClient velocityClient, ShapeMeasurementClient shapeClient, GeoMap map, MapPlottingUtilities iconFactory, EventBus bus) {
         this.paramClient = paramClient;
         this.velocityClient = velocityClient;
         this.shapeClient = shapeClient;
         this.bus = bus;
         this.mapImpl = map;
         this.iconFactory = iconFactory;
+
+        eventSelectionCallback = (selected, eventId) -> {
+            selectDataByCriteria(bus, selected, eventId);
+        };
+
+        stationSelectionCallback = (selected, stationId) -> {
+            selectDataByCriteria(bus, selected, stationId);
+        };
+    }
+
+    private void selectDataByCriteria(EventBus bus, Boolean selected, String key) {
+        List<Data<Number, Number>> selection = pointMap.get(key);
+        if (selection != null && !selection.isEmpty()) {
+            if (selected) {
+                highlightedData.clear();
+                selectedData.addAll(selection.stream().map(d -> new Data<Number, Number>(d.getXValue(), d.getYValue())).collect(Collectors.toList()));
+                selectedData.forEach(x -> x.getNode().setMouseTransparent(true));
+                if (velocityDistancePairsFreqMap != null) {
+                    List<PeakVelocityMeasurement> data = velocityDistancePairsFreqMap.get(selectedBand);
+                    if (data != null && !data.isEmpty()) {
+                        Long[] ids = data.stream()
+                                         .sequential()
+                                         .filter(
+                                                 pv -> pv != null
+                                                         && pv.getWaveform() != null
+                                                         && ((pv.getWaveform().getEvent() != null
+                                                                 && pv.getWaveform().getEvent().getEventId() != null
+                                                                 && pv.getWaveform().getEvent().getEventId().equalsIgnoreCase(key))
+                                                                 || (pv.getWaveform().getStream() != null
+                                                                         && pv.getWaveform().getStream().getStation() != null
+                                                                         && pv.getWaveform().getStream().getStation().getStationName() != null
+                                                                         && pv.getWaveform().getStream().getStation().getStationName().equalsIgnoreCase(key))))
+                                         .sorted((pv1, pv2) -> eventStaFreqComparator.compare(pv1.getWaveform(), pv2.getWaveform()))
+                                         .map(pv -> pv.getWaveform().getId())
+                                         .collect(Collectors.toList())
+                                         .toArray(new Long[0]);
+                        bus.post(new WaveformSelectionEvent(ids));
+                    }
+                }
+            } else {
+                selectedData.clear();
+            }
+        }
     }
 
     @FXML
@@ -151,16 +205,23 @@ public class ShapeController {
         frequencyBandCombo.setButtonCell(getFBCell());
         frequencyBandCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.equals(oldValue)) {
+                selectedBand = newValue;
                 refreshView();
             }
         });
 
         pointSeries.setData(pointData);
         modelCurveSeries.setData(modelData);
+        selectedSeries.setData(selectedData);
         series.add(pointSeries);
         series.add(modelCurveSeries);
+        series.add(selectedSeries);
+        series.add(highlightedSeries);
         mainFitPlot.setData(series);
+        mainFitPlot.setLegendVisible(false);
         modelCurveSeries.getNode().setMouseTransparent(true);
+        selectedSeries.getNode().setMouseTransparent(true);
+        highlightedSeries.getNode().setMouseTransparent(true);
     }
 
     private ListCell<FrequencyBand> getFBCell() {
@@ -221,78 +282,74 @@ public class ShapeController {
 
     private void plotGamma(final FrequencyBand selectedFrequency) {
         if (selectedFrequency != null) {
-            Function<Number, Data<Number, Number>> curvePointProducer = null;
+            Function<Number, Data<Number, Number>> curvePointProducer = createCurvePointProducer(
+                    selectedFrequency,
+                        (model, i) -> model.getGamma0() - (model.getGamma1() / (model.getGamma2() + ((double) i))));
 
-            if (modelCurveMap != null && selectedFrequency != null && modelCurveMap.containsKey(selectedFrequency)) {
-                SharedFrequencyBandParameters model = modelCurveMap.get(selectedFrequency);
-                curvePointProducer = i -> new Data<>(i, model.getGamma0() - (model.getGamma1() / (model.getGamma2() + ((double) i))));
-            }
-
-            Function<FrequencyBand, List<ShapeMeasurement>> valueSupplier;
-
-            if (velocityDistancePairsFreqMap != null) {
-                valueSupplier = freq -> Optional.ofNullable(shapeDistancePairsFreqMap.get(freq)).orElse(new ArrayList<>(0));
-            } else {
-                valueSupplier = freq -> new ArrayList<>(0);
-            }
-
-            Optional.ofNullable(mapMeasurements(valueSupplier.apply(selectedFrequency).stream().map(v -> v.getWaveform()).filter(Objects::nonNull).collect(Collectors.toList())))
-                    .ifPresent(mapImpl::addIcons);
-            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getMeasuredGamma()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer);
+            Function<FrequencyBand, List<ShapeMeasurement>> valueSupplier = createValueSupplier(shapeDistancePairsFreqMap);
+            Function<ShapeMeasurement, Waveform> mapFunc = ShapeMeasurement::getWaveform;
+            mapValues(selectedFrequency, valueSupplier, mapFunc);
+            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getMeasuredGamma()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer, mapFunc);
         }
     }
 
     private void plotBeta(final FrequencyBand selectedFrequency) {
         if (selectedFrequency != null) {
-            Function<Number, Data<Number, Number>> curvePointProducer = null;
+            Function<Number, Data<Number, Number>> curvePointProducer = createCurvePointProducer(
+                    selectedFrequency,
+                        (model, i) -> model.getBeta0() - (model.getBeta1() / (model.getBeta2() + ((double) i))));
 
-            if (modelCurveMap != null && selectedFrequency != null && modelCurveMap.containsKey(selectedFrequency)) {
-                SharedFrequencyBandParameters model = modelCurveMap.get(selectedFrequency);
-                curvePointProducer = i -> new Data<>(i, model.getBeta0() - (model.getBeta1() / (model.getBeta2() + ((double) i))));
-            }
-
-            Function<FrequencyBand, List<ShapeMeasurement>> valueSupplier;
-
-            if (velocityDistancePairsFreqMap != null) {
-                valueSupplier = freq -> Optional.ofNullable(shapeDistancePairsFreqMap.get(freq)).orElse(new ArrayList<>(0));
-            } else {
-                valueSupplier = freq -> new ArrayList<>(0);
-            }
-
-            Optional.ofNullable(mapMeasurements(valueSupplier.apply(selectedFrequency).stream().map(v -> v.getWaveform()).filter(Objects::nonNull).collect(Collectors.toList())))
-                    .ifPresent(mapImpl::addIcons);
-            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getMeasuredBeta()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer);
+            Function<FrequencyBand, List<ShapeMeasurement>> valueSupplier = createValueSupplier(shapeDistancePairsFreqMap);
+            Function<ShapeMeasurement, Waveform> mapFunc = ShapeMeasurement::getWaveform;
+            mapValues(selectedFrequency, valueSupplier, mapFunc);
+            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getMeasuredBeta()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer, mapFunc);
         }
     }
 
     private void plotVelocity(final FrequencyBand selectedFrequency) {
         if (selectedFrequency != null) {
-            Function<Number, Data<Number, Number>> curvePointProducer = null;
+            Function<Number, Data<Number, Number>> curvePointProducer = createCurvePointProducer(
+                    selectedFrequency,
+                        (model, i) -> model.getVelocity0() - (model.getVelocity1() / (model.getVelocity2() + ((double) i))));
 
-            if (modelCurveMap != null && selectedFrequency != null && modelCurveMap.containsKey(selectedFrequency)) {
-                SharedFrequencyBandParameters model = modelCurveMap.get(selectedFrequency);
-                curvePointProducer = i -> new Data<>(i, model.getVelocity0() - (model.getVelocity1() / (model.getVelocity2() + ((double) i))));
-            }
-
-            Function<FrequencyBand, List<PeakVelocityMeasurement>> valueSupplier;
-
-            if (velocityDistancePairsFreqMap != null) {
-                valueSupplier = freq -> Optional.ofNullable(velocityDistancePairsFreqMap.get(freq)).orElse(new ArrayList<>(0));
-            } else {
-                valueSupplier = freq -> new ArrayList<>(0);
-            }
-
-            Optional.ofNullable(mapMeasurements(valueSupplier.apply(selectedFrequency).stream().map(v -> v.getWaveform()).filter(Objects::nonNull).collect(Collectors.toList())))
-                    .ifPresent(mapImpl::addIcons);
-            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getVelocity()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer);
+            Function<FrequencyBand, List<PeakVelocityMeasurement>> valueSupplier = createValueSupplier(velocityDistancePairsFreqMap);
+            Function<PeakVelocityMeasurement, Waveform> mapFunc = PeakVelocityMeasurement::getWaveform;
+            mapValues(selectedFrequency, valueSupplier, mapFunc);
+            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getVelocity()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer, mapFunc);
         }
     }
 
+    private <T> void mapValues(final FrequencyBand selectedFrequency, Function<FrequencyBand, List<T>> valueSupplier, Function<T, Waveform> mapFunc) {
+        Optional.ofNullable(mapMeasurements(valueSupplier.apply(selectedFrequency).stream().map(mapFunc).filter(Objects::nonNull).collect(Collectors.toList()))).ifPresent(mapImpl::addIcons);
+    }
+
+    private <T> Function<FrequencyBand, List<T>> createValueSupplier(Map<FrequencyBand, List<T>> valueMap) {
+        Function<FrequencyBand, List<T>> valueSupplier;
+        if (valueMap != null) {
+            valueSupplier = freq -> Optional.ofNullable(valueMap.get(freq)).orElse(new ArrayList<>(0));
+        } else {
+            valueSupplier = freq -> new ArrayList<>(0);
+        }
+        return valueSupplier;
+    }
+
+    private Function<Number, Data<Number, Number>> createCurvePointProducer(final FrequencyBand selectedFrequency, final BiFunction<SharedFrequencyBandParameters, Number, Number> curvePointFunc) {
+        Function<Number, Data<Number, Number>> curvePointProducer = null;
+        if (modelCurveMap != null && selectedFrequency != null && modelCurveMap.containsKey(selectedFrequency)) {
+            SharedFrequencyBandParameters model = modelCurveMap.get(selectedFrequency);
+            curvePointProducer = i -> new Data<>(i, curvePointFunc.apply(model, i));
+        }
+        return curvePointProducer;
+    }
+
     private <T> void plot(final FrequencyBand selectedFrequency, Function<FrequencyBand, List<T>> valueSupplier, Function<T, Data<Number, Number>> dataPointSupplier,
-            Function<T, EventHandler<Event>> mouseClickedCallback, Function<Number, Data<Number, Number>> curveProducer) {
+            Function<T, EventHandler<Event>> mouseClickedCallback, Function<Number, Data<Number, Number>> curveProducer, Function<T, Waveform> mapFunc) {
         if (selectedFrequency != null) {
+            pointMap.clear();
             modelData.clear();
             pointData.clear();
+            selectedData.clear();
+            highlightedData.clear();
 
             AtomicReference<Integer> min = new AtomicReference<Integer>(XAXIS_MIN);
             AtomicReference<Integer> max = new AtomicReference<Integer>(XAXIS_MIN);
@@ -307,6 +364,19 @@ public class ShapeController {
                     min.set(data.getXValue().intValue());
                 }
                 data.getNode().addEventHandler(MouseEvent.MOUSE_CLICKED, mouseClickedCallback.apply(val));
+                Waveform w = mapFunc.apply(val);
+                boolean eventExists = w != null && w.getEvent() != null && w.getEvent().getEventId() != null;
+                boolean stationExists = w != null && w.getStream() != null && w.getStream().getStation() != null && w.getStream().getStation().getStationName() != null;
+                if (eventExists) {
+                    pointMap.computeIfAbsent(w.getEvent().getEventId(), k -> new ArrayList<>()).add(data);
+                }
+                if (stationExists) {
+                    pointMap.computeIfAbsent(w.getStream().getStation().getStationName(), k -> new ArrayList<>()).add(data);
+
+                }
+                if (eventExists && stationExists) {
+                    pointMap.computeIfAbsent(w.getEvent().getEventId() + w.getStream().getStation().getStationName(), k -> new ArrayList<>()).add(data);
+                }
             }));
 
             if (max.get() > XAXIS_MAX || max.get() == XAXIS_MIN) {
@@ -328,10 +398,10 @@ public class ShapeController {
             List<Icon> icons = new ArrayList<>();
             if (w.getStream() != null && w.getStream().getStation() != null) {
                 Station station = w.getStream().getStation();
-                icons.add(iconFactory.newIcon(IconTypes.TRIANGLE_UP, new Location(station.getLatitude(), station.getLongitude()), station.getStationName()));
+                icons.add(iconFactory.createStationIcon(station).setIconSelectionCallback(stationSelectionCallback));
             }
             if (w.getEvent() != null) {
-                icons.add(iconFactory.newIcon(w.getEvent().getEventId(), IconTypes.CIRCLE, new Location(w.getEvent().getLatitude(), w.getEvent().getLongitude()), w.getEvent().getEventId()));
+                icons.add(iconFactory.createEventIcon(w.getEvent()).setIconSelectionCallback(eventSelectionCallback));
             }
             return icons.stream();
         }).collect(Collectors.toList());
@@ -339,6 +409,12 @@ public class ShapeController {
 
     private EventHandler<Event> showWaveformPopup(Waveform waveform) {
         return event -> {
+            highlightedData.clear();
+            List<Data<Number, Number>> selection = pointMap.get(waveform.getEvent().getEventId() + waveform.getStream().getStation().getStationName());
+            if (selection != null && selection.size() == 1) {
+                highlightedData.add(new Data<Number, Number>(selection.get(0).getXValue(), selection.get(0).getYValue()));
+                highlightedData.forEach(x -> x.getNode().setMouseTransparent(true));
+            }
             bus.post(new WaveformSelectionEvent(waveform.getId()));
         };
     }
@@ -371,12 +447,15 @@ public class ShapeController {
         refreshView();
     }
 
+    @Override
     public void refreshView() {
         mapImpl.clearIcons();
         plotData();
     }
 
-    public void update() {
-        reloadData();
+    @Override
+    public Runnable getRefreshFunction() {
+        return () -> reloadData();
     }
+
 }

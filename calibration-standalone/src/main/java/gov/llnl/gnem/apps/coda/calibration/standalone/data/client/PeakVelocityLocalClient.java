@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurementMetadata;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PeakVelocityMeasurementService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,7 +48,11 @@ public class PeakVelocityLocalClient implements PeakVelocityClient {
 
     @Override
     public Mono<PeakVelocityMeasurement> getNoiseForWaveform(Long id) {
-        PeakVelocityMeasurement data = new PeakVelocityMeasurement(service.findByWaveformIdMetadataOnly(id));
-        return Mono.just(data);
+        PeakVelocityMeasurementMetadata metadata = service.findByWaveformIdMetadataOnly(id);
+        if (metadata != null) {
+            PeakVelocityMeasurement data = new PeakVelocityMeasurement(metadata);
+            return Mono.just(data);
+        }
+        return Mono.just(new PeakVelocityMeasurement());
     }
 }

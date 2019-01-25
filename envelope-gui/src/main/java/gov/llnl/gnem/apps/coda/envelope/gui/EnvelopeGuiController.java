@@ -14,8 +14,10 @@
 */
 package gov.llnl.gnem.apps.coda.envelope.gui;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,8 +33,11 @@ import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.envelope.gui.controllers.WaveformLoadingController;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.input.TransferMode;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -49,6 +54,7 @@ public class EnvelopeGuiController {
     private WaveformLoadingController waveformLoadingController;
 
     private DirectoryChooser sacDirFileChooser = new DirectoryChooser();
+    private DirectoryChooser sacSaveDirChooser = new DirectoryChooser();
     private FileChooser sacFileChooser = new FileChooser();
 
     private EventBus bus;
@@ -64,12 +70,13 @@ public class EnvelopeGuiController {
         this.waveformLoadingController = waveformLoadingController;
         this.bus = bus;
         sacDirFileChooser.setTitle("SAC File Directory");
+        sacSaveDirChooser.setTitle("Output File Directory");
         sacFileChooser.getExtensionFilters().addAll(new ExtensionFilter("Sac files (.sac)", "*.sac"), new ExtensionFilter("All files", "*.*"));
     }
 
     @FXML
     private void openWaveformLoadingWindow() {
-        Optional.ofNullable(sacFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(waveformLoadingController::loadFiles);
+        Optional.ofNullable(sacFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(this::saveFiles);
     }
 
     @FXML
@@ -78,13 +85,30 @@ public class EnvelopeGuiController {
     }
 
     @FXML
-    private void openWaveformDirectorySavingWindow() {
-        Optional.ofNullable(sacDirFileChooser.showDialog(rootElement.getScene().getWindow())).ifPresent(waveformLoadingController::saveToDirectory);
+    private Optional<File> openWaveformDirectorySavingWindow() {
+        Optional<File> opt = Optional.ofNullable(sacSaveDirChooser.showDialog(rootElement.getScene().getWindow()));
+        opt.ifPresent(waveformLoadingController::setExportPath);
+        return opt;
     }
 
     @FXML
     private void openWaveformDirectoryLoadingWindow() {
-        Optional.ofNullable(sacDirFileChooser.showDialog(rootElement.getScene().getWindow())).map(Collections::singletonList).ifPresent(waveformLoadingController::loadFiles);
+        Optional.ofNullable(sacDirFileChooser.showDialog(rootElement.getScene().getWindow())).map(Collections::singletonList).ifPresent(this::saveFiles);
+    }
+
+    private void saveFiles(List<File> files) {
+        Optional<File> opt = openWaveformDirectorySavingWindow();
+        if (opt.isPresent()) {
+            waveformLoadingController.loadFiles(files);
+        } else {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(AlertType.INFORMATION);
+                alert.setTitle("Load Canceled");
+                alert.setHeaderText("Load Canceled");
+                alert.setContentText("No output directory was selected; canceling data load.");
+                alert.show();
+            });
+        }
     }
 
     @FXML
@@ -99,7 +123,7 @@ public class EnvelopeGuiController {
         rootElement.setOnDragDropped(event -> {
             boolean success = false;
             if (event.getGestureSource() != rootElement && event.getDragboard().hasFiles()) {
-                waveformLoadingController.loadFiles(event.getDragboard().getFiles());
+                saveFiles(event.getDragboard().getFiles());
                 success = true;
             }
             event.setDropCompleted(success);

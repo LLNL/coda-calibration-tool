@@ -34,8 +34,8 @@ import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.FileToSeismogramConverter;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacExporter;
-import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.common.gui.events.EnvelopeLoadStartingEvent;
+import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressEventProgressListener;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
@@ -116,7 +116,7 @@ public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeis
         loadFiles(inputFiles, this.getCompletionCallback());
     }
 
-    public void loadFiles(List<File> inputFiles, Runnable completionCallback) {
+    public void loadFiles(List<File> inputFiles, Runnable completionCallback, ProgressMonitor... additionalBars) {
         CompletableFuture.runAsync(() -> {
 
             try (Stream<File> fileStream = inputFiles.stream()) {
@@ -146,6 +146,12 @@ public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeis
                         progressGui.show();
                         progressGui.addProgressMonitor(processingMonitor);
                         progressGui.addProgressMonitor(processingFailedMonitor);
+
+                        if (additionalBars != null) {
+                            for (ProgressMonitor bar : additionalBars) {
+                                progressGui.addProgressMonitor(bar);
+                            }
+                        }
 
                         fileProcessingProgress.setTotal(Integer.toUnsignedLong(files.size()));
                         bus.post(processingProgressEvent);
@@ -178,6 +184,9 @@ public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeis
 
                         if (completionCallback != null) {
                             completionCallback.run();
+                        }
+                        if (this.completionCallback != null && !this.completionCallback.equals(completionCallback)) {
+                            this.completionCallback.run();
                         }
                     } catch (RuntimeException e) {
                         log.error(e.getMessage(), e);

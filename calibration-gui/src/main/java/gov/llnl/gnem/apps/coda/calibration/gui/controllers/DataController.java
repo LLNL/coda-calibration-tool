@@ -14,8 +14,15 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,18 +31,22 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
+import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
+import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
+import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
+import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
-import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -45,11 +56,9 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
-import javafx.scene.control.cell.CheckBoxTableCell;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 @Component
-public class DataController {
+public class DataController implements MapListeningController, RefreshableController {
 
     private static final Logger log = LoggerFactory.getLogger(DataController.class);
 
@@ -60,9 +69,6 @@ public class DataController {
     private TableView<Waveform> tableView;
 
     @FXML
-    private TableColumn<Waveform, Boolean> selectionCol;
-
-    @FXML
     private CheckBox selectAllCheckbox;
 
     @FXML
@@ -71,86 +77,153 @@ public class DataController {
     @FXML
     private TableColumn<Waveform, String> eventCol;
 
+    @FXML
+    private TableColumn<Waveform, String> lowFreqCol;
+
+    @FXML
+    private TableColumn<Waveform, String> highFreqCol;
+
     private ObservableList<Waveform> listData = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
 
     private GeoMap mapImpl;
 
-    private IconFactory iconFactory;
+    private MapPlottingUtilities iconFactory;
 
     private WaveformClient client;
 
     private EventBus bus;
 
+    private NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
+
+    private EventStaFreqStringComparator eventStaFreqComparator = new EventStaFreqStringComparator();
+
+    private ListChangeListener<? super Waveform> tableChangeListener;
+
+    private final BiConsumer<Boolean, String> eventSelectionCallback;
+    private final BiConsumer<Boolean, String> stationSelectionCallback;
+
     @Autowired
-    public DataController(WaveformClient client, GeoMap mapImpl, IconFactory iconFactory, EventBus bus) {
+    public DataController(WaveformClient client, GeoMap mapImpl, MapPlottingUtilities iconFactory, EventBus bus) {
         super();
         this.client = client;
         this.mapImpl = mapImpl;
         this.iconFactory = iconFactory;
         this.bus = bus;
         bus.register(this);
+        tableChangeListener = buildTableListener();
+
+        eventSelectionCallback = (selected, eventId) -> {
+            selectDataByCriteria(bus, selected, (w) -> w.getEvent() != null && w.getEvent().getEventId().equalsIgnoreCase(eventId));
+        };
+
+        stationSelectionCallback = (selected, stationId) -> {
+            selectDataByCriteria(bus, selected, (w) -> w.getStream() != null && w.getStream().getStation() != null && w.getStream().getStation().getStationName().equalsIgnoreCase(stationId));
+        };
+    }
+
+    private void selectDataByCriteria(EventBus bus, Boolean selected, Function<Waveform, Boolean> matchCriteria) {
+        List<Waveform> selection = new ArrayList<>();
+        List<Integer> selectionIndices = new ArrayList<>();
+        tableView.getSelectionModel().clearSelection();
+        if (selected) {
+            for (int i = 0; i < listData.size(); i++) {
+                Waveform w = listData.get(i);
+                if (matchCriteria.apply(w)) {
+                    selection.add(w);
+                    tableView.getSelectionModel().select(i);
+                }
+            }
+            if (!selection.isEmpty()) {
+                selection.sort(eventStaFreqComparator);
+                Long[] ids = selection.stream().sequential().map(w -> w.getId()).collect(Collectors.toList()).toArray(new Long[0]);
+                bus.post(new WaveformSelectionEvent(ids));
+            }
+        } else {
+            selection.addAll(tableView.getSelectionModel().getSelectedItems());
+            selectionIndices.addAll(tableView.getSelectionModel().getSelectedIndices());
+            for (int i = 0; i < selection.size(); i++) {
+                if (matchCriteria.apply(selection.get(i))) {
+                    tableView.getSelectionModel().clearSelection(selectionIndices.get(i));
+                }
+            }
+        }
+    }
+
+    private ListChangeListener<? super Waveform> buildTableListener() {
+        return (ListChangeListener<Waveform>) change -> {
+            List<Waveform> selection = new ArrayList<>();
+            selection.addAll(tableView.getSelectionModel().getSelectedItems());
+            selection.sort(eventStaFreqComparator);
+            Long[] ids = selection.stream().sequential().map(w -> w.getId()).collect(Collectors.toList()).toArray(new Long[0]);
+            bus.post(new WaveformSelectionEvent(ids));
+        };
     }
 
     @FXML
     private void reloadTable(ActionEvent e) {
-        requestData();
+        CompletableFuture.runAsync(getRefreshFunction());
     }
 
     @FXML
     public void initialize() {
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        // TODO: Waveform has no "selected" need to change this to look at the
-        // selection model by WaveformId.
-        selectionCol.setCellValueFactory(new PropertyValueFactory<Waveform, Boolean>("checkBoxValue"));
-        selectionCol.setCellFactory(CheckBoxTableCell.forTableColumn(selectionCol));
-
         eventCol.setCellValueFactory(
                 x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getEvent).map(Event::getEventId).orElseGet(String::new)));
-
         eventCol.comparatorProperty().set(new MaybeNumericStringComparator());
+
+        CellBindingUtils.attachTextCellFactories(lowFreqCol, Waveform::getLowFrequency, dfmt2);
+        CellBindingUtils.attachTextCellFactories(highFreqCol, Waveform::getHighFrequency, dfmt2);
 
         stationCol.setCellValueFactory(
                 x -> Bindings.createStringBinding(
                         () -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getStream).map(Stream::getStation).map(Station::getStationName).orElseGet(String::new)));
 
+        tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
+        //Workaround for https://bugs.openjdk.java.net/browse/JDK-8095943, for now we just clear the selection to avoid dumping a stack trace in the logs and mucking up event bubbling
+        tableView.setOnSort(event -> {
+            if (tableView.getSelectionModel().getSelectedIndices().size() > 1) {
+                tableView.getSelectionModel().clearSelection();
+            }
+        });
         tableView.setItems(listData);
     }
 
+    @Override
     public void refreshView() {
         if (listData.isEmpty()) {
-            requestData();
+            CompletableFuture.runAsync(getRefreshFunction());
         } else {
-            mapImpl.clearIcons();
-            listData.forEach(waveform -> genIconsFromData(waveform));
+            CompletableFuture.runAsync(() -> {
+                mapImpl.clearIcons();
+                listData.forEach(waveform -> mapImpl.addIcons(genIconsFromData(waveform)));
+            });
         }
     }
 
-    public void update() {
-        requestData();
+    @Override
+    public Runnable getRefreshFunction() {
+        return () -> requestData();
     }
 
     private void requestData() {
         listData.clear();
         mapImpl.clearIcons();
-        client.getUniqueEventStationMetadataForStacks().filter(Objects::nonNull).doOnComplete(() -> tableView.sort()).subscribe(waveform -> {
+        client.getUniqueEventStationMetadataForStacks().filter(Objects::nonNull).doOnComplete(() -> {
+            tableView.sort();
+            refreshView();
+        }).subscribe(waveform -> {
             listData.add(waveform);
-            genIconsFromData(waveform);
-        }, err -> log.trace(err.getMessage(), err));
+        }, err -> log.error(err.getMessage(), err));
     }
 
-    protected void genIconsFromData(Waveform waveform) {
-        mapImpl.addIcon(
-                iconFactory.newIcon(
-                        IconTypes.TRIANGLE_UP,
-                            new Location(waveform.getStream().getStation().getLatitude(), waveform.getStream().getStation().getLongitude()),
-                            waveform.getStream().getStation().getStationName()));
-        mapImpl.addIcon(
-                iconFactory.newIcon(
-                        waveform.getEvent().getEventId(),
-                            IconTypes.CIRCLE,
-                            new Location(waveform.getEvent().getLatitude(), waveform.getEvent().getLongitude()),
-                            waveform.getEvent().getEventId()));
+    protected List<Icon> genIconsFromData(Waveform waveform) {
+        List<Icon> icons = new ArrayList<>();
+        if (waveform != null && waveform.getStream() != null && waveform.getEvent() != null) {
+            icons.add(iconFactory.createEventIcon(waveform.getEvent()).setIconSelectionCallback(eventSelectionCallback));
+            icons.add(iconFactory.createStationIcon(waveform.getStream().getStation()).setIconSelectionCallback(stationSelectionCallback));
+        }
+        return icons;
     }
 
 }

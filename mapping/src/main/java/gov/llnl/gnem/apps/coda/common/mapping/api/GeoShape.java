@@ -12,25 +12,10 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.common.service.api;
+package gov.llnl.gnem.apps.coda.common.mapping.api;
 
-import java.util.Collection;
-import java.util.List;
-
-import gov.llnl.gnem.apps.coda.common.model.domain.Event;
-import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
-
-public interface WaveformService extends BaseService<Waveform, Long> {
-
-    public List<Waveform> getByExampleAllMatching(Waveform waveform);
-
-    public List<Waveform> getAllStacks();
-
-    public List<Waveform> update(Long sessionId, Collection<Waveform> values);
-
-    public Waveform update(Waveform waveformPayload);
-
-    public List<Waveform> getUniqueEventStationStacks();
-
-    public Event findEventById(String eventId);
+public interface GeoShape {
+    public String getId();
+    //
+    //    public Class<? extends GeoShape> getType();
 }

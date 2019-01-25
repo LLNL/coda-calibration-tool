@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -15,13 +14,14 @@
 							<content>
 								<TableView fx:id="tableView">
 									<columns>
-										<TableColumn fx:id="selectionCol" maxWidth="50.0" minWidth="25.0" prefWidth="40.0" resizable="false" visible="false">
-											<graphic>
-												<CheckBox fx:id="selectAllCheckbox" mnemonicParsing="false" />
-											</graphic>
-										</TableColumn>
 										<TableColumn fx:id="eventCol" editable="false" prefWidth="75.0" text="Event" />
 										<TableColumn fx:id="stationCol" editable="false" prefWidth="75.0" text="Station" />
+                        <TableColumn editable="false" maxWidth="-1.0" minWidth="-1.0" prefWidth="-1.0" sortable="false" text="Frequency">
+                           <columns>
+                              <TableColumn fx:id="lowFreqCol" editable="false" minWidth="-1.0" prefWidth="-1.0" text="Low" />
+                              <TableColumn fx:id="highFreqCol" editable="false" minWidth="-1.0" prefWidth="-1.0" text="High" />
+                           </columns>
+                        </TableColumn>
 									</columns>
 									<columnResizePolicy>
 										<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

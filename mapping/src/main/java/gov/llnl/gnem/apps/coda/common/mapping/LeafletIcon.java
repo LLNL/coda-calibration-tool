@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.common.mapping;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
@@ -29,6 +30,7 @@ public class LeafletIcon implements Icon {
     private String friendlyName;
     private IconTypes iconType;
     private IconStyles iconStyle;
+    private BiConsumer<Boolean, String> selectedCallback;
 
     public LeafletIcon(Location location, String friendlyName, IconTypes iconType) {
         this(UUID.randomUUID().toString(), location, friendlyName, iconType);
@@ -143,5 +145,16 @@ public class LeafletIcon implements Icon {
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public Icon setIconSelectionCallback(BiConsumer<Boolean, String> callback) {
+        this.selectedCallback = callback;
+        return this;
+    }
+
+    @Override
+    public BiConsumer<Boolean, String> getIconSelectionCallback() {
+        return selectedCallback;
     }
 }

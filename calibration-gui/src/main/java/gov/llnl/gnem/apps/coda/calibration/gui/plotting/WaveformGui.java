@@ -30,13 +30,14 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementC
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
-import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -50,23 +51,23 @@ public class WaveformGui {
 
     @FXML
     private SwingNode waveformPlotNode;
-    private CodaWaveformPlot waveformPlot;
+    private CodaWaveformPlotManager waveformPlotManager;
     private WaveformClient waveformClient;
     private ShapeMeasurementClient shapeClient;
     private ParameterClient paramsClient;
     private PeakVelocityClient peakVelocityClient;
     private GeoMap map;
-    private IconFactory iconFactory;
+    private MapPlottingUtilities mapPlotUtilities;
 
     @Autowired
-    public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, PeakVelocityClient peakVelocityClient, GeoMap map, IconFactory iconFactory,
-            EventBus bus) {
+    public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, PeakVelocityClient peakVelocityClient, GeoMap map,
+            MapPlottingUtilities mapPlotUtilities, EventBus bus) {
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
         this.peakVelocityClient = peakVelocityClient;
         this.map = map;
-        this.iconFactory = iconFactory;
+        this.mapPlotUtilities = mapPlotUtilities;
         bus.register(this);
         Platform.runLater(() -> {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/WaveformGui.fxml"));
@@ -85,39 +86,48 @@ public class WaveformGui {
                 stage.setOnShowing(e -> {
                     show();
                 });
+
+                waveformPlotNode.setOnKeyReleased(new EventHandler<KeyEvent>() {
+                    @Override
+                    public void handle(KeyEvent event) {
+                        waveformPlotManager.triggerKeyEvent(event);
+                    }
+                });
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         });
+
     }
 
     @Subscribe
     private void listener(WaveformSelectionEvent event) {
-        if (waveformPlot != null) {
-            waveformClient.getSyntheticFromId(event.getWaveformID()).subscribe(synth -> {
-                if (synth != null && synth.getId() != null) {
-                    waveformPlot.setWaveform(synth);
-                } else {
-                    waveformClient.getWaveformFromId(event.getWaveformID()).subscribe(w -> waveformPlot.setWaveform(w));
-                }
-            });
-            show();
+        if (waveformPlotManager != null) {
+            if (event != null && event.getWaveformIDs() != null && !event.getWaveformIDs().isEmpty()) {
+                waveformPlotManager.setOrderedWaveformIDs(event.getWaveformIDs());
+                show();
+                repaintWaveformWindow();
+            }
         }
+    }
+
+    private void repaintWaveformWindow() {
+        Platform.runLater(() -> waveformPlotNode.autosize());
     }
 
     @FXML
     public void initialize() {
         SwingUtilities.invokeLater(() -> {
-            waveformPlot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient, map, iconFactory);
-            waveformPlotNode.setContent(waveformPlot);
+            waveformPlotManager = new CodaWaveformPlotManager(waveformClient, shapeClient, paramsClient, peakVelocityClient, map, mapPlotUtilities);
+            waveformPlotNode.setContent(waveformPlotManager);
         });
     }
 
     public void hide() {
         Platform.runLater(() -> {
             stage.hide();
-            if (waveformPlot != null) {
-                waveformPlot.setVisible(false);
+            if (waveformPlotManager != null) {
+                waveformPlotManager.setVisible(false);
             }
         });
     }
@@ -125,8 +135,8 @@ public class WaveformGui {
     public void show() {
         Platform.runLater(() -> {
             stage.show();
-            if (waveformPlot != null) {
-                waveformPlot.setVisible(true);
+            if (waveformPlotManager != null) {
+                waveformPlotManager.setVisible(true);
             }
             stage.toFront();
         });

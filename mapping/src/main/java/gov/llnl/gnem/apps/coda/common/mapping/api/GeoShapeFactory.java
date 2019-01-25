@@ -17,7 +17,7 @@ package gov.llnl.gnem.apps.coda.common.mapping.api;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
 
-public interface IconFactory {
+public interface GeoShapeFactory {
 
     default public Icon newIcon(Location location, String friendlyName) {
         return newIcon(IconTypes.DEFAULT, location, friendlyName, null);
@@ -34,4 +34,8 @@ public interface IconFactory {
     }
 
     public Icon newIcon(String id, IconTypes iconType, Location location, String friendlyName, IconStyles style);
+
+    public Line newLine(Location start, Location end);
+
+    public Line newLine(String id, Location start, Location end);
 }

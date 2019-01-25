@@ -72,6 +72,11 @@ public class SyntheticServiceImpl implements SyntheticService {
     public SyntheticCoda findOneByWaveformId(Long id) {
        return repository.findByWaveformId(id);
     }
+    
+    @Override
+    public Collection<SyntheticCoda> findAllByWaveformId(Collection<Long> ids) {
+        return repository.findByWaveformIds(ids);
+    }
 
     @Override
     public List<SyntheticCoda> findAll(Iterable<Long> ids) {
@@ -122,4 +127,6 @@ public class SyntheticServiceImpl implements SyntheticService {
     public void deleteAll() {
         repository.deleteAllInBatch();
     }
+
+
 }

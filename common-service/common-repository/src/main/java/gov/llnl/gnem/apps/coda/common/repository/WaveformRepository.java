@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import io.springlets.data.jpa.repository.DetachableJpaRepository;
 
 @Transactional
@@ -34,8 +35,11 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     public Waveform findOneByAllFields(@Param("beginTime") Date beginTime, @Param("endTime") Date endTime, @Param("event") Event event, @Param("stream") Stream stream,
             @Param("segmentType") String segmentType, @Param("segmentUnits") String segmentUnits, @Param("lowFrequency") Double lowFrequency, @Param("highFrequency") Double highFrequency);
 
-    @Query("select distinct w.event, w.stream from Waveform w")
-    public List<Object[]> uniqueByEventStation();
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate) from Waveform w")
+    public List<Waveform> getWaveformMetadata();
+
+    @Query("select p from WaveformPick p where p.waveform.id = :id")
+    public List<WaveformPick> findPicksByWaveformId(@Param("id") Long id);
 
     @Query("select w.event from Waveform w where w.event.eventId = :eventId order by w.id desc")
     public List<Event> findEventById(@Param("eventId") String eventId, Pageable pageable);

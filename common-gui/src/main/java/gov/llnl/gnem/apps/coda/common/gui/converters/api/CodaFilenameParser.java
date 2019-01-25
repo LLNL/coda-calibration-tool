@@ -12,9 +12,8 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.gui.converters.api;
+package gov.llnl.gnem.apps.coda.common.gui.converters.api;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.converters.StackInfo;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 
 public interface CodaFilenameParser {

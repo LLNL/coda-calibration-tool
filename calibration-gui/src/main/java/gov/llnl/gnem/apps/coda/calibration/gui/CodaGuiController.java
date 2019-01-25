@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +40,7 @@ import com.google.common.eventbus.Subscribe;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.CodaParamLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.DataController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.EnvelopeLoadingController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MapListeningController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.PathController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ReferenceEventLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController;
@@ -98,12 +100,12 @@ public class CodaGuiController {
     @FXML
     private Tab siteTab;
 
-    private Runnable dataRefresh = () -> data.update();
-    private Runnable paramRefresh = () -> param.update();
-    private Runnable shapeRefresh = () -> shape.update();
-    private Runnable pathRefresh = () -> path.update();
-    private Runnable siteRefresh = () -> site.update();
-    private Runnable activeTabRefresh = dataRefresh;
+    private Runnable dataRefresh;
+    private Runnable paramRefresh;
+    private Runnable shapeRefresh;
+    private Runnable pathRefresh;
+    private Runnable siteRefresh;
+    private Runnable activeTabRefresh;
 
     @FXML
     private Button showMapButton;
@@ -169,6 +171,13 @@ public class CodaGuiController {
         this.bus = bus;
         bus.register(this);
 
+        dataRefresh = data.getRefreshFunction();
+        paramRefresh = param.getRefreshFunction();
+        shapeRefresh = shape.getRefreshFunction();
+        pathRefresh = path.getRefreshFunction();
+        siteRefresh = site.getRefreshFunction();
+        activeTabRefresh = dataRefresh;
+
         sacDirFileChooser.setTitle("Coda STACK File Directory");
         sacFileChooser.getExtensionFilters().add(new ExtensionFilter("Coda STACK Files (.sac,.env)", "*.sac", "*.env"));
         sacFileChooser.getExtensionFilters().add(allFilesFilter);
@@ -199,6 +208,7 @@ public class CodaGuiController {
         Platform.runLater(() -> {
             if (mapController != null) {
                 mapController.show();
+                mapController.fitViewToActiveShapes();
             }
         });
     }
@@ -303,15 +313,7 @@ public class CodaGuiController {
         activeMapIcon = makeMapLabel();
         showMapIcon = makeMapLabel();
 
-        dataTab.setOnSelectionChanged(e -> {
-            if (dataTab.isSelected()) {
-                data.refreshView();
-                dataTab.setGraphic(activeMapIcon);
-                activeTabRefresh = dataRefresh;
-            } else {
-                dataTab.setGraphic(null);
-            }
-        });
+        addMapEnabledTabListeners(dataTab, data, dataRefresh);
 
         paramTab.setOnSelectionChanged(e -> {
             if (paramTab.isSelected()) {
@@ -320,35 +322,9 @@ public class CodaGuiController {
             }
         });
 
-        shapeTab.setOnSelectionChanged(e -> {
-            if (shapeTab.isSelected()) {
-                shape.refreshView();
-                shapeTab.setGraphic(activeMapIcon);
-                activeTabRefresh = shapeRefresh;
-            } else {
-                shapeTab.setGraphic(null);
-            }
-        });
-
-        pathTab.setOnSelectionChanged(e -> {
-            if (pathTab.isSelected()) {
-                path.refreshView();
-                pathTab.setGraphic(activeMapIcon);
-                activeTabRefresh = pathRefresh;
-            } else {
-                pathTab.setGraphic(null);
-            }
-        });
-
-        siteTab.setOnSelectionChanged(e -> {
-            if (siteTab.isSelected()) {
-                site.refreshView();
-                siteTab.setGraphic(activeMapIcon);
-                activeTabRefresh = siteRefresh;
-            } else {
-                siteTab.setGraphic(null);
-            }
-        });
+        addMapEnabledTabListeners(shapeTab, shape, shapeRefresh);
+        addMapEnabledTabListeners(pathTab, path, pathRefresh);
+        addMapEnabledTabListeners(siteTab, site, siteRefresh);
 
         rootElement.setOnDragOver(event -> {
             if (event.getGestureSource() != rootElement && event.getDragboard().hasFiles()) {
@@ -373,6 +349,18 @@ public class CodaGuiController {
         } catch (IllegalStateException e) {
             log.error("Unable to instantiate loading display {}", e.getMessage(), e);
         }
+    }
+
+    private void addMapEnabledTabListeners(Tab tab, MapListeningController controller, Runnable runnable) {
+        tab.setOnSelectionChanged(e -> {
+            if (tab.isSelected()) {
+                controller.refreshView();
+                tab.setGraphic(activeMapIcon);
+                activeTabRefresh = runnable;
+            } else {
+                tab.setGraphic(null);
+            }
+        });
     }
 
     @FXML
@@ -415,7 +403,7 @@ public class CodaGuiController {
     @Subscribe
     private void listener(EnvelopeLoadCompleteEvent evt) {
         if (dataTab.isSelected()) {
-            data.update();
+            CompletableFuture.runAsync(dataRefresh);
         }
     }
 

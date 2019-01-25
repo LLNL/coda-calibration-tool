@@ -144,7 +144,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     Collection<PeakVelocityMeasurement> velocityMeasurements = peakVelocityMeasurementsService.measureVelocities(stacks);
 
                     // First step is to clean up all the intermediary results if
-                    // they exist. This is wildly not-thread-safe as you might
+                    // they exist. This is as wildly not-thread-safe as you might
                     // imagine.
                     peakVelocityMeasurementsService.deleteAll();
                     syntheticService.deleteAll();
@@ -179,7 +179,6 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // service and get raw at start and raw at measurement time
                     // values back
                     stacks = stacks.parallelStream().filter(wave -> wave.getAssociatedPicks() != null).map(wave -> {
-
                         Optional<WaveformPick> pick = wave.getAssociatedPicks().stream().filter(p -> PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType())).findFirst();
                         if (pick.isPresent() && pick.get().getPickTimeSecFromOrigin() > 0) {
                             return wave;

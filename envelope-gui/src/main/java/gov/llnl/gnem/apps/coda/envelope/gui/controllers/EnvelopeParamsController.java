@@ -14,7 +14,6 @@
 */
 package gov.llnl.gnem.apps.coda.envelope.gui.controllers;
 
-import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +36,9 @@ import gov.llnl.gnem.apps.coda.envelope.gui.data.api.EnvelopeParamsClient;
 import gov.llnl.gnem.apps.coda.envelope.model.domain.EnvelopeBandParameters;
 import gov.llnl.gnem.apps.coda.envelope.model.domain.EnvelopeJobConfiguration;
 import gov.llnl.gnem.apps.coda.envelope.model.domain.SpacingType;
+import gov.llnl.gnem.apps.coda.envelope.util.BandGenerator;
+import gov.llnl.gnem.apps.coda.envelope.util.LinearBandGenerator;
+import gov.llnl.gnem.apps.coda.envelope.util.LogBandGenerator;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -96,6 +97,9 @@ public class EnvelopeParamsController {
 
     private NumberFormat numberFormat = NumberFormatFactory.sixDecimalOneLeadingZero();
 
+    private BandGenerator linearGenerator = new LinearBandGenerator(MIN_PRECISION);
+    private BandGenerator logGenerator = new LogBandGenerator(MIN_PRECISION);
+
     @Autowired
     public EnvelopeParamsController(EventBus bus, EnvelopeParamsClient client, EnvelopeJobConfiguration defaultConfig) {
         super();
@@ -137,53 +141,33 @@ public class EnvelopeParamsController {
                 Double overlap = Double.valueOf(overlapField.getText());
                 Double spacing = Double.valueOf(spacingField.getText());
 
-                if (minFreq > maxFreq) {
-                    //error
-                    minFreq = maxFreq;
+                BandGenerator tableGenerator;
+                if (SpacingType.LOG.name().equalsIgnoreCase(spacingTypeField.getSelectionModel().getSelectedItem())) {
+                    tableGenerator = logGenerator;
+                } else {
+                    tableGenerator = linearGenerator;
                 }
+                minFreq = tableGenerator.clampMinFreq(minFreq, maxFreq);
+                spacing = tableGenerator.clampSpacing(spacing);
+                overlap = tableGenerator.clampOverlap(overlap);
 
-                if (spacing <= MIN_PRECISION) {
-                    //error
-                    spacing = MIN_PRECISION;
-                    spacingField.setText(spacing.toString());
-                }
+                spacingField.setText(spacing.toString());
+                overlapField.setText(overlap.toString());
 
-                if (overlap < 0.) {
-                    //error
-                    overlap = 0.;
-                    overlapField.setText(overlap.toString());
-                } else if (overlap <= MIN_PRECISION) {
-                    overlap = MIN_PRECISION;
-                    overlapField.setText(overlap.toString());
-                } else if (overlap >= 100.) {
-                    overlap = 0.99;
-                    overlapField.setText(overlap.toString());
-                } else if (overlap >= 1.0) {
-                    overlap = overlap / 100.0;
-                    overlapField.setText(overlap.toString());
-                }
-
-                List<EnvelopeBandParameters> tmp = new ArrayList<>(bands);
+                List<EnvelopeBandParameters> oldBands = new ArrayList<>(bands);
                 bands.clear();
-                double last = minFreq;
-                double current = minFreq;
-                int reqBands = (int) (((maxFreq - minFreq) / spacing) + 0.5);
-                for (int i = 0; i < reqBands; i++) {
-                    current = current + spacing;
-                    bands.add(
-                            new EnvelopeBandParameters(Precision.round(Math.max(last - minFreq, minFreq), 6, BigDecimal.ROUND_HALF_DOWN),
-                                                       Precision.round(Math.min(current - minFreq + (spacing * overlap), maxFreq), 6)));
-                    last = current;
-                }
+                bands.addAll(tableGenerator.generateTable(minFreq, maxFreq, overlap, spacing));
+
                 config.setFrequencyBandConfiguration(bands);
 
                 postJob().doOnError(er -> {
                     bands.clear();
-                    config.setFrequencyBandConfiguration(tmp);
+                    config.setFrequencyBandConfiguration(oldBands);
                     bands.addAll(config.getFrequencyBandConfiguration());
                 }).subscribe();
             } catch (NumberFormatException e) {
                 // TODO: handle exception
+                log.error(e.getMessage(), e);
             }
         }
     }

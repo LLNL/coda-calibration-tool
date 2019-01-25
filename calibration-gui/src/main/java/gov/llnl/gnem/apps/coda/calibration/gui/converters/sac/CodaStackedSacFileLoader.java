@@ -23,12 +23,13 @@ import java.util.Locale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.converters.StackInfo;
-import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.CodaFilenameParser;
+import gov.llnl.gnem.apps.coda.common.gui.converters.api.CodaFilenameParser;
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.FileToEnvelopeConverter;
+import gov.llnl.gnem.apps.coda.common.gui.converters.api.StackInfo;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacLoader;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import llnl.gnem.core.io.SAC.SACHeader;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -80,4 +81,9 @@ public class CodaStackedSacFileLoader implements FileToEnvelopeConverter {
     public PathMatcher getMatchingPattern() {
         return filter;
     }
+
+    public String getOrCreateEvid(SACHeader header) {
+        return sacLoader.getOrCreateEvid(header);
+    }
+
 }

@@ -16,14 +16,15 @@ package gov.llnl.gnem.apps.coda.common.mapping;
 
 import org.springframework.stereotype.Service;
 
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShapeFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
-import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Line;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
 
 @Service
-public class LeafletIconFactory implements IconFactory {
+public class LeafletShapeFactory implements GeoShapeFactory {
 
     @Override
     public Icon newIcon(IconTypes iconType, Location location, String friendlyName, IconStyles style) {
@@ -39,5 +40,15 @@ public class LeafletIconFactory implements IconFactory {
             return new LeafletIcon(id, location, friendlyName, iconType, style);
         }
         return new LeafletIcon(id, location, friendlyName, iconType);
+    }
+
+    @Override
+    public Line newLine(String id, Location start, Location end) {
+        return new LeafletLine(id, start, end);
+    }
+
+    @Override
+    public Line newLine(Location start, Location end) {
+        return new LeafletLine(start, end);
     }
 }

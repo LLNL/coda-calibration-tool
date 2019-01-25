@@ -19,12 +19,15 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -37,7 +40,6 @@ import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 
 @Service
-@Transactional
 public class WaveformServiceImpl implements WaveformService {
 
     private WaveformRepository waveformRepository;
@@ -45,7 +47,7 @@ public class WaveformServiceImpl implements WaveformService {
 
     @Autowired
     public WaveformServiceImpl(WaveformRepository waveformRepository, NotificationService notificationService) {
-        setWaveformRepository(waveformRepository);
+        this.waveformRepository = waveformRepository;
         this.notificationService = notificationService;
     }
 
@@ -119,12 +121,14 @@ public class WaveformServiceImpl implements WaveformService {
         return Integer.class;
     }
 
+    @Transactional
     @Override
     public Waveform update(Waveform entry) {
         Waveform mergedEntry = attachIfAvailableInRepository(entry);
         return waveformRepository.saveAndFlush(mergedEntry);
     }
 
+    @Transactional
     @Override
     public List<Waveform> update(Long sessionId, Collection<Waveform> values) {
         List<Waveform> vals = new ArrayList<>(values.size());
@@ -132,11 +136,11 @@ public class WaveformServiceImpl implements WaveformService {
             Waveform mergedEntry = attachIfAvailableInRepository(entry);
             vals.add(mergedEntry);
         }
-        waveformRepository.saveAll(vals);
-        waveformRepository.flush();
-        if (sessionId != null) {
-            notificationService.post(new PassFailEvent(sessionId, UUID.randomUUID().toString(), new Result<Object>(true, Boolean.TRUE)));
-        }
+        CompletableFuture.runAsync(() -> waveformRepository.saveAll(vals)).thenRun(() -> {
+            if (sessionId != null) {
+                notificationService.post(new PassFailEvent(sessionId, UUID.randomUUID().toString(), new Result<Object>(true, Boolean.TRUE)));
+            }
+        });
         return vals;
     }
 
@@ -165,9 +169,10 @@ public class WaveformServiceImpl implements WaveformService {
         return waveformRepository.findAll(Example.of(waveform, matcher));
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @Override
-    public List<Object[]> getUniqueEventStationStacks() {
-        return waveformRepository.uniqueByEventStation();
+    public List<Waveform> getUniqueEventStationStacks() {
+        return waveformRepository.getWaveformMetadata().stream().filter(md -> md.getId() != null).collect(Collectors.toList());
     }
 
     @Override

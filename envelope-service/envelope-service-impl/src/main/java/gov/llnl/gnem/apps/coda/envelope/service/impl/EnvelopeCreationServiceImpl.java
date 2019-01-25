@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -68,20 +67,21 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
             // TODO: Propagate warning to the status API            
             return new Result<List<Waveform>>(false, Collections.singletonList(new LightweightIllegalStateException("No waveforms provided; unable to compute envelopes.")), Collections.emptyList());
         }
-        
+
         if (envConf == null) {
             envConf = params.getConfiguration();
-        }        
-        
-        if (envConf == null) {        
+        }
+
+        if (envConf == null) {
             // TODO: Propagate warning to the status API            
             return new Result<List<Waveform>>(false,
-                                              Collections.singletonList(new LightweightIllegalStateException("No configuration specified but is required for this endpoint; unable to compute envelopes.")),
+                                              Collections.singletonList(
+                                                      new LightweightIllegalStateException("No configuration specified but is required for this endpoint; unable to compute envelopes.")),
                                               Collections.emptyList());
         }
-        
+
         List<Waveform> results = generateEnvelopesForBands(waveforms.stream().filter(Objects::nonNull).collect(Collectors.toList()), envConf);
-        CompletableFuture.runAsync(() -> waveformSvc.saveAll(results));
+        //        CompletableFuture.runAsync(() -> waveformSvc.saveAll(results));
         return new Result<List<Waveform>>(true, results);
     }
 
@@ -97,6 +97,9 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
                     Waveform seisWave = new Waveform().mergeNonNullOrEmptyFields(wave);
 
                     TimeSeries seis = converter.convert(wave);
+
+                    //FIXME: Get from table
+                    seis.interpolate(4d);
 
                     if (startcut.ge(endcut)) {
                         log.info("Start time of cut is >= end time of cut.");

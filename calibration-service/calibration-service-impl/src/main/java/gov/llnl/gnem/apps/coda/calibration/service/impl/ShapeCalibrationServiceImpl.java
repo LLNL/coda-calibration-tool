@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.EnvelopeFit;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.service.api.EndTimePicker;
@@ -40,8 +39,6 @@ import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.ShapeCalculat
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SyntheticCodaModel;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
-import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
-import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformPickService;
@@ -86,12 +83,12 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
         final CalibrationCurveFitter fitter = new CalibrationCurveFitter();
 
         Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandCurveFits = fitter.fitAllVelocity(velocityMeasurements.stream()
-                                                                                                                             .filter(vel -> vel.getWaveform() != null)
+                                    .filter(vel -> vel.getWaveform() != null)
                                                                                                                              .collect(Collectors.groupingBy(vel -> new FrequencyBand(vel.getWaveform()
                                                                                                                                                                                         .getLowFrequency(),
                                                                                                                                                                                      vel.getWaveform()
                                                                                                                                                                                         .getHighFrequency()))),
-                                                                                                         frequencyBandParameters);
+                    frequencyBandParameters);
 
         // 1) If auto-picking is enabled attempt to pick any envelopes that
         // don't already have F-picks in this set
@@ -162,12 +159,12 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                 segment.interpolate(1.0);
 
                 double stopTime = endTimePicker.getEndTime(segment.getData(),
-                                                           segment.getSamprate(),
-                                                           startTime.getEpochTime(),
-                                                           segment.getIndexForTime(startTime.getEpochTime()),
-                                                           minlength,
-                                                           maxlength,
-                                                           params.getMinSnr());
+                            segment.getSamprate(),
+                            startTime.getEpochTime(),
+                            segment.getIndexForTime(startTime.getEpochTime()),
+                            minlength,
+                            maxlength,
+                            params.getMinSnr());
 
                 if (new TimeT(stopTime).gt(startTime)) {
                     stopTime = stopTime + beginTime.subtractD(originTime);
@@ -188,43 +185,6 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
             }
             return vel;
         }).filter(Objects::nonNull).collect(Collectors.toList());
-    }
-
-    private SyntheticCoda quickSynth(Waveform waveform, TimeT startTime) {
-        CalibrationCurveFitter curveFitter = new CalibrationCurveFitter();
-        SyntheticCoda synth = new SyntheticCoda();
-        double dt = 1d;
-        TimeSeries seis = converter.convert(waveform);
-        TimeSeries fitSeis = converter.convert(waveform);
-        seis.cut(startTime, new TimeT(waveform.getEndTime()));
-        fitSeis.cut(startTime, startTime.add(100));
-        seis.interpolate(1 / dt);
-        EnvelopeFit curve = curveFitter.fitCodaCMAESStraightLine(fitSeis.getData());
-
-        int npts = seis.getNsamp();
-
-        // TODO: Set synthetic end time to max length of measurement (+1?) for
-        // FB if it's set and > 0.0
-        Double[] Ac = new Double[npts];
-
-        double gr = curve.getGamma();
-        double br = curve.getBeta();
-        for (int ii = 0; ii < Ac.length; ii++) {
-            double t = (ii + 1) * dt;
-            Ac[ii] = syntheticCodaModel.getSyntheticPointAtTime(gr, br, t);
-        }
-
-        synth.setSegment(Ac);
-        synth.setBeginTime(seis.getTime().getDate());
-        synth.setEndTime(seis.getEndtime().getDate());
-        synth.setSampleRate(seis.getSamprate());
-        synth.setSourceWaveform(waveform);
-        synth.setSourceModel(null);
-        synth.setMeasuredV(0.0);
-        synth.setMeasuredB(br);
-        synth.setMeasuredG(gr);
-
-        return synth;
     }
 
     /**

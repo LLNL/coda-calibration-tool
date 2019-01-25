@@ -12,25 +12,33 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.common.service.api;
+package gov.llnl.gnem.apps.coda.envelope.util;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
-import gov.llnl.gnem.apps.coda.common.model.domain.Event;
-import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.envelope.model.domain.EnvelopeBandParameters;
 
-public interface WaveformService extends BaseService<Waveform, Long> {
+public interface BandGenerator {
 
-    public List<Waveform> getByExampleAllMatching(Waveform waveform);
+    public Double clampMinFreq(Double minFreq, Double maxFreq);
 
-    public List<Waveform> getAllStacks();
+    public Double clampSpacing(Double spacing);
 
-    public List<Waveform> update(Long sessionId, Collection<Waveform> values);
+    public Double clampOverlap(Double overlap);
 
-    public Waveform update(Waveform waveformPayload);
+    public List<EnvelopeBandParameters> generateTable(Double minFreq, Double maxFreq, Double overlap, Double spacing);
 
-    public List<Waveform> getUniqueEventStationStacks();
+    public BandGenerator setMinFunc(Function<Double, Double> minFunx);
 
-    public Event findEventById(String eventId);
+    public Function<Double, Double> getMinFunc();
+
+    public BandGenerator setMaxFunc(Function<Double, Double> maxFunc);
+
+    public Function<Double, Double> getMaxFunc();
+
+    public BandGenerator setMinPrecision(double minPrecision);
+
+    public double getMinPrecision();
+
 }

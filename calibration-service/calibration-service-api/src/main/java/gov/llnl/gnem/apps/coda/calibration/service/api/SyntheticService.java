@@ -26,4 +26,6 @@ public interface SyntheticService extends BaseService<SyntheticCoda, Long> {
     public SyntheticCoda update(SyntheticCoda payload);
 
     public SyntheticCoda findOneByWaveformId(Long id);
+
+    public Collection<SyntheticCoda> findAllByWaveformId(Collection<Long> ids);
 }

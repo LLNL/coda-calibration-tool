@@ -20,13 +20,14 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.layout.StackPane;
 
 @Component
-public class ParametersController {
+public class ParametersController implements RefreshableController {
 
     @FXML
     private StackPane parameters;
@@ -64,7 +65,8 @@ public class ParametersController {
         siteBandController.requestData();
     }
 
-    public void update() {
-        reloadData();
+    @Override
+    public Runnable getRefreshFunction() {
+        return () -> reloadData();
     }
 }

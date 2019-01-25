@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.standalone.data.client;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,8 +26,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticService;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
-import gov.llnl.gnem.apps.coda.common.model.domain.Event;
-import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
@@ -52,7 +51,7 @@ public class WaveformLocalClient implements WaveformClient {
     }
 
     @Override
-    public Mono<SyntheticCoda> getSyntheticFromId(Long id) {
+    public Mono<SyntheticCoda> getSyntheticFromWaveformId(Long id) {
         return Mono.just(Optional.ofNullable(synthService.findOneByWaveformId(id)).orElse(new SyntheticCoda())).onErrorReturn(new SyntheticCoda());
     }
 
@@ -73,9 +72,17 @@ public class WaveformLocalClient implements WaveformClient {
 
     @Override
     public Flux<Waveform> getUniqueEventStationMetadataForStacks() {
-        List<Object[]> eventStations = service.getUniqueEventStationStacks();
-        return Flux.fromStream(eventStations.parallelStream().filter(evSta -> evSta.length >= 2).map(evSta -> new Waveform().setEvent((Event) evSta[0]).setStream((Stream) evSta[1])))
-                   .onErrorReturn(null);
+        return Flux.fromIterable(service.getUniqueEventStationStacks());
+    }
+
+    @Override
+    public Flux<Waveform> getWaveformsFromIds(Collection<Long> ids) {
+        return Flux.fromIterable(service.findAll(ids)).onErrorReturn(new Waveform());
+    }
+
+    @Override
+    public Flux<SyntheticCoda> getSyntheticsFromWaveformIds(Collection<Long> ids) {
+        return Flux.fromIterable(synthService.findAllByWaveformId(ids)).onErrorReturn(new SyntheticCoda());
     }
 
 }

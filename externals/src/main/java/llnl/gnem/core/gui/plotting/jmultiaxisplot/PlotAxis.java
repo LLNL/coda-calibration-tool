@@ -315,7 +315,7 @@ public abstract class PlotAxis {
      *            The new labelVisible value
      */
     public void setLabelVisible(boolean v) {
-        label.setVisible(visible);
+        label.setVisible(v);
     }
 
     /**

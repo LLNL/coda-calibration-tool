@@ -14,7 +14,9 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.data.client;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -45,8 +47,8 @@ public class WaveformWebClient implements WaveformClient {
     }
 
     @Override
-    public Mono<SyntheticCoda> getSyntheticFromId(Long id) {
-        return client.get().uri("/synthetics/{id}", id).accept(MediaType.APPLICATION_JSON).exchange().flatMap(response -> response.bodyToMono(SyntheticCoda.class));
+    public Mono<SyntheticCoda> getSyntheticFromWaveformId(Long id) {
+        return client.get().uri("/synthetics/single/{id}", id).accept(MediaType.APPLICATION_JSON).exchange().flatMap(response -> response.bodyToMono(SyntheticCoda.class));
     }
 
     @Override
@@ -83,6 +85,29 @@ public class WaveformWebClient implements WaveformClient {
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(Waveform.class))
-                     .onErrorReturn(null);
+                     .filter(w -> w != null && w.getId() != null)
+                     .onErrorReturn(new Waveform());
+    }
+
+    @Override
+    public Flux<Waveform> getWaveformsFromIds(Collection<Long> ids) {
+        return client.get()
+                     .uri("/waveforms/batch/{ids}", ids.toString().replaceAll("\\[|\\]", ""))
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(Waveform.class))
+                     .filter(Objects::nonNull)
+                     .onErrorReturn(new Waveform());
+    }
+
+    @Override
+    public Flux<SyntheticCoda> getSyntheticsFromWaveformIds(Collection<Long> ids) {
+        return client.get()
+                     .uri("/synthetics/batch/{ids}", ids.toString().replaceAll("\\[|\\]", ""))
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(SyntheticCoda.class))
+                     .filter(Objects::nonNull)
+                     .onErrorReturn(new SyntheticCoda());
     }
 }

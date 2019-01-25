@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -117,6 +118,21 @@ public class LeafletMapController implements GeoMap {
     }
 
     @Override
+    public void addShape(GeoShape shape) {
+        mapImpl.addShape(shape);
+    }
+
+    @Override
+    public void removeShape(GeoShape shape) {
+        mapImpl.removeShape(shape);
+    }
+
+    @Override
+    public void fitViewToActiveShapes() {
+        mapImpl.fitViewToActiveShapes();
+    }
+
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
@@ -160,4 +176,5 @@ public class LeafletMapController implements GeoMap {
         builder.append("\"").append(view).append("\", \"").append(mapImpl).append("\"");
         return builder.toString();
     }
+
 }

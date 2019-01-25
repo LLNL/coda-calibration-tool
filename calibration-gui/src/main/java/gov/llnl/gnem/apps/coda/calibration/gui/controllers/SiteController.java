@@ -27,6 +27,7 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
@@ -51,11 +53,9 @@ import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
-import gov.llnl.gnem.apps.coda.common.mapping.api.IconFactory;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -73,7 +73,7 @@ import llnl.gnem.core.gui.plotting.plotobject.Symbol;
 import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
 
 @Component
-public class SiteController {
+public class SiteController implements MapListeningController, RefreshableController {
 
     private static final String X_AXIS_LABEL = "center freq";
 
@@ -134,6 +134,8 @@ public class SiteController {
     private ObservableList<MeasuredMwParameters> measuredMwParameters = FXCollections.observableArrayList();
 
     private ObservableList<LabeledPlotPoint> stationSymbols = FXCollections.observableArrayList();
+    private final BiConsumer<Boolean, String> eventSelectionCallback;
+    private final BiConsumer<Boolean, String> stationSelectionCallback;
 
     private EventBus bus;
 
@@ -141,22 +143,33 @@ public class SiteController {
     protected Map<Point2D.Double, SpectraMeasurement> pathSymbolMap = new ConcurrentHashMap<>();
     protected Map<Point2D.Double, SpectraMeasurement> siteSymbolMap = new ConcurrentHashMap<>();
 
+    private Map<String, List<PlotPoint>> plotPointMap = new HashMap<>();
+    private final List<PlotPoint> selectedPoints = new ArrayList<>();
+
     private SymbolStyleMapFactory symbolStyleMapFactory;
 
     private Map<String, PlotPoint> symbolStyleMap;
 
     private GeoMap mapImpl;
 
-    private IconFactory iconFactory;
+    private MapPlottingUtilities iconFactory;
 
     @Autowired
-    private SiteController(SpectraClient spectraClient, ReferenceEventClient referenceEventClient, SymbolStyleMapFactory styleFactory, GeoMap map, IconFactory iconFactory, EventBus bus) {
+    private SiteController(SpectraClient spectraClient, ReferenceEventClient referenceEventClient, SymbolStyleMapFactory styleFactory, GeoMap map, MapPlottingUtilities iconFactory, EventBus bus) {
         this.spectraClient = spectraClient;
         this.referenceEventClient = referenceEventClient;
         this.symbolStyleMapFactory = styleFactory;
         this.mapImpl = map;
         this.bus = bus;
         this.iconFactory = iconFactory;
+
+        eventSelectionCallback = (selected, eventId) -> {
+            selectDataByCriteria(bus, selected, eventId);
+        };
+
+        stationSelectionCallback = (selected, stationId) -> {
+            selectDataByCriteria(bus, selected, stationId);
+        };
     }
 
     @FXML
@@ -173,6 +186,7 @@ public class SiteController {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
                         PlotObject po = poc.getPlotObject();
                         if (po != null && po instanceof Symbol) {
+                            selectPoints(plotPointMap.get(((Symbol) po).getText()));
                             SpectraMeasurement spectra = rawSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
                             if (spectra != null) {
                                 showWaveformPopup(spectra.getWaveform());
@@ -192,6 +206,7 @@ public class SiteController {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
                         PlotObject po = poc.getPlotObject();
                         if (po != null && po instanceof Symbol) {
+                            selectPoints(plotPointMap.get(((Symbol) po).getText()));
                             SpectraMeasurement spectra = pathSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
                             if (spectra != null) {
                                 showWaveformPopup(spectra.getWaveform());
@@ -212,6 +227,7 @@ public class SiteController {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
                         PlotObject po = poc.getPlotObject();
                         if (po != null && po instanceof Symbol) {
+                            selectPoints(plotPointMap.get(((Symbol) po).getText()));
                             SpectraMeasurement spectra = siteSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
                             if (spectra != null) {
                                 showWaveformPopup(spectra.getWaveform());
@@ -290,25 +306,26 @@ public class SiteController {
         rawSymbolMap.clear();
         pathSymbolMap.clear();
         siteSymbolMap.clear();
-
+        plotPointMap.clear();
+        List<SpectraMeasurement> filteredMeasurements;
         if (evidCombo != null && evidCombo.getSelectionModel().getSelectedIndex() > 0) {
-            List<SpectraMeasurement> filteredMeasurements = filterToEvent(evidCombo.getSelectionModel().getSelectedItem(), spectralMeasurements);
-            rawSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime));
-            pathSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathCorrected));
-            siteSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected));
-
+            filteredMeasurements = filterToEvent(evidCombo.getSelectionModel().getSelectedItem(), spectralMeasurements);
             Spectra referenceSpectra = spectraClient.getReferenceSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
             Spectra theoreticalSpectra = spectraClient.getFitSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
             rawPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.TRUE);
             pathPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathCorrected), Boolean.TRUE);
             sitePlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.TRUE, referenceSpectra, theoreticalSpectra);
-            mapImpl.addIcons(mapMeasurements(filteredMeasurements));
         } else {
-            rawPlot.plotXYdata(toPlotPoints(spectralMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.FALSE);
-            pathPlot.plotXYdata(toPlotPoints(spectralMeasurements, SpectraMeasurement::getPathCorrected), Boolean.FALSE);
-            sitePlot.plotXYdata(toPlotPoints(spectralMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.FALSE);
-            mapImpl.addIcons(mapMeasurements(spectralMeasurements));
+            filteredMeasurements = spectralMeasurements;
+            rawPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.FALSE);
+            pathPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathCorrected), Boolean.FALSE);
+            sitePlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.FALSE);
         }
+        rawSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime));
+        pathSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathCorrected));
+        siteSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected));
+        mapImpl.addIcons(mapMeasurements(filteredMeasurements));
+
     }
 
     private Collection<Icon> mapMeasurements(List<SpectraMeasurement> filteredMeasurements) {
@@ -316,10 +333,10 @@ public class SiteController {
             List<Icon> icons = new ArrayList<>();
             if (w.getStream() != null && w.getStream().getStation() != null) {
                 Station station = w.getStream().getStation();
-                icons.add(iconFactory.newIcon(IconTypes.TRIANGLE_UP, new Location(station.getLatitude(), station.getLongitude()), station.getStationName()));
+                icons.add(iconFactory.createStationIcon(station).setIconSelectionCallback(stationSelectionCallback));
             }
             if (w.getEvent() != null) {
-                icons.add(iconFactory.newIcon(w.getEvent().getEventId(), IconTypes.CIRCLE, new Location(w.getEvent().getLatitude(), w.getEvent().getLongitude()), w.getEvent().getEventId()));
+                icons.add(iconFactory.createEventIcon(w.getEvent()).setIconSelectionCallback(eventSelectionCallback));
             }
             return icons.stream();
         }).collect(Collectors.toList());
@@ -349,10 +366,30 @@ public class SiteController {
 
     private List<PlotPoint> toPlotPoints(List<SpectraMeasurement> spectralMeasurements, Function<SpectraMeasurement, Double> func) {
         List<PlotPoint> list = spectralMeasurements.stream().filter(spectra -> !func.apply(spectra).equals(0.0)).map(spectra -> {
-            PlotPoint pp = symbolStyleMap.get(spectra.getWaveform().getStream().getStation().getStationName());
-            return new PlotPoint(Math.log10(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency())), func.apply(spectra), pp.getStyle(), pp.getColor());
+            String key = spectra.getWaveform().getStream().getStation().getStationName();
+            PlotPoint pp = symbolStyleMap.get(key);
+            PlotPoint point = new LabeledPlotPoint(key,
+                                                   new PlotPoint(Math.log10(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency())),
+                                                                 func.apply(spectra),
+                                                                 pp.getStyle(),
+                                                                 pp.getColor()));
+            if (hasEventAndStation(spectra)) {
+                plotPointMap.computeIfAbsent(spectra.getWaveform().getEvent().getEventId(), k -> new ArrayList<>()).add(point);
+                plotPointMap.computeIfAbsent(spectra.getWaveform().getStream().getStation().getStationName(), k -> new ArrayList<>()).add(point);
+            }
+            return point;
         }).collect(Collectors.toList());
         return list;
+    }
+
+    private boolean hasEventAndStation(SpectraMeasurement spectra) {
+        return spectra != null
+                && spectra.getWaveform() != null
+                && spectra.getWaveform().getEvent() != null
+                && spectra.getWaveform().getEvent().getEventId() != null
+                && spectra.getWaveform().getStream() != null
+                && spectra.getWaveform().getStream().getStation() != null
+                && spectra.getWaveform().getStream().getStation().getStationName() != null;
     }
 
     private double centerFreq(Double lowFrequency, Double highFrequency) {
@@ -391,12 +428,91 @@ public class SiteController {
         evids.addAll(spectralMeasurements.stream().map(spec -> spec.getWaveform().getEvent().getEventId()).distinct().sorted(new MaybeNumericStringComparator()).collect(Collectors.toList()));
     }
 
+    @Override
     public void refreshView() {
         mapImpl.clearIcons();
         plotSpectra();
+        Platform.runLater(() -> {
+            rawPlot.repaint();
+            pathPlot.repaint();
+            sitePlot.repaint();
+        });
     }
 
-    public void update() {
-        reloadData();
+    @Override
+    public Runnable getRefreshFunction() {
+        return () -> reloadData();
+    }
+
+    private void selectDataByCriteria(EventBus bus, Boolean selected, String key) {
+        List<PlotPoint> points = plotPointMap.get(key);
+        if (selected) {
+            selectPoints(points);
+        } else {
+            deselectPoints(points);
+        }
+    }
+
+    private void selectPoints(List<PlotPoint> points) {
+        if (points != null && !points.isEmpty()) {
+            if (!selectedPoints.isEmpty()) {
+                deselectPoints(selectedPoints);
+            }
+            selectedPoints.addAll(points);
+            SwingUtilities.invokeLater(() -> {
+                points.forEach(point -> {
+                    selectPoint(point);
+                });
+            });
+        }
+    }
+
+    private void deselectPoints(List<PlotPoint> selected) {
+        if (selected != null && !selected.isEmpty()) {
+            List<PlotPoint> points = new ArrayList<>(selected.size());
+            points.addAll(selected);
+            selectedPoints.clear();
+            SwingUtilities.invokeLater(() -> {
+                points.forEach(point -> {
+                    deselectPoint(point);
+                });
+            });
+        }
+    }
+
+    private void selectPoint(PlotPoint point) {
+        Point2D.Double xyPoint = new Point2D.Double(point.getX(), point.getY());
+        boolean existsInPlot = rawSymbolMap.containsKey(xyPoint);
+        if (existsInPlot) {
+            rawPlot.selectPoint(xyPoint);
+        }
+
+        existsInPlot = pathSymbolMap.containsKey(xyPoint);
+        if (existsInPlot) {
+            pathPlot.selectPoint(xyPoint);
+        }
+
+        existsInPlot = siteSymbolMap.containsKey(xyPoint);
+        if (existsInPlot) {
+            sitePlot.selectPoint(xyPoint);
+        }
+    }
+
+    private void deselectPoint(PlotPoint point) {
+        Point2D.Double xyPoint = new Point2D.Double(point.getX(), point.getY());
+        boolean existsInPlot = rawSymbolMap.containsKey(xyPoint);
+        if (existsInPlot) {
+            rawPlot.deselectPoint(xyPoint);
+        }
+
+        existsInPlot = pathSymbolMap.containsKey(xyPoint);
+        if (existsInPlot) {
+            pathPlot.deselectPoint(xyPoint);
+        }
+
+        existsInPlot = siteSymbolMap.containsKey(xyPoint);
+        if (existsInPlot) {
+            sitePlot.deselectPoint(xyPoint);
+        }
     }
 }

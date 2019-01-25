@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
+import java.io.File;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -29,6 +30,10 @@ import gov.llnl.gnem.apps.coda.common.gui.converters.api.FileToEnvelopeConverter
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacExporter;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.EnvelopeLoadCompleteEvent;
+import gov.llnl.gnem.apps.coda.common.gui.util.ProgressEventProgressListener;
+import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
+import gov.llnl.gnem.apps.coda.common.model.messaging.ProgressEvent;
 
 @Component
 @ConfigurationProperties("waveform.client")
@@ -39,6 +44,18 @@ public class EnvelopeLoadingController extends AbstractSeismogramSaveLoadControl
     @Autowired
     public EnvelopeLoadingController(List<FileToEnvelopeConverter> fileConverters, WaveformClient client, EventBus bus, SacExporter sacExporter) {
         super(fileConverters, bus, log, sacExporter, () -> client.getAllStacks(), (id, waveforms) -> client.postWaveforms(id, waveforms));
-        this.setCompletionCallback(() -> bus.post(new EnvelopeLoadCompleteEvent()));
+    }
+
+    @Override
+    public void loadFiles(List<File> inputFiles) {
+        Progress progress = new Progress(-1l, 0l);
+        ProgressEvent progressEvent = new ProgressEvent(idCounter.getAndIncrement(), progress);
+        ProgressMonitor progressMonitor = new ProgressMonitor("Data Processing", new ProgressEventProgressListener(bus, progressEvent));
+        super.loadFiles(inputFiles, () -> {
+            bus.post(new EnvelopeLoadCompleteEvent());
+            progress.setTotal(1l);
+            progress.setCurrent(1l);
+            bus.post(progressEvent);
+        }, progressMonitor);
     }
 }

@@ -46,7 +46,7 @@ public class SslUtils {
 
         TrustManager[] trustManagers = { new CombinedTrustManager(getSystemTrustManager(defaultAlgorithm, keyStore), getSystemTrustManager(defaultAlgorithm, null)) };
 
-        SSLContext context = SSLContext.getInstance("SSL");
+        SSLContext context = SSLContext.getInstance("TLSv1.2");
         context.init(keyManagers, trustManagers, null);
         return context;
     }

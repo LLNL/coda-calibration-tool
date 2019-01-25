@@ -430,6 +430,10 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven.surefire.plugin.version}</version>
+					<configuration>
+						<!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+						<useSystemClassLoader>false</useSystemClassLoader>
+					</configuration>
 				</plugin>
 
 				<plugin>

@@ -34,4 +34,10 @@ public interface GeoMap {
 
     public void addLayer(WMSLayerDescriptor layer);
 
+    public void addShape(GeoShape shape);
+
+    public void removeShape(GeoShape shape);
+
+    public void fitViewToActiveShapes();
+
 }

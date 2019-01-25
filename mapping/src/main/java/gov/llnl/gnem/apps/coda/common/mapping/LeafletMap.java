@@ -17,30 +17,58 @@ package gov.llnl.gnem.apps.coda.common.mapping;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Line;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.concurrent.Worker;
 import javafx.scene.layout.Pane;
 import javafx.scene.web.WebView;
+import netscape.javascript.JSObject;
 
 public class LeafletMap implements GeoMap {
 
     private WebView webView;
     private ObservableSet<Icon> icons = FXCollections.observableSet(new HashSet<>());
+    private ObservableSet<GeoShape> shapes = FXCollections.observableSet(new HashSet<>());
     private Pane parent;
     private Set<WMSLayerDescriptor> layers = new HashSet<>();
     private AtomicBoolean mapReady = new AtomicBoolean(false);
+    private Map<String, BiConsumer<Boolean, String>> callbackMap = new HashMap<>();
+    private IconCallbackHandler iconCallbackHandler;
+
+    public class IconCallbackHandler {
+        private BiConsumer<Boolean, String> iconCallbackHandler;
+
+        public IconCallbackHandler(BiConsumer<Boolean, String> iconCallbackHandler) {
+            this.iconCallbackHandler = iconCallbackHandler;
+        }
+
+        public void accept(Boolean selected, String value) {
+            iconCallbackHandler.accept(selected, value);
+        }
+    }
 
     public LeafletMap() {
+        iconCallbackHandler = new IconCallbackHandler((selected, id) -> {
+            BiConsumer<Boolean, String> callback = callbackMap.get(id);
+            if (callback != null) {
+                callback.accept(selected, id);
+            }
+        });
+
         Platform.runLater(() -> {
             webView = new WebView();
             webView.getEngine().setJavaScriptEnabled(true);
@@ -48,6 +76,8 @@ public class LeafletMap implements GeoMap {
                 if (n == Worker.State.SUCCEEDED) {
                     mapReady.set(true);
                     layers.forEach(this::addLayerToMap);
+                    JSObject wind = (JSObject) webView.getEngine().executeScript("window");
+                    wind.setMember("iconCallbackHandler", iconCallbackHandler);
                     return;
                 }
             });
@@ -79,6 +109,7 @@ public class LeafletMap implements GeoMap {
     @Override
     public void clearIcons() {
         icons.clear();
+        callbackMap.clear();
         clearIconLayer();
     }
 
@@ -132,6 +163,7 @@ public class LeafletMap implements GeoMap {
         if (mapReady.get()) {
             removeIconsFromMap(Collections.singleton(icon));
         }
+        callbackMap.remove(icon.getId());
         return icons.remove(icon);
     }
 
@@ -146,6 +178,7 @@ public class LeafletMap implements GeoMap {
     @Override
     public void removeIcons(Collection<Icon> icons) {
         this.icons.removeAll(icons);
+        icons.forEach(icon -> callbackMap.remove(icon.getId()));
         if (mapReady.get()) {
             removeIconsFromMap(icons);
         }
@@ -157,6 +190,9 @@ public class LeafletMap implements GeoMap {
             StringBuilder sb = new StringBuilder();
             for (Icon icon : iconCollection) {
                 sb.append(createJsIconRepresentation(icon));
+                if (icon.getIconSelectionCallback() != null) {
+                    callbackMap.put(icon.getId(), icon.getIconSelectionCallback());
+                }
             }
             webView.getEngine().executeScript(sb.toString());
         });
@@ -166,6 +202,76 @@ public class LeafletMap implements GeoMap {
         Platform.runLater(() -> icons.forEach(icon -> {
             webView.getEngine().executeScript("removeIcon(\"" + icon.getId() + "\");");
         }));
+    }
+
+    @Override
+    public void addShape(GeoShape shape) {
+        if (mapReady.get()) {
+            addShapesToMap(Collections.singleton(shape));
+        }
+        shapes.add(shape);
+    }
+
+    @Override
+    public void removeShape(GeoShape shape) {
+        if (mapReady.get()) {
+            removeShapesFromMap(Collections.singleton(shape));
+        }
+        shapes.remove(shape);
+    }
+
+    private void addShapesToMap(Collection<? extends GeoShape> shapes) {
+        List<? extends GeoShape> shapeCollection = new ArrayList<>(shapes);
+        Platform.runLater(() -> {
+            StringBuilder sb = new StringBuilder();
+            for (GeoShape shape : shapeCollection) {
+                sb.append(createJsShapeRepresentation(shape));
+            }
+            webView.getEngine().executeScript(sb.toString());
+        });
+    }
+
+    @Override
+    public void fitViewToActiveShapes() {
+        Platform.runLater(() -> webView.getEngine().executeScript("fitViewToActiveShapes();"));
+    }
+
+    private void removeShapesFromMap(Collection<? extends GeoShape> shapes) {
+        Platform.runLater(() -> shapes.forEach(shape -> {
+            webView.getEngine().executeScript("removeShape(\"" + shape.getId() + "\");");
+        }));
+    }
+
+    private String createJsShapeRepresentation(GeoShape shape) {
+        //TODO: Encapsulate this better...
+        StringBuilder sb = new StringBuilder();
+
+        if (shape instanceof Line) {
+            Line line = (Line) shape;
+            sb.append("if (!markers.has(\"");
+            sb.append(line.getId());
+            sb.append("\")) {");
+            sb.append("marker = L.polyline([");
+            sb.append("[");
+            sb.append(line.getStartLocation().getLatitude());
+            sb.append(",");
+            sb.append(line.getStartLocation().getLongitude());
+            sb.append("]");
+            sb.append(",");
+            sb.append("[");
+            sb.append(line.getEndLocation().getLatitude());
+            sb.append(",");
+            sb.append(line.getEndLocation().getLongitude());
+            sb.append("]");
+            sb.append("]");
+            sb.append(", {color: 'black', interactive: false, weight: 1, pane: 'background-pane', bubblingMouseEvents: false, smoothFactor: 1}");
+            sb.append(")");
+            sb.append(".addTo(lineGroup);");
+            sb.append("marker._uid = \"");
+            sb.append(shape.getId());
+            sb.append("\"; markers.set(marker._uid, lineGroup.getLayerId(marker)); }");
+        }
+        return sb.toString();
     }
 
     private String createJsIconRepresentation(Icon icon) {
@@ -190,14 +296,10 @@ public class LeafletMap implements GeoMap {
             sb.append("popupAnchor: [-3, -3]");
             sb.append("})");
             sb.append(getTriangleStyleZIndex(icon.getStyle()));
-            sb.append("}).bindPopup('");
-            sb.append(icon.getFriendlyName());
-            sb.append("').addTo(iconGroup);");
+            sb.append("})");
             break;
-        case LINE:
         case CIRCLE:
         case DEFAULT:
-        default:
             sb.append("marker = L.circleMarker([");
             sb.append(icon.getLocation().getLatitude());
             sb.append(",");
@@ -205,22 +307,37 @@ public class LeafletMap implements GeoMap {
             sb.append("]");
             sb.append(getCircleStyle(icon.getStyle()));
             sb.append(")");
-            sb.append(".bindPopup('");
-            sb.append(icon.getFriendlyName());
-            sb.append("').addTo(iconGroup);");
             break;
+        default:
+            return "";
         }
+        if (icon.getIconSelectionCallback() != null) {
+            sb.append(addCallbacks(icon.getId(), icon.getFriendlyName()));
+        }
+        sb.append(".addTo(iconGroup);");
         sb.append("marker._uid = \"");
         sb.append(icon.getId());
         sb.append("\"; markers.set(marker._uid, iconGroup.getLayerId(marker)); }");
         return sb.toString();
     }
 
+    private String addCallbacks(String id, String name) {
+        return ".on('click', function() { iconCallbackHandler.accept(true, \""
+                + id
+                + "\"); })"
+                + ".bindPopup('"
+                + name
+                + "')"
+                + ".on('popupclose', function() { iconCallbackHandler.accept(false, \""
+                + id
+                + "\"); })";
+    }
+
     private String getTriangleStyleZIndex(IconStyles style) {
         String jsonStyle;
         switch (style) {
         case FOCUSED:
-            jsonStyle = ", zIndexOffset: 800000";
+            jsonStyle = ", zIndexOffset: 800000, interactive: false";
             break;
         case BACKGROUND:
             jsonStyle = ", zIndexOffset: -800000";
@@ -254,7 +371,7 @@ public class LeafletMap implements GeoMap {
         String jsonStyle;
         switch (style) {
         case FOCUSED:
-            jsonStyle = ", { radius: 5, color: 'black', fillColor: '#ffffff', opacity: 1, fillOpacity: 1, pane: 'important-event-pane' }";
+            jsonStyle = ", { radius: 5, color: 'black', fillColor: '#ffffff', opacity: 1, fillOpacity: 1, pane: 'important-event-pane', interactive: false }";
             break;
         case BACKGROUND:
             jsonStyle = ", { radius: 5, color: 'black', fillColor: '#505050', opacity: 1, fillOpacity: 1 }";
@@ -266,4 +383,5 @@ public class LeafletMap implements GeoMap {
         }
         return jsonStyle;
     }
+
 }
