@@ -38,6 +38,7 @@ import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacLoader;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
+import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
@@ -78,7 +79,15 @@ public class AssessAutopicker {
             Double maxTime = halfSeries.getMaxTime()[0];
 
             double startTime = series.getTime().getEpochTime() + maxTime;
-            double stopTime = picker.getEndTime(series.getData(), series.getSamprate(), startTime, series.getIndexForTime(startTime), 0, 1200, 0.0);
+            double stopTime = picker.getEndTime(
+                    series.getData(),
+                        series.getSamprate(),
+                        startTime,
+                        series.getIndexForTime(startTime),
+                        0,
+                        1200,
+                        0.0,
+                        WaveformUtils.getNoiseFloor(WaveformUtils.floatsToDoubles(series.getData())));
             if (new TimeT(stopTime).gt(new TimeT(startTime))) {
                 stopTime = stopTime + series.getTime().subtractD(new TimeT(w.getEvent().getOriginTime()));
             }

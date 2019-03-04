@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
@@ -73,6 +75,8 @@ public class CodaWaveformPlot extends SeriesPlot {
     private ShapeMeasurementClient shapeClient;
 
     private PeakVelocityClient velocityClient;
+
+    private SyntheticCoda synthetic;
 
     private enum PLOT_ORDERING {
         BACKGROUND(0), NOISE_BOX(1), WAVEFORM(2), NOISE_LINE(3), SHAPE_FIT(4), MODEL_FIT(5), PICKS(6);
@@ -156,6 +160,9 @@ public class CodaWaveformPlot extends SeriesPlot {
                         Collection<VPickLine> pickLines = this.addPick(pick.getPickName(), pickTime);
                         for (VPickLine pickLine : pickLines) {
                             pickLine.setDraggable(true);
+                            if (!pickLine.getText().equalsIgnoreCase("f")) {
+                                pickLine.setColor(Color.LIGHT_GRAY);
+                            }
                             pickLineMap.put(pickLine, pick);
                         }
                     }
@@ -197,63 +204,18 @@ public class CodaWaveformPlot extends SeriesPlot {
                                 //                                int timeStart = (int) (new TimeT(measurement.getNoiseStartSecondsFromOrigin()).subtractD(beginTime) - 0.5);
                                 //                                int timeEnd = (int) (new TimeT(measurement.getNoiseEndSecondsFromOrigin()).subtractD(beginTime) - 0.5);
                                 //                                subplot.AddPlotObject(createRectangle(timeStart, timeEnd, -FULL_LENGTH, FULL_LENGTH, PINK_HALF_TRANS), PLOT_ORDERING.NOISE_BOX.getZOrder());
-                                subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel(), lineLength, LIGHT_RED, PenStyle.DASH), PLOT_ORDERING.NOISE_LINE.getZOrder());
-                                subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel() + params.getMinSnr(), lineLength, LIGHT_RED, PenStyle.SOLID), PLOT_ORDERING.NOISE_LINE.getZOrder());
+                                subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel(), lineLength, Color.BLACK, PenStyle.DASH), PLOT_ORDERING.NOISE_LINE.getZOrder());
+                                subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel() + params.getMinSnr(), lineLength, Color.BLACK, PenStyle.SOLID), PLOT_ORDERING.NOISE_LINE.getZOrder());
                                 repaint();
                             }
                         });
 
                         if (synth != null) {
-                            TimeSeries interpolatedSeries = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
-                            float[] synthSegment = doublesToFloats(synth.getSegment());
-                            TimeSeries synthSeries = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
-                            WaveformPick endPick = null;
-                            for (WaveformPick p : waveform.getAssociatedPicks()) {
-                                if (PICK_TYPES.F.name().equals(p.getPickType())) {
-                                    endPick = p;
-                                    break;
-                                }
-                            }
-                            TimeT endTime;
-                            if (endPick != null && endPick.getPickTimeSecFromOrigin() > 0 && waveform.getEvent() != null) {
-                                endTime = new TimeT(waveform.getEvent().getOriginTime()).add(endPick.getPickTimeSecFromOrigin());
-                            } else {
-                                endTime = new TimeT(synth.getEndTime());
-                            }
-
-                            interpolatedSeries.interpolate(synthSeries.getSamprate());
-
-                            double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
-                            if (vr == 0.0) {
-                                vr = 1.0;
-                            }
-                            TimeT originTime = new TimeT(event.getOriginTime());
-                            TimeT startTime;
-                            TimeT trimTime = originTime.add(distance / vr);
-                            TimeSeries trimmedWaveform = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
-                            try {
-                                trimmedWaveform.cutBefore(trimTime);
-                                trimmedWaveform.cutAfter(trimTime.add(30.0));
-                                startTime = new TimeT(trimTime.getEpochTime() + trimmedWaveform.getMaxTime()[0]);
-                            } catch (IllegalArgumentException e) {
-                                startTime = trimTime;
-                            }
-
-                            if (startTime.lt(endTime)) {
-                                interpolatedSeries.cut(startTime, endTime);
-                                synthSeries.cut(startTime, endTime);
-
-                                TimeSeries diffSeis = interpolatedSeries.subtract(synthSeries);
-                                int timeShift = (int) (startTime.subtractD(beginTime) - 0.5);
-                                double median = diffSeis.getMedian();
-
-                                subplot.DeletePlotObject(legendRef);
-                                subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
-                                subplot.AddPlotObject(createLine(timeShift, median, synthSeries, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
-                                repaint();
-                            }
+                            plotSynthetic(waveform, synth, beginTime, waveformSegment, subplot, event, distance, labelText, legendRef, params);
+                            this.synthetic = synth;
+                        } else if (this.synthetic != null && synthetic.getSourceWaveform() != null && synthetic.getSourceWaveform().getId() == waveform.getId()) {
+                            plotSynthetic(waveform, synthetic, beginTime, waveformSegment, subplot, event, distance, labelText, legendRef, params);
                         }
-
                     } catch (IllegalArgumentException e) {
                         log.warn(e.getMessage(), e);
                     }
@@ -261,6 +223,60 @@ public class CodaWaveformPlot extends SeriesPlot {
 
                 repaint();
             });
+        }
+    }
+
+    private void plotSynthetic(Waveform waveform, SyntheticCoda synth, final TimeT beginTime, final float[] waveformSegment, JSubplot subplot, Event event, double distance, String labelText,
+            PlotObject legendRef, SharedFrequencyBandParameters params) {
+        TimeSeries interpolatedSeries = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
+        float[] synthSegment = doublesToFloats(synth.getSegment());
+        TimeSeries synthSeries = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
+        WaveformPick endPick = null;
+        for (WaveformPick p : waveform.getAssociatedPicks()) {
+            if (p.getPickType() != null && PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType().trim())) {
+                endPick = p;
+                break;
+            }
+        }
+        TimeT endTime;
+        if (endPick != null && event != null) {
+            endTime = new TimeT(event.getOriginTime()).add(endPick.getPickTimeSecFromOrigin());
+        } else {
+            endTime = new TimeT(synth.getEndTime());
+        }
+
+        interpolatedSeries.interpolate(synthSeries.getSamprate());
+
+        double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
+        if (vr == 0.0) {
+            vr = 1.0;
+        }
+        TimeT originTime = new TimeT(event.getOriginTime());
+        TimeT startTime;
+        TimeT trimTime = originTime.add(distance / vr);
+        if (trimTime.lt(endTime)) {
+            TimeSeries trimmedWaveform = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
+            try {
+                trimmedWaveform.cutBefore(trimTime);
+                trimmedWaveform.cutAfter(trimTime.add(30.0));
+                startTime = new TimeT(trimTime.getEpochTime() + trimmedWaveform.getMaxTime()[0]);
+            } catch (IllegalArgumentException e) {
+                startTime = trimTime;
+            }
+
+            if (startTime.lt(endTime)) {
+                interpolatedSeries.cut(startTime, endTime);
+                synthSeries.cut(startTime, endTime);
+
+                TimeSeries diffSeis = interpolatedSeries.subtract(synthSeries);
+                int timeShift = (int) (startTime.subtractD(beginTime) + 0.5);
+                double median = diffSeis.getMedian();
+
+                subplot.DeletePlotObject(legendRef);
+                subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
+                subplot.AddPlotObject(createLine(timeShift, median, synthSeries, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                repaint();
+            }
         }
     }
 
@@ -322,8 +338,17 @@ public class CodaWaveformPlot extends SeriesPlot {
         if (vpl != null) {
             try {
                 WaveformPick pick = pickLineMap.get(vpl);
-                if (pick != null) {
+                if (pick != null && pick.getWaveform() != null) {
                     pick.setPickTimeSecFromOrigin((float) (vpl.getXval() - new TimeT(pick.getWaveform().getEvent().getOriginTime()).subtractD(new TimeT(pick.getWaveform().getBeginTime()))));
+                    if (pick.getPickName() != null && PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickName().trim())) {
+                        pick.getWaveform()
+                            .setAssociatedPicks(
+                                    pick.getWaveform()
+                                        .getAssociatedPicks()
+                                        .stream()
+                                        .filter(p -> p.getPickName() != null && !PICK_TYPES.AP.getPhase().equalsIgnoreCase(p.getPickName().trim()))
+                                        .collect(Collectors.toList()));
+                    }
                     waveformClient.postWaveform(pick.getWaveform()).subscribe(this::setWaveform);
                 }
             } catch (ClassCastException | JsonProcessingException e) {

@@ -15,5 +15,5 @@
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
 public interface EndTimePicker {
-    public double getEndTime(float[] waveform, double sampleRate, double startTimeEpochSeconds, int startOffset, double minLengthSec, double maxLengthSec, double minimumSnr);
+    public double getEndTime(float[] waveform, double sampleRate, double startTimeEpochSeconds, int startOffset, double minLengthSec, double maxLengthSec, double minimumSnr, double noise);
 }

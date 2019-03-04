@@ -43,4 +43,6 @@ public interface WaveformMetadata {
 
     public Long getVersion();
 
+    public Boolean getActive();
+
 }

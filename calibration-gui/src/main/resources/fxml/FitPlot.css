@@ -1,6 +1,6 @@
 .default-color0.chart-series-line { -fx-stroke: transparent; }
-.default-color1.chart-series-line { -fx-stroke: blue; -fx-stroke-width:5px;}
-.default-color2.chart-series-line { -fx-stroke: black; }
+.default-color1.chart-series-line { -fx-stroke: blue; -fx-stroke-width:5px; }
+.default-color2.chart-series-line { -fx-stroke: transparent; }
 .default-color3.chart-series-line { -fx-stroke: transparent; }
 
 .default-color0.chart-line-symbol { 

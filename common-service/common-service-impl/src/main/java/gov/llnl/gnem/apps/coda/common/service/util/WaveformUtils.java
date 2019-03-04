@@ -14,7 +14,12 @@
 */
 package gov.llnl.gnem.apps.coda.common.service.util;
 
+import java.util.List;
 import java.util.stream.IntStream;
+
+import org.apache.commons.math3.random.EmpiricalDistribution;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import llnl.gnem.core.util.TimeT;
@@ -61,6 +66,35 @@ public class WaveformUtils {
         double mean2 = result2.getMean();
 
         return mean1 > mean2 ? result2 : result1;
+    }
+
+    public static double getNoiseFloor(Double[] waveform) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        double[] values = new double[waveform.length];
+        for (int i = 0; i < waveform.length; i++) {
+            values[i] = waveform[i];
+            stats.addValue(values[i]);
+        }
+
+        Double noise = stats.getPercentile(50);
+
+        EmpiricalDistribution dist = new EmpiricalDistribution(100);
+        dist.load(values);
+
+        List<SummaryStatistics> bins = dist.getBinStats();
+        long lastCount = 0;
+        double maxBinVal = noise;
+        for (int i = 0; i < bins.size(); i++) {
+            if (bins.get(i).getN() > lastCount) {
+                lastCount = bins.get(i).getN();
+                maxBinVal = bins.get(i).getMean();
+            }
+        }
+
+        if (maxBinVal < noise) {
+            noise = maxBinVal;
+        }
+        return noise;
     }
 
     /**

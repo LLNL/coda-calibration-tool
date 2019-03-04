@@ -51,7 +51,6 @@ public class MaxVelocityCalculator {
     public Collection<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
         return waveforms.stream().parallel().map(rawWaveform -> {
             TimeSeries waveform = converter.convert(rawWaveform);
-            double median = waveform.getMedian();
             double distance = EModel.getDistanceWGS84(
                     rawWaveform.getEvent().getLatitude(),
                         rawWaveform.getEvent().getLongitude(),
@@ -77,7 +76,7 @@ public class MaxVelocityCalculator {
 
                 double min_length = 25.;
                 if (endtime.subtract(starttime).getEpochTime() < min_length) {
-                    log.info("Coda window length too short: {}", endtime.subtract(starttime).getEpochTime());
+                    log.debug("Coda window length too short: {}", endtime.subtract(starttime).getEpochTime());
                 }
 
                 // peakS[0] time in seconds for
@@ -92,12 +91,14 @@ public class MaxVelocityCalculator {
 
                 double velocity = distance / peakS[0];
 
+                double noise = WaveformUtils.getNoiseFloor(rawWaveform.getSegment());
+
                 // the envelope noise is in log10 units.
-                double snrPeak = peakS[1] - median;
+                double snrPeak = peakS[1] - noise;
                 return new PeakVelocityMeasurement().setWaveform(rawWaveform)
                                                     .setNoiseStartSecondsFromOrigin(0d)
                                                     .setNoiseEndSecondsFromOrigin(20d)
-                                                    .setNoiseLevel(median)
+                                                    .setNoiseLevel(noise)
                                                     .setSnr(snrPeak)
                                                     .setVelocity(velocity)
                                                     .setDistance(distance)

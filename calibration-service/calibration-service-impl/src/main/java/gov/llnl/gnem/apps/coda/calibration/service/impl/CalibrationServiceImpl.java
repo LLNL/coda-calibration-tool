@@ -134,7 +134,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.findAll());
                     final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap = new HashMap<>(frequencyBandParameterMap);
 
-                    List<Waveform> stacks = waveformService.getAllStacks();
+                    List<Waveform> stacks = waveformService.getAllActiveStacks();
                     // In general each step produces output that the next step
                     // consumes
 
@@ -179,7 +179,10 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // service and get raw at start and raw at measurement time
                     // values back
                     stacks = stacks.parallelStream().filter(wave -> wave.getAssociatedPicks() != null).map(wave -> {
-                        Optional<WaveformPick> pick = wave.getAssociatedPicks().stream().filter(p -> PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType())).findFirst();
+                        Optional<WaveformPick> pick = wave.getAssociatedPicks()
+                                                          .stream()
+                                                          .filter(p -> p.getPickType() != null && PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType().trim()))
+                                                          .findFirst();
                         if (pick.isPresent() && pick.get().getPickTimeSecFromOrigin() > 0) {
                             return wave;
                         } else {
@@ -245,7 +248,9 @@ public class CalibrationServiceImpl implements CalibrationService {
     }
 
     private Map<PICK_TYPES, MdacParametersPS> collectByFrequencyBand(List<MdacParametersPS> mdacPs) {
-        return mdacPs.stream().filter(ps -> PICK_TYPES.isKnownPhase(ps.getPhase())).collect(Collectors.toMap(ps -> PICK_TYPES.valueOf(ps.getPhase().toUpperCase(Locale.ENGLISH)), Function.identity()));
+        return mdacPs.stream()
+                     .filter(ps -> ps != null && PICK_TYPES.isKnownPhase(ps.getPhase().trim()))
+                     .collect(Collectors.toMap(ps -> PICK_TYPES.valueOf(ps.getPhase().toUpperCase(Locale.ENGLISH).trim()), Function.identity()));
     }
 
     private Map<FrequencyBand, List<SpectraMeasurement>> spectraByFrequencyBand(List<SpectraMeasurement> spectra) {

@@ -84,6 +84,30 @@ public class MdacParametersFI {
     @NumberFormat
     private double rhor;
 
+    public MdacParametersFI() {
+        super();
+    }
+
+    public MdacParametersFI(MdacParametersFI mdacFI) {
+        super();
+        this.id = new Long(mdacFI.getId());
+        this.version = new Long(mdacFI.getVersion());
+        this.sigma = mdacFI.getSigma();
+        this.delSigma = mdacFI.getDelSigma();
+        this.psi = mdacFI.getPsi();
+        this.delPsi = mdacFI.getDelPsi();
+        this.zeta = mdacFI.getZeta();
+        this.m0ref = mdacFI.getM0ref();
+        this.alphas = mdacFI.getAlphas();
+        this.betas = mdacFI.getBetas();
+        this.rhos = mdacFI.getRhos();
+        this.radPatP = mdacFI.getRadPatP();
+        this.radPatS = mdacFI.getRadPatS();
+        this.alphaR = mdacFI.getAlphaR();
+        this.betaR = mdacFI.getBetaR();
+        this.rhor = mdacFI.getRhor();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

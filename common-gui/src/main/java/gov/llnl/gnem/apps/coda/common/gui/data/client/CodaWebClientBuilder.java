@@ -17,7 +17,9 @@ package gov.llnl.gnem.apps.coda.common.gui.data.client;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -58,11 +60,16 @@ import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.common.gui.events.SocketDisconnectEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.SslUtils;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
+import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeExecutor;
 import net.jodah.failsafe.RetryPolicy;
-import net.jodah.failsafe.SyncFailsafe;
 import reactor.netty.http.client.HttpClient;
 
 @Service
@@ -124,7 +131,17 @@ public class CodaWebClientBuilder {
             throw new IllegalStateException("Unable to load trust store.", e);
         }
 
-        JdkSslContext sslContext = new JdkSslContext(sc, true, ClientAuth.OPTIONAL);
+        JdkSslContext sslContext = new JdkSslContext(sc,
+                                                     true,
+                                                     Arrays.asList(sc.getSupportedSSLParameters().getCipherSuites()),
+                                                     IdentityCipherSuiteFilter.INSTANCE,
+                                                     new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
+                                                                                   SelectorFailureBehavior.CHOOSE_MY_LAST_PROTOCOL,
+                                                                                   SelectedListenerFailureBehavior.ACCEPT,
+                                                                                   ApplicationProtocolNames.HTTP_1_1),
+                                                     ClientAuth.OPTIONAL,
+                                                     new String[] { "TLSv1.2" },
+                                                     false);
         connector = new ReactorClientHttpConnector(HttpClient.create().secure(t -> t.sslContext(sslContext)));
         sslEngineConfigurator = new SslEngineConfigurator(sc);
         sslEngineConfigurator.setHostnameVerifier(hostnameVerifier);
@@ -163,13 +180,12 @@ public class CodaWebClientBuilder {
         }
 
         //TODO: Fire off connect/disconnect events for the UI to display to the user
-        SyncFailsafe<StompSession> syncFailsafe = Failsafe.with(new RetryPolicy().withBackoff(1, 30, TimeUnit.SECONDS));
-        syncFailsafe.with(retryExecutor).onRetry((s, ex) -> {
-            log.trace("Attempting to connect to stomp: {}", ex);
-        }).runAsync(execution -> {
+        FailsafeExecutor<StompSession> failsafe = Failsafe.with(new RetryPolicy<StompSession>().withBackoff(1l, 30l, ChronoUnit.SECONDS).withMaxRetries(-1));
+        failsafe.with(retryExecutor).onFailure(evt -> {
+            log.trace("Attempting to connect to stomp: {}", evt);
+        }).runAsync(r -> {
             stompSession = stompClient.connect(websocketBase, frameHandler).get(1, TimeUnit.SECONDS);
             subscriptions.forEach(topic -> stompSession.subscribe(topic.replaceAll("\"", ""), frameHandler));
-            execution.complete(stompSession);
         });
     }
 

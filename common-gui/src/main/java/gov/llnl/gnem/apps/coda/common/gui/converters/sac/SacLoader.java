@@ -340,6 +340,16 @@ public class SacLoader implements FileToWaveformConverter {
         return acceptFilter;
     }
 
+    public String getOrCreateEvid(Waveform waveform) {
+        int evid = 0;
+        Double time = 0d;
+        if (waveform.getEvent() != null && waveform.getEvent().getOriginTime() != null) {
+            time = new TimeT(waveform.getEvent().getOriginTime()).getEpochTime();
+        }
+        evid = createJDateMinuteResolutionFromEpoch(time);
+        return Integer.toString(evid);
+    }
+
     public String getOrCreateEvid(SACHeader header) {
         int evid = 0;
         Double time = 0d;

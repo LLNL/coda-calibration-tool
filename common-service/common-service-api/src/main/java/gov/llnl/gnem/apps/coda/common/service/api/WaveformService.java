@@ -24,7 +24,7 @@ public interface WaveformService extends BaseService<Waveform, Long> {
 
     public List<Waveform> getByExampleAllMatching(Waveform waveform);
 
-    public List<Waveform> getAllStacks();
+    public List<Waveform> getAllActiveStacks();
 
     public List<Waveform> update(Long sessionId, Collection<Waveform> values);
 

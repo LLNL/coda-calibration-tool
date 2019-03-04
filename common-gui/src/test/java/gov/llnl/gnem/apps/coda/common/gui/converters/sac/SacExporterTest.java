@@ -95,6 +95,7 @@ public class SacExporterTest {
     @ParameterizedTest
     @MethodSource("testParamSet")
     public void testWriteWaveformToDirectory(Waveform input, ArgumentsAccessor arguments) throws Exception {
+        @SuppressWarnings("unchecked")
         Consumer<Result<String>> assertions = arguments.get(2, Consumer.class);
         assertions.accept(exporter.writeWaveformToDirectory(testDir, input));
     }

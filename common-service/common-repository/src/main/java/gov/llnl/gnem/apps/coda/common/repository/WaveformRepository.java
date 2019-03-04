@@ -35,7 +35,7 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     public Waveform findOneByAllFields(@Param("beginTime") Date beginTime, @Param("endTime") Date endTime, @Param("event") Event event, @Param("stream") Stream stream,
             @Param("segmentType") String segmentType, @Param("segmentUnits") String segmentUnits, @Param("lowFrequency") Double lowFrequency, @Param("highFrequency") Double highFrequency);
 
-    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate) from Waveform w")
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w")
     public List<Waveform> getWaveformMetadata();
 
     @Query("select p from WaveformPick p where p.waveform.id = :id")

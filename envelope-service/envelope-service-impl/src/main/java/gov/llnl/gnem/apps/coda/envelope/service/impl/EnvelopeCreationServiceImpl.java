@@ -98,9 +98,6 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
 
                     TimeSeries seis = converter.convert(wave);
 
-                    //FIXME: Get from table
-                    seis.interpolate(4d);
-
                     if (startcut.ge(endcut)) {
                         log.info("Start time of cut is >= end time of cut.");
                         return null;
@@ -126,6 +123,9 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
                     seis.Log10();
 
                     int smoothing = bandConfig.getSmoothing();
+
+                    //FIXME: Get from table
+                    seis.interpolate(4d);
 
                     //Convert it to samples
                     smoothing = (int) (smoothing * seis.getSamprate());

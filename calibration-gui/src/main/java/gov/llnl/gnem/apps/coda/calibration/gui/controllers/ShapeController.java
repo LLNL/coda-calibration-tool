@@ -351,19 +351,30 @@ public class ShapeController implements MapListeningController, RefreshableContr
             selectedData.clear();
             highlightedData.clear();
 
-            AtomicReference<Integer> min = new AtomicReference<Integer>(XAXIS_MIN);
-            AtomicReference<Integer> max = new AtomicReference<Integer>(XAXIS_MIN);
+            AtomicReference<Integer> minX = new AtomicReference<Integer>(0);
+            AtomicReference<Integer> maxX = new AtomicReference<Integer>(0);
+            AtomicReference<Double> minY = new AtomicReference<Double>(0d);
+            AtomicReference<Double> maxY = new AtomicReference<Double>(0d);
 
             Optional.ofNullable(valueSupplier.apply(selectedFrequency)).ifPresent(values -> values.forEach(val -> {
                 Data<Number, Number> data = dataPointSupplier.apply(val);
                 pointData.add(data);
-                if (data.getXValue().doubleValue() > max.get()) {
-                    max.set(data.getXValue().intValue());
+                if (data.getXValue().doubleValue() > maxX.get()) {
+                    maxX.set(data.getXValue().intValue());
                 }
-                if (data.getXValue().doubleValue() < min.get()) {
-                    min.set(data.getXValue().intValue());
+                if (data.getXValue().doubleValue() < minX.get()) {
+                    minX.set(data.getXValue().intValue());
                 }
+
+                if (data.getXValue().doubleValue() > maxY.get()) {
+                    maxY.set(data.getYValue().doubleValue());
+                }
+                if (data.getYValue().doubleValue() < minY.get()) {
+                    minY.set(data.getYValue().doubleValue());
+                }
+
                 data.getNode().addEventHandler(MouseEvent.MOUSE_CLICKED, mouseClickedCallback.apply(val));
+                data.getNode().toBack();
                 Waveform w = mapFunc.apply(val);
                 boolean eventExists = w != null && w.getEvent() != null && w.getEvent().getEventId() != null;
                 boolean stationExists = w != null && w.getStream() != null && w.getStream().getStation() != null && w.getStream().getStation().getStationName() != null;
@@ -379,12 +390,20 @@ public class ShapeController implements MapListeningController, RefreshableContr
                 }
             }));
 
-            if (max.get() > XAXIS_MAX || max.get() == XAXIS_MIN) {
-                max.set(XAXIS_MAX);
+            if (maxX.get() > XAXIS_MAX || maxX.get() == XAXIS_MIN) {
+                maxX.set(XAXIS_MAX);
+            }
+
+            if (yAxis.getLowerBound() > minY.get()) {
+                yAxis.setLowerBound(1.1 * minY.get());
+            }
+
+            if (yAxis.getUpperBound() < maxY.get()) {
+                yAxis.setUpperBound(1.1 * maxY.get());
             }
 
             if (curveProducer != null) {
-                for (double i = min.get(); i <= max.get(); i = i + ((max.get() - min.get()) / LINE_SEGMENTS)) {
+                for (double i = minX.get(); i <= maxX.get(); i = i + ((maxX.get() - minX.get()) / LINE_SEGMENTS)) {
                     Data<Number, Number> data = curveProducer.apply(i);
                     modelData.add(data);
                     data.getNode().setMouseTransparent(true);

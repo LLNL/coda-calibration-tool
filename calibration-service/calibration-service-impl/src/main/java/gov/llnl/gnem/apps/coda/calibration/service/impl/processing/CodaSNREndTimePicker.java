@@ -25,9 +25,9 @@ public class CodaSNREndTimePicker implements EndTimePicker {
     private static final double BAD_PICK = -100.0;
 
     @Override
-    public double getEndTime(float[] waveform, double sampleRate, double startTimeEpochSeconds, int startOffset, double minLengthSec, double maxLengthSec, double minimumSnr) {
+    public double getEndTime(float[] waveform, double sampleRate, double startTimeEpochSeconds, int startOffset, double minLengthSec, double maxLengthSec, double minimumSnr, double noise) {
 
-        Double snrPick = getSnrEndPick(waveform, sampleRate, startOffset, minLengthSec, maxLengthSec, minimumSnr, 20);
+        Double snrPick = getSnrEndPick(waveform, sampleRate, startOffset, minLengthSec, maxLengthSec, minimumSnr, noise, 20);
 
         Double overallPick;
         if (!Double.isNaN(snrPick)) {
@@ -39,14 +39,10 @@ public class CodaSNREndTimePicker implements EndTimePicker {
         return startTimeEpochSeconds + overallPick;
     }
 
-    private Double getSnrEndPick(final float[] waveform, final double sampleRate, int startOffset, final double minLengthSec, final double maxLengthSec, final double minimumSnr,
+    private Double getSnrEndPick(final float[] waveform, final double sampleRate, int startOffset, final double minLengthSec, final double maxLengthSec, final double minimumSnr, final double noise,
             final int windowSize) {
-        DescriptiveStatistics stats = new DescriptiveStatistics();
-        for (float value : waveform) {
-            stats.addValue(value);
-        }
-        Double noise = stats.getPercentile(50);
-        DescriptiveStatistics obs = new DescriptiveStatistics((int) (windowSize * sampleRate));
+        int obsWindow = (int) (windowSize * sampleRate);
+        DescriptiveStatistics obs = new DescriptiveStatistics(obsWindow);
         DescriptiveStatistics spike = new DescriptiveStatistics((int) (5 * sampleRate));
         double snrTimePick = BAD_PICK;
 
@@ -55,15 +51,26 @@ public class CodaSNREndTimePicker implements EndTimePicker {
 
         if (waveform.length > startOffset && waveform.length - startOffset > minSamples) {
             int stopIdx = waveform.length > maxSamples ? maxSamples : waveform.length;
-            for (int i = startOffset; i < stopIdx; i++) {
-                obs.addValue(waveform[i]);
-                spike.addValue(waveform[i]);
-                if (obs.getN() >= windowSize) {
-                    //TODO: .5 is a WAG on a data set, should try to find a better formulation that takes into account things like sample rate, window,  and overall SNR
-                    if (obs.getMean() - minimumSnr <= noise || spike.getMean() > (obs.getMean() + .5d)) {
-                        break;
-                    } else {
-                        snrTimePick = (i - spike.getN()) / sampleRate;
+            if (waveform[startOffset] - minimumSnr >= noise) {
+                for (int i = startOffset; i < stopIdx; i++) {
+                    obs.addValue(waveform[i]);
+                    spike.addValue(waveform[i]);
+                    if (obs.getN() >= windowSize) {
+                        if (obs.getMean() <= minimumSnr + noise) {
+                            for (int j = i - obsWindow; j < i; j++) {
+                                if (j > 0 && waveform[j] <= minimumSnr + noise) {
+                                    snrTimePick = j / sampleRate;
+                                    break;
+                                }
+                            }
+                            break;
+
+                            //TODO: 1.1 is a WAG on a data set, should try to find a better formulation that takes into account things like sample rate, window, and overall SNR
+                        } else if (spike.getMean() > (obs.getMean() * 1.1d)) {
+                            break;
+                        } else {
+                            snrTimePick = (i - spike.getN()) / sampleRate;
+                        }
                     }
                 }
             }

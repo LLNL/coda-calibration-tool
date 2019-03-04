@@ -2,7 +2,7 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* w1 file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
 * 
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use w1 file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0

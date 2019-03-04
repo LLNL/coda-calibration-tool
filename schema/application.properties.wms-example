@@ -1,0 +1,7 @@
+app.wms-layers[0].url=https://server-name1.example.com/wms/layergroup-name1?
+app.wms-layers[0].name=Displayed Layer Name 1
+app.wms-layers[0].layers[0]=wms-layer-id1
+
+app.wms-layers[1].url=https://server-name2/wms/layergroup-name2?
+app.wms-layers[1].name=Displayed Layer Name 2
+app.wms-layers[1].layers[0]=wms-layer-id2

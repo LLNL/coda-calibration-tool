@@ -15,9 +15,12 @@
 package gov.llnl.gnem.apps.coda.calibration.standalone;
 
 import java.util.TimeZone;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.PostConstruct;
 import javax.swing.SwingUtilities;
@@ -102,10 +105,13 @@ public class CodaCalibrationStandalone extends Application {
 
     @Override
     public void stop() throws Exception {
-        CompletableFuture.runAsync(() -> {
-            springContext.stop();
-            springContext.close();
-        }).get(1, TimeUnit.SECONDS);
+        try {
+            CompletableFuture.runAsync(() -> {
+                springContext.stop();
+                springContext.close();
+            }).get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException | ExecutionException | CancellationException | InterruptedException e) {
+        }
         Platform.exit();
         System.exit(0);
     }

@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.converters.sac;
 
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Component;
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.CodaFilenameParser;
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.StackInfo;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.util.LightweightIllegalStateException;
 
 @Component
 public class CodaFilenameParserImpl implements CodaFilenameParser {
@@ -37,6 +39,7 @@ public class CodaFilenameParserImpl implements CodaFilenameParser {
             String dataType = fileNameMatcher.group(3);
             return new Result<StackInfo>(true, new StackInfo(lowFreq, highFreq, dataType));
         }
-        return new Result<StackInfo>(false, null);
+        return new Result<StackInfo>(false, null).setErrors(
+                Collections.singletonList(new LightweightIllegalStateException("Filename did not match expected format for a stacked SAC file. Expected *_*_*_*_*_*_*.env; Got " + fileName)));
     }
 }

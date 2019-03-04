@@ -158,14 +158,14 @@ public class WaveformServiceImpl implements WaveformService {
     }
 
     @Override
-    public List<Waveform> getAllStacks() {
-        ExampleMatcher matcher = ExampleMatcher.matchingAny().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version");
-        return waveformRepository.findAll(Example.of(new Waveform().setStream(new Stream().setChannelName(Stream.TYPE_STACK)), matcher));
+    public List<Waveform> getAllActiveStacks() {
+        ExampleMatcher matcher = ExampleMatcher.matchingAll().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
+        return waveformRepository.findAll(Example.of(new Waveform().setStream(new Stream().setChannelName(Stream.TYPE_STACK)).setActive(Boolean.TRUE), matcher));
     }
 
     @Override
     public List<Waveform> getByExampleAllMatching(Waveform waveform) {
-        ExampleMatcher matcher = ExampleMatcher.matching().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version");
+        ExampleMatcher matcher = ExampleMatcher.matching().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
         return waveformRepository.findAll(Example.of(waveform, matcher));
     }
 

@@ -16,6 +16,4 @@ package gov.llnl.gnem.apps.coda.common.mapping.api;
 
 public interface GeoShape {
     public String getId();
-    //
-    //    public Class<? extends GeoShape> getType();
 }

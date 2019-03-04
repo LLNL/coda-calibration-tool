@@ -36,7 +36,6 @@ import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeCalibrationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeMeasurementService;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.CalibrationCurveFitter;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.ShapeCalculator;
-import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SyntheticCodaModel;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
@@ -52,22 +51,22 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
 
     private static final Logger log = LoggerFactory.getLogger(ShapeCalibrationServiceImpl.class);
 
+    private static final double BAD = 0d;
+
     private ShapeMeasurementService shapeMeasurementService;
     private ShapeCalculator shapeCalc;
     private EndTimePicker endTimePicker;
     private WaveformToTimeSeriesConverter converter;
-    private SyntheticCodaModel syntheticCodaModel;
     private WaveformService waveService;
     private WaveformPickService pickService;
 
     @Autowired
-    public ShapeCalibrationServiceImpl(ShapeMeasurementService shapeMeasurementService, ShapeCalculator shapeCalc, EndTimePicker endTimePicker, SyntheticCodaModel syntheticCodaModel,
-            WaveformService waveService, WaveformPickService pickService) {
+    public ShapeCalibrationServiceImpl(ShapeMeasurementService shapeMeasurementService, ShapeCalculator shapeCalc, EndTimePicker endTimePicker, WaveformService waveService,
+            WaveformPickService pickService) {
         this.shapeMeasurementService = shapeMeasurementService;
         this.shapeCalc = shapeCalc;
         this.endTimePicker = endTimePicker;
         this.converter = new WaveformToTimeSeriesConverter();
-        this.syntheticCodaModel = syntheticCodaModel;
         this.waveService = waveService;
         this.pickService = pickService;
     }
@@ -82,12 +81,10 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
         }
         final CalibrationCurveFitter fitter = new CalibrationCurveFitter();
 
-        Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandCurveFits = fitter.fitAllVelocity(velocityMeasurements.stream()
+        Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandCurveFits = fitter.fitAllVelocity(
+                velocityMeasurements.stream()
                                     .filter(vel -> vel.getWaveform() != null)
-                                                                                                                             .collect(Collectors.groupingBy(vel -> new FrequencyBand(vel.getWaveform()
-                                                                                                                                                                                        .getLowFrequency(),
-                                                                                                                                                                                     vel.getWaveform()
-                                                                                                                                                                                        .getHighFrequency()))),
+                                    .collect(Collectors.groupingBy(vel -> new FrequencyBand(vel.getWaveform().getLowFrequency(), vel.getWaveform().getHighFrequency()))),
                     frequencyBandParameters);
 
         // 1) If auto-picking is enabled attempt to pick any envelopes that
@@ -113,10 +110,10 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
         Map<FrequencyBand, List<ShapeMeasurement>> frequencyBandShapeMeasurementMap = shapeMeasurementService.save(betaAndGammaMeasurements)
                                                                                                              .stream()
                                                                                                              .filter(meas -> meas.getWaveform() != null)
-                                                                                                             .collect(Collectors.groupingBy(meas -> new FrequencyBand(meas.getWaveform()
-                                                                                                                                                                          .getLowFrequency(),
-                                                                                                                                                                      meas.getWaveform()
-                                                                                                                                                                          .getHighFrequency())));
+                                                                                                             .collect(
+                                                                                                                     Collectors.groupingBy(
+                                                                                                                             meas -> new FrequencyBand(meas.getWaveform().getLowFrequency(),
+                                                                                                                                                       meas.getWaveform().getHighFrequency())));
 
         frequencyBandCurveFits = fitter.fitAllBeta(frequencyBandShapeMeasurementMap, frequencyBandCurveFits);
         frequencyBandCurveFits = fitter.fitAllGamma(frequencyBandShapeMeasurementMap, frequencyBandCurveFits);
@@ -127,9 +124,18 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
             final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters) {
         return velocityMeasurements.parallelStream().filter(vel -> vel.getWaveform() != null).filter(vel -> vel.getWaveform().getAssociatedPicks() != null).map(vel -> {
             SharedFrequencyBandParameters params = frequencyBandParameters.get(new FrequencyBand(vel.getWaveform().getLowFrequency(), vel.getWaveform().getHighFrequency()));
-            Optional<WaveformPick> pick = vel.getWaveform().getAssociatedPicks().stream().filter(p -> PICK_TYPES.AP.name().equalsIgnoreCase(p.getPickType())).findFirst();
+            Optional<WaveformPick> pick = vel.getWaveform()
+                                             .getAssociatedPicks()
+                                             .stream()
+                                             .filter(p -> p.getPickType() != null && PICK_TYPES.AP.name().equalsIgnoreCase(p.getPickType().trim()))
+                                             .findFirst();
 
-            Optional<WaveformPick> endPick = vel.getWaveform().getAssociatedPicks().stream().filter(p -> PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType())).findFirst();
+            Optional<WaveformPick> endPick = vel.getWaveform()
+                                                .getAssociatedPicks()
+                                                .stream()
+                                                .filter(p -> p.getPickType() != null && PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType().trim()))
+                                                .findFirst();
+
             if ((!endPick.isPresent() || pick.isPresent()) && params != null) {
                 vel.getWaveform().getAssociatedPicks().forEach(p -> p.setWaveform(null));
                 vel.getWaveform().getAssociatedPicks().clear();
@@ -158,31 +164,43 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                 TimeSeries segment = converter.convert(vel.getWaveform());
                 segment.interpolate(1.0);
 
-                double stopTime = endTimePicker.getEndTime(segment.getData(),
+                double stopTime = endTimePicker.getEndTime(
+                        segment.getData(),
                             segment.getSamprate(),
                             startTime.getEpochTime(),
                             segment.getIndexForTime(startTime.getEpochTime()),
                             minlength,
                             maxlength,
-                            params.getMinSnr());
+                            params.getMinSnr(),
+                            vel.getNoiseLevel());
 
                 if (new TimeT(stopTime).gt(startTime)) {
                     stopTime = stopTime + beginTime.subtractD(originTime);
                 }
                 stopTime = new TimeT(stopTime).subtractD(startTime);
 
-                WaveformPick autoPick = new WaveformPick().setPickType(PICK_TYPES.F.name()).setPickName(PICK_TYPES.F.name()).setWaveform(vel.getWaveform()).setPickTimeSecFromOrigin((float) stopTime);
+                double offset = stopTime - startTime.subtractD(originTime);
+                if (offset < minlength) {
+                    stopTime = BAD;
+                } else if (offset > maxlength) {
+                    stopTime = maxlength;
+                }
+
+                WaveformPick autoPick = new WaveformPick().setPickType(PICK_TYPES.F.name())
+                                                          .setPickName(PICK_TYPES.F.getPhase())
+                                                          .setWaveform(vel.getWaveform())
+                                                          .setPickTimeSecFromOrigin((float) stopTime);
 
                 WaveformPick startPick = new WaveformPick().setPickType(PICK_TYPES.AP.name())
-                                                           .setPickName(PICK_TYPES.AP.name())
+                                                           .setPickName(PICK_TYPES.AP.getPhase())
                                                            .setWaveform(vel.getWaveform())
                                                            .setPickTimeSecFromOrigin((float) startTime.subtractD(originTime));
 
-                if (autoPick.getPickTimeSecFromOrigin() > startPick.getPickTimeSecFromOrigin()) {
-                    vel.getWaveform().getAssociatedPicks().add(autoPick);
-                    vel.getWaveform().getAssociatedPicks().add(startPick);
-                }
+                vel.getWaveform().getAssociatedPicks().add(autoPick);
+                vel.getWaveform().getAssociatedPicks().add(startPick);
+
             }
+
             return vel;
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }

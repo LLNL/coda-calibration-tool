@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.ConvergenceChecker;
@@ -65,17 +64,13 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     private SpectraCalculator spectraCalc;
 
-    // How many different randomized starting parameter guesses to use when
-    // trying to optimize
-    private static final int STARTING_POINTS = 10;
-
     // Optimization terms common to a frequency band fit: p1,p2,q,xcross,xtrans
     private static final int NUM_TERMS = 4;
     private static final int P1_IDX = 0;
     private static final int Q_IDX = 1;
     private static final int XCROSS_IDX = 2;
     private static final int XTRANS_IDX = 3;
-    private static final double TOLERANCE = 0.0001;
+    private static final double TOLERANCE = 1E-10;
 
     private static final double XTRANS_MAX = 0.04;
     private static final double XTRANS_MIN = -10.0;
@@ -101,6 +96,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     private final double efact = Math.log10(Math.E);
     private PathCalibrationMeasurementService pathCalibrationMeasurementService;
+    private List<double[]> paramPoints;
 
     @Autowired
     public Joint1DPathCorrection(SpectraCalculator spectraCalc, PathCalibrationMeasurementService pathCalibrationMeasurementService) {
@@ -133,7 +129,8 @@ public class Joint1DPathCorrection implements PathCalibrationService {
             if (freqBandData != null) {
                 // Avoiding divide by zero as this is only ever used for
                 // residual calculations
-                double totalDataCount = 1.0;
+                final double totalDataCount;
+                long dataCount = 0l;
                 for (Entry<Event, Map<Station, SpectraMeasurement>> eventEntry : freqBandData.entrySet()) {
                     Event event = eventEntry.getKey();
                     for (Entry<Station, SpectraMeasurement> stationEntry : eventEntry.getValue().entrySet()) {
@@ -156,9 +153,10 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
                         stations.add(station);
                         eventCountByStation.put(station, eventCountByStation.get(station) + 1);
-                        totalDataCount++;
+                        dataCount++;
                     }
                 }
+                totalDataCount = dataCount;
 
                 // Common terms + one site term for each station
                 double[] optimizationParams = new double[NUM_TERMS + stations.size()];
@@ -196,13 +194,15 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
                 double[] sigmaArray = new double[optimizationParams.length];
                 for (int i = 0; i < sigmaArray.length; i++) {
-                    sigmaArray[i] = 1.;
+                    sigmaArray[i] = 0.5;
                 }
 
                 // starting residual
                 Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, 2.0);
+                log.info("Band {} initial cost: {}", frequencyBand.getLowFrequency(), initialResidual);
 
-                PointValuePair optimizedResult = IntStream.range(0, STARTING_POINTS).parallel().mapToObj(i -> {
+                List<double[]> paramPoints = makeParamPoints(NUM_TERMS, optimizationLowBounds, optimizationHighBounds);
+                PointValuePair optimizedResult = IntStream.range(0, paramPoints.size()).parallel().mapToObj(i -> {
                     ConvergenceChecker<PointValuePair> convergenceChecker = new SimpleValueChecker(TOLERANCE, TOLERANCE);
                     CMAESOptimizer optimizer = new CMAESOptimizer(1000000, TOLERANCE, true, 0, 10, new MersenneTwister(), true, convergenceChecker);
 
@@ -214,11 +214,12 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                                     new ObjectiveFunction(prediction),
                                     GoalType.MINIMIZE,
                                     new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
-                                    new InitialGuess(perturbParams(optimizationLowBounds, optimizationHighBounds)),
+                                    new InitialGuess(paramPoints.get(i)),
                                     new CMAESOptimizer.PopulationSize(POP_SIZE),
                                     new CMAESOptimizer.Sigma(sigmaArray));
                     } catch (TooManyEvaluationsException e) {
                     }
+                    log.info("frequency: {}, iteration: {}, residual: {}", frequencyBand.getLowFrequency(), i, opt.getValue());
                     return opt;
                 }).filter(Objects::nonNull).reduce((a, b) -> Double.compare(a.getValue(), b.getValue()) <= 0 ? a : b).orElse(null);
 
@@ -232,6 +233,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 // final residual
                 Double finalResults = costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams);
                 Double finalResidual = Math.pow(finalResults / totalDataCount, 2.0);
+                log.info("Band {} final cost: {}", frequencyBand.getLowFrequency(), finalResidual);
 
                 PathCalibrationMeasurement measurement = new PathCalibrationMeasurement();
                 measurement.setInitialResidual(initialResidual);
@@ -362,18 +364,52 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     }
 
-    private double[] perturbParams(double[] optimizationLowBounds, double[] optimizationHighBounds) {
-        double[] newParams = new double[optimizationLowBounds.length];
-
-        for (int i = 0; i < newParams.length; i++) {
-            if (optimizationLowBounds[i] < 0.0) {
-                newParams[i] = RandomUtils.nextDouble(0.0, optimizationHighBounds[i] + Math.abs(optimizationLowBounds[i])) + optimizationLowBounds[i];
-            } else {
-                newParams[i] = RandomUtils.nextDouble(optimizationLowBounds[i], optimizationHighBounds[i]);
-            }
+    /**
+     * @param numberOfTerms
+     * @param optimizationBounds
+     *            I'm making the pretty big assumption these are ordered such
+     *            that bound0 is the min and boundN is the max.
+     * @return
+     */
+    private List<double[]> makeParamPoints(int numberOfTerms, double[]... optimizationBounds) {
+        if (paramPoints != null && !paramPoints.isEmpty() && paramPoints.get(0).length == numberOfTerms) {
+            return paramPoints;
         }
 
-        return newParams;
+        int terms = numberOfTerms * numberOfTerms + 1;
+        List<double[]> params = new ArrayList<>(terms);
+        int[] selectionIndex = new int[numberOfTerms];
+        double[] param = optimizationBounds[0].clone();
+
+        for (int j = 0; j < numberOfTerms; j++) {
+            param[j] = optimizationBounds[0][j] + (optimizationBounds[optimizationBounds.length - 1][j] - optimizationBounds[0][j]) / 2;
+        }
+
+        params.add(param.clone());
+        param = optimizationBounds[0].clone();
+
+        for (int i = 1; i < terms; i++) {
+            for (int j = 0; j < selectionIndex.length; j++) {
+                param[j] = optimizationBounds[selectionIndex[j]][j];
+            }
+            params.add(param.clone());
+            param = optimizationBounds[0].clone();
+            selectionIndex = nextIndex(selectionIndex, optimizationBounds.length);
+        }
+        paramPoints = params;
+        return paramPoints;
     }
 
+    private int[] nextIndex(int[] selectionIndex, int base) {
+        int[] index = selectionIndex.clone();
+        for (int i = 0; i < index.length; i++) {
+            index[i]++;
+            if (index[i] % base == 0) {
+                index[i] = 0;
+            } else {
+                break;
+            }
+        }
+        return index;
+    }
 }

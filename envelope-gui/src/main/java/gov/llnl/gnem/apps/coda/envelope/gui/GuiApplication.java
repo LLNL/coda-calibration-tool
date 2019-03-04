@@ -17,8 +17,11 @@ package gov.llnl.gnem.apps.coda.envelope.gui;
 import java.io.IOException;
 import java.net.URL;
 import java.util.TimeZone;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -109,12 +112,13 @@ public class GuiApplication extends Application {
                 Manifest mf = new Manifest(new URL(manifestPath).openStream());
                 Attributes atts = mf.getMainAttributes();
                 // Put this info in the log to help with analysis
-                log.info("Version:{} Commit:{} Branch:{} By:{} at {}",
-                         atts.getValue("Implementation-Version"),
-                         atts.getValue("Implementation-Build"),
-                         atts.getValue("Build-Branch"),
-                         atts.getValue("Built-By"),
-                         atts.getValue("Build-Timestamp"));
+                log.info(
+                        "Version:{} Commit:{} Branch:{} By:{} at {}",
+                            atts.getValue("Implementation-Version"),
+                            atts.getValue("Implementation-Build"),
+                            atts.getValue("Build-Branch"),
+                            atts.getValue("Built-By"),
+                            atts.getValue("Build-Timestamp"));
                 // Update the title bar
                 baseTitle += " Built at " + atts.getValue("Build-Timestamp");
             } else {
@@ -148,10 +152,13 @@ public class GuiApplication extends Application {
 
     @Override
     public void stop() throws Exception {
-        CompletableFuture.runAsync(() -> {
-            springContext.stop();
-            springContext.close();
-        }).get(1, TimeUnit.SECONDS);
+        try {
+            CompletableFuture.runAsync(() -> {
+                springContext.stop();
+                springContext.close();
+            }).get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException | ExecutionException | CancellationException | InterruptedException e) {
+        }
         Platform.exit();
         System.exit(0);
     }

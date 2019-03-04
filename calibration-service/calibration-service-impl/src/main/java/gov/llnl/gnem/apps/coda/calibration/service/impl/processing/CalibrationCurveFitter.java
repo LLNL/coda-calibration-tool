@@ -91,7 +91,7 @@ public class CalibrationCurveFitter {
     protected static final double YVV_MAX = 6.01;
     protected static final double V_DIST_MAX = 1600;
 
-    protected static final double YBB_MIN = -3.0E-2;
+    protected static final double YBB_MIN = -12.0E-2;
     protected static final double YBB_MAX = 0.0005;
     protected static final double B_DIST_MAX = 1550;
 

@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,7 +69,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
         this.sacLoader = sacLoader;
         this.filenameParser = filenameParser;
         this.loadClient = (id, waveforms) -> client.postEnvelopes(id, waveforms).doOnNext(w -> {
-            this.sacExporter.writeWaveformToDirectory(getExportPath().toFile(), w);
+            this.sacExporter.writeWaveformToDirectory(getExportPath(w).toFile(), w);
         });
         this.setCompletionCallback(() -> {
             stackEnvelopes(createEnvelopeMapping(getSacFiles(getExportPath())));
@@ -203,7 +204,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                     // TODO: Implement array processing
                     // TODO: Profile to improve perf
                     // TODO: Progress bars for stacking
-                    // TODO: Export enveloeps and stacks to seperate dirs
+                    // TODO: Export envelopes and stacks to separate dirs
                     // TODO: Create folder hierarchy for output (Year->Month->Evid->Sta)
 
                     // 1. For each element envelope, find record begin and end of each
@@ -229,7 +230,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                     stackedWaveform.setSegment(data);
                     stackedWaveform.getStream().setChannelName("STACK");
 
-                    File stackFolder = getExportPath().toFile();
+                    File stackFolder = getExportPath(stackedWaveform).toFile();
                     sacExporter.writeWaveformToDirectory(stackFolder, stackedWaveform);
                 } else {
                     log.warn("No valid seismograms available to stack for inputs: {}", files);
@@ -241,6 +242,39 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
 
     public Path getExportPath() {
         return exportPath;
+    }
+
+    public Path getExportPath(Waveform w) {
+
+        Path path = exportPath;
+        if (exportPath == null) {
+            throw new IllegalStateException("Unable to export waveform, export path was null");
+        }
+
+        if (w == null) {
+            throw new IllegalStateException("Unable to export waveform,waveform was null");
+        }
+
+        String station = Optional.ofNullable(w.getStream()).map(stream -> stream.getStation()).map(sta -> sta.getStationName()).orElse("");
+        TimeT time = w.getEvent() != null ? new TimeT(w.getEvent().getOriginTime()) : new TimeT(w.getBeginTime());
+        if (time != null) {
+            String evid = sacLoader.getOrCreateEvid(w);
+            // evid
+            int year = time.getYear();
+            int month = time.getMonth();
+
+            String newPath = exportPath.toAbsolutePath().toString() + File.separator + year + File.separator + String.format("%02d", month) + File.separator + evid + File.separator + station;
+
+            File result = new File(newPath);
+            if (!result.exists()) {
+                boolean wasCreated = result.mkdirs();
+                if (!wasCreated) {
+                    throw new IllegalStateException("Could not create directory: " + newPath);
+                }
+            }
+            path = result.toPath();
+        }
+        return path;
     }
 
     public void setExportPath(File exportDirectory) {

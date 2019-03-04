@@ -30,6 +30,7 @@ public class WrappingEventHandler<T, S> implements EventHandler<javafx.scene.con
         this.setValue = setValue;
     }
 
+    @SuppressWarnings("unchecked")
     public Function<Object, S> getValueParser() {
         return (Function<Object, S>) Function.identity();
     }

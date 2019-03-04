@@ -48,7 +48,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
         @Index(columnList = "event_id", name = "w_event_id_index"), @Index(columnList = "station_name", name = "w_station_name_index"),
         @Index(columnList = "network_name", name = "w_network_name_index"), @Index(columnList = "lowFrequency", name = "lowFreq_index"), @Index(columnList = "highFrequency", name = "highFreq_index"),
         @Index(columnList = "segmentType", name = "type_index"), @Index(columnList = "segmentUnits", name = "units_index"), @Index(columnList = "sampleRate", name = "rate_index"),
-        @Index(columnList = "channelName", name = "channel_name_index") })
+        @Index(columnList = "channelName", name = "channel_name_index"), @Index(columnList = "active", name = "active") })
 public class Waveform {
 
     @Id
@@ -104,6 +104,9 @@ public class Waveform {
     @JsonManagedReference(value = "waveform-picks")
     private List<WaveformPick> associatedPicks = new ArrayList<>();
 
+    @Column(name = "active")
+    private Boolean active = Boolean.TRUE;
+
     public Waveform() {
         //NOP
     }
@@ -121,10 +124,11 @@ public class Waveform {
         this.setLowFrequency(waveform.getLowFrequency());
         this.setHighFrequency(waveform.getHighFrequency());
         this.setAssociatedPicks(waveform.getAssociatedPicks());
+        this.setActive(waveform.getActive());
     }
 
     public Waveform(Long id, Long version, Event event, Stream stream, Date beginTime, Date endTime, String segmentType, String segmentUnits, Double lowFrequency, Double highFrequency,
-            Double sampleRate) {
+            Double sampleRate, Boolean active) {
         super();
         this.id = id;
         this.version = version;
@@ -137,6 +141,7 @@ public class Waveform {
         this.lowFrequency = lowFrequency;
         this.highFrequency = highFrequency;
         this.sampleRate = sampleRate;
+        this.active = active;
     }
 
     public Long getId() {
@@ -263,6 +268,15 @@ public class Waveform {
         return this;
     }
 
+    public Boolean isActive() {
+        return active;
+    }
+
+    public Waveform setActive(Boolean active) {
+        this.active = active;
+        return this;
+    }
+
     public static Waveform mergeNonNullOrEmptyFields(Waveform waveformOverlay, Waveform baseWaveform) {
         return baseWaveform.mergeNonNullOrEmptyFields(waveformOverlay);
     }
@@ -296,6 +310,9 @@ public class Waveform {
         if (waveformOverlay.getAssociatedPicks() != null) {
             this.setAssociatedPicks(waveformOverlay.getAssociatedPicks());
         }
+        if (waveformOverlay.isActive() != null) {
+            this.setActive(waveformOverlay.isActive());
+        }
         return this;
     }
 
@@ -303,6 +320,7 @@ public class Waveform {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + ((active == null) ? 0 : active.hashCode());
         result = prime * result + ((beginTime == null) ? 0 : beginTime.hashCode());
         result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
         result = prime * result + ((event == null) ? 0 : event.hashCode());
@@ -328,6 +346,13 @@ public class Waveform {
             return false;
         }
         Waveform other = (Waveform) obj;
+        if (active == null) {
+            if (other.active != null) {
+                return false;
+            }
+        } else if (!active.equals(other.active)) {
+            return false;
+        }
         if (beginTime == null) {
             if (other.beginTime != null) {
                 return false;
@@ -399,28 +424,34 @@ public class Waveform {
 
     @Override
     public String toString() {
-        return "Waveform [id="
-                + id
-                + ", version="
-                + version
-                + ", event="
-                + event
-                + ", stream="
-                + stream
-                + ", beginTime="
-                + beginTime
-                + ", endTime="
-                + endTime
-                + ", segmentType="
-                + segmentType
-                + ", segmentUnits="
-                + segmentUnits
-                + ", lowFrequency="
-                + lowFrequency
-                + ", highFrequency="
-                + highFrequency
-                + ", sampleRate="
-                + sampleRate
-                + "]";
+        StringBuilder builder = new StringBuilder();
+        builder.append("Waveform [id=")
+               .append(id)
+               .append(", version=")
+               .append(version)
+               .append(", event=")
+               .append(event)
+               .append(", stream=")
+               .append(stream)
+               .append(", beginTime=")
+               .append(beginTime)
+               .append(", endTime=")
+               .append(endTime)
+               .append(", segmentType=")
+               .append(segmentType)
+               .append(", segmentUnits=")
+               .append(segmentUnits)
+               .append(", lowFrequency=")
+               .append(lowFrequency)
+               .append(", highFrequency=")
+               .append(highFrequency)
+               .append(", sampleRate=")
+               .append(sampleRate)
+               .append(", segment=")
+               .append(segment)
+               .append(", active=")
+               .append(active)
+               .append("]");
+        return builder.toString();
     }
 }

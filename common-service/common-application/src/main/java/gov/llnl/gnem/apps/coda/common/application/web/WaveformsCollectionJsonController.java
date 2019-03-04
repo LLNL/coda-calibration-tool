@@ -64,7 +64,7 @@ public class WaveformsCollectionJsonController {
     @GetMapping(value = "/query/stacks", name = "getAllStacks")
     public ResponseEntity<?> getAllStacks() {
 
-        List<Waveform> waveforms = getWaveformService().getAllStacks();
+        List<Waveform> waveforms = getWaveformService().getAllActiveStacks();
         return ResponseEntity.ok(waveforms);
     }
 
