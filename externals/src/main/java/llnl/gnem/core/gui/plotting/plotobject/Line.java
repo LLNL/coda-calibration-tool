@@ -330,7 +330,7 @@ public class Line extends AbstractLine {
 
     @Override
     protected int getMinIndex() {
-        if (owner != null && owner instanceof JSubplot) {
+        if (owner instanceof JSubplot) {
             JSubplot plot = (JSubplot) owner;
             double xmin = plot.getXaxis().getMin();
             double ymin = plot.getYaxis().getMin();
@@ -361,7 +361,7 @@ public class Line extends AbstractLine {
 
     @Override
     protected int getMaxIndex() {
-        if (owner != null && owner instanceof JSubplot) {
+        if (owner instanceof JSubplot) {
             JSubplot plot = (JSubplot) owner;
             double xmax = plot.getXaxis().getMax();
             double ymin = plot.getYaxis().getMin();

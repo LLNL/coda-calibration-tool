@@ -29,23 +29,28 @@ public class MaybeNumericStringComparator implements Comparator<String> {
         } else if (s2 == null) {
             return 1;
         }
-        if (StringUtils.isNumeric(s1) && StringUtils.isNumeric(s2)) {
-            int val = -1;
+        String ns1 = s1.trim().isEmpty() ? "0.0" : s1.trim();
+        String ns2 = s2.trim().isEmpty() ? "0.0" : s2.trim();
+        int val = -1;
+        if (StringUtils.isNumeric(ns1) && StringUtils.isNumeric(ns2)) {
             try {
-                val = Long.valueOf(s1).compareTo(Long.valueOf(s2));
+                val = Long.valueOf(ns1).compareTo(Long.valueOf(ns2));
             } catch (NumberFormatException e) {
             }
-            return val;
-        } else if (StringUtils.containsOnly(s1, "0123456789.") && StringUtils.containsOnly(s2, "0123456789.")) {
-            int val = -1;
-            try {
-                val = Double.valueOf(s1).compareTo(Double.valueOf(s2));
-            } catch (NumberFormatException e) {
+        } else if (StringUtils.containsOnly(ns1, "0123456789.")) {
+            if (StringUtils.containsOnly(ns2, "0123456789.")) {
+                try {
+                    val = Double.valueOf(ns1).compareTo(Double.valueOf(ns2));
+                } catch (NumberFormatException e) {
+                }
+            } else {
+                val = ns1.compareTo(ns2);
             }
-            return val;
         } else {
-            return s1.compareTo(s2);
+            val = ns1.compareTo(ns2);
         }
+
+        return val;
     }
 
 }

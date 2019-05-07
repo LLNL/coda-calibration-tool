@@ -98,7 +98,7 @@ public class AssessAutopicker {
                                       .filter(pick -> PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickType()))
                                       .findAny()
                                       .map(pick -> (double) pick.getPickTimeSecFromOrigin())
-                                      .orElse(new Double(-100));
+                                      .orElseGet(() -> Double.valueOf(-100));
 
             if (autoPickedTime > 0) {
                 stats.addValue(humanPickedTime - autoPickedTime);

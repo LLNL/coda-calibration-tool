@@ -15,11 +15,10 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.data.exporters;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -44,12 +43,15 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
-import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
+import reactor.core.scheduler.Schedulers;
 
 @Component
 public class ParamExporter {
@@ -60,14 +62,17 @@ public class ParamExporter {
 
     private ReferenceEventClient eventClient;
     private List<MeasuredMwTempFileWriter> mwWriters;
+    private List<ReferenceMwTempFileWriter> referenceMwWriters;
 
     @Autowired
-    public ParamExporter(ParameterClient paramClient, ReferenceEventClient eventClient, List<ParamTempFileWriter> paramWriters, List<MeasuredMwTempFileWriter> mwWriters) {
+    public ParamExporter(ParameterClient paramClient, ReferenceEventClient eventClient, List<ParamTempFileWriter> paramWriters, List<MeasuredMwTempFileWriter> mwWriters,
+            List<ReferenceMwTempFileWriter> referenceMwWriters) {
         this.paramClient = paramClient;
         this.paramWriters = paramWriters;
 
         this.eventClient = eventClient;
         this.mwWriters = mwWriters;
+        this.referenceMwWriters = referenceMwWriters;
     }
 
     public File createExportArchive() throws IOException {
@@ -98,24 +103,28 @@ public class ParamExporter {
                                                                                                                                       (a, b) -> b,
                                                                                                                                       TreeMap::new)));
 
+            VelocityConfiguration velocity = paramClient.getVelocityConfiguration().subscribeOn(Schedulers.elastic()).block(Duration.ofSeconds(5l));
+
             for (ParamTempFileWriter writer : paramWriters) {
-                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters);
+                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters, velocity);
             }
         }
 
         if (mwWriters != null) {
-
             List<MeasuredMwDetails> measuredMwsDetails = new ArrayList<>();
             //Get corresponding Event details
-            eventClient.getMeasuredEvents().filter(Objects::nonNull).filter(mw -> mw.getEventId() != null && !mw.getEventId().trim().isEmpty()).subscribe(mw -> {
-                Event event = eventClient.getEvent(mw.getEventId()).block();
-                MeasuredMwDetails details = new MeasuredMwDetails(mw, event);
-                if (details.isValid()) {
-                    measuredMwsDetails.add(details);
-                }
-            });
+            measuredMwsDetails.addAll(eventClient.getMeasuredEventDetails().filter(Objects::nonNull).filter(MeasuredMwDetails::isValid).toStream().collect(Collectors.toList()));
+
             for (MeasuredMwTempFileWriter writer : mwWriters) {
-                writer.writeParams(tmpFolder, measuredMwsDetails);
+                writer.writeMeasuredMws(tmpFolder, measuredMwsDetails);
+            }
+
+            if (referenceMwWriters != null) {
+                List<ReferenceMwParameters> referenceMws = new ArrayList<>();
+                referenceMws.addAll(eventClient.getReferenceEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
+                for (ReferenceMwTempFileWriter writer : referenceMwWriters) {
+                    writer.writeReferenceMwParams(tmpFolder, referenceMws);
+                }
             }
         }
 
@@ -124,10 +133,10 @@ public class ParamExporter {
 
         try (Stream<Path> fileStream = Files.walk(tmpFolder, 5)) {
             List<File> files = fileStream.map(p -> p.toFile()).filter(f -> f.isFile()).collect(Collectors.toList());
-            try (ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("zip", new FileOutputStream(zipDir))) {
+            try (ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("zip", Files.newOutputStream(zipDir.toPath()))) {
                 for (File file : files) {
                     os.putArchiveEntry(new ZipArchiveEntry(file, file.getName()));
-                    IOUtils.copy(new FileInputStream(file), os);
+                    IOUtils.copy(Files.newInputStream(file.toPath()), os);
                     os.closeArchiveEntry();
                 }
                 os.flush();

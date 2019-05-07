@@ -46,8 +46,7 @@ public class ShapeMeasurement implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @OneToOne(optional = false)
     @JoinColumn(unique = true)
@@ -85,6 +84,26 @@ public class ShapeMeasurement implements Serializable {
     @NumberFormat
     private double timeDifference;
 
+    public ShapeMeasurement() {
+        //nop
+    }
+
+    public ShapeMeasurement(ShapeMeasurementMetadata md) {
+        this.id = md.getId();
+        this.version = md.getVersion();
+        this.waveform = new Waveform(md.getWaveform());
+        this.v0 = md.getV0();
+        this.v1 = md.getV1();
+        this.v2 = md.getV2();
+        this.measuredBeta = md.getMeasuredBeta();
+        this.measuredGamma = md.getMeasuredGamma();
+        this.measuredIntercept = md.getMeasuredIntercept();
+        this.measuredError = md.getMeasuredError();
+        this.measuredTime = md.getMeasuredTime();
+        this.distance = md.getDistance();
+        this.timeDifference = md.getTimeDifference();
+    }
+
     public Long getId() {
         return id;
     }
@@ -94,13 +113,8 @@ public class ShapeMeasurement implements Serializable {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return version;
-    }
-
-    public ShapeMeasurement setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public Waveform getWaveform() {

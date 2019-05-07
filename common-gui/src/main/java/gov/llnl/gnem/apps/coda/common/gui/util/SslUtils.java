@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.net.ssl.KeyManager;
@@ -31,15 +32,20 @@ import javax.net.ssl.X509TrustManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
+import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
+import io.netty.handler.ssl.ApplicationProtocolNames;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+
 public class SslUtils {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     public static SSLContext initMergedSSLTrustStore(InputStream keyStoreInput) throws GeneralSecurityException, IOException {
-
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(keyStoreInput, null);
-
         String defaultAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
 
         KeyManager[] keyManagers = { getSystemKeyManager(defaultAlgorithm, null) };
@@ -49,6 +55,27 @@ public class SslUtils {
         SSLContext context = SSLContext.getInstance("TLSv1.2");
         context.init(keyManagers, trustManagers, null);
         return context;
+    }
+
+    public static SslContext initMergedSSLTrustStore(Supplier<SslContextBuilder> base, InputStream keyStoreInput) throws GeneralSecurityException, IOException {
+        SslContextBuilder baseSSL = base.get();
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore.load(keyStoreInput, null);
+        String defaultAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+
+        KeyManagerFactory keyManFactory = KeyManagerFactory.getInstance(defaultAlgorithm);
+        keyManFactory.init(keyStore, null);
+
+        return baseSSL.applicationProtocolConfig(
+                new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
+                                              SelectorFailureBehavior.CHOOSE_MY_LAST_PROTOCOL,
+                                              SelectedListenerFailureBehavior.ACCEPT,
+                                              // **Go back to H2 when Netty 4.1.X fixes their connection pooling problem with h2
+                                              // ApplicationProtocolNames.HTTP_2,
+                                              ApplicationProtocolNames.HTTP_1_1))
+                      .keyManager(keyManFactory)
+                      .trustManager(new CombinedTrustManager(getSystemTrustManager(defaultAlgorithm, keyStore), getSystemTrustManager(defaultAlgorithm, null)).getAcceptedIssuers())
+                      .build();
     }
 
     public static X509KeyManager getSystemKeyManager(String algorithm, KeyStore keystore) throws GeneralSecurityException {

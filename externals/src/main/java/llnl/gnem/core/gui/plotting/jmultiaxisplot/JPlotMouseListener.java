@@ -303,7 +303,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
             }
         }
 
-        if (po != null && po instanceof MarginButton) {
+        if (po instanceof MarginButton) {
             marginButton = (MarginButton) po;
             marginButton.setToDepressedState(myGraphics);
         }

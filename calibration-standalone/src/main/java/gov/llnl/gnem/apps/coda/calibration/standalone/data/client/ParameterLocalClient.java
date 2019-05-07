@@ -26,6 +26,8 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersFiService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersPsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
@@ -43,19 +45,21 @@ public class ParameterLocalClient implements ParameterClient {
     private SiteFrequencyBandParametersService siteParamsService;
     private MdacParametersFiService mdacFiService;
     private MdacParametersPsService mdacPsService;
+    private ConfigurationService configService;
 
     @Autowired
     public ParameterLocalClient(SharedFrequencyBandParametersService sharedParamsService, SiteFrequencyBandParametersService siteParamsService, MdacParametersFiService mdacFiService,
-            MdacParametersPsService mdacPsService) {
+            MdacParametersPsService mdacPsService, ConfigurationService configService) {
         this.sharedParamsService = sharedParamsService;
         this.siteParamsService = siteParamsService;
         this.mdacFiService = mdacFiService;
         this.mdacPsService = mdacPsService;
+        this.configService = configService;
     }
 
     @Override
     public Mono<String> setSharedFrequencyBandParameter(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
-        return Mono.just(Optional.ofNullable(sharedParamsService.update(parameters)).orElse(new SharedFrequencyBandParameters()).toString());
+        return Mono.just(Optional.ofNullable(sharedParamsService.update(parameters)).orElseGet(() -> new SharedFrequencyBandParameters()).toString());
     }
 
     @Override
@@ -113,7 +117,17 @@ public class ParameterLocalClient implements ParameterClient {
 
     @Override
     public Mono<SharedFrequencyBandParameters> getSharedFrequencyBandParametersForFrequency(FrequencyBand frequencyBand) {
-        return Mono.just(Optional.ofNullable(sharedParamsService.findByFrequencyBand(frequencyBand)).orElse(new SharedFrequencyBandParameters()));
+        return Mono.just(Optional.ofNullable(sharedParamsService.findByFrequencyBand(frequencyBand)).orElseGet(() -> new SharedFrequencyBandParameters()));
+    }
+
+    @Override
+    public Mono<VelocityConfiguration> getVelocityConfiguration() {
+        return Mono.just(Optional.ofNullable(configService.getVelocityConfiguration()).orElseGet(() -> new VelocityConfiguration()));
+    }
+
+    @Override
+    public Mono<String> updateVelocityConfiguration(VelocityConfiguration velConf) {
+        return Mono.just(Optional.ofNullable(configService.update(velConf)).map(v -> v.toString()).orElseGet(() -> ""));
     }
 
 }

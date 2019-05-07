@@ -73,38 +73,58 @@
 		<maven.compile.source>1.8</maven.compile.source>
 		<maven.compile.target>1.8</maven.compile.target>
 		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
-		<maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
+		<maven.javadoc.plugin.version>3.1.0</maven.javadoc.plugin.version>
 		<maven.surefire.plugin.version>3.0.0-M3</maven.surefire.plugin.version>
 		<maven.shade.plugin.version>3.0.0</maven.shade.plugin.version>
 		<maven.jar.plugin.version>3.1.1</maven.jar.plugin.version>
 
-		<jfx.version>12-ea+14</jfx.version>
+		<jfx.version>13-ea+5</jfx.version>
 		<jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
 		<springlets.version>1.2.0.RELEASE</springlets.version>
-		<spring.boot.version>2.1.3.RELEASE</spring.boot.version>
-		<reactor.version>Californium-RELEASE</reactor.version>
+		<spring.boot.version>2.2.0.M2</spring.boot.version>
+		<reactor.version>Californium-SR6</reactor.version>
 
 		<javax.persistence.version>2.2.1</javax.persistence.version>
 		<org.apache.xmlgraphics.batik-script.version>1.11</org.apache.xmlgraphics.batik-script.version>
 		<xml.apis.ext.version>1.3.04</xml.apis.ext.version>
-		<xml.apis.version>2.0.2</xml.apis.version>
 		<geographiclib.java.version>1.49</geographiclib.java.version>
+
+		<netty.boringssl.version>2.0.25.Final</netty.boringssl.version>
+		<jetty.version>9.4.16.v20190411</jetty.version>
+		<eclipse.collections.version>10.0.0.M2</eclipse.collections.version>
 
 		<!-- GUI Specific -->
 		<tyrus.standalone.client.version>1.15</tyrus.standalone.client.version>
 		<commons.compress.version>1.18</commons.compress.version>
 		<commons.math3.version>3.6.1</commons.math3.version>
-		<guava.version>27.0.1-jre</guava.version>
+		<guava.version>27.1-jre</guava.version>
 		<failsafe.version>2.0.1</failsafe.version>
 
 		<!-- Testing -->
-		<spring.test.version>5.1.5.RELEASE</spring.test.version>
-		<junit.jupiter.version>5.4.0</junit.jupiter.version>
-		<mockito.version>2.24.5</mockito.version>
+		<spring.test.version>5.2.0.M1</spring.test.version>
+		<junit.jupiter.version>5.5.0-M1</junit.jupiter.version>
+		<mockito.version>2.27.0</mockito.version>
+		<javax.annotation.version>1.3.2</javax.annotation.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.eclipse.collections</groupId>
+				<artifactId>eclipse-collections-api</artifactId>
+				<version>${eclipse.collections.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.eclipse.collections</groupId>
+				<artifactId>eclipse-collections</artifactId>
+				<version>${eclipse.collections.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-tcnative-boringssl-static</artifactId>
+				<version>${netty.boringssl.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-base</artifactId>
@@ -117,25 +137,50 @@
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
-				<artifactId>javafx-web</artifactId>
-				<version>${jfx.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-swing</artifactId>
 				<version>${jfx.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-web</artifactId>
+				<version>${jfx.version}</version>
+				<classifier>win</classifier>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-web</artifactId>
+				<version>${jfx.version}</version>
+				<classifier>mac</classifier>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-web</artifactId>
+				<version>${jfx.version}</version>
+				<classifier>linux</classifier>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-graphics</artifactId>
 				<version>${jfx.version}</version>
+				<classifier>win</classifier>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-graphics</artifactId>
+				<version>${jfx.version}</version>
+				<classifier>mac</classifier>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-graphics</artifactId>
+				<version>${jfx.version}</version>
+				<classifier>linux</classifier>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-controls</artifactId>
 				<version>${jfx.version}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>javax.xml.bind</groupId>
 				<artifactId>jaxb-api</artifactId>
@@ -275,14 +320,36 @@
 				<version>${springlets.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>io.springlets</groupId>
-				<artifactId>springlets-web</artifactId>
-				<version>${springlets.version}</version>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-web</artifactId>
+				<version>${spring.boot.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-starter-tomcat</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
-				<groupId>io.springlets</groupId>
-				<artifactId>springlets-boot-starter-web</artifactId>
-				<version>${springlets.version}</version>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-jetty</artifactId>
+				<version>${spring.boot.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.eclipse.jetty</groupId>
+						<artifactId>jetty-server</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-alpn-conscrypt-server</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty.http2</groupId>
+				<artifactId>http2-server</artifactId>
+				<version>${jetty.version}</version>
 			</dependency>
 
 			<dependency>
@@ -314,7 +381,12 @@
 			<dependency>
 				<groupId>xml-apis</groupId>
 				<artifactId>xml-apis</artifactId>
-				<version>${xml.apis.version}</version>
+				<!-- Note the xml-apis maven repo is hosed and their versions make no 
+					sense so I am pinning this one specifically to not auto-update as we are 
+					liable to go backwards! -->
+				<!-- i.e. xml-apis 2.0.2 was released in 2005, 1.4.01 in 2011, and 1.0.b2 
+					in 2007! -->
+				<version>1.4.01</version>
 			</dependency>
 			<dependency>
 				<groupId>xml-apis</groupId>
@@ -392,6 +464,12 @@
 				<artifactId>mockito-junit-jupiter</artifactId>
 				<version>${mockito.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>javax.annotation</groupId>
+				<artifactId>javax.annotation-api</artifactId>
+				<version>${javax.annotation.version}</version>
+			</dependency>
+
 		</dependencies>
 	</dependencyManagement>
 
@@ -407,6 +485,7 @@
 						<target>${java.version}</target>
 						<encoding>${project.build.sourceEncoding}</encoding>
 						<useIncrementalCompilation>false</useIncrementalCompilation>
+						<compilerArgument>-Xlint:deprecation</compilerArgument>
 					</configuration>
 				</plugin>
 

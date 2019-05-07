@@ -24,4 +24,5 @@ public class CalibrationJsonConstants {
     public static final String MDAC_FI_FIELD = "mdac-fi";
     public static final String REFERENCE_EVENTS_FIELD = "reference-events";
     public static final String MEASURED_EVENTS_FIELD = "measured-events";
+    public static final String VELOCITY_CONFIGURATION = "velocity-configuration";
 }

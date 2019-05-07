@@ -15,8 +15,10 @@
 package llnl.gnem.core.util.FileUtil;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Vector;
@@ -24,7 +26,7 @@ import java.util.Vector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ListOfFiles implements Enumeration<FileInputStream> {
+public class ListOfFiles implements Enumeration<InputStream> {
     private static final Logger log = LoggerFactory.getLogger(ListOfFiles.class);
     private String[] listOfFiles;
     private int current = 0;
@@ -57,24 +59,24 @@ public class ListOfFiles implements Enumeration<FileInputStream> {
 
     @Override
     public boolean hasMoreElements() {
-        if (current < listOfFiles.length)
+        if (current < listOfFiles.length) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     @Override
-    public FileInputStream nextElement() {
-        FileInputStream in = null;
-
-        if (!hasMoreElements())
+    public InputStream nextElement() {
+        InputStream in = null;
+        if (!hasMoreElements()) {
             throw new NoSuchElementException("No more files.");
-        else {
+        } else {
             String nextElement = listOfFiles[current];
             current++;
             try {
-                in = new FileInputStream(nextElement);
-            } catch (FileNotFoundException e) {
+                in = Files.newInputStream(Paths.get(nextElement));
+            } catch (IOException e) {
                 log.warn("ListOfFiles: Can't open {}", nextElement, e);
             }
         }

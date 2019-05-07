@@ -38,17 +38,17 @@ public class PeakVelocityJsonController {
         this.service = service;
     }
 
-    @GetMapping(name = "getMeasurements")
+    @GetMapping(name = "getMeasurements", path = "/all")
     public List<PeakVelocityMeasurement> getMeasurements() {
         return service.findAll();
     }
 
-    @GetMapping(name = "getMeasurementsMetadataOnly", path = "/metadata")
+    @GetMapping(name = "getMeasurementsMetadataOnly", path = "/metadata/all")
     public List<PeakVelocityMeasurementMetadata> getMeasurementsMetadataOnly() {
         return service.findAllMetadataOnly();
     }
 
-    @GetMapping(name = "getMeasurementsMetadataOnly", path = "/metadata-by-id/{id}")
+    @GetMapping(name = "getMeasurementsMetadataOnly", path = "/metadata/by-id/{id}")
     public PeakVelocityMeasurementMetadata getByWaveformIdMetadataOnly(@PathVariable(name = "id", required = true) Long id) {
         return service.findByWaveformIdMetadataOnly(id);
     }

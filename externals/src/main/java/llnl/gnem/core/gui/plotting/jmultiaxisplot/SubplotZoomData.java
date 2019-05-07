@@ -117,7 +117,7 @@ class SubplotZoomData {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("SubplotZoomData{" + "subplot(" + Integer.toHexString(System.identityHashCode(p)) + "), state=:");
+        StringBuilder sb = new StringBuilder("SubplotZoomData{ subplot(").append(Integer.toHexString(System.identityHashCode(p))).append("), state=:");
         for (SubplotDisplayInfo sdi : stack) {
             sb.append("\n\t\t");
             sb.append(sdi);

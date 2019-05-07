@@ -53,4 +53,24 @@ public class ShapeMeasurementWebClient implements ShapeMeasurementClient {
                      .flatMap(response -> response.bodyToMono(ShapeMeasurement.class))
                      .onErrorReturn(new ShapeMeasurement());
     }
+
+    @Override
+    public Flux<ShapeMeasurement> getMeasuredShapesMetadata() {
+        return client.get()
+                     .uri("/shape-measurements/metadata/all/")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(ShapeMeasurement.class))
+                     .onErrorReturn(new ShapeMeasurement());
+    }
+
+    @Override
+    public Mono<ShapeMeasurement> getMeasuredShapeMetadata(Long id) {
+        return client.get()
+                     .uri("/shape-measurements/metadata/byWaveformId/" + id)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMap(response -> response.bodyToMono(ShapeMeasurement.class))
+                     .onErrorReturn(new ShapeMeasurement());
+    }
 }

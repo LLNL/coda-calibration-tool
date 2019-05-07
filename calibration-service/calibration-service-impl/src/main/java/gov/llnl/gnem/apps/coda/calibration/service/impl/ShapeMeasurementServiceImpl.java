@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurementMetadata;
 import gov.llnl.gnem.apps.coda.calibration.repository.ShapeMeasurementRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeMeasurementService;
 
@@ -87,5 +88,15 @@ public class ShapeMeasurementServiceImpl implements ShapeMeasurementService {
     @Override
     public ShapeMeasurement findOneByWaveformId(Long waveformId) {
         return Optional.ofNullable(shapeMeasurementRepository.findOneByWaveformId(waveformId)).orElseGet(ShapeMeasurement::new);
+    }
+
+    @Override
+    public List<ShapeMeasurementMetadata> findAllMetadataOnly() {
+        return shapeMeasurementRepository.findAllMetadataOnly();
+    }
+
+    @Override
+    public ShapeMeasurementMetadata findOneMetadataByWaveformId(Long waveformId) {
+        return shapeMeasurementRepository.findOneMetadataByWaveformId(waveformId);
     }
 }

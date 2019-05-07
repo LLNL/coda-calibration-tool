@@ -74,7 +74,7 @@ public class Pair<L, R> {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(left).append("\", \"").append(right).append("\"");
+        builder.append("\"").append(left).append("\", \"").append(right).append('\"');
         return builder.toString();
     }
 

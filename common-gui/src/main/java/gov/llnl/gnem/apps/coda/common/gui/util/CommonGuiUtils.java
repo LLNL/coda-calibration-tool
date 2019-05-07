@@ -38,10 +38,11 @@ public class CommonGuiUtils {
                 Method getTaskbar = taskbar.getMethod("getTaskbar");
                 try {
                     Object taskbarInstance = getTaskbar.invoke(taskbar);
-                    Method setIconImage = taskbar.cast(taskbarInstance).getClass().getMethod("setIconImage", java.awt.Image.class);
-                    setIconImage.invoke(taskbarInstance, image);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                    log.error(e.getMessage(), e);
+                    if (taskbarInstance != null) {
+                        Method setIconImage = taskbar.cast(taskbarInstance).getClass().getMethod("setIconImage", java.awt.Image.class);
+                        setIconImage.invoke(taskbarInstance, image);
+                    }
+                } catch (UnsupportedOperationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 }
             } catch (ClassNotFoundException | NoSuchMethodException e) {
                 try {

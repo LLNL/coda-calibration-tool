@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -48,6 +49,7 @@ import com.google.common.eventbus.EventBus;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
@@ -62,10 +64,15 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.embed.swing.SwingNode;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.Pane;
 import llnl.gnem.core.gui.plotting.JBasicPlot;
 import llnl.gnem.core.gui.plotting.MouseOverPlotObject;
 import llnl.gnem.core.gui.plotting.PaintMode;
@@ -107,7 +114,11 @@ public class PathController implements MapListeningController, RefreshableContro
     @FXML
     SwingNode sdPlotSwingNode;
 
+    @FXML
+    Pane path;
+
     private SpectraClient spectraMeasurementClient;
+    private WaveformClient waveformClient;
 
     private GeoMap mapImpl;
 
@@ -127,11 +138,15 @@ public class PathController implements MapListeningController, RefreshableContro
     private final BiConsumer<Boolean, String> eventSelectionCallback;
     private final BiConsumer<Boolean, String> stationSelectionCallback;
     private final List<Symbol> selectedSymbols = new ArrayList<>();
+    private MenuItem exclude;
+    private MenuItem include;
+    private ContextMenu menu;
 
     @Autowired
-    public PathController(SpectraClient spectraMeasurementClient, EventBus bus, GeoMap mapImpl, MapPlottingUtilities mappingUtilities) {
+    public PathController(SpectraClient spectraMeasurementClient, WaveformClient waveformClient, EventBus bus, GeoMap mapImpl, MapPlottingUtilities mappingUtilities) {
         super();
         this.spectraMeasurementClient = spectraMeasurementClient;
+        this.waveformClient = waveformClient;
         this.mapImpl = mapImpl;
         this.mappingUtilities = mappingUtilities;
         this.bus = bus;
@@ -214,7 +229,7 @@ public class PathController implements MapListeningController, RefreshableContro
                     if (obj instanceof MouseOverPlotObject) {
                         MouseOverPlotObject pos = (MouseOverPlotObject) obj;
                         PlotObject po = pos.getPlotObject();
-                        if (po != null && po instanceof Symbol) {
+                        if (po instanceof Symbol) {
                             Platform.runLater(() -> {
                                 stationPlotTooltip.setText(((Symbol) po).getText());
                                 Point p = MouseInfo.getPointerInfo().getLocation();
@@ -228,14 +243,9 @@ public class PathController implements MapListeningController, RefreshableContro
                     if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).getMouseEvent().getID() == MouseEvent.MOUSE_RELEASED) {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
                         PlotObject po = poc.getPlotObject();
-                        if (po != null && po instanceof Symbol) {
-                            TreeSet<Waveform> sortedSet = new TreeSet<Waveform>(evStaComparator);
-                            sortedSet.addAll(stationSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter())));
-                            List<Long> ids = sortedSet.stream().sequential().map(w -> w.getId()).collect(Collectors.toList());
-                            if (ids != null) {
-                                selectSymbolsForWaveforms(sortedSet);
-                                selectWaveforms(ids.toArray(new Long[0]));
-                            }
+                        if (po instanceof Symbol) {
+                            List<Waveform> waveforms = stationSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
+                            handlePlotObjectClicked(poc, waveforms);
                         }
                     }
                 }
@@ -253,7 +263,7 @@ public class PathController implements MapListeningController, RefreshableContro
                     if (obj instanceof MouseOverPlotObject) {
                         MouseOverPlotObject pos = (MouseOverPlotObject) obj;
                         PlotObject po = pos.getPlotObject();
-                        if (po != null && po instanceof Symbol) {
+                        if (po instanceof Symbol) {
                             Platform.runLater(() -> {
                                 sdPlotTooltip.setText(((Symbol) po).getText());
                                 Point p = MouseInfo.getPointerInfo().getLocation();
@@ -267,14 +277,9 @@ public class PathController implements MapListeningController, RefreshableContro
                     if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).getMouseEvent().getID() == MouseEvent.MOUSE_RELEASED) {
                         PlotObjectClicked poc = (PlotObjectClicked) obj;
                         PlotObject po = poc.getPlotObject();
-                        if (po != null && po instanceof Symbol) {
-                            TreeSet<Waveform> sortedSet = new TreeSet<Waveform>(evStaComparator);
-                            sortedSet.addAll(sdSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter())));
-                            List<Long> ids = sortedSet.stream().sequential().map(w -> w.getId()).collect(Collectors.toList());
-                            if (ids != null) {
-                                selectSymbolsForWaveforms(sortedSet);
-                                selectWaveforms(ids.toArray(new Long[0]));
-                            }
+                        if (po instanceof Symbol) {
+                            List<Waveform> waveforms = sdSymbolMap.get(new Point2D.Double(((Symbol) po).getXcenter(), ((Symbol) po).getYcenter()));
+                            handlePlotObjectClicked(poc, waveforms);
                         }
                     }
                 }
@@ -301,9 +306,51 @@ public class PathController implements MapListeningController, RefreshableContro
 
         station1ComboBox.valueProperty().addListener(e -> refreshView());
         station2ComboBox.valueProperty().addListener(e -> refreshView());
+
+        menu = new ContextMenu();
+        include = new MenuItem("Include Selected");
+        menu.getItems().add(include);
+        exclude = new MenuItem("Exclude Selected");
+        menu.getItems().add(exclude);
+
+        EventHandler<javafx.scene.input.MouseEvent> menuHideHandler = (evt) -> {
+            if (MouseButton.SECONDARY != evt.getButton()) {
+                menu.hide();
+            }
+        };
+        path.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, menuHideHandler);
+        sdPlotSwingNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, menuHideHandler);
+        stationPlotSwingNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, menuHideHandler);
     }
 
-    protected void selectSymbolsForWaveforms(Collection<Waveform> sortedSet) {
+    private void setSymbolsActive(List<Waveform> ws, Boolean active) {
+        SwingUtilities.invokeLater(() -> {
+            ws.stream().flatMap(w -> Optional.ofNullable(stationWaveformMap.get(w.getEvent().getEventId())).orElseGet(() -> new ArrayList<>()).stream()).forEach(sym -> {
+                if (active) {
+                    sym.setFillColor(sym.getEdgeColor());
+                } else {
+                    sym.setFillColor(Color.GRAY);
+                }
+            });
+            Platform.runLater(() -> {
+                stationPlot.repaint();
+            });
+        });
+    }
+
+    private void showContextMenu(List<Waveform> waveforms, MouseEvent t, BiConsumer<List<Waveform>, Boolean> activationFunc) {
+        Platform.runLater(() -> {
+            include.setOnAction(evt -> setActive(waveforms, true, activationFunc));
+            exclude.setOnAction(evt -> setActive(waveforms, false, activationFunc));
+            menu.show(path, t.getXOnScreen(), t.getYOnScreen());
+        });
+    }
+
+    private void setActive(List<Waveform> waveforms, boolean active, BiConsumer<List<Waveform>, Boolean> activationFunc) {
+        waveformClient.setWaveformsActiveByIds(waveforms.stream().map(w -> w.getId()).collect(Collectors.toList()), active).subscribe(s -> activationFunc.accept(waveforms, active));
+    }
+
+    private void selectSymbolsForWaveforms(Collection<Waveform> sortedSet) {
         if (!selectedSymbols.isEmpty()) {
             deselectSymbols(selectedSymbols);
             selectedSymbols.clear();
@@ -349,7 +396,7 @@ public class PathController implements MapListeningController, RefreshableContro
 
         frequencyBandComboBox.getItems().clear();
         measurementsFreqBandMap.putAll(
-                spectraMeasurementClient.getMeasuredSpectra()
+                spectraMeasurementClient.getMeasuredSpectraMetadata()
                                         .filter(Objects::nonNull)
                                         .filter(spectra -> spectra.getWaveform() != null)
                                         .toStream()
@@ -501,7 +548,6 @@ public class PathController implements MapListeningController, RefreshableContro
                     }
 
                     for (Entry<Pair<Station, Station>, Double> distanceStaPair : distanceStaPairs.entrySet()) {
-
                         Pair<Station, Station> staPair = distanceStaPair.getKey();
                         if (Double.isNaN(beforeStatsStaPairs.get(staPair).getStandardDeviation()) || beforeStatsStaPairs.get(staPair).getStandardDeviation() == 0.0) {
                             continue;
@@ -621,7 +667,7 @@ public class PathController implements MapListeningController, RefreshableContro
                                     TriangleUp plotObj = new TriangleUp(firstMeasurement.getRawAtMeasurementTime(),
                                                                         secondMeasurement.getRawAtMeasurementTime(),
                                                                         5.0,
-                                                                        Color.RED,
+                                                                        firstMeasurement.getWaveform().isActive() ? Color.RED : Color.GRAY,
                                                                         Color.RED,
                                                                         Color.RED,
                                                                         firstStation.getStationName(),
@@ -633,7 +679,7 @@ public class PathController implements MapListeningController, RefreshableContro
                                     TriangleDn plotObj2 = new TriangleDn(firstMeasurement.getPathCorrected(),
                                                                          secondMeasurement.getPathCorrected(),
                                                                          5.0,
-                                                                         Color.BLUE,
+                                                                         firstMeasurement.getWaveform().isActive() ? Color.BLUE : Color.GRAY,
                                                                          Color.BLUE,
                                                                          Color.BLUE,
                                                                          secondStation.getStationName(),
@@ -742,6 +788,23 @@ public class PathController implements MapListeningController, RefreshableContro
                     stationPlot.getTitle().setText(labelText);
                 }
             });
+        }
+    }
+
+    private void handlePlotObjectClicked(PlotObjectClicked poc, List<Waveform> waveforms) {
+        if (waveforms != null) {
+            if (SwingUtilities.isLeftMouseButton(poc.getMouseEvent())) {
+                TreeSet<Waveform> sortedSet = new TreeSet<Waveform>(evStaComparator);
+                sortedSet.addAll(waveforms);
+                List<Long> ids = sortedSet.stream().sequential().map(w -> w.getId()).collect(Collectors.toList());
+                selectSymbolsForWaveforms(sortedSet);
+                selectWaveforms(ids.toArray(new Long[0]));
+                Platform.runLater(() -> menu.hide());
+            } else if (SwingUtilities.isRightMouseButton(poc.getMouseEvent())) {
+                showContextMenu(waveforms, poc.getMouseEvent(), (ws, active) -> {
+                    setSymbolsActive(ws, active);
+                });
+            }
         }
     }
 }

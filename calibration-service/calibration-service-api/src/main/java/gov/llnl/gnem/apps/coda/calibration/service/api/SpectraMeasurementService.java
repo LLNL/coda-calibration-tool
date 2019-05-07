@@ -20,6 +20,8 @@ import java.util.Map;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -28,10 +30,11 @@ import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 
 public interface SpectraMeasurementService {
 
-    public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled);
+    public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled,
+            VelocityConfiguration velocityConfig);
 
     public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled,
-            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap);
+            VelocityConfiguration velocityConfig, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap);
 
     public SpectraMeasurement findOne(Long id);
 
@@ -41,10 +44,13 @@ public interface SpectraMeasurementService {
 
     public List<SpectraMeasurement> findAll();
 
+    public List<SpectraMeasurementMetadata> findAllMetadataOnly();
+
+    public List<SpectraMeasurementMetadata> findAllMetadataOnly(Iterable<Long> ids);
+
     public long count();
 
     public Spectra computeSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
 
     public Spectra getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
-
 }

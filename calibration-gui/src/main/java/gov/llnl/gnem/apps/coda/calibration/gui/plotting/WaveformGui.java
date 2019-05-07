@@ -134,10 +134,20 @@ public class WaveformGui {
 
     public void show() {
         Platform.runLater(() -> {
+            boolean showing = stage.isShowing();
             stage.show();
             if (waveformPlotManager != null) {
                 waveformPlotManager.setVisible(true);
             }
+            if (!showing) {
+                stage.toFront();
+            }
+        });
+    }
+
+    public void toFront() {
+        show();
+        Platform.runLater(() -> {
             stage.toFront();
         });
     }

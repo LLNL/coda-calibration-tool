@@ -48,12 +48,19 @@ public class SpectraLocalClient implements SpectraClient {
     }
 
     @Override
+    public Flux<SpectraMeasurement> getMeasuredSpectraMetadata() {
+        return Flux.fromIterable(service.findAllMetadataOnly()).map(md -> new SpectraMeasurement(md)).onErrorReturn(new SpectraMeasurement());
+    }
+
+    @Override
     public Mono<Spectra> getReferenceSpectra(String eventId) {
-        return Mono.just(Optional.ofNullable(service.computeSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElse(new Spectra())).onErrorReturn(new Spectra());
+        return Mono.just(Optional.ofNullable(service.computeSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(() -> new Spectra()))
+                   .onErrorReturn(new Spectra());
     }
 
     @Override
     public Mono<Spectra> getFitSpectra(String eventId) {
-        return Mono.just(Optional.ofNullable(service.getFitSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElse(new Spectra())).onErrorReturn(new Spectra());
+        return Mono.just(Optional.ofNullable(service.getFitSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(() -> new Spectra()))
+                   .onErrorReturn(new Spectra());
     }
 }

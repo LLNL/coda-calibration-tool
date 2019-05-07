@@ -14,8 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurementMetadata;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.repository.PeakVelocityMeasurementRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PeakVelocityMeasurementService;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.MaxVelocityCalculator;
@@ -106,8 +107,8 @@ public class PeakVelocityMeasurementServiceImpl implements PeakVelocityMeasureme
     }
 
     @Override
-    public Collection<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks) {
-        return velocityCalc.computeMaximumVelocity(allStacks);
+    public Stream<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks, VelocityConfiguration velocityConfiguration) {
+        return velocityCalc.computeMaximumVelocity(allStacks, velocityConfiguration);
     }
 
     @Override

@@ -23,7 +23,6 @@ import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Locale;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -56,7 +55,7 @@ public class SacExporter {
                     header.setBeginTime(new TimeT(w.getBeginTime()));
                     header.setOriginTime(new TimeT(w.getEvent().getOriginTime()));
 
-                    header.nevid = Integer.valueOf(w.getEvent().getEventId());
+                    header.nevid = Integer.parseInt(w.getEvent().getEventId());
                     if (w.getAssociatedPicks() != null) {
                         for (int i = 0; i < w.getAssociatedPicks().size() && i <= 10; i++) {
                             try {
@@ -97,7 +96,7 @@ public class SacExporter {
                             header.idep = 8;
                         }
                     }
-                    float[] sequence = new Sequence(ArrayUtils.toPrimitive(w.getSegment())).getArray();
+                    float[] sequence = new Sequence(w.getSegment()).getArray();
                     header.npts = sequence.length;
                     header.write(os);
                     for (int i = 0; i < sequence.length; i++) {

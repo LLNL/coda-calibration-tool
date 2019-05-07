@@ -514,10 +514,10 @@
                             5.0
                         ]
                     },
-                    "stressDropInMpa": {
-                        "$id": "#/properties/reference-events/entry/properties/stressDropInMpa",
+                    "refApparentStressInMpa": {
+                        "$id": "#/properties/reference-events/entry/properties/refApparentStressInMpa",
                         "type": "number",
-                        "title": "An optional measure of the stress drop term for this specific event. If present it will be used in lieu of the MDAC2 Sigma-Psi terms loaded for calibrating tie points for this event.",
+                        "title": "An optional measure of the apparent stress term for this specific event. If present it will be used in lieu of the MDAC2 Sigma-Psi terms loaded for calibrating tie points for this event.",
                         "default": false,
                         "examples": [
                             0.0, 0.5
@@ -525,6 +525,67 @@
                     }
                 }
             }
-        }        
+        },
+        "velocity-configuration": {
+            "$id": "#/properties/velocity-configuration",
+            "type": "object",
+            "title": "Configuration properties related to group velocities that should be used by the calibration code.",
+            "properties": {
+                "phaseSpeedInKms": {
+                    "$id": "#/properties/velocity-configuration/properties/phaseSpeedInKms",
+                    "type": "number",
+                    "title": "Phase speed (Km/S) to use for the spectra calibration. Note: path calibration will use this value if it is available but path.phaseSpeedKmS isn't.",
+                    "default": 0,
+                    "examples": [
+                        3.5
+                    ]
+                },
+                "groupVelocity1InKmsGtDistance": {
+                    "$id": "#/properties/velocity-configuration/properties/groupVelocity1InKmsGtDistance",
+                    "type": "number",
+                    "title": "Starting velocity (in Km/S) for windowing distances after the distance threshold.",
+                    "default": 0,
+                    "examples": [
+                        4.7
+                    ]
+                },
+                "groupVelocity2InKmsGtDistance": {
+                    "$id": "#/properties/velocity-configuration/properties/groupVelocity2InKmsGtDistance",
+                    "type": "number",
+                    "title": "Ending velocity (in Km/S) for windowing distances after the distance threshold.",
+                    "default": 0,
+                    "examples": [
+                        2.3
+                    ]
+                },
+                "groupVelocity1InKmsLtDistance": {
+                    "$id": "#/properties/velocity-configuration/properties/groupVelocity1InKmsLtDistance",
+                    "type": "number",
+                    "title": "Starting velocity (in Km/S) for windowing distances before the distance threshold.",
+                    "default": 0,
+                    "examples": [
+                        3.9
+                    ]
+                },
+                "groupVelocity2InKmsLtDistance": {
+                    "$id": "#/properties/velocity-configuration/properties/groupVelocity2InKmsLtDistance",
+                    "type": "number",
+                    "title": "Ending velocity (in Km/S) for windowing distances before the distance threshold.",
+                    "default": 0,
+                    "examples": [
+                        1.9
+                    ]
+                },
+                "distanceThresholdInKm": {
+                    "$id": "#/properties/velocity-configuration/properties/distanceThresholdInKm",
+                    "type": "number",
+                    "title": "Distance threshold to use (in Km) to use for selected which group velocity to use.",
+                    "default": 0,
+                    "examples": [
+                        300.0
+                    ]
+                }                     
+            }            
+        }                  
     }
-}
+}      

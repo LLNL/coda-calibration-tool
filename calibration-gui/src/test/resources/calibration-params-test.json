@@ -41,6 +41,6 @@
     ],
     "reference-events": [
     	{ "eventId" : "0331199924", "refMw" : 3.0 },
-        { "eventId" : "0401199924", "refMw" : 5.0,  "stressDropInMpa": 0.7 }
+        { "eventId" : "0401199924", "refMw" : 5.0,  "apparentStressInMpa": 0.7 }
     ]
 }

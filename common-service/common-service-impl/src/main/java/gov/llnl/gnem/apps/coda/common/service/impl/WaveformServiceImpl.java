@@ -15,9 +15,10 @@
 package gov.llnl.gnem.apps.coda.common.service.impl;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -35,6 +36,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.PassFailEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import gov.llnl.gnem.apps.coda.common.repository.WaveformRepository;
 import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
@@ -44,6 +46,7 @@ public class WaveformServiceImpl implements WaveformService {
 
     private WaveformRepository waveformRepository;
     private NotificationService notificationService;
+    private ExampleMatcher ignoreStandardFieldsMatcher = ExampleMatcher.matching().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
 
     @Autowired
     public WaveformServiceImpl(WaveformRepository waveformRepository, NotificationService notificationService) {
@@ -63,6 +66,7 @@ public class WaveformServiceImpl implements WaveformService {
     @Override
     public void delete(Waveform waveform) {
         getWaveformRepository().delete(waveform);
+        notificationService.post(new WaveformChangeEvent(getIds(waveform)).setDelete(true));
     }
 
     @Transactional
@@ -80,12 +84,19 @@ public class WaveformServiceImpl implements WaveformService {
     public void delete(Iterable<Long> ids) {
         List<Waveform> toDelete = getWaveformRepository().findAllById(ids);
         getWaveformRepository().deleteInBatch(toDelete);
+        notificationService.post(new WaveformChangeEvent(getIds(toDelete)).setDelete(true));
     }
 
     @Transactional
     @Override
     public Waveform save(Waveform entity) {
-        return update(entity);
+        Waveform wave;
+        if (entity.getId() != null) {
+            wave = waveformRepository.save(entity);
+        } else {
+            wave = update(entity);
+        }
+        return wave;
     }
 
     @Override
@@ -101,6 +112,11 @@ public class WaveformServiceImpl implements WaveformService {
     @Override
     public List<Waveform> findAll(Iterable<Long> ids) {
         return getWaveformRepository().findAllById(ids);
+    }
+
+    @Override
+    public List<Waveform> findAllMetadata(List<Long> ids) {
+        return getWaveformRepository().findAllMetadataByIds(ids);
     }
 
     @Override
@@ -124,49 +140,73 @@ public class WaveformServiceImpl implements WaveformService {
     @Transactional
     @Override
     public Waveform update(Waveform entry) {
-        Waveform mergedEntry = attachIfAvailableInRepository(entry);
-        return waveformRepository.saveAndFlush(mergedEntry);
+        Waveform mergedEntry = waveformRepository.saveAndFlush(attachIfAvailableInRepository(entry));
+        notificationService.post(new WaveformChangeEvent(getIds(mergedEntry)).setAddOrUpdate(true));
+        return mergedEntry;
     }
 
     @Transactional
     @Override
-    public List<Waveform> update(Long sessionId, Collection<Waveform> values) {
+    public List<Waveform> update(Long sessionId, List<Waveform> values) {
         List<Waveform> vals = new ArrayList<>(values.size());
         for (Waveform entry : values) {
             Waveform mergedEntry = attachIfAvailableInRepository(entry);
             vals.add(mergedEntry);
         }
-        CompletableFuture.runAsync(() -> waveformRepository.saveAll(vals)).thenRun(() -> {
+        CompletableFuture.runAsync(() -> {
+            List<Waveform> saved = waveformRepository.saveAll(vals);
+            waveformRepository.flush();
             if (sessionId != null) {
                 notificationService.post(new PassFailEvent(sessionId, UUID.randomUUID().toString(), new Result<Object>(true, Boolean.TRUE)));
+                notificationService.post(new WaveformChangeEvent(getIds(saved)).setAddOrUpdate(true));
             }
         });
         return vals;
     }
 
+    private List<Long> getIds(Waveform waveform) {
+        return getIds(Collections.singletonList(waveform));
+    }
+
+    private List<Long> getIds(List<Waveform> vals) {
+        return vals.stream().map(Waveform::getId).collect(Collectors.toList());
+    }
+
     private Waveform attachIfAvailableInRepository(Waveform entry) {
         Waveform mergedEntry = null;
-        if (entry.getId() != null) {
-            mergedEntry = waveformRepository.findById(entry.getId()).get();
-        }
-        if (mergedEntry != null) {
-            mergedEntry = mergedEntry.mergeNonNullOrEmptyFields(entry);
-        } else {
-            mergedEntry = entry;
+        if (entry != null) {
+            if (entry.getId() != null) {
+                mergedEntry = waveformRepository.findById(entry.getId()).get();
+            } else if (entry.getEvent() != null && entry.getStream() != null && entry.getStream().getStation() != null && entry.getLowFrequency() != null && entry.getHighFrequency() != null) {
+                mergedEntry = waveformRepository.findByUniqueFields(
+                        entry.getEvent().getEventId(),
+                            entry.getStream().getStation().getNetworkName(),
+                            entry.getStream().getStation().getStationName(),
+                            entry.getLowFrequency(),
+                            entry.getHighFrequency());
+            }
+            if (mergedEntry != null) {
+                mergedEntry = mergedEntry.mergeNonNullOrEmptyFields(entry);
+            } else {
+                mergedEntry = entry;
+            }
         }
         return mergedEntry;
     }
 
     @Override
     public List<Waveform> getAllActiveStacks() {
-        ExampleMatcher matcher = ExampleMatcher.matchingAll().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
-        return waveformRepository.findAll(Example.of(new Waveform().setStream(new Stream().setChannelName(Stream.TYPE_STACK)).setActive(Boolean.TRUE), matcher));
+        return getByExampleAllDistinctMatching(new Waveform().setActive(Boolean.TRUE).setStream(new Stream().setChannelName(Stream.TYPE_STACK)));
     }
 
     @Override
-    public List<Waveform> getByExampleAllMatching(Waveform waveform) {
-        ExampleMatcher matcher = ExampleMatcher.matching().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
-        return waveformRepository.findAll(Example.of(waveform, matcher));
+    public List<Waveform> getAllStacks() {
+        return getByExampleAllDistinctMatching(new Waveform().setStream(new Stream().setChannelName(Stream.TYPE_STACK)));
+    }
+
+    @Override
+    public List<Waveform> getByExampleAllDistinctMatching(Waveform waveform) {
+        return Optional.ofNullable(waveformRepository.findAll(Example.of(waveform, ignoreStandardFieldsMatcher))).orElseGet(ArrayList::new).stream().distinct().collect(Collectors.toList());
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -183,5 +223,34 @@ public class WaveformServiceImpl implements WaveformService {
         } else {
             return new Event();
         }
+    }
+
+    @Override
+    public List<Long> setActiveFlagForIds(List<Long> selectedWaveforms, boolean active) {
+        List<Waveform> waveforms = waveformRepository.findAllById(selectedWaveforms);
+        waveforms.forEach(w -> w.setActive(active));
+        waveformRepository.saveAll(waveforms);
+        notificationService.post(new WaveformChangeEvent(selectedWaveforms).setAddOrUpdate(true));
+        return selectedWaveforms;
+    }
+
+    @Override
+    public List<Long> setActiveFlagByEventId(String eventId, boolean active) {
+        List<Long> ids = new ArrayList<>();
+        if (waveformRepository.setActiveByEventId(eventId, active) > 0) {
+            ids.addAll(waveformRepository.findAllIdsByEventId(eventId));
+            notificationService.post(new WaveformChangeEvent(ids).setAddOrUpdate(true));
+        }
+        return ids;
+    }
+
+    @Override
+    public List<Long> setActiveFlagByStationName(String stationName, boolean active) {
+        List<Long> ids = new ArrayList<>();
+        if (waveformRepository.setActiveByStationName(stationName, active) > 0) {
+            ids.addAll(waveformRepository.findAllIdsByStationName(stationName));
+            notificationService.post(new WaveformChangeEvent(ids).setAddOrUpdate(true));
+        }
+        return ids;
     }
 }

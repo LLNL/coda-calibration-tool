@@ -26,49 +26,7 @@ import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 public class WaveformUtils {
-
-    // TODO: Make these configurable
-    // In KM/s
-    private static double groupVelocityDenominator = 10.0;
-    // In Seconds
-    private static long noiseWindowOffset = 20l;
-
-    /**
-     * @param distance
-     *            in kilometers between event and station recording it. This is
-     *            used to compute the predicted start and end arrival time
-     *            windows based on the group velocity.
-     * @param origintime
-     *            event origin time
-     * @param segment
-     *            the segment of the waveform to use for computing the noise
-     *            window
-     * @return {@link TimeSeries} containing the calculated noise window offset
-     *         from the origin time
-     * @throws IllegalArgumentException
-     *             if the predicted time windows do not align with the actual
-     *             envelope (predicted start > end of the recorded waveform,
-     *             etc.)
-     */
-    //FIXME: This mean value calculation is fundamentally not generalizable across frequency bands and regions and needs to be updated.
-    public static TimeSeries getNoiseWindow(double distance, TimeT origintime, TimeSeries segment) {
-
-        TimeSeries result1 = new TimeSeries(segment);
-        result1.cut(origintime.subtract(noiseWindowOffset), origintime);
-        double mean1 = result1.getMean();
-
-        TimeSeries result2 = new TimeSeries(segment);
-        double groupVelocity = distance / groupVelocityDenominator;
-        TimeT noiseStart = origintime.subtract(noiseWindowOffset);
-        TimeT noiseEnd = origintime.add(groupVelocity);
-
-        result2.cut(noiseStart, noiseEnd);
-        double mean2 = result2.getMean();
-
-        return mean1 > mean2 ? result2 : result1;
-    }
-
-    public static double getNoiseFloor(Double[] waveform) {
+    public static double getNoiseFloor(double[] waveform) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         double[] values = new double[waveform.length];
         for (int i = 0; i < waveform.length; i++) {
@@ -121,15 +79,15 @@ public class WaveformUtils {
 
     }
 
-    public static float[] doublesToFloats(Double[] x) {
+    public static float[] doublesToFloats(double[] x) {
         float[] xfloats = new float[x.length];
-        IntStream.range(0, x.length).parallel().forEach(i -> xfloats[i] = x[i].floatValue());
+        IntStream.range(0, x.length).parallel().forEach(i -> xfloats[i] = (float) x[i]);
         return xfloats;
     }
 
-    public static Double[] floatsToDoubles(float[] x) {
-        Double[] xdoubles = new Double[x.length];
-        IntStream.range(0, x.length).parallel().forEach(i -> xdoubles[i] = new Double(x[i]));
+    public static double[] floatsToDoubles(float[] x) {
+        double[] xdoubles = new double[x.length];
+        IntStream.range(0, x.length).parallel().forEach(i -> xdoubles[i] = x[i]);
         return xdoubles;
     }
 

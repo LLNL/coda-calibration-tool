@@ -138,17 +138,7 @@ public class CalibrationCurveFitter {
         if (Double.isNaN(startIntercept)) {
             startIntercept = ThreadLocalRandom.current().nextDouble(minInt, maxInt);
             startBeta = minBeta;
-        }
-
-        if (startIntercept > maxInt) {
-            startIntercept = maxInt;
-        } else if (startIntercept < minInt) {
-            startIntercept = minInt;
-        }
-
-        if (startBeta > maxBeta) {
-            startBeta = maxBeta;
-        } else if (startBeta < minBeta) {
+        } else if (startBeta > maxBeta || startBeta < minBeta) {
             startBeta = minBeta;
         }
 
@@ -158,7 +148,7 @@ public class CalibrationCurveFitter {
                     new CMAESOptimizer.Sigma(new double[] { 0.5, 0.05, 0.05 }),
                     convergenceChecker,
                     50,
-                    new SimpleBounds(new double[] { minInt, minGamma, minBeta }, new double[] { maxInt, maxGamma, maxBeta }));
+                    new SimpleBounds(new double[] { -Double.MAX_VALUE, minGamma, minBeta }, new double[] { Double.MAX_VALUE, maxGamma, maxBeta }));
 
         double[] curve = bestResult.getKey();
         fit.setIntercept(curve[0]);
@@ -426,9 +416,9 @@ public class CalibrationCurveFitter {
                         sum = lossFunction(sum, velocity, predictedVel);
                     }
                     return new Double[] { v0, v1, v2, sum };
-                }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult);
-            }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult);
-        }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult));
+                }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult);
+            }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult);
+        }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult));
     }
 
     public double[] gridSearchCodaB(List<Entry<Double, Double>> betaDistancePairs) {
@@ -459,9 +449,9 @@ public class CalibrationCurveFitter {
                         sum = lossFunction(sum, beta, bb);
                     }
                     return new Double[] { b0, b1, b2, sum };
-                }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult);
-            }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult);
-        }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult));
+                }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult);
+            }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult);
+        }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult));
     }
 
     public double[] gridSearchCodaG(List<Entry<Double, Double>> gammaDistancePairs) {
@@ -497,9 +487,9 @@ public class CalibrationCurveFitter {
                     }
 
                     return new Double[] { g0, g1, g2, sum };
-                }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult);
-            }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult);
-        }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElse(baseResult));
+                }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult);
+            }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult);
+        }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult));
     }
 
     /**
@@ -517,17 +507,15 @@ public class CalibrationCurveFitter {
      */
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllVelocity(Map<FrequencyBand, List<PeakVelocityMeasurement>> velocityDistancePairsFreqMap,
             Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap) {
-        for (Entry<FrequencyBand, List<PeakVelocityMeasurement>> velDistPairs : velocityDistancePairsFreqMap.entrySet()) {
-            if (freqBandMap.get(velDistPairs.getKey()) != null) {
-                double[] curve = gridSearch(
-                        velDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getVelocity(), v.getDistance())).collect(Collectors.toList()),
-                            new ApacheGridSearchV(),
-                            new BasicGridSearchV());
 
-                freqBandMap.put(velDistPairs.getKey(), freqBandMap.get(velDistPairs.getKey()).setVelocity0(curve[0]).setVelocity1(curve[1]).setVelocity2(curve[2]));
-            }
-        }
+        velocityDistancePairsFreqMap.entrySet().parallelStream().filter(velDistPairs -> freqBandMap.get(velDistPairs.getKey()) != null).forEach(velDistPairs -> {
+            double[] curve = gridSearch(
+                    velDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getVelocity(), v.getDistance())).collect(Collectors.toList()),
+                        new ApacheGridSearchV(),
+                        new BasicGridSearchV());
 
+            freqBandMap.put(velDistPairs.getKey(), freqBandMap.get(velDistPairs.getKey()).setVelocity0(curve[0]).setVelocity1(curve[1]).setVelocity2(curve[2]));
+        });
         return freqBandMap;
     }
 
@@ -547,18 +535,16 @@ public class CalibrationCurveFitter {
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllBeta(Map<FrequencyBand, List<ShapeMeasurement>> betaDistancePairsFreqMap,
             Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap) {
 
-        for (Entry<FrequencyBand, List<ShapeMeasurement>> betaDistPairs : betaDistancePairsFreqMap.entrySet()) {
-            if (freqBandMap.get(betaDistPairs.getKey()) != null) {
-                double[] curve = gridSearch(
-                        betaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getMeasuredBeta(), v.getDistance())).collect(Collectors.toList()),
-                            new ApacheGridSearchB(),
-                            new BasicGridSearchB());
-                // Artificially lower the intercept value, b0 to 95%
-                // to account for possible noise contamination causing
-                // too shallow decay
-                freqBandMap.put(betaDistPairs.getKey(), freqBandMap.get(betaDistPairs.getKey()).setBeta0(curve[0] * 1.05).setBeta1(curve[1]).setBeta2(curve[2]));
-            }
-        }
+        betaDistancePairsFreqMap.entrySet().parallelStream().filter(betaDistPairs -> freqBandMap.get(betaDistPairs.getKey()) != null).forEach(betaDistPairs -> {
+            double[] curve = gridSearch(
+                    betaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getMeasuredBeta(), v.getDistance())).collect(Collectors.toList()),
+                        new ApacheGridSearchB(),
+                        new BasicGridSearchB());
+            // Artificially lower the intercept value, b0 to 95%
+            // to account for possible noise contamination causing
+            // too shallow decay
+            freqBandMap.put(betaDistPairs.getKey(), freqBandMap.get(betaDistPairs.getKey()).setBeta0(curve[0] * 1.05).setBeta1(curve[1]).setBeta2(curve[2]));
+        });
 
         return freqBandMap;
     }
@@ -579,15 +565,13 @@ public class CalibrationCurveFitter {
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllGamma(Map<FrequencyBand, List<ShapeMeasurement>> gammaDistancePairsFreqMap,
             Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap) {
 
-        for (Entry<FrequencyBand, List<ShapeMeasurement>> gammaDistPairs : gammaDistancePairsFreqMap.entrySet()) {
-            if (freqBandMap.get(gammaDistPairs.getKey()) != null) {
-                double[] curve = gridSearch(
-                        gammaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getMeasuredGamma(), v.getDistance())).collect(Collectors.toList()),
-                            new ApacheGridSearchG(),
-                            new BasicGridSearchG());
-                freqBandMap.put(gammaDistPairs.getKey(), freqBandMap.get(gammaDistPairs.getKey()).setGamma0(curve[0]).setGamma1(curve[1]).setGamma2(curve[2]));
-            }
-        }
+        gammaDistancePairsFreqMap.entrySet().parallelStream().filter(gammaDistPairs -> freqBandMap.get(gammaDistPairs.getKey()) != null).forEach(gammaDistPairs -> {
+            double[] curve = gridSearch(
+                    gammaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getMeasuredGamma(), v.getDistance())).collect(Collectors.toList()),
+                        new ApacheGridSearchG(),
+                        new BasicGridSearchG());
+            freqBandMap.put(gammaDistPairs.getKey(), freqBandMap.get(gammaDistPairs.getKey()).setGamma0(curve[0]).setGamma1(curve[1]).setGamma2(curve[2]));
+        });
 
         return freqBandMap;
     }

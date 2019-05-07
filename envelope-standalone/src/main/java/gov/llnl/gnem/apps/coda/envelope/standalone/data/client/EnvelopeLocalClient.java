@@ -38,7 +38,7 @@ public class EnvelopeLocalClient implements EnvelopeClient {
 
     private EnvelopeCreationService service;
     private WaveformService waveformService;
-   
+
     private static final Logger log = LoggerFactory.getLogger(EnvelopeLocalClient.class);
 
     @Autowired
@@ -49,12 +49,12 @@ public class EnvelopeLocalClient implements EnvelopeClient {
 
     @Override
     public Mono<Waveform> getEnvelopeFromId(Long id) {
-        return Mono.just(Optional.ofNullable(waveformService.findOne(id)).orElse(new Waveform()));
+        return Mono.just(Optional.ofNullable(waveformService.findOne(id)).orElseGet(() -> new Waveform()));
     }
 
     @Override
     public Flux<Waveform> getEnvelopesMatchingAllFields(Waveform segment) {
-        return Flux.fromIterable(waveformService.getByExampleAllMatching(segment)).onErrorReturn(new Waveform());
+        return Flux.fromIterable(waveformService.getByExampleAllDistinctMatching(segment)).onErrorReturn(new Waveform());
     }
 
     @Override
@@ -69,7 +69,7 @@ public class EnvelopeLocalClient implements EnvelopeClient {
 
     @Override
     public Flux<Waveform> postEnvelopes(Long sessionId, List<Waveform> segments, EnvelopeJobConfiguration conf) {
-        return Flux.fromIterable(service.createEnvelopes(sessionId, segments, conf).getResultPayload().orElse(new ArrayList<Waveform>()));
+        return Flux.fromIterable(service.createEnvelopes(sessionId, segments, conf).getResultPayload().orElseGet(() -> new ArrayList<Waveform>()));
     }
 
 }

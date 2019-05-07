@@ -167,7 +167,7 @@ public class GuiApplication extends Application {
                 springContext.stop();
                 springContext.close();
             }).get(1, TimeUnit.SECONDS);
-        } catch (TimeoutException | ExecutionException | CancellationException | InterruptedException e) {
+        } catch (TimeoutException | ExecutionException | CancellationException e) {
         }
         Platform.exit();
         System.exit(0);

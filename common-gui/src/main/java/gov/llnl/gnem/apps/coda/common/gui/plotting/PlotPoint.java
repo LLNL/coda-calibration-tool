@@ -33,6 +33,20 @@ public class PlotPoint {
         this.color = color;
     }
 
+    public PlotPoint(PlotPoint pp) {
+        super();
+        if (pp != null) {
+            this.x = pp.getX();
+            this.y = pp.getY();
+            this.style = pp.getStyle();
+            this.color = pp.getColor();
+        }
+    }
+
+    public PlotPoint() {
+        super();
+    }
+
     public Double getX() {
         return x;
     }

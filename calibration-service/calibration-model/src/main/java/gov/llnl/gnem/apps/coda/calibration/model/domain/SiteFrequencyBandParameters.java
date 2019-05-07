@@ -37,8 +37,7 @@ public class SiteFrequencyBandParameters {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @NumberFormat
     private double lowFrequency;
@@ -60,12 +59,8 @@ public class SiteFrequencyBandParameters {
         this.id = id;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return this.version;
-    }
-
-    public void setVersion(Long version) {
-        this.version = version;
     }
 
     public double getLowFrequency() {

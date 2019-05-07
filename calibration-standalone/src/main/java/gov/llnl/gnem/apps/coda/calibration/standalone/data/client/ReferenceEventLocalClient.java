@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
@@ -70,6 +71,11 @@ public class ReferenceEventLocalClient implements ReferenceEventClient {
             event = new Event();
         }
         return Mono.just(event);
+    }
+
+    @Override
+    public Flux<MeasuredMwDetails> getMeasuredEventDetails() {
+        return Flux.fromIterable(measureService.findAllDetails()).filter(Objects::nonNull).onErrorReturn(new MeasuredMwDetails());
     }
 
 }

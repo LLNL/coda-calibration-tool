@@ -17,12 +17,9 @@ package gov.llnl.gnem.apps.coda.calibration.gui.util;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class TimeLatchedGetSet {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final int THRESHOLD = 1;
 
     private final ScheduledThreadPoolExecutor scheduledGet = new ScheduledThreadPoolExecutor(1);
     private final ScheduledThreadPoolExecutor scheduledSet = new ScheduledThreadPoolExecutor(1);
@@ -49,27 +46,70 @@ public class TimeLatchedGetSet {
         scheduledSet.setRemoveOnCancelPolicy(true);
     }
 
+    public TimeLatchedGetSet() {
+        this(null, null, 1000l, 1000l, 1000l);
+    }
+
     public void set() {
         if (setter != null) {
-            scheduledSet.getQueue().clear();
-            scheduledSet.schedule(() -> {
-                setter.run();
-                if (getter != null) {
-                    scheduledGet.schedule(() -> {
-                        getter.run();
-                    }, failsafeDelay, TimeUnit.MILLISECONDS);
-                }
-            }, setDelay, TimeUnit.MILLISECONDS);
+            if (scheduledSet.getQueue().size() < THRESHOLD) {
+                scheduledSet.schedule(() -> {
+                    setter.run();
+                }, setDelay, TimeUnit.MILLISECONDS);
+            }
         }
     }
 
     public void get() {
         if (getter != null) {
-            scheduledGet.getQueue().clear();
-            scheduledGet.schedule(() -> {
-                getter.run();
-            }, getDelay, TimeUnit.MILLISECONDS);
+            if (scheduledGet.getQueue().size() < THRESHOLD) {
+                scheduledGet.schedule(() -> {
+                    getter.run();
+                }, getDelay, TimeUnit.MILLISECONDS);
+            }
         }
+    }
+
+    public TimeLatchedGetSet setGetter(Runnable getter) {
+        this.getter = getter;
+        return this;
+    }
+
+    public TimeLatchedGetSet setSetter(Runnable setter) {
+        this.setter = setter;
+        return this;
+    }
+
+    public long getSetDelay() {
+        return setDelay;
+    }
+
+    public TimeLatchedGetSet setSetDelay(long setDelay) {
+        this.setDelay = setDelay;
+        return this;
+    }
+
+    public long getGetDelay() {
+        return getDelay;
+    }
+
+    public TimeLatchedGetSet setGetDelay(long getDelay) {
+        this.getDelay = getDelay;
+        return this;
+    }
+
+    public long getFailsafeDelay() {
+        return failsafeDelay;
+    }
+
+    public TimeLatchedGetSet setFailsafeDelay(long failsafeDelay) {
+        this.failsafeDelay = failsafeDelay;
+        return this;
+    }
+
+    public void clear() {
+        scheduledSet.getQueue().clear();
+        scheduledGet.getQueue().clear();
     }
 
 }

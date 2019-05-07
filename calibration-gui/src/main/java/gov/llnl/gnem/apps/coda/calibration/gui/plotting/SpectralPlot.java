@@ -215,9 +215,9 @@ public class SpectralPlot extends JMultiAxisPlot {
             }
             jsubplot.AddPlotObject(line);
             DecimalFormat df = new DecimalFormat("#.0#");
-            if (spectra.getStressDrop() > 0.0) {
+            if (spectra.getApparentStress() > 0.0) {
                 DecimalFormat df2 = new DecimalFormat("#0.0#");
-                legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getStressDrop()) + "MPa", line);
+                legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa", line);
             } else {
                 legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()), line);
             }
@@ -263,7 +263,7 @@ public class SpectralPlot extends JMultiAxisPlot {
     private List<PlotPoint> sortPointsByX(List<PlotPoint> inPlots) {
         List<PlotPoint> plots = new ArrayList<>(inPlots);
         int smallestIndex = getSmallestX(plots);
-        List<PlotPoint> orderedList = new ArrayList<>();
+        List<PlotPoint> orderedList = new ArrayList<>(plots.size());
         orderedList.add(plots.remove(smallestIndex));
         while (!plots.isEmpty()) {
             // Find the index of the closest point (using another method)

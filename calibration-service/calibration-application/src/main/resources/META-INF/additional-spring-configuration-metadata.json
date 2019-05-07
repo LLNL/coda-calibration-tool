@@ -1,0 +1,120 @@
+{
+	"groups": [
+		{
+			"name": "path"
+		},
+		{
+			"name": "phase"
+		},
+		{
+			"name": "velocity.calc"
+		}
+	],
+	"properties": [
+		{
+			"name": "path.use-aggressive-opt",
+			"type": "java.lang.Boolean",
+			"description": "If the path correction inversion should be more aggressive and start one chain for every vertex of the model space permutation simplex + some additional samples across the space. This is considerably slower but is more robust to noisier data sets. If disabled the path correction still uses a small number of starting chains empirically observed to be sufficient for every data set we've ever seen that a 1D correction was possible or appropriate for. Generally the recommendation is to run at least once with the fully aggressive inversion every time you start a new data set to watch for instability in the inversion (note: set logging.level.gov.llnl.gnem.apps.coda.calibration.service.impl.Joint1DPathCorrection=debug to see each chain's residuals) and then run the less aggressive version if you can for speed. Defaults to enabled (true)."
+		},
+		{
+			"name": "path.phase-speed-kms",
+			"type": "java.lang.Double",
+			"description": "Phase speed (Km/S) to use for the path calibration."
+		},
+		{
+			"name": "phase.phase-speed-kms",
+			"type": "java.lang.Double",
+			"description": "Phase speed (Km/S) to use for the spectra calibration. Note: path calibration will use this value if it is available but path.phaseSpeedKmS isn't."
+		},
+		{
+			"name": "velocity.calc.group-velocity1-gt-distance",
+			"type": "java.lang.Double",
+			"description": "Starting velocity (in Km/S) for windowing distances before the distance threshold."
+		},
+		{
+			"name": "velocity.calc.group-velocity2-gt-distance",
+			"type": "java.lang.Double",
+			"description": "Ending velocity (in Km/S) for windowing distances before the distance threshold."
+		},
+		{
+			"name": "velocity.calc.group-velocity1-lt-distance",
+			"type": "java.lang.Double",
+			"description": "Starting velocity (in Km/S) for windowing distances after the distance threshold."
+		},
+		{
+			"name": "velocity.calc.group-velocity2-lt-distance",
+			"type": "java.lang.Double",
+			"description": "Ending velocity (in Km/S) for windowing distances after the distance threshold."
+		},
+		{
+			"name": "velocity.calc.distance-threshold-km",
+			"type": "java.lang.Double",
+			"description": "Distance threshold to use (in Km) to use for selected which group velocity to use"
+		}
+	],
+	"hints": [
+		{
+			"name": "phase.phase-speed-kms",
+			"values": [
+				{
+					"value": "3.5",
+					"description": "Default phase speed in Km/S for spectra calculation"
+				}
+			]
+		},
+		{
+			"name": "path.phase-speed-kms",
+			"values": [
+				{
+					"value": "3.5",
+					"description": "Default phase speed in Km/S for path correction"
+				}
+			]
+		},
+		{
+			"name": "velocity.calc.group-velocity1-gt-distance",
+			"values": [
+				{
+					"value": "4.7",
+					"description": "Default starting velocity (in Km/S) for windowing distances past the distance threshold."
+				}
+			]
+		},
+		{
+			"name": "velocity.calc.group-velocity2-gt-distance",
+			"values": [
+				{
+					"value": "2.3",
+					"description": "Default ending velocity (in Km/S) for windowing distances past the distance threshold."
+				}
+			]
+		},
+		{
+			"name": "velocity.calc.group-velocity1-lt-distance",
+			"values": [
+				{
+					"value": "3.9",
+					"description": "Default starting velocity (in Km/S) for windowing distances before the distance threshold."
+				}
+			]
+		},
+		{
+			"name": "velocity.calc.group-velocity2-lt-distance",
+			"values": [
+				{
+					"value": "1.9",
+					"description": "Default ending velocity (in Km/S) for windowing distances before the distance threshold."
+				}
+			]
+		},
+		{
+			"name": "velocity.calc.distance-threshold-km",
+			"values": [
+				{
+					"value": "300.0",
+					"description": "Default distance threshold to use (in Km)"
+				}
+			]
+		}
+	]
+}

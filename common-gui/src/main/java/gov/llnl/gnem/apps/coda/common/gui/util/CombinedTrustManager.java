@@ -24,12 +24,13 @@ import java.util.stream.Stream;
 import javax.net.ssl.X509TrustManager;
 
 public class CombinedTrustManager implements X509TrustManager {
-    private List<X509TrustManager> managers = new ArrayList<>();
+    private List<X509TrustManager> managers;
 
     public CombinedTrustManager(X509TrustManager... trustManagers) {
         if (trustManagers == null) {
             throw new IllegalStateException("A minimum of one X509TrustManager is required to use a CombinedTrustManager.");
         }
+        managers = new ArrayList<>(trustManagers.length);
         for (X509TrustManager manager : trustManagers) {
             this.managers.add(manager);
         }

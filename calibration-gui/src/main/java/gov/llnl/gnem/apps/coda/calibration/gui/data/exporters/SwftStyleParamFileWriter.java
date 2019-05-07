@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -37,6 +38,8 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 
 @Component
 public class SwftStyleParamFileWriter implements ParamTempFileWriter {
+
+    private static final char NEWLINE = '\n';
 
     private NumberFormat dfmt6 = NumberFormatFactory.sixDecimalOneLeadingZero();
 
@@ -76,9 +79,9 @@ public class SwftStyleParamFileWriter implements ParamTempFileWriter {
                 sb.append(dfmt6.format(shared.getQ())).append(SEP);
 
                 if (stationParametersByFreqBand != null && stationParametersByFreqBand.containsKey(fb)) {
-                    sb.append(dfmt6.format(stationParametersByFreqBand.get(fb).getSiteTerm())).append("\n");
+                    sb.append(dfmt6.format(stationParametersByFreqBand.get(fb).getSiteTerm())).append(NEWLINE);
                 } else {
-                    sb.append(DEFAULT_SITE_TERM).append("\n");
+                    sb.append(DEFAULT_SITE_TERM).append(NEWLINE);
                 }
             }
             writer.write(sb.toString());
@@ -86,7 +89,8 @@ public class SwftStyleParamFileWriter implements ParamTempFileWriter {
     }
 
     @Override
-    public void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters) {
+    public void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
+            VelocityConfiguration velocityConfig) {
         File sharedParamFile = new File(folder.toFile(), "Shared.param");
         sharedParamFile.deleteOnExit();
         try {

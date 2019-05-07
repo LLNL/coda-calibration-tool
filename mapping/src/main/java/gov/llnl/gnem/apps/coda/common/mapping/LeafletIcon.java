@@ -73,7 +73,7 @@ public class LeafletIcon implements Icon {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(id).append("\", \"").append(location).append("\", \"").append(friendlyName).append("\", \"").append(iconType).append("\"");
+        builder.append("\"").append(id).append("\", \"").append(location).append("\", \"").append(friendlyName).append("\", \"").append(iconType).append('\"');
         return builder.toString();
     }
 

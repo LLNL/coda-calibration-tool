@@ -22,6 +22,7 @@ import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.GvDataChangeEvent;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.layout.StackPane;
@@ -40,15 +41,23 @@ public class ParametersController implements RefreshableController {
 
     @FXML
     private SiteBandController siteBandController;
+    
+    @FXML
+    private VelocityConfigurationController velocityConfigController;
 
     private EventBus bus;
 
     @Autowired
     public ParametersController(EventBus bus) {
         this.bus = bus;
-        bus.register(this);
+        this.bus.register(this);
     }
 
+    @Subscribe
+    private void listener(GvDataChangeEvent event) {
+        velocityConfigController.requestData();
+    }
+    
     @Subscribe
     private void listener(ParametersLoadedEvent event) {
         reloadData();
@@ -63,6 +72,7 @@ public class ParametersController implements RefreshableController {
         sharedBandController.requestData();
         modelController.requestData();
         siteBandController.requestData();
+        velocityConfigController.requestData();
     }
 
     @Override

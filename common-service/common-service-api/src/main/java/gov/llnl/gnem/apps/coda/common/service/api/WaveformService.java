@@ -14,7 +14,6 @@
 */
 package gov.llnl.gnem.apps.coda.common.service.api;
 
-import java.util.Collection;
 import java.util.List;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -22,15 +21,26 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 
 public interface WaveformService extends BaseService<Waveform, Long> {
 
-    public List<Waveform> getByExampleAllMatching(Waveform waveform);
+    public List<Waveform> getByExampleAllDistinctMatching(Waveform waveform);
+
+    public List<Waveform> getAllStacks();
 
     public List<Waveform> getAllActiveStacks();
 
-    public List<Waveform> update(Long sessionId, Collection<Waveform> values);
+    public List<Waveform> update(Long sessionId, List<Waveform> values);
 
     public Waveform update(Waveform waveformPayload);
 
     public List<Waveform> getUniqueEventStationStacks();
 
     public Event findEventById(String eventId);
+
+    public List<Waveform> findAllMetadata(List<Long> ids);
+
+    public List<Long> setActiveFlagForIds(List<Long> selectedWaveforms, boolean active);
+
+    public List<Long> setActiveFlagByEventId(String eventId, boolean active);
+
+    public List<Long> setActiveFlagByStationName(String stationName, boolean active);
+
 }

@@ -41,8 +41,7 @@ public class PeakVelocityMeasurement implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @OneToOne(optional = false)
     @JoinColumn(unique = true)
@@ -91,13 +90,8 @@ public class PeakVelocityMeasurement implements Serializable {
         this.waveform = new Waveform(metadata.getWaveform());
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return version;
-    }
-
-    public PeakVelocityMeasurement setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public Waveform getWaveform() {
@@ -311,7 +305,7 @@ public class PeakVelocityMeasurement implements Serializable {
                .append(noiseEndSecondsFromOrigin)
                .append("\", \"")
                .append(noiseLevel)
-               .append("\"");
+               .append('\"');
         return builder.toString();
     }
 

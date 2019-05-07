@@ -42,8 +42,7 @@ public class SpectraMeasurement implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @OneToOne(optional = false)
     @JoinColumn(unique = true)
@@ -70,13 +69,25 @@ public class SpectraMeasurement implements Serializable {
     @NumberFormat
     private double rmsFit;
 
-    public Long getVersion() {
-        return version;
+    public SpectraMeasurement() {
+        //nop
     }
 
-    public SpectraMeasurement setVersion(Long version) {
-        this.version = version;
-        return this;
+    public SpectraMeasurement(SpectraMeasurementMetadata md) {
+        this.id = md.getId();
+        this.version = md.getVersion();
+        this.waveform = new Waveform(md.getWaveform());
+        this.rawAtStart = md.getRawAtStart();
+        this.rawAtMeasurementTime = md.getRawAtMeasurementTime();
+        this.pathCorrected = md.getPathCorrected();
+        this.pathAndSiteCorrected = md.getPathAndSiteCorrected();
+        this.startCutSec = md.getStartCutSec();
+        this.endCutSec = md.getEndCutSec();
+        this.rmsFit = md.getRmsFit();
+    }
+
+    public Integer getVersion() {
+        return version;
     }
 
     public Waveform getWaveform() {

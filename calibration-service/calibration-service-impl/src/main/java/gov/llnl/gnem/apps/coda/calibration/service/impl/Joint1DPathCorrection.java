@@ -41,11 +41,13 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PathCalibrationMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PathCalibrationMeasurementService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PathCalibrationService;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
@@ -92,11 +94,15 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     private double q = Math.log10(500.0);
     private double xtrans = Math.log10(Math.log10(2.0));
     private double xcross = Math.log10(500.0);
-    private double vphase = 3.5;
 
-    private final double efact = Math.log10(Math.E);
+    @Value("#{'${path.phase-speed-kms:${phase.phase-speed-kms:${phase-speed-kms:3.5}}}'}")
+    private double vphase;
+
+    private static final double efact = Math.log10(Math.E);
     private PathCalibrationMeasurementService pathCalibrationMeasurementService;
     private List<double[]> paramPoints;
+    @Value(value = "${path.use-aggressive-opt:true}")
+    private boolean agressiveOptimization;
 
     @Autowired
     public Joint1DPathCorrection(SpectraCalculator spectraCalc, PathCalibrationMeasurementService pathCalibrationMeasurementService) {
@@ -106,14 +112,21 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     @Override
     public Map<FrequencyBand, SharedFrequencyBandParameters> measurePathCorrections(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters) {
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, VelocityConfiguration velConf) {
 
+        if (velConf != null) {
+            Double phase = velConf.getPhaseSpeedInKms();
+            if (phase != null && phase != 0.0) {
+                vphase = phase;
+            }
+        }
+        
         List<PathCalibrationMeasurement> measurements = new ArrayList<>();
         Map<FrequencyBand, SharedFrequencyBandParameters> pathCorrectedFrequencyBandParameters = new HashMap<>();
 
         Map<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> dataMappedToEventAndStation = removeSingleStationOrFewerEntries(mapToEventAndStation(dataByFreqBand));
 
-        for (Entry<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParams : frequencyBandParameters.entrySet()) {
+        frequencyBandParameters.entrySet().parallelStream().forEach(frequencyBandParams -> {
 
             SharedFrequencyBandParameters pathCorrectedParams = frequencyBandParams.getValue();
 
@@ -156,6 +169,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                         dataCount++;
                     }
                 }
+                dataCount = dataCount > 0 ? dataCount : 1;
                 totalDataCount = dataCount;
 
                 // Common terms + one site term for each station
@@ -201,7 +215,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, 2.0);
                 log.info("Band {} initial cost: {}", frequencyBand.getLowFrequency(), initialResidual);
 
-                List<double[]> paramPoints = makeParamPoints(NUM_TERMS, optimizationLowBounds, optimizationHighBounds);
+                List<double[]> paramPoints = makeParamPoints(NUM_TERMS, agressiveOptimization, optimizationLowBounds, optimizationHighBounds);
                 PointValuePair optimizedResult = IntStream.range(0, paramPoints.size()).parallel().mapToObj(i -> {
                     ConvergenceChecker<PointValuePair> convergenceChecker = new SimpleValueChecker(TOLERANCE, TOLERANCE);
                     CMAESOptimizer optimizer = new CMAESOptimizer(1000000, TOLERANCE, true, 0, 10, new MersenneTwister(), true, convergenceChecker);
@@ -209,17 +223,16 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                     MultivariateFunction prediction = new ESHPathMultivariate(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand);
                     PointValuePair opt = null;
                     try {
-                        opt = optimizer.optimize(
-                                new MaxEval(1000000),
-                                    new ObjectiveFunction(prediction),
-                                    GoalType.MINIMIZE,
-                                    new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
-                                    new InitialGuess(paramPoints.get(i)),
-                                    new CMAESOptimizer.PopulationSize(POP_SIZE),
-                                    new CMAESOptimizer.Sigma(sigmaArray));
+                        opt = optimizer.optimize(new MaxEval(1000000),
+                                                 new ObjectiveFunction(prediction),
+                                                 GoalType.MINIMIZE,
+                                                 new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
+                                                 new InitialGuess(paramPoints.get(i)),
+                                                 new CMAESOptimizer.PopulationSize(POP_SIZE),
+                                                 new CMAESOptimizer.Sigma(sigmaArray));
                     } catch (TooManyEvaluationsException e) {
                     }
-                    log.info("frequency: {}, iteration: {}, residual: {}", frequencyBand.getLowFrequency(), i, opt.getValue());
+                    log.debug("frequency: {}, iteration: {}, residual: {}", frequencyBand.getLowFrequency(), i, opt.getValue());
                     return opt;
                 }).filter(Objects::nonNull).reduce((a, b) -> Double.compare(a.getValue(), b.getValue()) <= 0 ? a : b).orElse(null);
 
@@ -248,7 +261,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 pathCorrectedParams.setXt(Math.pow(10.0, Math.pow(10.0, optimizationParams[XTRANS_IDX])));
                 pathCorrectedFrequencyBandParameters.put(frequencyBand, pathCorrectedParams);
             }
-        }
+        });
 
         pathCalibrationMeasurementService.deleteAll();
         pathCalibrationMeasurementService.save(measurements);
@@ -370,13 +383,18 @@ public class Joint1DPathCorrection implements PathCalibrationService {
      *            I'm making the pretty big assumption these are ordered such
      *            that bound0 is the min and boundN is the max.
      * @return
+     * @throws IllegalStateException
+     *             if optimizationBounds.length < 2
      */
-    private List<double[]> makeParamPoints(int numberOfTerms, double[]... optimizationBounds) {
+    private List<double[]> makeParamPoints(int numberOfTerms, boolean agressiveOptimization, double[]... optimizationBounds) {
         if (paramPoints != null && !paramPoints.isEmpty() && paramPoints.get(0).length == numberOfTerms) {
             return paramPoints;
         }
+        if (optimizationBounds.length < 2) {
+            throw new IllegalStateException("Optmization bounds needs at least two entries for the low and high boundary conditions. Got: " + optimizationBounds.length);
+        }
 
-        int terms = numberOfTerms * numberOfTerms + 1;
+        int terms = (int) (Math.pow(numberOfTerms, optimizationBounds.length)) + 1;
         List<double[]> params = new ArrayList<>(terms);
         int[] selectionIndex = new int[numberOfTerms];
         double[] param = optimizationBounds[0].clone();
@@ -388,14 +406,21 @@ public class Joint1DPathCorrection implements PathCalibrationService {
         params.add(param.clone());
         param = optimizationBounds[0].clone();
 
-        for (int i = 1; i < terms; i++) {
-            for (int j = 0; j < selectionIndex.length; j++) {
-                param[j] = optimizationBounds[selectionIndex[j]][j];
+        if (agressiveOptimization) {
+            for (int i = 1; i < terms; i++) {
+                for (int j = 0; j < selectionIndex.length; j++) {
+                    param[j] = optimizationBounds[selectionIndex[j]][j];
+                }
+                params.add(param.clone());
+                param = optimizationBounds[0].clone();
+                selectionIndex = nextIndex(selectionIndex, optimizationBounds.length);
             }
-            params.add(param.clone());
-            param = optimizationBounds[0].clone();
-            selectionIndex = nextIndex(selectionIndex, optimizationBounds.length);
+        } else {
+            params.add(param);
+            param = optimizationBounds[optimizationBounds.length - 1].clone();
+            params.add(param);
         }
+
         paramPoints = params;
         return paramPoints;
     }

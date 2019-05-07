@@ -20,7 +20,7 @@ public interface PeakVelocityMeasurementMetadata {
 
     public Long getId();
 
-    public Long getVersion();
+    public Integer getVersion();
 
     public WaveformMetadata getWaveform();
 

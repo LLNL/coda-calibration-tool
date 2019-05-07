@@ -232,7 +232,7 @@ public class PositionMarker extends PlotObject {
         s.append(f.format(xCenter));
         s.append(", ");
         s.append(f.format(yCenter));
-        s.append(")");
+        s.append(')');
         return s.toString();
     }
 

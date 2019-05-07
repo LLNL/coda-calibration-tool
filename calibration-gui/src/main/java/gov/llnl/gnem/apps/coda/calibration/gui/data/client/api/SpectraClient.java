@@ -22,6 +22,8 @@ import reactor.core.publisher.Mono;
 public interface SpectraClient {
 
     public Flux<SpectraMeasurement> getMeasuredSpectra();
+    
+    public Flux<SpectraMeasurement> getMeasuredSpectraMetadata();
 
     public Mono<Spectra> getReferenceSpectra(String eventId);
 

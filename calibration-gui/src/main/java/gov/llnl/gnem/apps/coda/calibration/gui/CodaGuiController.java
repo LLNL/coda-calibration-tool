@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -49,14 +48,16 @@ import gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.Parameters
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.ParamExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.CalibrationStageShownEvent;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.MapIconActivationCallback;
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.WaveformGui;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.CalibrationProgressListener;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent.Status;
 import gov.llnl.gnem.apps.coda.common.gui.controllers.ProgressGui;
-import gov.llnl.gnem.apps.coda.common.gui.events.EnvelopeLoadCompleteEvent;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
-import gov.llnl.gnem.apps.coda.common.mapping.LeafletMapController;
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -79,11 +80,12 @@ public class CodaGuiController {
     @FXML
     private Node rootElement;
 
+    private WaveformGui waveformGui;
     private DataController data;
     private ParametersController param;
     private ShapeController shape;
     private PathController path;
-    private SiteController site;
+    private SiteController site;        
 
     @FXML
     private Tab dataTab;
@@ -117,7 +119,9 @@ public class CodaGuiController {
 
     private Label showMapIcon;
 
-    private LeafletMapController mapController;
+    private GeoMap mapController;
+
+    private WaveformClient waveformClient;
 
     private EnvelopeLoadingController envelopeLoadingController;
 
@@ -153,16 +157,18 @@ public class CodaGuiController {
     });
 
     @Autowired
-    public CodaGuiController(LeafletMapController mapController, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
-            ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, DataController data, ParametersController param,
-            ShapeController shape, PathController path, SiteController site, EventBus bus) throws IOException {
+    public CodaGuiController(GeoMap mapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
+            ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, WaveformGui waveformGui, DataController data,
+            ParametersController param, ShapeController shape, PathController path, SiteController site, EventBus bus) throws IOException {
         super();
         this.mapController = mapController;
+        this.waveformClient = waveformClient;
         this.envelopeLoadingController = waveformLoadingController;
         this.codaParamLoadingController = codaParamLoadingController;
         this.refEventLoadingController = refEventLoadingController;
         this.calibrationClient = calibrationClient;
         this.paramExporter = paramExporter;
+        this.waveformGui = waveformGui;
         this.data = data;
         this.param = param;
         this.shape = shape;
@@ -211,6 +217,11 @@ public class CodaGuiController {
                 mapController.fitViewToActiveShapes();
             }
         });
+    }
+
+    @FXML
+    private void openWaveformDisplay() {
+        waveformGui.toFront();
     }
 
     @FXML
@@ -295,21 +306,24 @@ public class CodaGuiController {
 
     @FXML
     private void runCalibration() {
-        calibrationClient.runCalibration(Boolean.FALSE).subscribe(value -> log.trace(value.toString()), err -> log.trace(err.getMessage(), err));
+        calibrationClient.runCalibration(Boolean.FALSE).subscribe(value -> log.trace(value), err -> log.trace(err.getMessage(), err));
     }
 
     @FXML
     private void clearData() {
-        calibrationClient.clearData().subscribe(value -> log.trace(value.toString()), err -> log.trace(err.getMessage(), err));
+        calibrationClient.clearData().subscribe(value -> log.trace(value), err -> log.trace(err.getMessage(), err), () -> dataRefresh.run());
     }
 
     @FXML
     private void runAutoPickingCalibration() {
-        calibrationClient.runCalibration(Boolean.TRUE).subscribe(value -> log.trace(value.toString()), err -> log.trace(err.getMessage(), err));
+        calibrationClient.runCalibration(Boolean.TRUE).subscribe(value -> log.trace(value), err -> log.trace(err.getMessage(), err));
     }
 
     @FXML
     public void initialize() {
+
+        mapController.registerEventCallback(new MapIconActivationCallback(waveformClient));
+
         activeMapIcon = makeMapLabel();
         showMapIcon = makeMapLabel();
 
@@ -396,14 +410,29 @@ public class CodaGuiController {
 
         if (event.getStatus() == Status.COMPLETE || event.getStatus() == Status.ERROR) {
             final ProgressMonitor monitor = monitors.remove(event.getId());
+            monitor.setProgressStage("Finished");
             service.schedule(() -> loadingGui.removeProgressMonitor(monitor), 15, TimeUnit.MINUTES);
-        }
-    }
+        } else {
+            ProgressMonitor monitor = monitors.get(event.getId());
+            if (monitor != null) {
+                switch (event.getStatus()) {
+                case PEAK_STARTING:
+                    monitor.setProgressStage("Peak starting");
+                    break;
+                case SHAPE_STARTING:
+                    monitor.setProgressStage("Shape starting");
+                    break;
+                case PATH_STARTING:
+                    monitor.setProgressStage("Path starting");
+                    break;
+                case SITE_STARTING:
+                    monitor.setProgressStage("Site starting");
+                    break;
+                default:
+                    break;
 
-    @Subscribe
-    private void listener(EnvelopeLoadCompleteEvent evt) {
-        if (dataTab.isSelected()) {
-            CompletableFuture.runAsync(dataRefresh);
+                }
+            }
         }
     }
 

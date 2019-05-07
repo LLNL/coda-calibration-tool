@@ -17,23 +17,18 @@ package llnl.gnem.core.util.FileUtil;
 import java.awt.Component;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.SequenceInputStream;
-import java.io.StringReader;
-import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.StringTokenizer;
@@ -75,16 +70,7 @@ public class FileManager {
             throw new FileSystemException(msg);
         }
         try {
-            try (FileInputStream fis = new FileInputStream(srcFile)) {
-                try (FileChannel srcChannel = fis.getChannel()) {
-                    try (FileOutputStream fos = new FileOutputStream(destFile)) {
-                        try (FileChannel destChannel = fos.getChannel()) {
-                            long size = srcChannel.size();
-                            destChannel.transferFrom(srcChannel, 0, size);
-                        }
-                    }
-                }
-            }
+            Files.copy(srcFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             String msg = String.format("Copy failed: ", e.toString());
             throw new FileSystemException(msg);
@@ -110,8 +96,7 @@ public class FileManager {
      */
     public static void concatenate(Vector<File> filelist, File outfile) throws IOException {
         ListOfFiles mylist = new ListOfFiles(filelist);
-        try (SequenceInputStream s = new SequenceInputStream(mylist); FileOutputStream out = new FileOutputStream(outfile);) {
-
+        try (SequenceInputStream s = new SequenceInputStream(mylist); OutputStream out = Files.newOutputStream(outfile.toPath());) {
             int c;
             while ((c = s.read()) != -1) {
                 out.write(c);

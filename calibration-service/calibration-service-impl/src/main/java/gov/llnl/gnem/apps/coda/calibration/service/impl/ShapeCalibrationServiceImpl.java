@@ -91,7 +91,7 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
         // don't already have F-picks in this set
         if (autoPickingEnabled) {
             velocityMeasurements = autoPickWaveforms(velocityMeasurements, frequencyBandParameters);
-            velocityMeasurements.forEach(v -> pickService.save(waveService.save(v.getWaveform()).getAssociatedPicks()));
+            velocityMeasurements = velocityMeasurements.parallelStream().map(v -> v.setWaveform(waveService.save(v.getWaveform()))).collect(Collectors.toList());
         }
 
         // 2) Filter to only measurements with an end pick
@@ -108,7 +108,7 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
         shapeMeasurementService.deleteAll();
 
         Map<FrequencyBand, List<ShapeMeasurement>> frequencyBandShapeMeasurementMap = shapeMeasurementService.save(betaAndGammaMeasurements)
-                                                                                                             .stream()
+                                                                                                             .parallelStream()
                                                                                                              .filter(meas -> meas.getWaveform() != null)
                                                                                                              .collect(
                                                                                                                      Collectors.groupingBy(
@@ -211,7 +211,6 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
      */
     private Collection<Entry<PeakVelocityMeasurement, WaveformPick>> filterMeasurementsToEndPickedOnly(Collection<PeakVelocityMeasurement> velocityMeasurements) {
         return velocityMeasurements.parallelStream().filter(vel -> vel.getWaveform() != null).filter(vel -> vel.getWaveform().getAssociatedPicks() != null).map(vel -> {
-
             Optional<WaveformPick> pick = vel.getWaveform().getAssociatedPicks().stream().filter(p -> PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType())).findFirst();
             if (pick.isPresent()) {
                 return new AbstractMap.SimpleEntry<>(vel, pick.get());

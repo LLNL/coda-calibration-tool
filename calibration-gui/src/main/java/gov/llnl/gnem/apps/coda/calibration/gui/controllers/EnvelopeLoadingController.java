@@ -20,7 +20,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
@@ -29,21 +28,19 @@ import gov.llnl.gnem.apps.coda.common.gui.controllers.AbstractSeismogramSaveLoad
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.FileToEnvelopeConverter;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacExporter;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
-import gov.llnl.gnem.apps.coda.common.gui.events.EnvelopeLoadCompleteEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressEventProgressListener;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
 import gov.llnl.gnem.apps.coda.common.model.messaging.ProgressEvent;
 
 @Component
-@ConfigurationProperties("waveform.client")
 public class EnvelopeLoadingController extends AbstractSeismogramSaveLoadController<FileToEnvelopeConverter, String> {
 
     private static final Logger log = LoggerFactory.getLogger(EnvelopeLoadingController.class);
 
     @Autowired
     public EnvelopeLoadingController(List<FileToEnvelopeConverter> fileConverters, WaveformClient client, EventBus bus, SacExporter sacExporter) {
-        super(fileConverters, bus, log, sacExporter, () -> client.getAllStacks(), (id, waveforms) -> client.postWaveforms(id, waveforms));
+        super(fileConverters, bus, log, sacExporter, () -> client.getAllActiveStacks(), (id, waveforms) -> client.postWaveforms(id, waveforms));
     }
 
     @Override
@@ -52,7 +49,6 @@ public class EnvelopeLoadingController extends AbstractSeismogramSaveLoadControl
         ProgressEvent progressEvent = new ProgressEvent(idCounter.getAndIncrement(), progress);
         ProgressMonitor progressMonitor = new ProgressMonitor("Data Processing", new ProgressEventProgressListener(bus, progressEvent));
         super.loadFiles(inputFiles, () -> {
-            bus.post(new EnvelopeLoadCompleteEvent());
             progress.setTotal(1l);
             progress.setCurrent(1l);
             bus.post(progressEvent);

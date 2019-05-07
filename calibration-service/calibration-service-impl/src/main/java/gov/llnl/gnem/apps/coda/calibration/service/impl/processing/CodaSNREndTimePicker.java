@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl.processing;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.service.api.EndTimePicker;
@@ -27,7 +28,7 @@ public class CodaSNREndTimePicker implements EndTimePicker {
     @Override
     public double getEndTime(float[] waveform, double sampleRate, double startTimeEpochSeconds, int startOffset, double minLengthSec, double maxLengthSec, double minimumSnr, double noise) {
 
-        Double snrPick = getSnrEndPick(waveform, sampleRate, startOffset, minLengthSec, maxLengthSec, minimumSnr, noise, 20);
+        Double snrPick = getSnrEndPick(waveform, sampleRate, startOffset, minLengthSec, maxLengthSec, minimumSnr, noise, 40);
 
         Double overallPick;
         if (!Double.isNaN(snrPick)) {
@@ -42,34 +43,53 @@ public class CodaSNREndTimePicker implements EndTimePicker {
     private Double getSnrEndPick(final float[] waveform, final double sampleRate, int startOffset, final double minLengthSec, final double maxLengthSec, final double minimumSnr, final double noise,
             final int windowSize) {
         int obsWindow = (int) (windowSize * sampleRate);
+        int spikeSamples = (int) ((windowSize/4) * sampleRate);
         DescriptiveStatistics obs = new DescriptiveStatistics(obsWindow);
-        DescriptiveStatistics spike = new DescriptiveStatistics((int) (5 * sampleRate));
+        DescriptiveStatistics spike = new DescriptiveStatistics(spikeSamples);
+        SimpleRegression spikeReg = new SimpleRegression();
         double snrTimePick = BAD_PICK;
 
         int minSamples = (int) (minLengthSec * sampleRate);
         int maxSamples = (int) (maxLengthSec * sampleRate);
+        if (startOffset < 0) {
+            startOffset = 0;
+        }
 
         if (waveform.length > startOffset && waveform.length - startOffset > minSamples) {
             int stopIdx = waveform.length > maxSamples ? maxSamples : waveform.length;
-            if (waveform[startOffset] - minimumSnr >= noise) {
+            double noiseThreshold = noise + minimumSnr;
+            if (waveform[startOffset] >= noiseThreshold) {
                 for (int i = startOffset; i < stopIdx; i++) {
                     obs.addValue(waveform[i]);
                     spike.addValue(waveform[i]);
                     if (obs.getN() >= windowSize) {
-                        if (obs.getMean() <= minimumSnr + noise) {
+                        if (obs.getMean() <= noiseThreshold) {
                             for (int j = i - obsWindow; j < i; j++) {
-                                if (j > 0 && waveform[j] <= minimumSnr + noise) {
+                                if (j > 0 && waveform[j] <= noiseThreshold) {
                                     snrTimePick = j / sampleRate;
                                     break;
                                 }
                             }
                             break;
-
-                            //TODO: 1.1 is a WAG on a data set, should try to find a better formulation that takes into account things like sample rate, window, and overall SNR
-                        } else if (spike.getMean() > (obs.getMean() * 1.1d)) {
+                        } else if (waveform[i] <= noiseThreshold) {
+                            snrTimePick = i / sampleRate;
                             break;
                         } else {
                             snrTimePick = (i - spike.getN()) / sampleRate;
+                        }
+                    }
+                    if (spike.getN() >= spikeSamples) {
+                        double[] spikeVals = spike.getValues();
+                        spikeReg.clear();
+                        for (int k = 0; k < spikeVals.length; k++) {
+                            spikeReg.addData(k, spikeVals[k]);
+                        }
+
+                        double spikeSlope = spikeReg.getSlope();
+                        if (!Double.isNaN(spikeSlope)) {
+                            if (spikeSlope > 0.1 || (obs.getN() < windowSize && spikeSlope > 0.05)) {
+                                break;
+                            }
                         }
                     }
                 }
@@ -78,4 +98,5 @@ public class CodaSNREndTimePicker implements EndTimePicker {
 
         return snrTimePick;
     }
+
 }

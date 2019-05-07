@@ -14,9 +14,17 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
+import java.util.List;
+
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurementMetadata;
 import gov.llnl.gnem.apps.coda.common.service.api.BaseService;
 
 public interface ShapeMeasurementService extends BaseService<ShapeMeasurement, Long> {
+
     public ShapeMeasurement findOneByWaveformId(Long waveformId);
+
+    public List<ShapeMeasurementMetadata> findAllMetadataOnly();
+
+    public ShapeMeasurementMetadata findOneMetadataByWaveformId(Long waveformId);
 }

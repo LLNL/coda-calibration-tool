@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,12 +37,11 @@ import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import reactor.core.publisher.Mono;
 
-//TODO: This class needs a GUI to display a list of files it's attempting to load and process + pass/fail indicators
 @Component
-@ConfigurationProperties("coda.param.client")
 public class CodaParamLoadingController {
 
     private static final Logger log = LoggerFactory.getLogger(CodaParamLoadingController.class);
@@ -85,67 +83,77 @@ public class CodaParamLoadingController {
     }
 
     protected void convertFiles(List<File> validFiles) {
-        fileConverters.stream().forEach(fileConverter -> fileConverter.convertFiles(validFiles).subscribe(result -> {
-            // TODO: Feedback to the user about failure causes!
-            if (result.isSuccess()) {
-                Optional<?> res = result.getResultPayload();
-                if (res.isPresent()) {
-                    if (res.get() instanceof SharedFrequencyBandParameters) {
-                        SharedFrequencyBandParameters sfb = (SharedFrequencyBandParameters) res.get();
-                        try {
-                            Mono<String> request = paramsClient.setSharedFrequencyBandParameter(sfb);
-                            if (request != null) {
-                                request.retry(3).subscribe();
-                            } else {
-                                log.error("Returned a null request from the parameter client while posting SharedFrequencyBandParameters {}", sfb);
-                            }
-                        } catch (JsonProcessingException ex) {
-                            log.trace(ex.getMessage(), ex);
-                        }
-                    } else if (res.get() instanceof MdacParametersPS) {
-                        MdacParametersPS entry = (MdacParametersPS) res.get();
-                        try {
-                            Mono<String> request = paramsClient.setPsParameter(entry);
-                            if (request != null) {
-                                request.retry(3).subscribe();
-                            } else {
-                                log.error("Returned a null request from the parameter client while posting MdacParametersPS {}", entry);
-                            }
-                        } catch (JsonProcessingException ex) {
-                            log.trace(ex.getMessage(), ex);
-                        }
-                    } else if (res.get() instanceof MdacParametersFI) {
-                        MdacParametersFI entry = (MdacParametersFI) res.get();
-                        try {
-                            Mono<String> request = paramsClient.setFiParameter(entry);
-                            if (request != null) {
-                                request.retry(3).subscribe();
-                            } else {
-                                log.error("Returned a null request from the parameter client while posting MdacParametersFI {}", entry);
-                            }
-                        } catch (JsonProcessingException ex) {
-                            log.trace(ex.getMessage(), ex);
-                        }
-                    } else if (res.get() instanceof ReferenceMwParameters) {
-                        ReferenceMwParameters entry = (ReferenceMwParameters) res.get();
-                        try {
-                            Mono<String> request = refMwClient.postReferenceEvents(Collections.singletonList(entry));
-                            if (request != null) {
-                                request.retry(3).subscribe();
-                            } else {
-                                log.error("Returned a null request from the parameter client while posting MdacParametersFI {}", entry);
-                            }
-                        } catch (JsonProcessingException ex) {
-                            log.trace(ex.getMessage(), ex);
-                        }
-                    }
-                }
-            }
-        }));
+        fileConverters.stream()
+                      .forEach(fileConverter -> fileConverter.convertFiles(validFiles)
+                                                             .subscribe(result -> {
+                                                                 // TODO: Feedback to the user about failure causes!
+                                                                 if (result.isSuccess()) {
+                                                                     Optional<?> res = result.getResultPayload();
+                                                                     if (res.isPresent()) {
+                                                                         if (res.get() instanceof SharedFrequencyBandParameters) {
+                                                                             SharedFrequencyBandParameters sfb = (SharedFrequencyBandParameters) res.get();
+                                                                             try {
+                                                                                 Mono<String> request = paramsClient.setSharedFrequencyBandParameter(sfb);
+                                                                                 if (request != null) {
+                                                                                     request.retry(3).subscribe();
+                                                                                 } else {
+                                                                                     log.error("Returned a null request from the parameter client while posting SharedFrequencyBandParameters {}", sfb);
+                                                                                 }
+                                                                             } catch (JsonProcessingException ex) {
+                                                                                 log.trace(ex.getMessage(), ex);
+                                                                             }
+                                                                         } else if (res.get() instanceof MdacParametersPS) {
+                                                                             MdacParametersPS entry = (MdacParametersPS) res.get();
+                                                                             try {
+                                                                                 Mono<String> request = paramsClient.setPsParameter(entry);
+                                                                                 if (request != null) {
+                                                                                     request.retry(3).subscribe();
+                                                                                 } else {
+                                                                                     log.error("Returned a null request from the parameter client while posting MdacParametersPS {}", entry);
+                                                                                 }
+                                                                             } catch (JsonProcessingException ex) {
+                                                                                 log.trace(ex.getMessage(), ex);
+                                                                             }
+                                                                         } else if (res.get() instanceof MdacParametersFI) {
+                                                                             MdacParametersFI entry = (MdacParametersFI) res.get();
+                                                                             try {
+                                                                                 Mono<String> request = paramsClient.setFiParameter(entry);
+                                                                                 if (request != null) {
+                                                                                     request.retry(3).subscribe();
+                                                                                 } else {
+                                                                                     log.error("Returned a null request from the parameter client while posting MdacParametersFI {}", entry);
+                                                                                 }
+                                                                             } catch (JsonProcessingException ex) {
+                                                                                 log.trace(ex.getMessage(), ex);
+                                                                             }
+                                                                         } else if (res.get() instanceof ReferenceMwParameters) {
+                                                                             ReferenceMwParameters entry = (ReferenceMwParameters) res.get();
+                                                                             try {
+                                                                                 Mono<String> request = refMwClient.postReferenceEvents(Collections.singletonList(entry));
+                                                                                 if (request != null) {
+                                                                                     request.retry(3).subscribe();
+                                                                                 } else {
+                                                                                     log.error("Returned a null request from the parameter client while posting ReferenceMwParameters {}", entry);
+                                                                                 }
+                                                                             } catch (JsonProcessingException ex) {
+                                                                                 log.trace(ex.getMessage(), ex);
+                                                                             }
+                                                                         } else if (res.get() instanceof VelocityConfiguration) {
+                                                                             VelocityConfiguration entry = (VelocityConfiguration) res.get();
+                                                                             Mono<String> request = paramsClient.updateVelocityConfiguration(entry);
+                                                                             if (request != null) {
+                                                                                 request.retry(3).subscribe();
+                                                                             } else {
+                                                                                 log.error("Returned a null request from the parameter client while posting VelocityConfiguration {}", entry);
+                                                                             }
+                                                                         }
+                                                                     }
+                                                                 }
+                                                             }));
     }
 
     private boolean validPath(Path p) {
-        Optional<FileToParameterConverter<?>> match = Optional.ofNullable(fileConverters).orElse(Collections.emptyList()).stream().filter(fc -> fc.getMatchingPattern().matches(p)).findAny();
+        Optional<FileToParameterConverter<?>> match = Optional.ofNullable(fileConverters).orElseGet(() -> Collections.emptyList()).stream().filter(fc -> fc.getMatchingPattern().matches(p)).findAny();
         return match.isPresent();
     }
 

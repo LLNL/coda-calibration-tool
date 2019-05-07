@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
 
@@ -36,9 +37,14 @@ public class MeasuredMwsJsonController {
         this.service = service;
     }
 
-    @GetMapping(name = "getReferenceEvents")
+    @GetMapping(name = "getReferenceEvents", value = "/")
     public List<MeasuredMwParameters> getReferenceEvents() {
         return service.findAll();
+    }    
+
+    @GetMapping(name = "getEventDetails", value = "/details")
+    public List<MeasuredMwDetails> getEventDetails() {
+        return service.findAllDetails();
     }
 
     public MeasuredMwsService getService() {

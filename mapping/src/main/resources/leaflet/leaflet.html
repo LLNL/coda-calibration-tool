@@ -12,6 +12,7 @@
 	<div id="map" style="height: 98vh;"></div>
 	<script type="text/javascript">
         var markers = new Map();
+        var mouseoverIconId = null;
 
         var map = L.map('map', {
             attributionControl: false
@@ -69,6 +70,10 @@
         	if (markers.size > 0) {
         		map.flyToBounds(iconGroup.getBounds());
         	}
+        }
+        
+        var getActiveIcon = function() {
+        	return mouseoverIconId;
         }
     </script>
 </body>

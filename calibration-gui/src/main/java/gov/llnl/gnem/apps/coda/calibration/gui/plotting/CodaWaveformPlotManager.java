@@ -16,12 +16,9 @@ package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
-import java.awt.FontFormatException;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,6 +53,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.scene.input.KeyCode;
+import reactor.core.scheduler.Schedulers;
 
 //TODO: Split this out into a few separate functional areas when time permits (i.e. CodaWaveformPlotGUI, CodaWaveformPlotManager, etc).
 // As it currently is this class is pretty entangled.
@@ -122,38 +120,33 @@ public class CodaWaveformPlotManager extends JPanel {
             toolbar = new JToolBar();
             toolbar.setFloatable(false);
 
-            try (InputStream is = CodaWaveformPlotManager.class.getResourceAsStream("/fxml/MaterialIcons-Regular.ttf")) {
-                Font font = Font.createFont(Font.TRUETYPE_FONT, is);
-                Font sizedFont = font.deriveFont(24f);
+            pagingLabel = new JLabel("0/0");
+            JButton forwardButton = new JButton(">");
+            JButton backButton = new JButton("<");
 
-                JButton forwardButton = new JButton("\uE315");
-                pagingLabel = new JLabel("0/0");
-                JButton backButton = new JButton("\uE314");
-                forwardButton.setFont(sizedFont);
-                backButton.setFont(sizedFont);
+            forwardButton.setBorderPainted(false);
+            forwardButton.setFocusPainted(false);
+            forwardButton.setContentAreaFilled(false);
 
-                forwardButton.setBorderPainted(false);
-                forwardButton.setFocusPainted(false);
-                forwardButton.setContentAreaFilled(false);
+            backButton.setBorderPainted(false);
+            backButton.setFocusPainted(false);
+            backButton.setContentAreaFilled(false);
 
-                backButton.setBorderPainted(false);
-                backButton.setFocusPainted(false);
-                backButton.setContentAreaFilled(false);
+            forwardButton.addActionListener(action -> {
+                forwardAction.actionPerformed(action);
+            });
 
-                forwardButton.addActionListener(action -> {
-                    forwardAction.actionPerformed(action);
-                });
+            backButton.addActionListener(action -> {
+                backwardAction.actionPerformed(action);
+            });
 
-                backButton.addActionListener(action -> {
-                    backwardAction.actionPerformed(action);
-                });
+            toolbar.add(backButton);
+            toolbar.add(pagingLabel);
+            toolbar.add(forwardButton);
 
-                toolbar.add(backButton);
-                toolbar.add(pagingLabel);
-                toolbar.add(forwardButton);
-            } catch (FontFormatException | IOException e) {
-                log.error(e.getMessage(), e);
-            }
+            Font sizedFont = forwardButton.getFont().deriveFont(24f);
+            forwardButton.setFont(sizedFont);
+            backButton.setFont(sizedFont);
         });
     }
 
@@ -256,11 +249,11 @@ public class CodaWaveformPlotManager extends JPanel {
         clear();
         List<Pair<Waveform, CodaWaveformPlot>> results = new ArrayList<>();
         if (allWaveformIDs.size() == 1) {
-            SyntheticCoda synth = waveformClient.getSyntheticFromWaveformId(allWaveformIDs.get(0)).block(Duration.ofSeconds(10));
+            SyntheticCoda synth = waveformClient.getSyntheticFromWaveformId(allWaveformIDs.get(0)).publishOn(Schedulers.elastic()).block(Duration.ofSeconds(10));
             if (synth != null && synth.getId() != null) {
                 results.add(createPlot(synth));
             } else {
-                results.add(createPlot(waveformClient.getWaveformFromId(allWaveformIDs.get(0)).block(Duration.ofSeconds(10))));
+                results.add(createPlot(waveformClient.getWaveformFromId(allWaveformIDs.get(0)).publishOn(Schedulers.elastic()).block(Duration.ofSeconds(10))));
             }
         } else {
             pagingLabel.setText(pageNumber + 1 + "/" + (totalPages + 1));
@@ -270,13 +263,21 @@ public class CodaWaveformPlotManager extends JPanel {
                 skipVal = allWaveformIDs.size() - pageSize;
             }
             allWaveformIDs.stream().sequential().skip(skipVal).limit(pageSize).forEach(pageIds::add);
-            List<SyntheticCoda> synthetics = waveformClient.getSyntheticsFromWaveformIds(pageIds).filter(synth -> synth != null && synth.getId() != null).collectList().block(Duration.ofSeconds(10));
+            List<SyntheticCoda> synthetics = waveformClient.getSyntheticsFromWaveformIds(pageIds)
+                                                           .filter(synth -> synth != null && synth.getId() != null)
+                                                           .collectList()
+                                                           .publishOn(Schedulers.elastic())
+                                                           .block(Duration.ofSeconds(10));
             if (synthetics != null && !synthetics.isEmpty()) {
                 pageIds.removeAll(synthetics.stream().map(synth -> synth.getSourceWaveform().getId()).collect(Collectors.toList()));
                 results.addAll(createSyntheticPlots(synthetics));
             }
 
-            List<Waveform> waveforms = waveformClient.getWaveformsFromIds(pageIds).filter(waveform -> waveform != null && waveform.getId() != null).collectList().block(Duration.ofSeconds(10));
+            List<Waveform> waveforms = waveformClient.getWaveformsFromIds(pageIds)
+                                                     .filter(waveform -> waveform != null && waveform.getId() != null)
+                                                     .collectList()
+                                                     .publishOn(Schedulers.elastic())
+                                                     .block(Duration.ofSeconds(10));
             if (waveforms != null && !waveforms.isEmpty()) {
                 results.addAll(createWaveformPlots(waveforms));
             }
@@ -303,9 +304,9 @@ public class CodaWaveformPlotManager extends JPanel {
     }
 
     public void triggerKeyEvent(javafx.scene.input.KeyEvent event) {
-        if (event.getCode().equals(KeyCode.LEFT)) {
+        if (event.getCode() == KeyCode.LEFT) {
             SwingUtilities.invokeLater(() -> backwardAction.actionPerformed(new ActionEvent(event.getSource(), KeyEvent.KEY_RELEASED, "BackwardAction")));
-        } else if (event.getCode().equals(KeyCode.RIGHT)) {
+        } else if (event.getCode() == KeyCode.RIGHT) {
             SwingUtilities.invokeLater(() -> forwardAction.actionPerformed(new ActionEvent(event.getSource(), KeyEvent.KEY_RELEASED, "ForwardAction")));
         }
     }

@@ -14,13 +14,23 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.repository;
 
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurementMetadata;
 import io.springlets.data.jpa.repository.DetachableJpaRepository;
 
 @Transactional
 public interface ShapeMeasurementRepository extends DetachableJpaRepository<ShapeMeasurement, Long> {
 
     public ShapeMeasurement findOneByWaveformId(Long waveformId);
+
+    @Query("select v from ShapeMeasurement v")
+    public List<ShapeMeasurementMetadata> findAllMetadataOnly();
+
+    @Query("select v from ShapeMeasurement v where v.waveform.id = :waveformId ")
+    public ShapeMeasurementMetadata findOneMetadataByWaveformId(Long waveformId);
 }

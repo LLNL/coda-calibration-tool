@@ -34,7 +34,6 @@ import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformPickService;
-import io.springlets.web.NotFoundException;
 
 @RestController
 @RequestMapping(value = "/api/v1/waveform-picks/{waveformPick}", name = "WaveformPicksItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -59,7 +58,7 @@ public class WaveformPicksItemJsonController {
     public WaveformPick getWaveformPick(@PathVariable("waveformPick") Long id) {
         WaveformPick waveformPick = waveformPickService.findOne(id);
         if (waveformPick == null) {
-            throw new NotFoundException(String.format("WaveformPick with identifier '%s' not found", id));
+            throw new IllegalStateException(String.format("WaveformPick with identifier '%s' not found", id));
         }
         return waveformPick;
     }

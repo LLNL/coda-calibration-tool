@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import reactor.core.publisher.Flux;
@@ -49,5 +50,9 @@ public interface ParameterClient {
     public Flux<MdacParametersFI> getFiParameters();
 
     public Mono<String> removeFiParameter(MdacParametersFI parameters);
+
+    public Mono<VelocityConfiguration> getVelocityConfiguration();
+
+    public Mono<String> updateVelocityConfiguration(VelocityConfiguration velConf);
 
 }

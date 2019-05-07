@@ -55,7 +55,8 @@
 						</Menu>
 						<Menu mnemonicParsing="false" text="Window">
 							<items>
-								<MenuItem mnemonicParsing="false" onAction="#openFailureReportDisplay" text="View Load Failures" />
+								<MenuItem mnemonicParsing="false" onAction="#openWaveformDisplay" text="Waveform View" />
+                        <MenuItem mnemonicParsing="false" onAction="#openFailureReportDisplay" text="View Load Failures" />
 							</items>
 						</Menu>
 

@@ -71,7 +71,7 @@ public class EnvelopeWebClient implements EnvelopeClient {
                          Mono<Result<List<Waveform>>> respMono = resp.bodyToMono(POST_ENV_RETURN_TYPE);
                          return respMono.doOnError(e -> log.error(resp.toString())).doOnError(e -> log.error(e.getMessage(), e)).flatMapMany(results -> {
                              if (results.isSuccess()) {
-                                 return Flux.fromStream(results.getResultPayload().orElse(new ArrayList<Waveform>()).stream());
+                                 return Flux.fromStream(results.getResultPayload().orElseGet(() -> new ArrayList<Waveform>()).stream());
                              } else {
                                  return Flux.empty();
                              }

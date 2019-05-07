@@ -14,8 +14,6 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -27,6 +25,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import reactor.core.publisher.Flux;
@@ -36,7 +35,6 @@ import reactor.core.publisher.Mono;
 public class ParameterWebClient implements ParameterClient {
 
     private WebClient client;
-    private static final Logger log = LoggerFactory.getLogger(ParameterWebClient.class);
 
     @Autowired
     public ParameterWebClient(WebClient client) {
@@ -159,6 +157,21 @@ public class ParameterWebClient implements ParameterClient {
                      .syncBody(frequencyBand)
                      .exchange()
                      .flatMap(response -> response.bodyToMono(SharedFrequencyBandParameters.class));
+    }
+
+    @Override
+    public Mono<VelocityConfiguration> getVelocityConfiguration() {
+        return client.get()
+                     .uri("/config/velocity/")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMap(response -> response.bodyToMono(VelocityConfiguration.class))
+                     .onErrorReturn(new VelocityConfiguration());
+    }
+
+    @Override
+    public Mono<String> updateVelocityConfiguration(VelocityConfiguration velConf) {
+        return client.post().uri("/config/velocity/update").accept(MediaType.APPLICATION_JSON).syncBody(velConf).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
     }
 
 }

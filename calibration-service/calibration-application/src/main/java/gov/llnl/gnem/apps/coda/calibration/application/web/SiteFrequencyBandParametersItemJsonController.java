@@ -34,7 +34,6 @@ import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SiteFrequencyBandParametersService;
-import io.springlets.web.NotFoundException;
 
 @RestController
 @RequestMapping(value = "/api/v1/params/site-fb-parameters/{siteFrequencyBandParameters}", name = "SiteFrequencyBandParametersItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -49,7 +48,7 @@ public class SiteFrequencyBandParametersItemJsonController {
     public SiteFrequencyBandParameters getSiteFrequencyBandParameters(@PathVariable("siteFrequencyBandParameters") Long id) {
         SiteFrequencyBandParameters siteFrequencyBandParameters = siteFrequencyBandParametersService.findOne(id);
         if (siteFrequencyBandParameters == null) {
-            throw new NotFoundException(String.format("SiteFrequencyBandParameters with identifier '%s' not found", id));
+            throw new IllegalStateException(String.format("SiteFrequencyBandParameters with identifier '%s' not found", id));
         }
         return siteFrequencyBandParameters;
     }

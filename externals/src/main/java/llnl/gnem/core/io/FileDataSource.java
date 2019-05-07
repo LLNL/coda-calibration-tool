@@ -12,10 +12,11 @@ package llnl.gnem.core.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,7 @@ public class FileDataSource extends AbstractDataSource {
         super.initiate();
         close();
         try {
-            initiate(new FileInputStream(path));
+            initiate(Files.newInputStream(Paths.get(path)));
             fis.skip(foff); // skip bytes, as necessary
         } catch (IOException ioe) {
             log.warn("io.FileDataSource.initiate():  {} ", ioe.getMessage(), ioe);
@@ -170,7 +171,7 @@ public class FileDataSource extends AbstractDataSource {
             case CSS_S4:
 
                 for (int i = 0; i < numSamplesToRead; i++) {
-                    dataArray[i + offset] = (float) dis.readInt();
+                    dataArray[i + offset] = dis.readInt();
                 }
                 numSamplesRemaining -= numSamplesToRead;
                 nextSample += numSamplesToRead;
@@ -191,9 +192,9 @@ public class FileDataSource extends AbstractDataSource {
                 for (int i = 0; i < numSamplesToRead; i++) {
 
                     if ((0x80 & buffer[ib]) == 0x80) {
-                        dataArray[i + offset] = (float) (((0xff) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
+                        dataArray[i + offset] = ((0xff) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff));
                     } else {
-                        dataArray[i + offset] = (float) (((0x00) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
+                        dataArray[i + offset] = ((0x00) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff));
                     }
 
                 }

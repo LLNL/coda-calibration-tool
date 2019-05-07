@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
@@ -49,7 +48,6 @@ import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 @Component
-@ConfigurationProperties("envelope-app.waveform.client")
 public class WaveformLoadingController extends AbstractSeismogramSaveLoadController<FileToWaveformConverter, Waveform> {
 
     private static final Logger log = LoggerFactory.getLogger(WaveformLoadingController.class);
@@ -158,7 +156,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                         if (rawWaveform != null && rawWaveform.getSegment() != null && rawWaveform.getSegment().length > 0) {
                             float[] fData = new float[rawWaveform.getSegment().length];
                             for (int j = 0; j < fData.length; ++j) {
-                                fData[j] = rawWaveform.getSegment()[j].floatValue();
+                                fData[j] = (float) rawWaveform.getSegment()[j];
                             }
                             TimeSeries seis = new TimeSeries(fData, rawWaveform.getSampleRate(), new TimeT(rawWaveform.getBeginTime()));
                             if (stackedSeries == null) {
@@ -223,9 +221,9 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                 if (nseismograms > 1) {
                     stackedSeries.MultiplyScalar(1 / ((double) nseismograms));
                     float[] stackedData = stackedSeries.getData();
-                    Double[] data = new Double[stackedData.length];
+                    double[] data = new double[stackedData.length];
                     for (int i = 0; i < data.length; ++i) {
-                        data[i] = new Double(stackedData[i]);
+                        data[i] = stackedData[i];
                     }
                     stackedWaveform.setSegment(data);
                     stackedWaveform.getStream().setChannelName("STACK");

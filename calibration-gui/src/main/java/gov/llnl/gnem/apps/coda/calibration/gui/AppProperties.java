@@ -18,22 +18,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
-import gov.llnl.gnem.apps.coda.common.mapping.MapProperties;
 import gov.llnl.gnem.apps.coda.common.mapping.WMSLayerDescriptor;
 
-@Component
-@Configuration
 @ConfigurationProperties("app")
 public class AppProperties {
 
     private String baseTitle = "Coda Calibration";
     private Integer height = 800;
     private Integer width = 600;
-    private Boolean debugEnabled = false;
+    private Boolean debugEnabled = Boolean.FALSE;
     private List<WMSLayerDescriptor> wmsLayers = new ArrayList<>();
 
     public Boolean getDebugEnabled() {
@@ -74,10 +68,5 @@ public class AppProperties {
 
     public void setWmsLayers(List<WMSLayerDescriptor> wmsLayers) {
         this.wmsLayers = wmsLayers;
-    }
-
-    @Bean
-    public MapProperties getMapProperties() {
-        return new MapProperties().setLayers(wmsLayers);
     }
 }

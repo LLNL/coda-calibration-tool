@@ -22,6 +22,7 @@ import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.Calibratio
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SCHEMA_VALUE;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_VALUE;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VELOCITY_CONFIGURATION;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterCon
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
@@ -91,6 +93,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
                 results.addAll(convertJsonFields(node, MDAC_PS_FIELD, x -> mdacPsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, MDAC_FI_FIELD, x -> mdacFiFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, REFERENCE_EVENTS_FIELD, x -> refEventsFromJsonNode(x)));
+                results.addAll(convertJsonFields(node, VELOCITY_CONFIGURATION, x -> velocityConfigurationFromJsonNode(x)));
             }
         } catch (IOException e) {
             return Collections.singletonList(exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): %s", file.getName(), e.getMessage()), e)));
@@ -112,6 +115,17 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
             }
         }
         return results;
+    }
+
+    protected Result<Object> velocityConfigurationFromJsonNode(JsonNode node) {
+        ObjectReader reader = mapper.readerFor(VelocityConfiguration.class);
+        try {
+            //TODO: Validate all fields
+            VelocityConfiguration val = reader.readValue(node);
+            return new Result<Object>(true, val);
+        } catch (IOException e) {
+            return exceptionalResult(e);
+        }
     }
 
     protected Result<Object> refEventsFromJsonNode(JsonNode node) {
@@ -150,7 +164,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
     protected Result<Object> sharedFrequenyBandFromJsonNode(JsonNode band) {
         SharedFrequencyBandParameters sfb = new SharedFrequencyBandParameters();
         if (band.get("lowFreqHz").isNull() || band.get("highFreqHz").isNull()) {
-            return exceptionalResult(new LightweightIllegalStateException("Unable to parse frequency band " + sfb.toString() + "; received a empty frequency band."));
+            return exceptionalResult(new LightweightIllegalStateException("Unable to parse frequency band " + sfb + "; received a empty frequency band."));
         } else {
             try {
                 ObjectReader reader = mapper.readerFor(SharedFrequencyBandParameters.class);

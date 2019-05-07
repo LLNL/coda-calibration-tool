@@ -16,8 +16,10 @@ package gov.llnl.gnem.apps.coda.common.repository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,16 +33,40 @@ import io.springlets.data.jpa.repository.DetachableJpaRepository;
 @Transactional
 public interface WaveformRepository extends DetachableJpaRepository<Waveform, Long> {
 
-    @Query("select w from Waveform w where w.beginTime = :beginTime and w.endTime = :endTime and w.event = :event and w.stream = :stream and w.segmentType = :segmentType and w.segmentUnits = :segmentUnits and w.lowFrequency = :lowFrequency and w.highFrequency = :highFrequency")
+    @Query("select w from Waveform w where w.event.eventId = :eventId and w.stream.station.networkName = :networkName and w.stream.station.stationName = :stationName and w.lowFrequency = :lowFrequency and w.highFrequency = :highFrequency order by w.id desc")
+    public Waveform findByUniqueFields(@Param("eventId") String eventId, @Param("networkName") String networkName, @Param("stationName") String stationName, @Param("lowFrequency") Double lowFrequency,
+            @Param("highFrequency") Double highFrequency);
+
+    @Query("select w from Waveform w where w.beginTime = :beginTime and w.endTime = :endTime and w.event = :event and w.stream = :stream and w.segmentType = :segmentType and w.segmentUnits = :segmentUnits and w.lowFrequency = :lowFrequency and w.highFrequency = :highFrequency order by w.id desc")
     public Waveform findOneByAllFields(@Param("beginTime") Date beginTime, @Param("endTime") Date endTime, @Param("event") Event event, @Param("stream") Stream stream,
             @Param("segmentType") String segmentType, @Param("segmentUnits") String segmentUnits, @Param("lowFrequency") Double lowFrequency, @Param("highFrequency") Double highFrequency);
 
-    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w")
-    public List<Waveform> getWaveformMetadata();
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w order by w.id desc")
+    public Set<Waveform> getWaveformMetadata();
+
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.id in :ids order by w.id desc")
+    public List<Waveform> findAllMetadataByIds(@Param("ids") List<Long> ids);
+
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.id = :id order by w.id desc")
+    public Waveform findWaveformMetadataById(@Param("id") Long id);
 
     @Query("select p from WaveformPick p where p.waveform.id = :id")
     public List<WaveformPick> findPicksByWaveformId(@Param("id") Long id);
 
     @Query("select w.event from Waveform w where w.event.eventId = :eventId order by w.id desc")
     public List<Event> findEventById(@Param("eventId") String eventId, Pageable pageable);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Waveform w SET w.active = :active where w.event.eventId = :eventId")
+    public int setActiveByEventId(@Param("eventId") String eventId, @Param("active") boolean active);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Waveform w SET w.active = :active where w.stream.station.stationName = :stationName")
+    public int setActiveByStationName(@Param("stationName") String stationName, @Param("active") boolean active);
+
+    @Query("select w.id from Waveform w where w.event.eventId = :eventId")
+    public List<Long> findAllIdsByEventId(@Param("eventId") String eventId);
+
+    @Query("select w.id from Waveform w where w.stream.station.stationName = :stationName")
+    public List<Long> findAllIdsByStationName(@Param("stationName") String stationName);
 }

@@ -98,7 +98,7 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
                 int npts = seis.getNsamp();
 
                 //TODO: Set synthetic end time to max length of measurement (+1?) for FB if it's set and > 0.0
-                Double[] Ac = new Double[npts];
+                double[] Ac = new double[npts];
 
                 for (int ii = 0; ii < Ac.length; ii++) {
                     // t is relative to the phase start time - note t=0 is a
@@ -116,7 +116,7 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
                 synth.setMeasuredV(vr);
                 synth.setMeasuredB(br);
                 synth.setMeasuredG(gr);
-                
+
                 return synth;
             } catch (IllegalArgumentException e) {
                 log.warn("Error attempting to cut seismogram for Synthetic generation {}; {}", sourceWaveform, e.getMessage());

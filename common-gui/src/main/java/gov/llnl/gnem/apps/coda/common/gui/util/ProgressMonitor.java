@@ -37,9 +37,11 @@ public class ProgressMonitor extends VBox implements Observer {
     private Label label;
 
     private String displayableName;
+    private String progressStage;
 
     public ProgressMonitor(String displayableName, ProgressListener progressListener) {
         this.displayableName = displayableName;
+        this.progressStage = "";
         progressListener.addObserver(this);
 
         Platform.runLater(() -> {
@@ -68,7 +70,7 @@ public class ProgressMonitor extends VBox implements Observer {
             Progress progress = (Progress) event;
             Platform.runLater(() -> {
                 if (progress.getTotal() >= 0.0) {
-                    label.setText(progress.getCurrent() + "/" + progress.getTotal());
+                    label.setText(progress.getCurrent() + "/" + progress.getTotal() + getProgressStage());
                     progressBar.setProgress(progress.getProgress());
                 } else {
                     progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
@@ -78,8 +80,21 @@ public class ProgressMonitor extends VBox implements Observer {
         }
     }
 
+    private String getProgressStage() {
+        if (progressStage.isEmpty()) {
+            return progressStage;
+        } else {
+            return " | " + progressStage;
+        }
+    }
+
     public String getDisplayableName() {
         return displayableName;
+    }
+
+    public ProgressMonitor setProgressStage(String progressStage) {
+        this.progressStage = progressStage;
+        return this;
     }
 
     public ProgressBar getProgressBar() {

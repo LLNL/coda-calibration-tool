@@ -8,7 +8,10 @@
             "latitude": 0.0,
             "longitude": 0.0,
             "mw": 3.3,
-            "stressDropInMpa": 0.7
+            "apparentStressInMpa": 0.7,
+            "refMw" : 3.3,
+            "refApparentStressInMpa" : 0.7,
+            "dataCount": 123
         }
     ]
 }

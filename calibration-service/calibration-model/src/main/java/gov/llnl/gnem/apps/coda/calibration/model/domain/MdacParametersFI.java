@@ -39,8 +39,7 @@ public class MdacParametersFI {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @NumberFormat
     private double sigma;
@@ -90,8 +89,8 @@ public class MdacParametersFI {
 
     public MdacParametersFI(MdacParametersFI mdacFI) {
         super();
-        this.id = new Long(mdacFI.getId());
-        this.version = new Long(mdacFI.getVersion());
+        this.id = mdacFI.getId();
+        this.version = mdacFI.getVersion();
         this.sigma = mdacFI.getSigma();
         this.delSigma = mdacFI.getDelSigma();
         this.psi = mdacFI.getPsi();
@@ -106,6 +105,24 @@ public class MdacParametersFI {
         this.alphaR = mdacFI.getAlphaR();
         this.betaR = mdacFI.getBetaR();
         this.rhor = mdacFI.getRhor();
+    }
+
+    public MdacParametersFI merge(MdacParametersFI overlay) {
+        this.sigma = overlay.sigma;
+        this.delSigma = overlay.delSigma;
+        this.psi = overlay.psi;
+        this.delPsi = overlay.delPsi;
+        this.zeta = overlay.zeta;
+        this.m0ref = overlay.m0ref;
+        this.alphas = overlay.alphas;
+        this.betas = overlay.betas;
+        this.rhos = overlay.rhos;
+        this.radPatP = overlay.radPatP;
+        this.radPatS = overlay.radPatS;
+        this.alphaR = overlay.alphaR;
+        this.betaR = overlay.betaR;
+        this.rhor = overlay.rhor;
+        return this;
     }
 
     @Override
@@ -133,12 +150,8 @@ public class MdacParametersFI {
         this.id = id;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return this.version;
-    }
-
-    public void setVersion(Long version) {
-        this.version = version;
     }
 
     public double getSigma() {
@@ -288,25 +301,5 @@ public class MdacParametersFI {
                 + ", rhor="
                 + rhor
                 + "]";
-    }
-
-    public MdacParametersFI mergeNonNullOrEmptyFields(MdacParametersFI overlay) {
-
-        this.sigma = overlay.sigma;
-        this.delSigma = overlay.delSigma;
-        this.psi = overlay.psi;
-        this.delPsi = overlay.delPsi;
-        this.zeta = overlay.zeta;
-        this.m0ref = overlay.m0ref;
-        this.alphas = overlay.alphas;
-        this.betas = overlay.betas;
-        this.rhos = overlay.rhos;
-        this.radPatP = overlay.radPatP;
-        this.radPatS = overlay.radPatS;
-        this.alphaR = overlay.alphaR;
-        this.betaR = overlay.betaR;
-        this.rhor = overlay.rhor;
-
-        return this;
     }
 }

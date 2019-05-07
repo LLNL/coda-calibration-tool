@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
-import io.springlets.web.NotFoundException;
 
 @RestController
 @RequestMapping(value = "/api/v1/single-waveform", name = "WaveformsItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -56,11 +55,11 @@ public class WaveformsItemJsonController {
     public Waveform getWaveform(@PathVariable("id") Long id) {
         Waveform waveform = waveformService.findOne(id);
         if (waveform == null) {
-            throw new NotFoundException(String.format("Waveform with identifier '%s' not found", id));
+            throw new IllegalStateException(String.format("Waveform with identifier '%s' not found", id));
         }
         return waveform;
     }
-    
+
     /**
      * 
      * @param storedWaveform
@@ -70,12 +69,10 @@ public class WaveformsItemJsonController {
      */
     @PostMapping(name = "update")
     public ResponseEntity<?> update(@Valid @RequestBody Waveform waveform, BindingResult result) {
-
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
-
-        Waveform wave = getWaveformService().save(waveform);
+        Waveform wave = getWaveformService().update(waveform);
         return ResponseEntity.ok(wave);
     }
 

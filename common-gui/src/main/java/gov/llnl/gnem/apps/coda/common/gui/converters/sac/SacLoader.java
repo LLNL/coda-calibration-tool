@@ -15,7 +15,7 @@
 package gov.llnl.gnem.apps.coda.common.gui.converters.sac;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -107,7 +107,10 @@ public class SacLoader implements FileToWaveformConverter {
             }
             String stationName = headerResult.getResultPayload().orElse(UNKNOWN_VAL);
 
-            TimeT originTime = header.getOriginTime() != null ? header.getOriginTime() : header.getReferenceTime();
+            TimeT originTime = header.getOriginTime();
+            if (originTime == null) {
+                originTime = header.getReferenceTime();
+            }
             if (originTime == null) {
                 return exceptionalResult(new LightweightIllegalStateException("Both reference time and origin time may not be null!"));
             }
@@ -203,7 +206,7 @@ public class SacLoader implements FileToWaveformConverter {
             double sampleRate = header.delta > 0 ? 1.0 / header.delta : 1.0;
             Sequence sequence = reader.readSequence(header.npts);
             float[] rawVals = sequence.getArray();
-            Double[] segment = new Double[rawVals.length];
+            double[] segment = new double[rawVals.length];
             try {
                 IntStream.range(0, rawVals.length).forEach(index -> {
                     segment[index] = Double.valueOf(rawVals[index]);
@@ -238,7 +241,7 @@ public class SacLoader implements FileToWaveformConverter {
                                               .setSegmentUnits(dataUnits)
                                               .setSampleRate(sampleRate)
                                               .setAssociatedPicks(getPicksFromHeader(header)));
-        } catch (FileNotFoundException | NegativeArraySizeException | IllegalStateException e) {
+        } catch (NegativeArraySizeException | IllegalStateException | IOException e) {
             return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable. %s", fileName, e.getMessage()), e));
         } finally {
             if (reader != null) {
@@ -353,10 +356,14 @@ public class SacLoader implements FileToWaveformConverter {
     public String getOrCreateEvid(SACHeader header) {
         int evid = 0;
         Double time = 0d;
-        if (header.getOriginTime() != null) {
-            time = header.getOriginTime().getEpochTime();
-        } else if (header.getReferenceTime() != null) {
-            time = header.getReferenceTime().getEpochTime();
+        TimeT relTime = header.getOriginTime();
+        if (relTime != null) {
+            time = relTime.getEpochTime();
+        } else {
+            relTime = header.getReferenceTime();
+            if (relTime != null) {
+                time = relTime.getEpochTime();
+            }
         }
         evid = createJDateMinuteResolutionFromEpoch(time);
         return Integer.toString(evid);

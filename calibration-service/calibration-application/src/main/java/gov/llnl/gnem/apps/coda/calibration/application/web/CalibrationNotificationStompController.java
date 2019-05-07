@@ -22,6 +22,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.messaging.BandParametersDataCha
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.MdacDataChangeEvent;
 import gov.llnl.gnem.apps.coda.common.application.web.TypingMessageTemplate;
+import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import gov.llnl.gnem.apps.coda.common.service.api.Listener;
 import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 
@@ -32,39 +33,22 @@ public class CalibrationNotificationStompController {
     public CalibrationNotificationStompController(SimpMessagingTemplate template, NotificationService notificationService) {
         final TypingMessageTemplate typingTemplate = new TypingMessageTemplate(template);
 
-        notificationService.register(new Listener<CalibrationStatusEvent>() {
+        registerCalEvent(notificationService, typingTemplate, CalibrationStatusEvent.class);
+        registerCalEvent(notificationService, typingTemplate, MdacDataChangeEvent.class);
+        registerCalEvent(notificationService, typingTemplate, BandParametersDataChangeEvent.class);
+        registerCalEvent(notificationService, typingTemplate, WaveformChangeEvent.class);
+    }
+
+    private <T> void registerCalEvent(final NotificationService notificationService, final TypingMessageTemplate typingTemplate, Class<T> clazz) {
+        notificationService.register(new Listener<T>() {
             @Override
-            public void apply(CalibrationStatusEvent event) {
+            public void apply(T event) {
                 typingTemplate.convertAndSend("/topic/calibration-events", event);
             }
 
             @Override
-            public Class<CalibrationStatusEvent> getType() {
-                return CalibrationStatusEvent.class;
-            }
-        });
-
-        notificationService.register(new Listener<MdacDataChangeEvent>() {
-            @Override
-            public void apply(MdacDataChangeEvent event) {
-                typingTemplate.convertAndSend("/topic/calibration-events", event);
-            }
-
-            @Override
-            public Class<MdacDataChangeEvent> getType() {
-                return MdacDataChangeEvent.class;
-            }
-        });
-
-        notificationService.register(new Listener<BandParametersDataChangeEvent>() {
-            @Override
-            public void apply(BandParametersDataChangeEvent event) {
-                typingTemplate.convertAndSend("/topic/calibration-events", event);
-            }
-
-            @Override
-            public Class<BandParametersDataChangeEvent> getType() {
-                return BandParametersDataChangeEvent.class;
+            public Class<T> getType() {
+                return clazz;
             }
         });
     }

@@ -87,7 +87,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         //Result
         Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> siteCorrections = new HashMap<>();
 
-        //0) Determine if we have a RefMW in the dataset with a GT stress drop
+        //0) Determine if we have a RefMW in the dataset with a GT stress
         //0-1A) If yes then omit everything above the corner frequency for MDAC model only events
         //0-1B) Add it to the GT spectra event map
         //0-1C) Weight the Mw fit for that event 1.0 at all bands
@@ -107,11 +107,8 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                     if (refMw != null) {
                         double mw = refMw.getRefMw();
                         MdacParametersFI mdacFiEntry = new MdacParametersFI(mdacFI);
-                        if (refMw.getStressDropInMpa() != null && refMw.getStressDropInMpa() != 0.0) {
-                            // If we know a MPA stress drop for this reference
-                            // event we want to use stress instead of apparent
-                            // stress so we set Psi == 0.0 to use Sigma as stress drop
-                            mdacFiEntry.setSigma(refMw.getStressDropInMpa());
+                        if (refMw.getRefApparentStressInMpa() != null && refMw.getRefApparentStressInMpa() != 0.0) {
+                            mdacFiEntry.setSigma(refMw.getRefApparentStressInMpa());
                             mdacFiEntry.setPsi(0.0);
                             weightFunctionMapByEvent.put(evid, this::noWeights);
                         }

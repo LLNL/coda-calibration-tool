@@ -43,7 +43,17 @@ public class ShapeMeasurementLocalClient implements ShapeMeasurementClient {
     }
 
     @Override
+    public Flux<ShapeMeasurement> getMeasuredShapesMetadata() {
+        return Flux.fromIterable(service.findAllMetadataOnly()).map(md -> new ShapeMeasurement(md)).onErrorReturn(new ShapeMeasurement());
+    }
+
+    @Override
     public Mono<ShapeMeasurement> getMeasuredShape(Long waveformId) {
-        return Mono.just(Optional.ofNullable(service.findOneByWaveformId(waveformId)).orElse(new ShapeMeasurement())).onErrorReturn(new ShapeMeasurement());
+        return Mono.just(Optional.ofNullable(service.findOneByWaveformId(waveformId)).orElseGet(() -> new ShapeMeasurement())).onErrorReturn(new ShapeMeasurement());
+    }
+
+    @Override
+    public Mono<ShapeMeasurement> getMeasuredShapeMetadata(Long waveformId) {
+        return Mono.just(service.findOneMetadataByWaveformId(waveformId)).map(md -> new ShapeMeasurement(md)).onErrorReturn(new ShapeMeasurement());
     }
 }

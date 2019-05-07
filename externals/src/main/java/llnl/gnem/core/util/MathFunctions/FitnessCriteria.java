@@ -37,8 +37,7 @@ public class FitnessCriteria {
      * @return
      */
     public static float[] Differential(float[] data, float[] reference) {
-        //if (data.length != reference.length)       TODO encountering an error where one trace is a single element longer than the other
-        //    return Float.MAX_VALUE;
+
         int minnpts = (data.length < reference.length) ? data.length : reference.length; // find the number of points in the shorter trace
 
         float[] Difference = new float[minnpts];// the sum of the squares of the differences (data - reference)
@@ -62,8 +61,6 @@ public class FitnessCriteria {
      * @return the sum of the squares of the differences
      */
     public static Double SumSquareDifference(double[] data, double[] reference) {
-        //if (data.length != reference.length)       TODO encountering an error where one trace is a single element longer than the other
-        //    return Float.MAX_VALUE;
         int minnpts = (data.length < reference.length) ? data.length : reference.length; // find the number of points in the shorter trace
 
         Double SumSquareDifference = 0.;// the sum of the squares of the differences (data - reference)
@@ -87,8 +84,6 @@ public class FitnessCriteria {
      * @return the sum of the squares of the differences
      */
     public static Double SumSquareDifference(float[] data, float[] reference) {
-        //if (data.length != reference.length)       TODO encountering an error where one trace is a single element longer than the other
-        //    return Float.MAX_VALUE;
         int minnpts = (data.length < reference.length) ? data.length : reference.length; // find the number of points in the shorter trace
 
         Double SumSquareDifference = 0.;// the sum of the squares of the differences (data - reference)
@@ -145,8 +140,6 @@ public class FitnessCriteria {
      * @return the RMSD of the two series
      */
     public static Double RMSD(float[] data, float[] reference) {
-        //if (data.length != reference.length)       TODO encountering an error where one trace is a single element longer than the other
-        //    return Float.MAX_VALUE;
         int minnpts = (data.length < reference.length) ? data.length : reference.length; // find the number of points in the shorter trace
 
         Double SumSquareDifference = SumSquareDifference(data, reference);
@@ -195,9 +188,6 @@ public class FitnessCriteria {
      * @return a single float measure of the RMS fit
      */
     public static Double CVRMSD(float[] data, float[] reference) {
-        //if (data.length != reference.length)       TODO encountering an error where one trace is a single element longer than the other due to measurement limits
-        //    return Float.MAX_VALUE;
-
         int minnpts = (data.length < reference.length) ? data.length : reference.length; // find the number of points in the shorter trace
 
         if (minnpts <= 0) {
@@ -227,8 +217,6 @@ public class FitnessCriteria {
      * @return a single double valued measure of the RMS fit
      */
     public static Double CVRMSD(double[] data, double[] reference) {
-        //if (data.length != reference.length)    TODO encountering an error where one trace is a single element longer than the other
-        //    return Double.MAX_VALUE;
         int minnpts = (data.length < reference.length) ? data.length : reference.length; // find the number of points in the shorter trace
 
         if (minnpts <= 0) {
@@ -294,8 +282,6 @@ public class FitnessCriteria {
      * @return a single float measure of the MD fit
      */
     public static Float MeanDifference(float[] data, float[] reference) {
-        //if (data.length != reference.length)    TODO encountering an error where one trace is a single element longer than the other
-        //    return Double.MAX_VALUE;
         int minnpts = (data.length < reference.length) ? data.length : reference.length; // find the number of points in the shorter trace
 
         if (minnpts <= 0) {

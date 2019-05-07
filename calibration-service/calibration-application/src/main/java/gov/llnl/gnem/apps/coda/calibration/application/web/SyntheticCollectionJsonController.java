@@ -38,7 +38,6 @@ import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticService;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
-import io.springlets.web.NotFoundException;
 
 @RestController
 @RequestMapping(value = "/api/v1/synthetics", name = "SyntheticCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -71,7 +70,7 @@ public class SyntheticCollectionJsonController {
         if (!data.isEmpty()) {
             return ResponseEntity.ok().body(data);
         } else {
-            throw new NotFoundException(String.format("SyntheticCoda with identifiers '%s' not found", ids));
+            throw new IllegalStateException(String.format("SyntheticCoda with identifiers '%s' not found", ids));
         }
     }
 
@@ -81,7 +80,7 @@ public class SyntheticCollectionJsonController {
         if (synthetic == null) {
             synthetic = syntheticService.findOneByWaveformId(id);
             if (synthetic == null) {
-                throw new NotFoundException(String.format("SyntheticCoda with identifier '%s' not found", id));
+                throw new IllegalStateException(String.format("SyntheticCoda with identifier '%s' not found", id));
             }
         }
         return ResponseEntity.ok().body(synthetic);

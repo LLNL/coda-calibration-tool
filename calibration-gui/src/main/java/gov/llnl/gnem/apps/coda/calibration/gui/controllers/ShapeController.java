@@ -17,6 +17,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,15 +41,18 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementC
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
@@ -59,9 +63,14 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.MenuItem;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.transform.Affine;
 
 @Component
 public class ShapeController implements MapListeningController, RefreshableController {
@@ -79,10 +88,13 @@ public class ShapeController implements MapListeningController, RefreshableContr
     private static final int XAXIS_MIN = 0;
     private static final int XAXIS_MAX = 5000;
     private static final double LINE_SEGMENTS = 250.0;
+    private static final double SCALE_IN = 1.5;
+    private static final double SCALE_OUT = 0.5;
 
     private Map<FrequencyBand, List<PeakVelocityMeasurement>> velocityDistancePairsFreqMap = new HashMap<>();
     private Map<FrequencyBand, List<ShapeMeasurement>> shapeDistancePairsFreqMap = new HashMap<>();
     private Map<FrequencyBand, SharedFrequencyBandParameters> modelCurveMap = new TreeMap<>();
+    private Map<Long, Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>>> waveformIdMapping = new HashMap<>();
     private EventStaFreqStringComparator eventStaFreqComparator = new EventStaFreqStringComparator();
 
     @FXML
@@ -106,6 +118,7 @@ public class ShapeController implements MapListeningController, RefreshableContr
     private ParameterClient paramClient;
     private PeakVelocityClient velocityClient;
     private ShapeMeasurementClient shapeClient;
+    private WaveformClient waveformClient;
     private NumberFormat dfmt = NumberFormatFactory.twoDecimalOneLeadingZero();
 
     private ObservableList<Data<Number, Number>> modelData = FXCollections.observableArrayList();
@@ -126,12 +139,17 @@ public class ShapeController implements MapListeningController, RefreshableContr
     private final BiConsumer<Boolean, String> eventSelectionCallback;
     private final BiConsumer<Boolean, String> stationSelectionCallback;
     private FrequencyBand selectedBand;
+    private MenuItem exclude;
+    private MenuItem include;
+    private ContextMenu menu;
 
     @Autowired
-    private ShapeController(ParameterClient paramClient, PeakVelocityClient velocityClient, ShapeMeasurementClient shapeClient, GeoMap map, MapPlottingUtilities iconFactory, EventBus bus) {
+    private ShapeController(ParameterClient paramClient, PeakVelocityClient velocityClient, ShapeMeasurementClient shapeClient, WaveformClient waveformClient, GeoMap map,
+            MapPlottingUtilities iconFactory, EventBus bus) {
         this.paramClient = paramClient;
         this.velocityClient = velocityClient;
         this.shapeClient = shapeClient;
+        this.waveformClient = waveformClient;
         this.bus = bus;
         this.mapImpl = map;
         this.iconFactory = iconFactory;
@@ -182,7 +200,6 @@ public class ShapeController implements MapListeningController, RefreshableContr
 
     @FXML
     public void initialize() {
-
         mainFitPlot.setAnimated(false);
 
         yAxis.setAutoRanging(false);
@@ -220,8 +237,40 @@ public class ShapeController implements MapListeningController, RefreshableContr
         mainFitPlot.setData(series);
         mainFitPlot.setLegendVisible(false);
         modelCurveSeries.getNode().setMouseTransparent(true);
+        modelCurveSeries.getNode().toFront();
+
         selectedSeries.getNode().setMouseTransparent(true);
         highlightedSeries.getNode().setMouseTransparent(true);
+
+        mainFitPlot.addEventHandler(MouseEvent.MOUSE_CLICKED, (evt) -> {
+            if (MouseButton.SECONDARY != evt.getButton()) {
+                menu.hide();
+            }
+        });
+
+        final Affine scaleTrans = new Affine();
+        mainFitPlot.getTransforms().add(scaleTrans);
+
+        mainFitPlot.setOnScroll(new EventHandler<ScrollEvent>() {
+            @Override
+            public void handle(ScrollEvent event) {
+                if (event.getDeltaY() < 0) {
+                    if (mainFitPlot.getScaleX() * SCALE_OUT < 1.0) {
+                        scaleTrans.setToIdentity();
+                    } else {
+                        scaleTrans.appendScale(SCALE_OUT, SCALE_OUT, event.getX(), event.getY());
+                    }
+                } else {
+                    scaleTrans.appendScale(SCALE_IN, SCALE_IN, event.getX(), event.getY());
+                }
+            }
+        });
+
+        menu = new ContextMenu();
+        include = new MenuItem("Include Selected");
+        menu.getItems().add(include);
+        exclude = new MenuItem("Exclude Selected");
+        menu.getItems().add(exclude);
     }
 
     private ListCell<FrequencyBand> getFBCell() {
@@ -289,7 +338,13 @@ public class ShapeController implements MapListeningController, RefreshableContr
             Function<FrequencyBand, List<ShapeMeasurement>> valueSupplier = createValueSupplier(shapeDistancePairsFreqMap);
             Function<ShapeMeasurement, Waveform> mapFunc = ShapeMeasurement::getWaveform;
             mapValues(selectedFrequency, valueSupplier, mapFunc);
-            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getMeasuredGamma()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer, mapFunc);
+            plot(
+                    selectedFrequency,
+                        valueSupplier,
+                        val -> new Data<>(val.getDistance(), val.getMeasuredGamma()),
+                        (data, val) -> clickEventHandler(data, val.getWaveform()),
+                        curvePointProducer,
+                        mapFunc);
         }
     }
 
@@ -302,7 +357,7 @@ public class ShapeController implements MapListeningController, RefreshableContr
             Function<FrequencyBand, List<ShapeMeasurement>> valueSupplier = createValueSupplier(shapeDistancePairsFreqMap);
             Function<ShapeMeasurement, Waveform> mapFunc = ShapeMeasurement::getWaveform;
             mapValues(selectedFrequency, valueSupplier, mapFunc);
-            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getMeasuredBeta()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer, mapFunc);
+            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getMeasuredBeta()), (data, val) -> clickEventHandler(data, val.getWaveform()), curvePointProducer, mapFunc);
         }
     }
 
@@ -315,7 +370,47 @@ public class ShapeController implements MapListeningController, RefreshableContr
             Function<FrequencyBand, List<PeakVelocityMeasurement>> valueSupplier = createValueSupplier(velocityDistancePairsFreqMap);
             Function<PeakVelocityMeasurement, Waveform> mapFunc = PeakVelocityMeasurement::getWaveform;
             mapValues(selectedFrequency, valueSupplier, mapFunc);
-            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getVelocity()), val -> showWaveformPopup(val.getWaveform()), curvePointProducer, mapFunc);
+            plot(selectedFrequency, valueSupplier, val -> new Data<>(val.getDistance(), val.getVelocity()), (data, val) -> clickEventHandler(data, val.getWaveform()), curvePointProducer, mapFunc);
+        }
+    }
+
+    private EventHandler<Event> clickEventHandler(Data<Number, Number> data, Waveform waveform) {
+        return event -> {
+            if (event instanceof MouseEvent) {
+                MouseEvent evt = (MouseEvent) event;
+                if (MouseButton.PRIMARY == evt.getButton()) {
+                    showWaveformPopup(waveform);
+                } else if (MouseButton.SECONDARY == evt.getButton()) {
+                    showContextMenu(data, waveform, evt);
+                }
+            }
+        };
+    }
+
+    private void showContextMenu(Data<Number, Number> data, Waveform waveform, MouseEvent t) {
+        include.setOnAction(evt -> includeWaveforms(data, waveform));
+        exclude.setOnAction(evt -> excludeWaveforms(data, waveform));
+        menu.show(mainFitPlot, t.getScreenX(), t.getScreenY());
+    }
+
+    private void excludeWaveforms(Data<Number, Number> data, Waveform waveform) {
+        setActive(data, waveform, false);
+    }
+
+    private void includeWaveforms(Data<Number, Number> data, Waveform waveform) {
+        setActive(data, waveform, true);
+    }
+
+    private void setActive(Data<Number, Number> data, Waveform waveform, boolean active) {
+        if (waveformClient != null && waveform != null && waveform.getId() != null) {
+            waveformClient.setWaveformsActiveByIds(Collections.singletonList(waveform.getId()), active).subscribe(s -> {
+                Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>> pair = waveformIdMapping.get(waveform.getId());
+                if (pair != null) {
+                    pair.getLeft().forEach(v -> v.getWaveform().setActive(active));
+                    pair.getRight().forEach(v -> v.getWaveform().setActive(active));
+                    Platform.runLater(() -> refreshView());
+                }
+            });
         }
     }
 
@@ -326,7 +421,7 @@ public class ShapeController implements MapListeningController, RefreshableContr
     private <T> Function<FrequencyBand, List<T>> createValueSupplier(Map<FrequencyBand, List<T>> valueMap) {
         Function<FrequencyBand, List<T>> valueSupplier;
         if (valueMap != null) {
-            valueSupplier = freq -> Optional.ofNullable(valueMap.get(freq)).orElse(new ArrayList<>(0));
+            valueSupplier = freq -> Optional.ofNullable(valueMap.get(freq)).orElseGet(() -> new ArrayList<>(0));
         } else {
             valueSupplier = freq -> new ArrayList<>(0);
         }
@@ -343,7 +438,7 @@ public class ShapeController implements MapListeningController, RefreshableContr
     }
 
     private <T> void plot(final FrequencyBand selectedFrequency, Function<FrequencyBand, List<T>> valueSupplier, Function<T, Data<Number, Number>> dataPointSupplier,
-            Function<T, EventHandler<Event>> mouseClickedCallback, Function<Number, Data<Number, Number>> curveProducer, Function<T, Waveform> mapFunc) {
+            BiFunction<Data<Number, Number>, T, EventHandler<Event>> mouseClickedCallback, Function<Number, Data<Number, Number>> curveProducer, Function<T, Waveform> mapFunc) {
         if (selectedFrequency != null) {
             pointMap.clear();
             modelData.clear();
@@ -360,21 +455,30 @@ public class ShapeController implements MapListeningController, RefreshableContr
                 Data<Number, Number> data = dataPointSupplier.apply(val);
                 pointData.add(data);
                 if (data.getXValue().doubleValue() > maxX.get()) {
-                    maxX.set(data.getXValue().intValue());
+                    maxX.set(Integer.valueOf((int) (data.getXValue().doubleValue() * 1.1)));
                 }
                 if (data.getXValue().doubleValue() < minX.get()) {
                     minX.set(data.getXValue().intValue());
                 }
 
-                if (data.getXValue().doubleValue() > maxY.get()) {
+                if (data.getYValue().doubleValue() > maxY.get()) {
                     maxY.set(data.getYValue().doubleValue());
                 }
                 if (data.getYValue().doubleValue() < minY.get()) {
                     minY.set(data.getYValue().doubleValue());
                 }
 
-                data.getNode().addEventHandler(MouseEvent.MOUSE_CLICKED, mouseClickedCallback.apply(val));
-                data.getNode().toBack();
+                data.getNode().addEventHandler(MouseEvent.MOUSE_CLICKED, mouseClickedCallback.apply(data, val));
+                data.extraValueProperty().addListener((obs, o, n) -> {
+                    if (n instanceof Boolean && data != null && data.getNode() != null) {
+                        if ((Boolean) n) {
+                            data.getNode().setStyle("");
+                        } else {
+                            data.getNode().setStyle("-fx-background-color: white, gray;");
+                        }
+                    }
+                });
+                data.setExtraValue(mapFunc.apply(val).isActive());
                 Waveform w = mapFunc.apply(val);
                 boolean eventExists = w != null && w.getEvent() != null && w.getEvent().getEventId() != null;
                 boolean stationExists = w != null && w.getStream() != null && w.getStream().getStation() != null && w.getStream().getStation().getStationName() != null;
@@ -407,8 +511,10 @@ public class ShapeController implements MapListeningController, RefreshableContr
                     Data<Number, Number> data = curveProducer.apply(i);
                     modelData.add(data);
                     data.getNode().setMouseTransparent(true);
+                    data.getNode().toFront();
                 }
             }
+            modelCurveSeries.getNode().toFront();
         }
     }
 
@@ -426,44 +532,49 @@ public class ShapeController implements MapListeningController, RefreshableContr
         }).collect(Collectors.toList());
     }
 
-    private EventHandler<Event> showWaveformPopup(Waveform waveform) {
-        return event -> {
-            highlightedData.clear();
-            List<Data<Number, Number>> selection = pointMap.get(waveform.getEvent().getEventId() + waveform.getStream().getStation().getStationName());
-            if (selection != null && selection.size() == 1) {
-                highlightedData.add(new Data<Number, Number>(selection.get(0).getXValue(), selection.get(0).getYValue()));
-                highlightedData.forEach(x -> x.getNode().setMouseTransparent(true));
-            }
-            bus.post(new WaveformSelectionEvent(waveform.getId()));
-        };
+    private void showWaveformPopup(Waveform waveform) {
+        highlightedData.clear();
+        List<Data<Number, Number>> selection = pointMap.get(waveform.getEvent().getEventId() + waveform.getStream().getStation().getStationName());
+        if (selection != null && selection.size() == 1) {
+            highlightedData.add(new Data<Number, Number>(selection.get(0).getXValue(), selection.get(0).getYValue()));
+            highlightedData.forEach(x -> x.getNode().setMouseTransparent(true));
+        }
+        bus.post(new WaveformSelectionEvent(waveform.getId()));
     }
 
     private void reloadData() {
         velocityDistancePairsFreqMap.clear();
         shapeDistancePairsFreqMap.clear();
+        waveformIdMapping.clear();
         modelCurveMap.clear();
 
         frequencyBandCombo.getItems().clear();
 
         paramClient.getSharedFrequencyBandParameters().subscribe(sfb -> modelCurveMap.put(new FrequencyBand(sfb.getLowFrequency(), sfb.getHighFrequency()), sfb));
         velocityDistancePairsFreqMap.putAll(
-                velocityClient.getMeasuredPeakVelocities()
+                velocityClient.getMeasuredPeakVelocitiesMetadata()
                               .toStream()
                               .filter(Objects::nonNull)
                               .filter(pvm -> pvm.getWaveform() != null)
+                              .peek(pvm -> waveformIdMapping.computeIfAbsent(pvm.getWaveform().getId(), k -> getMapping(k)).getLeft().add(pvm))
                               .collect(Collectors.groupingBy(pvm -> new FrequencyBand(pvm.getWaveform().getLowFrequency(), pvm.getWaveform().getHighFrequency()))));
 
         shapeDistancePairsFreqMap.putAll(
-                shapeClient.getMeasuredShapes()
+                shapeClient.getMeasuredShapesMetadata()
                            .toStream()
                            .filter(Objects::nonNull)
                            .filter(shape -> shape.getWaveform() != null)
+                           .peek(shape -> waveformIdMapping.computeIfAbsent(shape.getWaveform().getId(), k -> getMapping(k)).getRight().add(shape))
                            .collect(Collectors.groupingBy(shape -> new FrequencyBand(shape.getWaveform().getLowFrequency(), shape.getWaveform().getHighFrequency()))));
 
         frequencyBandCombo.getItems().addAll(modelCurveMap.keySet());
         frequencyBandCombo.getSelectionModel().selectFirst();
 
         refreshView();
+    }
+
+    private Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>> getMapping(Long key) {
+        return new Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>>(new ArrayList<PeakVelocityMeasurement>(), new ArrayList<ShapeMeasurement>());
     }
 
     @Override

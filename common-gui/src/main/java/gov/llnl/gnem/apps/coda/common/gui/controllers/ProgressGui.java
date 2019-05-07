@@ -85,7 +85,7 @@ public class ProgressGui {
                                     super.setGraphic(null);
                                 } else if (item instanceof Node) {
                                     super.setText(null);
-                                    super.setGraphic((Node) item);
+                                    super.setGraphic(item);
                                 }
                             }
                         };

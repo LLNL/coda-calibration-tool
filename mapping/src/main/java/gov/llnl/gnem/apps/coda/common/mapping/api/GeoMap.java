@@ -15,7 +15,9 @@
 package gov.llnl.gnem.apps.coda.common.mapping.api;
 
 import java.util.Collection;
+import java.util.function.Consumer;
 
+import gov.llnl.gnem.apps.coda.common.mapping.MapCallbackEvent;
 import gov.llnl.gnem.apps.coda.common.mapping.WMSLayerDescriptor;
 
 public interface GeoMap {
@@ -40,4 +42,9 @@ public interface GeoMap {
 
     public void fitViewToActiveShapes();
 
+    public void registerEventCallback(Consumer<MapCallbackEvent> callback);
+
+    public void removeEventCallback(Consumer<MapCallbackEvent> callback);
+
+    public void show();
 }

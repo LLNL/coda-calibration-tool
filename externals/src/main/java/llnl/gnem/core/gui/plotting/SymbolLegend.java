@@ -21,7 +21,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.util.ArrayList;
+import java.util.List;
 
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
 import llnl.gnem.core.gui.plotting.plotobject.Symbol;
@@ -33,7 +33,7 @@ import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
  */
 public class SymbolLegend extends PlotObject {
 
-    private ArrayList<SymbolTextPair> legendEntries;
+    private List<SymbolTextPair> legendEntries;
     private String fontName;
     private double fontSize;
     private HorizPinEdge horAlign;
@@ -41,7 +41,7 @@ public class SymbolLegend extends PlotObject {
     private double xOffset;
     private double yOffset;
 
-    public SymbolLegend(ArrayList<SymbolTextPair> entries, String fontName, double fontSize, HorizPinEdge hAlign, VertPinEdge vAlign, double xOff, double yOff) {
+    public SymbolLegend(List<SymbolTextPair> entries, String fontName, double fontSize, HorizPinEdge hAlign, VertPinEdge vAlign, double xOff, double yOff) {
         this.legendEntries = entries;
         this.fontName = fontName;
         this.fontSize = fontSize;
@@ -106,7 +106,7 @@ public class SymbolLegend extends PlotObject {
             int advance = fm.stringWidth(a_Text.getText());
             maxlen = Math.max(maxlen, advance);
         }
-        double minLineLen = 15.0;
+        double minLineLen = 8.0;
         // millimeters
         return maxlen + owner.getUnitsMgr().getHorizUnitsToPixels(minLineLen) + 5;
     }

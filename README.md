@@ -1,7 +1,7 @@
 ![Livermore logo](llnl-logo.gif)
 
 The `Coda Calibration Tool` (CCT) is a Java based application for calibrating 1D shear wave coda measurement models to observed data using a much smaller set of reference MWs calculated from other means (waveform modeling, etc.). 
-<br/>These calibrated measurement models can then be used in other tools to generate coda MW measurements, source spectra, estimated stress drop, and other useful measurements against the rest of the events and any new data collected in the calibrated region.
+<br/>These calibrated measurement models can then be used in other tools to generate coda MW measurements, source spectra, estimated stress, and other useful measurements against the rest of the events and any new data collected in the calibrated region.
 
 > ***<sub>note</sub>*** <br/>
 > The `Coda Calibration Tool` currently only does calibration; it requires data to be pre-processed for loading using other tools. 
@@ -97,7 +97,7 @@ As of 1.0, CCT is capable of loading four basic file types
    A simple space delimited text file of format:
 
    ```text
-   EVID MW [STRESS_DROP_IN_MPA|0.0]
+   EVID MW [APPARENT_STRESS_IN_MPA|0.0]
    (e.g. 999999 5.1 0.0)
    ```
    > ***<sub>note</sub>*** <br/>

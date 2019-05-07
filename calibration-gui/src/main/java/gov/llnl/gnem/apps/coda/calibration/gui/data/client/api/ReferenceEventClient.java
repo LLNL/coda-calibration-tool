@@ -18,6 +18,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -33,4 +34,6 @@ public interface ReferenceEventClient {
     public Mono<String> postReferenceEvents(List<ReferenceMwParameters> refEvents) throws JsonProcessingException;
 
     public Mono<Event> getEvent(String eventId);
+
+    public Flux<MeasuredMwDetails> getMeasuredEventDetails();
 }

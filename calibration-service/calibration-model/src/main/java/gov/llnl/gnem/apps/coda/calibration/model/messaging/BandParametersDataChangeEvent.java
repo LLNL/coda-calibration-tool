@@ -40,7 +40,7 @@ public class BandParametersDataChangeEvent {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(id).append("\"");
+        builder.append("\"").append(id).append('\"');
         return builder.toString();
     }
 

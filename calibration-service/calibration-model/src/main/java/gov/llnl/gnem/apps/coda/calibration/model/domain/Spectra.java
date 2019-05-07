@@ -22,7 +22,7 @@ import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 public class Spectra {
 
     private List<java.awt.geom.Point2D.Double> xyVals;
-    private double stressDrop = -1;
+    private double apparentStress = -1;
     private double mw = -1;
     private SPECTRA_TYPES type;
 
@@ -31,16 +31,16 @@ public class Spectra {
      *            List of java.awt.geom.Point2D.Double entries representing X, Y
      *            points
      * @param mw
-     * @param stressDrop
+     * @param stress
      */
-    public Spectra(SPECTRA_TYPES type, List<java.awt.geom.Point2D.Double> xyVals, Double mw, Double stressDrop) {
+    public Spectra(SPECTRA_TYPES type, List<java.awt.geom.Point2D.Double> xyVals, Double mw, Double stress) {
         this.type = type;
         this.xyVals = xyVals;
         if (mw != null) {
             this.mw = mw;
         }
-        if (stressDrop != null) {
-            this.stressDrop = stressDrop;
+        if (stress != null) {
+            this.apparentStress = stress;
         }
     }
 
@@ -53,8 +53,8 @@ public class Spectra {
         return xyVals;
     }
 
-    public double getStressDrop() {
-        return stressDrop;
+    public double getApparentStress() {
+        return apparentStress;
     }
 
     public double getMw() {

@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -33,6 +35,8 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class WaveformWebClient implements WaveformClient {
+
+    private static final Logger log = LoggerFactory.getLogger(WaveformWebClient.class);
 
     private WebClient client;
 
@@ -75,7 +79,24 @@ public class WaveformWebClient implements WaveformClient {
 
     @Override
     public Flux<Waveform> getAllStacks() {
-        return client.get().uri("/waveforms/query/stacks").accept(MediaType.APPLICATION_JSON).exchange().flatMapMany(response -> response.bodyToFlux(Waveform.class)).onErrorReturn(new Waveform());
+        return client.get()
+                     .uri("/waveforms/query/stacks")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(Waveform.class))
+                     .doOnError(e -> log.error(e.getMessage(), e))
+                     .onErrorReturn(new Waveform());
+    }
+
+    @Override
+    public Flux<Waveform> getAllActiveStacks() {
+        return client.get()
+                     .uri("/waveforms/query/active-stacks")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(Waveform.class))
+                     .doOnError(e -> log.error(e.getMessage(), e))
+                     .onErrorReturn(new Waveform());
     }
 
     @Override
@@ -101,6 +122,17 @@ public class WaveformWebClient implements WaveformClient {
     }
 
     @Override
+    public Flux<Waveform> getWaveformMetadataFromIds(List<Long> ids) {
+        return client.get()
+                     .uri("/waveforms/metadata/batch/{ids}", ids.toString().replaceAll("\\[|\\]", ""))
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(Waveform.class))
+                     .filter(Objects::nonNull)
+                     .onErrorReturn(new Waveform());
+    }
+
+    @Override
     public Flux<SyntheticCoda> getSyntheticsFromWaveformIds(Collection<Long> ids) {
         return client.get()
                      .uri("/synthetics/batch/{ids}", ids.toString().replaceAll("\\[|\\]", ""))
@@ -109,5 +141,38 @@ public class WaveformWebClient implements WaveformClient {
                      .flatMapMany(response -> response.bodyToFlux(SyntheticCoda.class))
                      .filter(Objects::nonNull)
                      .onErrorReturn(new SyntheticCoda());
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByIds(List<Long> selectedWaveforms, boolean active) {
+        return client.post()
+                     .uri("/waveforms/set-active/batch/" + active)
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(selectedWaveforms)
+                     .exchange()
+                     .flatMapMany(resp -> Flux.just(resp.toString()));
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByEventId(String id, boolean active) {
+        return client.post()
+                     .uri("/waveforms/set-active/by-event-id/" + active)
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(id)
+                     .exchange()
+                     .flatMapMany(resp -> Flux.just(resp.toString()));
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByStationName(String id, boolean active) {
+        return client.post()
+                     .uri("/waveforms/set-active/by-station-name/" + active)
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .syncBody(id)
+                     .exchange()
+                     .flatMapMany(resp -> Flux.just(resp.toString()));
     }
 }

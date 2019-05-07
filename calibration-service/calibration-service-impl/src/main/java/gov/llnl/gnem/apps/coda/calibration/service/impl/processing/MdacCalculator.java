@@ -48,8 +48,6 @@ public class MdacCalculator {
     double[][] wcvels;
 
     // phase specific variables
-    double logGr;
-    double logQfi;
     double F;
     double logS0;
     double wc;
@@ -203,9 +201,6 @@ public class MdacCalculator {
      * wc - the corner frequency wcp or wcs (see getCornerFrequencies).
      */
     public void initializePhaseSpecificVariables(double distance, MdacParametersPS mdacPs, MdacParametersFI mdacFi, double M0) {
-        logGr = getLogGeometricalSpreading(distance, mdacPs.getDistCrit(), mdacPs.getEta());
-        logQfi = getLogQfi(distance, mdacPs.getQ0(), mdacPs.getU0());
-
         String phase = mdacPs.getPhase();
 
         if (PICK_TYPES.PN.getPhase().equals(phase) || PICK_TYPES.PG.getPhase().equals(phase)) {

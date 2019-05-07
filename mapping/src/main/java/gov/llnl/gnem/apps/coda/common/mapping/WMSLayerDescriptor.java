@@ -108,7 +108,7 @@ public class WMSLayerDescriptor {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(url).append("\", \"").append(name).append("\", \"").append(layers).append("\"");
+        builder.append("\"").append(url).append("\", \"").append(name).append("\", \"").append(layers).append('\"');
         return builder.toString();
     }
 

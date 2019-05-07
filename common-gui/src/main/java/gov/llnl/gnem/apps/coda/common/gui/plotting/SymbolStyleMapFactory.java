@@ -42,7 +42,7 @@ public class SymbolStyleMapFactory {
      * @return A java.awt.Color object containing the color.
      * @author HughesR
      */
-    private Color getSpacedOutColour(int index, int count) {
+    private static Color getSpacedOutColour(int index, int count) {
         final float saturation = 0.95f; // Saturation
         final float brightness = 0.8f; // Brightness
         float hue = (float) index / (float) count;
@@ -89,7 +89,9 @@ public class SymbolStyleMapFactory {
         AtomicInteger i = new AtomicInteger(0);
         long keyCount = values.stream().map(v -> keyProvider.apply(v)).distinct().count();
         //Is the JIT going to do what I expect here? Let's find out...        
-        values.stream().sequential().forEach(v -> styles.putIfAbsent(keyProvider.apply(v), new PlotPoint(null, null, nextSymbol(), getSpacedOutColour(i.getAndIncrement(), (int) keyCount))));
+        values.stream()
+              .sequential()
+              .forEach(v -> styles.putIfAbsent(keyProvider.apply(v), new PlotPoint(null, null, nextSymbol(), SymbolStyleMapFactory.getSpacedOutColour(i.getAndIncrement(), (int) keyCount))));
         return styles;
     }
 }

@@ -85,7 +85,7 @@ public class EnvelopeJob {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(jobConfig).append("\", \"").append(data).append("\"");
+        builder.append("\"").append(jobConfig).append("\", \"").append(data).append('\"');
         return builder.toString();
     }
 

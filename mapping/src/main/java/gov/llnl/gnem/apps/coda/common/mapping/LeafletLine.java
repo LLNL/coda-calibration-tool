@@ -120,7 +120,7 @@ public class LeafletLine implements Line {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(id).append("\", \"").append(startLocation).append("\", \"").append(endLocation).append("\"");
+        builder.append("\"").append(id).append("\", \"").append(startLocation).append("\", \"").append(endLocation).append('\"');
         return builder.toString();
     }
 }

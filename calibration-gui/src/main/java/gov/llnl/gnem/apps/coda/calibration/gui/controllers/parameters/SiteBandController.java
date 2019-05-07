@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
-import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
+import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import javafx.beans.binding.Bindings;
@@ -86,30 +86,9 @@ public class SiteBandController {
                                       .filter(Objects::nonNull)
                                       .orElseGet(String::new)));
 
-        siteLowFreqCol.setCellValueFactory(
-                x -> Bindings.createStringBinding(
-                        () -> Optional.ofNullable(x)
-                                      .map(CellDataFeatures::getValue)
-                                      .map(SiteFrequencyBandParameters::getLowFrequency)
-                                      .filter(Objects::nonNull)
-                                      .map(dfmt2::format)
-                                      .orElseGet(String::new)));
-        siteLowFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
-
-        siteHighFreqCol.setCellValueFactory(
-                x -> Bindings.createStringBinding(
-                        () -> Optional.ofNullable(x)
-                                      .map(CellDataFeatures::getValue)
-                                      .map(SiteFrequencyBandParameters::getHighFrequency)
-                                      .filter(Objects::nonNull)
-                                      .map(dfmt2::format)
-                                      .orElseGet(String::new)));
-        siteHighFreqCol.comparatorProperty().set(new MaybeNumericStringComparator());
-
-        siteCorrectionCol.setCellValueFactory(
-                x -> Bindings.createStringBinding(
-                        () -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(SiteFrequencyBandParameters::getSiteTerm).filter(Objects::nonNull).map(dfmt2::format).orElseGet(String::new)));
-
+        CellBindingUtils.attachTextCellFactories(siteLowFreqCol, SiteFrequencyBandParameters::getLowFrequency, dfmt2);
+        CellBindingUtils.attachTextCellFactories(siteHighFreqCol, SiteFrequencyBandParameters::getHighFrequency, dfmt2);
+        CellBindingUtils.attachTextCellFactories(siteCorrectionCol, SiteFrequencyBandParameters::getSiteTerm, dfmt2);
         codaSiteTableView.setItems(siteFbData);
     }
 

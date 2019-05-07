@@ -403,8 +403,13 @@ public abstract class AbstractLine extends PlotObject {
      */
     @Override
     public String toString() {
-        StringBuilder s = new StringBuilder("Line with attributes: Color = " + color);
-        s.append(", PaintMode = ").append(Mode).append(", PenStyle = ").append(penStyle).append(", Width = ").append(_Width);
+        StringBuilder s = new StringBuilder("Line with attributes: Color = ").append(color)
+                                                                             .append(", PaintMode = ")
+                                                                             .append(Mode)
+                                                                             .append(", PenStyle = ")
+                                                                             .append(penStyle)
+                                                                             .append(", Width = ")
+                                                                             .append(_Width);
         return s.toString();
     }
 
@@ -604,8 +609,9 @@ public abstract class AbstractLine extends PlotObject {
             return;
         }
 
-        if (!plotLineSymbols)
+        if (!plotLineSymbols) {
             return;
+        }
 
         if (limitPlottedSymbols && Npts > maxSymbolsToPlot) {
             return;

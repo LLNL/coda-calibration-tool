@@ -14,8 +14,12 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
+import java.util.List;
+
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.common.service.api.BaseService;
 
 public interface MeasuredMwsService extends BaseService<MeasuredMwParameters, Long> {
+    public List<MeasuredMwDetails> findAllDetails();
 }

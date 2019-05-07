@@ -41,8 +41,7 @@ public class PathCalibrationMeasurement implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @NumberFormat
     private Double initialResidual;
@@ -62,13 +61,8 @@ public class PathCalibrationMeasurement implements Serializable {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return version;
-    }
-
-    public PathCalibrationMeasurement setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public Double getInitialResidual() {

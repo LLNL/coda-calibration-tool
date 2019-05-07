@@ -103,7 +103,7 @@ public class WaveformPickServiceImpl implements WaveformPickService {
     @Transactional
     @Override
     public WaveformPick save(WaveformPick entity) {
-        return waveformPickRepository.save(entity);
+        return waveformPickRepository.saveAndFlush(entity);
     }
 
     /**

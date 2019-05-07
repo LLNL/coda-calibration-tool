@@ -129,7 +129,7 @@ public class MdacParametersFiServiceImpl implements MdacParametersFiService {
             mergedEntry = mdacParametersRepository.findFirstByOrderById();
         }
         if (mergedEntry != null) {
-            mergedEntry = mergedEntry.mergeNonNullOrEmptyFields(entry);
+            mergedEntry = mergedEntry.merge(entry);
         } else {
             mergedEntry = entry;
         }

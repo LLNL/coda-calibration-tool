@@ -33,13 +33,22 @@
                 "type": "object",
                 "title": "A specific measured event entry.",
                 "required": [
-                    "eventId",
-                    "mw",
-                    "stressDropInMpa",
-                    "datetime",
-                    "latitude",
-                    "longitude"
+                    "eventId"
                 ],
+                "anyOf": [
+                    { 
+                        "required":
+                        [ 
+                            "mw"
+                        ] 
+                    },
+                    { 
+                        "required":
+                        [ 
+                            "refMw" 
+                        ] 
+                    }
+                ]                
                 "properties": {
                     "eventId": {
                         "$id": "#/properties/measured-events/entry/properties/eventId",
@@ -59,15 +68,42 @@
                             5.0
                         ]
                     },
-                    "stressDropInMpa": {
-                        "$id": "#/properties/reference-events/entry/properties/stressDropInMpa",
+                    "apparentStressInMpa": {
+                        "$id": "#/properties/reference-events/entry/properties/apparentStressInMpa",
                         "type": "number",
-                        "title": "An estimate measure of the stress drop term for this specific event.",
+                        "title": "An estimate measure of the apparent stress term for this specific event.",
                         "default": false,
                         "examples": [                            
                             0.3
                         ]
                     },
+                    "refMw": {
+                        "$id": "#/properties/reference-events/entry/properties/refMw",
+                        "type": "number",
+                        "title": "The Mw value used as a reference for this event.",
+                        "default": 0,
+                        "examples": [
+                            5.0
+                        ]
+                    },
+                    "refApparentStressInMpa": {
+                        "$id": "#/properties/reference-events/entry/properties/refApparentStressInMpa",
+                        "type": "number",
+                        "title": "A reference estimate of the apparent stress term for this specific event.",
+                        "default": false,
+                        "examples": [                            
+                            0.3
+                        ]
+                    },                
+                    "dataCount": {
+                        "$id": "#/properties/reference-events/entry/properties/dataCount",
+                        "type": "number",
+                        "title": "The number of data points used in the inversion to compute the Mw fit value. If every station contributed an entry for every frequency band this is equivalent to nSta*nBands.",
+                        "default": 0,
+                        "examples": [
+                            100
+                        ]
+                    },                        
                     "datetime": {
                         "$id": "#/properties/reference-events/entry/properties/datetime",
                         "type": "string",

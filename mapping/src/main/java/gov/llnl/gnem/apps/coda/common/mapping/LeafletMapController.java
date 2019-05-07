@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.common.mapping;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +76,7 @@ public class LeafletMapController implements GeoMap {
         });
     }
 
+    @Override
     public void show() {
         Platform.runLater(() -> {
             stage.show();
@@ -133,6 +135,16 @@ public class LeafletMapController implements GeoMap {
     }
 
     @Override
+    public void registerEventCallback(Consumer<MapCallbackEvent> callback) {
+        mapImpl.registerEventCallback(callback);
+    }
+
+    @Override
+    public void removeEventCallback(Consumer<MapCallbackEvent> callback) {
+        mapImpl.removeEventCallback(callback);
+    }
+
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
@@ -173,7 +185,7 @@ public class LeafletMapController implements GeoMap {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(view).append("\", \"").append(mapImpl).append("\"");
+        builder.append("\"").append(view).append("\", \"").append(mapImpl).append('\"');
         return builder.toString();
     }
 

@@ -27,6 +27,11 @@ package llnl.gnem.core.gui.plotting;
  */
 public class DrawingUnits {
 
+    private static final double PixelsPerHorizUnit = 72.0 / 25.4;
+    // Units are assumed to be millimeters
+    private static final double PixelsPerVertUnit = 72.0 / 25.4;
+    // Units are assumed to be millimeters
+
     /**
      * Gets the horizontal pixel equivalent of a value in millimeters for this
      * graphics context
@@ -84,9 +89,4 @@ public class DrawingUnits {
     public double getPixelsPerUnit() {
         return (PixelsPerHorizUnit + PixelsPerVertUnit) / 2;
     }
-
-    private final double PixelsPerHorizUnit = 72.0 / 25.4;
-    // Units are assumed to be millimeters
-    private final double PixelsPerVertUnit = 72.0 / 25.4;
-    // Units are assumed to be millimeters
 }

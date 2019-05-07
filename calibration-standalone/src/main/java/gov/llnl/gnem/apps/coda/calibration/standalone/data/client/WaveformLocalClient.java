@@ -47,17 +47,17 @@ public class WaveformLocalClient implements WaveformClient {
 
     @Override
     public Mono<Waveform> getWaveformFromId(Long id) {
-        return Mono.just(Optional.ofNullable(service.findOne(id)).orElse(new Waveform()));
+        return Mono.just(Optional.ofNullable(service.findOne(id)).orElseGet(() -> new Waveform()));
     }
 
     @Override
     public Mono<SyntheticCoda> getSyntheticFromWaveformId(Long id) {
-        return Mono.just(Optional.ofNullable(synthService.findOneByWaveformId(id)).orElse(new SyntheticCoda())).onErrorReturn(new SyntheticCoda());
+        return Mono.just(Optional.ofNullable(synthService.findOneByWaveformId(id)).orElseGet(() -> new SyntheticCoda())).onErrorReturn(new SyntheticCoda());
     }
 
     @Override
     public Mono<Waveform> postWaveform(Waveform segment) throws JsonProcessingException {
-        return Mono.just(Optional.ofNullable(service.update(segment)).orElse(new Waveform()));
+        return Mono.just(Optional.ofNullable(service.update(segment)).orElseGet(() -> new Waveform()));
     }
 
     @Override
@@ -67,7 +67,12 @@ public class WaveformLocalClient implements WaveformClient {
 
     @Override
     public Flux<Waveform> getAllStacks() {
-        return Flux.fromIterable(service.findAll()).onErrorReturn(new Waveform());
+        return Flux.fromIterable(service.getAllStacks()).onErrorReturn(new Waveform());
+    }
+
+    @Override
+    public Flux<Waveform> getAllActiveStacks() {
+        return Flux.fromIterable(service.getAllActiveStacks()).onErrorReturn(new Waveform());
     }
 
     @Override
@@ -81,8 +86,28 @@ public class WaveformLocalClient implements WaveformClient {
     }
 
     @Override
+    public Flux<Waveform> getWaveformMetadataFromIds(List<Long> ids) {
+        return Flux.fromIterable(service.findAllMetadata(ids)).onErrorReturn(new Waveform());
+    }
+
+    @Override
     public Flux<SyntheticCoda> getSyntheticsFromWaveformIds(Collection<Long> ids) {
         return Flux.fromIterable(synthService.findAllByWaveformId(ids)).onErrorReturn(new SyntheticCoda());
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByIds(List<Long> selectedWaveforms, boolean active) {
+        return Flux.just(service.setActiveFlagForIds(selectedWaveforms, active).toString());
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByEventId(String id, boolean active) {
+        return Flux.just(service.setActiveFlagByEventId(id, active).toString());
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByStationName(String id, boolean active) {
+        return Flux.just(service.setActiveFlagByStationName(id, active).toString());
     }
 
 }

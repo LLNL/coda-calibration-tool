@@ -34,7 +34,6 @@ import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersFiService;
-import io.springlets.web.NotFoundException;
 
 @RestController
 @RequestMapping(value = "/api/v1/params/fi/{fiParameters}", name = "MdacParametersFiItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -59,7 +58,7 @@ public class MdacParametersFiItemJsonController {
     public MdacParametersFI getMdacParameters(@PathVariable("fiParameters") Long id) {
         MdacParametersFI fiParameters = fiParametersService.findOne(id);
         if (fiParameters == null) {
-            throw new NotFoundException(String.format("MdacParameters with identifier '%s' not found", id));
+            throw new IllegalStateException(String.format("MdacParameters with identifier '%s' not found", id));
         }
         return fiParameters;
     }

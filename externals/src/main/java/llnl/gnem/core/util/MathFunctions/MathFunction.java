@@ -63,7 +63,7 @@ public class MathFunction {
             return 0;
         } else {
             String bits = Long.toBinaryString(num);
-            int exp = bits.length() - bits.indexOf("1");
+            int exp = bits.length() - bits.indexOf('1');
             long larger = (long) Math.pow(2, exp); // next power of 2 greater than num
             long lower = (long) Math.pow(2, exp - 1); // previous power of 2 less than num
 
@@ -85,7 +85,7 @@ public class MathFunction {
             return 0;
         } else {
             String bits = Long.toBinaryString(num);
-            int exp = bits.length() - bits.indexOf("1");
+            int exp = bits.length() - bits.indexOf('1');
             return (long) Math.pow(2, exp); // next power of 2 greater than num
         }
     }

@@ -29,8 +29,10 @@ public interface WaveformClient {
     public Mono<Waveform> getWaveformFromId(Long id);
 
     public Mono<SyntheticCoda> getSyntheticFromWaveformId(Long id);
-    
+
     public Flux<Waveform> getWaveformsFromIds(Collection<Long> ids);
+
+    public Flux<Waveform> getWaveformMetadataFromIds(List<Long> ids);
 
     public Flux<SyntheticCoda> getSyntheticsFromWaveformIds(Collection<Long> ids);
 
@@ -38,7 +40,15 @@ public interface WaveformClient {
 
     public Flux<Waveform> getAllStacks();
 
+    public Flux<Waveform> getAllActiveStacks();
+
     public Flux<String> postWaveforms(Long sessionId, List<Waveform> segments);
 
     public Flux<Waveform> getUniqueEventStationMetadataForStacks();
+
+    public Flux<String> setWaveformsActiveByIds(List<Long> selectedWaveforms, boolean active);
+
+    public Flux<String> setWaveformsActiveByEventId(String id, boolean active);
+
+    public Flux<String> setWaveformsActiveByStationName(String id, boolean active);
 }

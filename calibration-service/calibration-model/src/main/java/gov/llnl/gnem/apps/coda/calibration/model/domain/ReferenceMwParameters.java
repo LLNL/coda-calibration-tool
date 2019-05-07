@@ -27,6 +27,8 @@ import javax.persistence.Version;
 
 import org.springframework.format.annotation.NumberFormat;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 @Entity
 @Table(name = "Reference_Mws", indexes = { @Index(columnList = "eventId", name = "ref_mw_event_id_index") })
 public class ReferenceMwParameters implements Serializable {
@@ -39,8 +41,7 @@ public class ReferenceMwParameters implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @Column(name = "eventId")
     private String eventId;
@@ -50,7 +51,8 @@ public class ReferenceMwParameters implements Serializable {
 
     @NumberFormat
     @Column(nullable = true)
-    private Double stressDropInMpa;
+    @JsonAlias({ "stressDropInMpa" })
+    private Double refApparentStressInMpa;
 
     public Long getId() {
         return id;
@@ -61,13 +63,8 @@ public class ReferenceMwParameters implements Serializable {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return version;
-    }
-
-    public ReferenceMwParameters setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public String getEventId() {
@@ -88,18 +85,18 @@ public class ReferenceMwParameters implements Serializable {
         return this;
     }
 
-    public Double getStressDropInMpa() {
-        return stressDropInMpa;
+    public Double getRefApparentStressInMpa() {
+        return refApparentStressInMpa;
     }
 
-    public ReferenceMwParameters setStressDropInMpa(Double stressDropInMpa) {
-        this.stressDropInMpa = stressDropInMpa;
+    public ReferenceMwParameters setRefApparentStressInMpa(Double apparentStressInMpa) {
+        this.refApparentStressInMpa = apparentStressInMpa;
         return this;
     }
 
     @Override
     public String toString() {
-        return "ReferenceMwParams [id=" + id + ", version=" + version + ", eventId=" + eventId + ", refMw=" + refMw + ", stressDropInMpa=" + stressDropInMpa + "]";
+        return "ReferenceMwParams [id=" + id + ", version=" + version + ", eventId=" + eventId + ", refMw=" + refMw + ", apparentStressInMpa=" + refApparentStressInMpa + "]";
     }
 
     @Override
@@ -110,7 +107,7 @@ public class ReferenceMwParameters implements Serializable {
         long temp;
         temp = Double.doubleToLongBits(refMw);
         result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((stressDropInMpa == null) ? 0 : stressDropInMpa.hashCode());
+        result = prime * result + ((refApparentStressInMpa == null) ? 0 : refApparentStressInMpa.hashCode());
         return result;
     }
 
@@ -136,11 +133,11 @@ public class ReferenceMwParameters implements Serializable {
         if (Double.doubleToLongBits(refMw) != Double.doubleToLongBits(other.refMw)) {
             return false;
         }
-        if (stressDropInMpa == null) {
-            if (other.stressDropInMpa != null) {
+        if (refApparentStressInMpa == null) {
+            if (other.refApparentStressInMpa != null) {
                 return false;
             }
-        } else if (!stressDropInMpa.equals(other.stressDropInMpa)) {
+        } else if (!refApparentStressInMpa.equals(other.refApparentStressInMpa)) {
             return false;
         }
         return true;
@@ -148,7 +145,7 @@ public class ReferenceMwParameters implements Serializable {
 
     public ReferenceMwParameters merge(ReferenceMwParameters overlay) {
         this.refMw = overlay.getRefMw();
-        this.stressDropInMpa = overlay.getStressDropInMpa();
+        this.refApparentStressInMpa = overlay.getRefApparentStressInMpa();
         return this;
     }
 

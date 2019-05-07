@@ -25,7 +25,7 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
 public class CalibrationProgressListener extends ProgressListener {
 
     private CalibrationStatusEvent cachedEvent;
-    private Progress progress = new Progress(1l, -1l);
+    private Progress progress = new Progress((long) CalibrationStatusEvent.Status.COMPLETE.ordinal(), 0l);
 
     public CalibrationProgressListener(EventBus bus, CalibrationStatusEvent event) {
         bus.register(this);
@@ -37,9 +37,9 @@ public class CalibrationProgressListener extends ProgressListener {
         if (cachedEvent != null && cachedEvent.getId().equals(event.getId())) {
             cachedEvent = event;
             if (cachedEvent.getStatus() == Status.COMPLETE || cachedEvent.getStatus() == Status.ERROR) {
-                progress.setCurrent(1l);
+                progress.setCurrent((long) CalibrationStatusEvent.Status.COMPLETE.ordinal());
             } else {
-                progress.setCurrent(-1l);
+                progress.setCurrent((long) cachedEvent.getStatus().ordinal());
             }
             this.setChanged();
             this.notifyObservers(progress);

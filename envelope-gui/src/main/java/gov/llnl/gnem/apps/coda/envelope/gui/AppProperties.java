@@ -15,16 +15,14 @@
 package gov.llnl.gnem.apps.coda.envelope.gui;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Component
 @ConfigurationProperties("envelope-app")
 public class AppProperties {
 
     private String baseTitle = "Envelope Creator";
     private Integer height = 900;
     private Integer width = 800;
-    private Boolean debugEnabled = false;
+    private Boolean debugEnabled = Boolean.FALSE;
 
     public Boolean getDebugEnabled() {
         return debugEnabled;

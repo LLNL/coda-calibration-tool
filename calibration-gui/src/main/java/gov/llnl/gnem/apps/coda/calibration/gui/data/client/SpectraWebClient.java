@@ -38,13 +38,24 @@ public class SpectraWebClient implements SpectraClient {
     @Override
     public Flux<SpectraMeasurement> getMeasuredSpectra() {
         return client.get()
-                     .uri("/spectra-measurements")
+                     .uri("/spectra-measurements/all")
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(SpectraMeasurement.class))
                      .onErrorReturn(new SpectraMeasurement());
     }
 
+    
+    @Override
+    public Flux<SpectraMeasurement> getMeasuredSpectraMetadata() {
+        return client.get()
+                     .uri("/spectra-measurements/metadata/all")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(SpectraMeasurement.class))
+                     .onErrorReturn(new SpectraMeasurement());
+    }
+    
     @Override
     public Mono<Spectra> getReferenceSpectra(String eventId) {
         return client.post()

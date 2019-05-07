@@ -95,10 +95,7 @@ public class Stream implements Serializable {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((bandName == null) ? 0 : bandName.hashCode());
         result = prime * result + ((channelName == null) ? 0 : channelName.hashCode());
-        result = prime * result + ((instrument == null) ? 0 : instrument.hashCode());
-        result = prime * result + ((orientation == null) ? 0 : orientation.hashCode());
         result = prime * result + ((station == null) ? 0 : station.hashCode());
         return result;
     }
@@ -115,32 +112,11 @@ public class Stream implements Serializable {
             return false;
         }
         Stream other = (Stream) obj;
-        if (bandName == null) {
-            if (other.bandName != null) {
-                return false;
-            }
-        } else if (!bandName.equals(other.bandName)) {
-            return false;
-        }
         if (channelName == null) {
             if (other.channelName != null) {
                 return false;
             }
         } else if (!channelName.equals(other.channelName)) {
-            return false;
-        }
-        if (instrument == null) {
-            if (other.instrument != null) {
-                return false;
-            }
-        } else if (!instrument.equals(other.instrument)) {
-            return false;
-        }
-        if (orientation == null) {
-            if (other.orientation != null) {
-                return false;
-            }
-        } else if (!orientation.equals(other.orientation)) {
             return false;
         }
         if (station == null) {

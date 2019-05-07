@@ -53,14 +53,14 @@ public class ReferenceEventLoader implements FileToReferenceEventConverter {
 
     public List<Result<ReferenceMwParameters>> convertFileToReferenceMwParameters(File file) {
 
-        ArrayList<Result<ReferenceMwParameters>> results = new ArrayList<>();
+        List<Result<ReferenceMwParameters>> results = new ArrayList<>();
 
         if (file == null || !file.exists() || file.isDirectory()) {
             return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable.", "NULL")));
         }
         if (!file.getName().toUpperCase(Locale.ENGLISH).endsWith(".TXT") && !file.getName().toUpperCase(Locale.ENGLISH).endsWith(".DAT")) {
-            return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file is not of a recognized format. The accepted file formats are .txt and .dat.",
-                                                                                        file.getName())));
+            return exceptionalResult(
+                    new LightweightIllegalStateException(String.format("Error parsing (%s): file is not of a recognized format. The accepted file formats are .txt and .dat.", file.getName())));
         }
 
         Pattern pattern = Pattern.compile("\\s+");
@@ -78,9 +78,9 @@ public class ReferenceEventLoader implements FileToReferenceEventConverter {
         ReferenceMwParameters refEvent = new ReferenceMwParameters();
         try {
             if (tokens.length >= 2) {
-                refEvent.setEventId(tokens[0]).setRefMw(Double.valueOf(tokens[1]));
+                refEvent.setEventId(tokens[0]).setRefMw(Double.parseDouble(tokens[1]));
                 if (tokens.length == 3 && tokens[2].matches("^[-+]?\\d+(\\.\\d+)?$")) {
-                    refEvent.setStressDropInMpa(Double.valueOf(tokens[2]));
+                    refEvent.setRefApparentStressInMpa(Double.valueOf(tokens[2]));
                 }
                 result.setSuccess(true).setResultPayload(Optional.of(refEvent));
             } else {
@@ -93,10 +93,8 @@ public class ReferenceEventLoader implements FileToReferenceEventConverter {
     }
 
     private List<Result<ReferenceMwParameters>> exceptionalResult(Exception error) {
-        ArrayList<Result<ReferenceMwParameters>> results = new ArrayList<>();
-        List<Exception> exceptions = new ArrayList<>();
-        exceptions.add(error);
-        results.add(new Result<ReferenceMwParameters>(false, exceptions, null));
+        List<Result<ReferenceMwParameters>> results = new ArrayList<>();
+        results.add(new Result<ReferenceMwParameters>(false, Collections.singletonList(error), null));
         return results;
     }
 

@@ -39,8 +39,7 @@ public class MeasuredMwParameters implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @Column(name = "eventId")
     private String eventId;
@@ -50,7 +49,9 @@ public class MeasuredMwParameters implements Serializable {
 
     @NumberFormat
     @Column(nullable = true)
-    private Double stressDropInMpa;
+    private Double apparentStressInMpa;
+
+    private int dataCount;
 
     public Long getId() {
         return id;
@@ -61,13 +62,8 @@ public class MeasuredMwParameters implements Serializable {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return version;
-    }
-
-    public MeasuredMwParameters setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public String getEventId() {
@@ -88,32 +84,44 @@ public class MeasuredMwParameters implements Serializable {
         return this;
     }
 
-    public Double getStressDropInMpa() {
-        return stressDropInMpa;
+    public Double getApparentStressInMpa() {
+        return apparentStressInMpa;
     }
 
-    public MeasuredMwParameters setStressDropInMpa(Double stressDropInMpa) {
-        this.stressDropInMpa = stressDropInMpa;
+    public MeasuredMwParameters setApparentStressInMpa(Double apparentStressInMpa) {
+        this.apparentStressInMpa = apparentStressInMpa;
         return this;
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#toString()
-     */
-    @Override
-    public String toString() {
-        return "MeasuredMwParameters [id=" + id + ", version=" + version + ", eventId=" + eventId + ", mw=" + mw + ", stressDropInMpa=" + stressDropInMpa + "]";
+    public Integer getDataCount() {
+        return dataCount;
+    }
+
+    public MeasuredMwParameters setDataCount(Integer dataCount) {
+        this.dataCount = dataCount;
+        return this;
+    }
+
+    public MeasuredMwParameters merge(MeasuredMwParameters overlay) {
+        this.mw = overlay.getMw();
+        this.apparentStressInMpa = overlay.getApparentStressInMpa();
+        this.dataCount = overlay.getDataCount();
+        return this;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((eventId == null) ? 0 : eventId.hashCode());
+        result = prime * result + ((apparentStressInMpa == null) ? 0 : apparentStressInMpa.hashCode());
         long temp;
+        temp = Double.doubleToLongBits(dataCount);
+        result = prime * result + (int) (temp ^ (temp >>> 32));
+        result = prime * result + ((eventId == null) ? 0 : eventId.hashCode());
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         temp = Double.doubleToLongBits(mw);
         result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((stressDropInMpa == null) ? 0 : stressDropInMpa.hashCode());
+        result = prime * result + ((version == null) ? 0 : version.hashCode());
         return result;
     }
 
@@ -129,6 +137,16 @@ public class MeasuredMwParameters implements Serializable {
             return false;
         }
         MeasuredMwParameters other = (MeasuredMwParameters) obj;
+        if (apparentStressInMpa == null) {
+            if (other.apparentStressInMpa != null) {
+                return false;
+            }
+        } else if (!apparentStressInMpa.equals(other.apparentStressInMpa)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(dataCount) != Double.doubleToLongBits(other.dataCount)) {
+            return false;
+        }
         if (eventId == null) {
             if (other.eventId != null) {
                 return false;
@@ -136,23 +154,43 @@ public class MeasuredMwParameters implements Serializable {
         } else if (!eventId.equals(other.eventId)) {
             return false;
         }
+        if (id == null) {
+            if (other.id != null) {
+                return false;
+            }
+        } else if (!id.equals(other.id)) {
+            return false;
+        }
         if (Double.doubleToLongBits(mw) != Double.doubleToLongBits(other.mw)) {
             return false;
         }
-        if (stressDropInMpa == null) {
-            if (other.stressDropInMpa != null) {
+        if (version == null) {
+            if (other.version != null) {
                 return false;
             }
-        } else if (!stressDropInMpa.equals(other.stressDropInMpa)) {
+        } else if (!version.equals(other.version)) {
             return false;
         }
         return true;
     }
 
-    public MeasuredMwParameters merge(MeasuredMwParameters overlay) {
-        this.mw = overlay.getMw();
-        this.stressDropInMpa = overlay.getStressDropInMpa();
-        return this;
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("MeasuredMwParameters [id=")
+               .append(id)
+               .append(", version=")
+               .append(version)
+               .append(", eventId=")
+               .append(eventId)
+               .append(", mw=")
+               .append(mw)
+               .append(", apparentStressInMpa=")
+               .append(apparentStressInMpa)
+               .append(", dataCount=")
+               .append(dataCount)
+               .append("]");
+        return builder.toString();
     }
 
 }

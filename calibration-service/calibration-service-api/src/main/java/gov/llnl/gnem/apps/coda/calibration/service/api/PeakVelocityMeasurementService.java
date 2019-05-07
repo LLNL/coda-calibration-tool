@@ -14,17 +14,18 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurementMetadata;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.api.BaseService;
 
 public interface PeakVelocityMeasurementService extends BaseService<PeakVelocityMeasurement, Long> {
 
-    public Collection<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks);
+    public Stream<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks, VelocityConfiguration velocityConfig);
 
     public List<PeakVelocityMeasurementMetadata> findAllMetadataOnly();
 

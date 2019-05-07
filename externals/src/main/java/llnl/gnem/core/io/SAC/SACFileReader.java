@@ -9,11 +9,10 @@ package llnl.gnem.core.io.SAC;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
+import java.nio.file.Files;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +29,12 @@ public class SACFileReader extends FileDataSource {
     public SACHeader header;
     public TimeT timeT;
 
-    public SACFileReader(String filename) throws FileNotFoundException {
+    public SACFileReader(String filename) throws IOException {
         this(new File(filename));
     }
 
-    public SACFileReader(File file) throws FileNotFoundException {
-        this(new FileInputStream(file));
+    public SACFileReader(File file) throws IOException {
+        this(Files.newInputStream(file.toPath()));
         path = file.getAbsolutePath();
     }
 
@@ -49,10 +48,10 @@ public class SACFileReader extends FileDataSource {
             numSamplesRemaining = totalNumSamples;
             station = (header.kstnm).trim();
             channel = (header.kcmpnm).trim();
-            samplingRate = 1.0 / ((double) header.delta);
+            samplingRate = 1.0 / (header.delta);
             timeT = new TimeT(header.nzyear, header.nzjday, header.nzhour, header.nzmin, header.nzsec, header.nzmsec);
             foff = 4 * WORDS_IN_HEADER;
-            timeT = timeT.add((double) header.b);
+            timeT = timeT.add(header.b);
             startTime = timeT.getEpochTime();
 
             if (header.checkByteSwap()) {
@@ -75,10 +74,10 @@ public class SACFileReader extends FileDataSource {
             numSamplesRemaining = totalNumSamples;
             station = (header.kstnm).trim();
             channel = (header.kcmpnm).trim();
-            samplingRate = 1.0 / ((double) header.delta);
+            samplingRate = 1.0 / (header.delta);
             timeT = new TimeT(header.nzyear, header.nzjday, header.nzhour, header.nzmin, header.nzsec, header.nzmsec);
             foff = 4 * WORDS_IN_HEADER;
-            timeT = timeT.add((double) header.b);
+            timeT = timeT.add(header.b);
             startTime = timeT.getEpochTime();
 
             if (header.checkByteSwap()) {
@@ -149,7 +148,7 @@ public class SACFileReader extends FileDataSource {
             case CSS_S4:
 
                 for (int i = 0; i < numSamplesToRead; i++) {
-                    dataArray[i + offset] = (float) dis.readInt();
+                    dataArray[i + offset] = dis.readInt();
                 }
                 numSamplesRemaining -= numSamplesToRead;
                 nextSample += numSamplesToRead;
@@ -170,9 +169,9 @@ public class SACFileReader extends FileDataSource {
                 for (int i = 0; i < numSamplesToRead; i++) {
 
                     if ((0x80 & buffer[ib]) == 0x80) {
-                        dataArray[i + offset] = (float) (((0xff) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
+                        dataArray[i + offset] = ((0xff) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff));
                     } else {
-                        dataArray[i + offset] = (float) (((0x00) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff)));
+                        dataArray[i + offset] = ((0x00) << 24) + ((buffer[ib++] & 0xff) << 16) + ((buffer[ib++] & 0xff) << 8) + ((buffer[ib++] & 0xff));
                     }
 
                 }

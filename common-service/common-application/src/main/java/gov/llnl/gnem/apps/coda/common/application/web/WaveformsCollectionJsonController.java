@@ -57,13 +57,18 @@ public class WaveformsCollectionJsonController {
      */
     @PostMapping(value = "/query/all", name = "getByExampleAllMatching")
     public ResponseEntity<?> getByExampleAllMatching(@RequestBody Waveform waveform, BindingResult result) {
-        List<Waveform> waveforms = getWaveformService().getByExampleAllMatching(waveform);
+        List<Waveform> waveforms = getWaveformService().getByExampleAllDistinctMatching(waveform);
         return ResponseEntity.ok(waveforms);
     }
 
     @GetMapping(value = "/query/stacks", name = "getAllStacks")
     public ResponseEntity<?> getAllStacks() {
+        List<Waveform> waveforms = getWaveformService().getAllStacks();
+        return ResponseEntity.ok(waveforms);
+    }
 
+    @GetMapping(value = "/query/active-stacks", name = "getAllActiveStacks")
+    public ResponseEntity<?> getAllActiveStacks() {
         List<Waveform> waveforms = getWaveformService().getAllActiveStacks();
         return ResponseEntity.ok(waveforms);
     }
@@ -71,6 +76,48 @@ public class WaveformsCollectionJsonController {
     @GetMapping(value = "/query/unique-by-event-station", name = "getAllStacks")
     public ResponseEntity<?> getUniqueEventStationStacks() {
         return ResponseEntity.ok(getWaveformService().getUniqueEventStationStacks());
+    }
+
+    @PostMapping(value = "/set-active/batch/{active}", name = "setActiveFlagsById")
+    public ResponseEntity<?> setActiveFlagsById(@PathVariable Boolean active, @Valid @RequestBody List<Long> waveformIds, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }
+        getWaveformService().setActiveFlagForIds(waveformIds, active);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/set-active/by-event-id/{active}", name = "setActiveFlagByEventId")
+    public ResponseEntity<?> setActiveFlagByEventId(@PathVariable Boolean active, @Valid @RequestBody String eventId, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }
+        getWaveformService().setActiveFlagByEventId(eventId, active);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/set-active/by-station-name/{active}", name = "setActiveFlagByStationName")
+    public ResponseEntity<?> setActiveFlagByStationName(@PathVariable Boolean active, @Valid @RequestBody String stationName, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }
+        getWaveformService().setActiveFlagByStationName(stationName, active);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 
+     * @param ids
+     * @return ResponseEntity
+     */
+    @GetMapping(value = "/metadata/batch/{ids}", name = "getBatchMetadata")
+    public ResponseEntity<?> getBatchMetadata(@PathVariable("ids") List<Long> ids) {
+        List<Waveform> data = getWaveformService().findAllMetadata(ids);
+        if (data != null && !data.isEmpty()) {
+            return ResponseEntity.ok().body(data);
+        } else {
+            return ResponseEntity.noContent().build();
+        }
     }
 
     /**
@@ -95,7 +142,7 @@ public class WaveformsCollectionJsonController {
      * @return ResponseEntity
      */
     @PostMapping(value = "/batch/{sessionId}", name = "createBatch")
-    public ResponseEntity<?> createBatch(@PathVariable Long sessionId, @Valid @RequestBody Collection<Waveform> waveforms, BindingResult result) {
+    public ResponseEntity<?> createBatch(@PathVariable Long sessionId, @Valid @RequestBody List<Waveform> waveforms, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
@@ -110,7 +157,7 @@ public class WaveformsCollectionJsonController {
      * @return ResponseEntity
      */
     @PutMapping(value = "/batch/{sessionId}", name = "updateBatch")
-    public ResponseEntity<?> updateBatch(@PathVariable Long sessionId, @Valid @RequestBody Collection<Waveform> waveforms, BindingResult result) {
+    public ResponseEntity<?> updateBatch(@PathVariable Long sessionId, @Valid @RequestBody List<Waveform> waveforms, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }

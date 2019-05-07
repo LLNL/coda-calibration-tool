@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.application.web;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -45,9 +46,14 @@ public class SpectraMeasurementJsonController {
         this.sharedParamsService = sharedParamsService;
     }
 
-    @GetMapping(name = "getMeasurements")
+    @GetMapping(name = "getMeasurements", path = "/all")
     public List<SpectraMeasurement> getMeasurements() {
         return service.findAll();
+    }
+
+    @GetMapping(name = "getMeasurementsMetadata", path = "/metadata/all")
+    public List<SpectraMeasurement> getMeasurementsMetadata() {
+        return service.findAllMetadataOnly().stream().map(md -> new SpectraMeasurement(md)).collect(Collectors.toList());        
     }
 
     @PostMapping(value = "/reference-spectra", name = "computeSpectraForEventId")

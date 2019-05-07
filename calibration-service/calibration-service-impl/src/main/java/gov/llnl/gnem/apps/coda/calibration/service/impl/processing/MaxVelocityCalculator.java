@@ -14,9 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.impl.processing;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
@@ -36,19 +36,40 @@ public class MaxVelocityCalculator {
 
     private static final Logger log = LoggerFactory.getLogger(MaxVelocityCalculator.class);
     private WaveformToTimeSeriesConverter converter;
-
-    // TODO: Make these configurable
-    final static double groupVelocity1Greater300 = 4.7;
-    final static double groupVelocity2Greater300 = 2.3;
-    final static double groupVelocity1Less300 = 3.9;
-    final static double groupVelocity2Less300 = 1.9;
+    private VelocityConfiguration velConf;
 
     @Autowired
-    public MaxVelocityCalculator(WaveformToTimeSeriesConverter converter) {
+    public MaxVelocityCalculator(VelocityConfiguration velConf, WaveformToTimeSeriesConverter converter) {
         this.converter = converter;
+        this.velConf = velConf;
     }
 
-    public Collection<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
+    public Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
+        return computeMaximumVelocity(
+                waveforms,
+                velConf.getGroupVelocity1InKmsGtDistance(),
+                velConf.getGroupVelocity2InKmsGtDistance(),
+                velConf.getGroupVelocity1InKmsLtDistance(),
+                velConf.getGroupVelocity2InKmsLtDistance(),
+                velConf.getDistanceThresholdInKm());
+    }
+
+    public Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, VelocityConfiguration velocityConfiguration) {
+        if (velocityConfiguration != null) {
+            return computeMaximumVelocity(
+                    waveforms,
+                        velocityConfiguration.getGroupVelocity1InKmsGtDistance(),
+                        velocityConfiguration.getGroupVelocity2InKmsGtDistance(),
+                        velocityConfiguration.getGroupVelocity1InKmsLtDistance(),
+                        velocityConfiguration.getGroupVelocity2InKmsLtDistance(),
+                        velocityConfiguration.getDistanceThresholdInKm());
+        } else {
+            return computeMaximumVelocity(waveforms);
+        }
+    }
+
+    private Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, double gv1GtDistanceThreshold, double gv2GtDistanceThreshold, double gv1LtDistanceThreshold,
+            double gv2LtDistanceThreshold, double thresholdInKm) {
         return waveforms.stream().parallel().map(rawWaveform -> {
             TimeSeries waveform = converter.convert(rawWaveform);
             double distance = EModel.getDistanceWGS84(
@@ -60,17 +81,16 @@ public class MaxVelocityCalculator {
             TimeT starttime;
             TimeT endtime;
 
-            if (distance >= 300) {
-                starttime = origintime.add(distance / groupVelocity1Greater300);
-                endtime = origintime.add(distance / groupVelocity2Greater300);
+            if (distance >= thresholdInKm) {
+                starttime = origintime.add(distance / gv1GtDistanceThreshold);
+                endtime = origintime.add(distance / gv2GtDistanceThreshold);
             } else {
-                starttime = origintime.add(distance / groupVelocity1Less300);
-                endtime = origintime.add(distance / groupVelocity2Less300);
+                starttime = origintime.add(distance / gv1LtDistanceThreshold);
+                endtime = origintime.add(distance / gv2LtDistanceThreshold);
             }
 
             // The envelope is in log10.
             try {
-
                 // cut the coda window portion of the seismograms
                 waveform.cut(starttime, endtime);
 
@@ -108,6 +128,6 @@ public class MaxVelocityCalculator {
                 log.info("Unable to compute maximum velocity, this stack will be skipped. {} {}.", ill.getMessage(), rawWaveform);
                 return new PeakVelocityMeasurement();
             }
-        }).filter(measurement -> measurement.getWaveform() != null).collect(Collectors.toList());
+        }).filter(measurement -> measurement.getWaveform() != null);
     }
 }

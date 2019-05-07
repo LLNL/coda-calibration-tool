@@ -15,9 +15,9 @@
 package gov.llnl.gnem.apps.coda.common.model.domain;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
@@ -37,6 +37,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
 
+import org.eclipse.collections.impl.list.mutable.primitive.DoubleArrayList;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.NumberFormat;
 import org.springframework.util.StringUtils;
@@ -57,8 +58,7 @@ public class Waveform {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @Embedded
     private Event event;
@@ -98,7 +98,7 @@ public class Waveform {
     @NotNull
     @Lob
     @Basic
-    private Double[] segment = new Double[0];
+    private DoubleArrayList segment = new DoubleArrayList(0);
 
     @OneToMany(cascade = { CascadeType.ALL }, orphanRemoval = true, mappedBy = "waveform", targetEntity = WaveformPick.class, fetch = FetchType.EAGER)
     @JsonManagedReference(value = "waveform-picks")
@@ -113,7 +113,7 @@ public class Waveform {
 
     public Waveform(WaveformMetadata waveform) {
         this.setId(waveform.getId());
-        this.setVersion(waveform.getVersion());
+        this.version = waveform.getVersion();
         this.setEvent(waveform.getEvent());
         this.setStream(waveform.getStream());
         this.setBeginTime(waveform.getBeginTime());
@@ -127,7 +127,7 @@ public class Waveform {
         this.setActive(waveform.getActive());
     }
 
-    public Waveform(Long id, Long version, Event event, Stream stream, Date beginTime, Date endTime, String segmentType, String segmentUnits, Double lowFrequency, Double highFrequency,
+    public Waveform(Long id, Integer version, Event event, Stream stream, Date beginTime, Date endTime, String segmentType, String segmentUnits, Double lowFrequency, Double highFrequency,
             Double sampleRate, Boolean active) {
         super();
         this.id = id;
@@ -153,13 +153,8 @@ public class Waveform {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return this.version;
-    }
-
-    public Waveform setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public Event getEvent() {
@@ -225,12 +220,12 @@ public class Waveform {
         return this;
     }
 
-    public Double[] getSegment() {
-        return segment;
+    public double[] getSegment() {
+        return segment.toArray();
     }
 
-    public Waveform setSegment(Double[] segment) {
-        this.segment = segment;
+    public Waveform setSegment(double[] segment) {
+        this.segment = new DoubleArrayList(segment);
         return this;
     }
 
@@ -258,10 +253,19 @@ public class Waveform {
 
     public Waveform setAssociatedPicks(List<WaveformPick> associatedPicks) {
         if (associatedPicks != null) {
-            this.associatedPicks.clear();
-            ;
-            this.associatedPicks.addAll(associatedPicks);
-            this.associatedPicks.forEach(pick -> pick.setWaveform(this));
+            associatedPicks.forEach(pick -> {
+                int idx = this.associatedPicks.indexOf(pick);
+                if (idx >= 0) {
+                    this.associatedPicks.get(idx).mergeNonNullOrEmptyFields(pick);
+                } else {
+                    this.associatedPicks.add(pick);
+                }
+                pick.setWaveform(this);
+            });
+
+            //Remove picks not on the waveform anymore
+            List<WaveformPick> shouldRemove = this.associatedPicks.stream().filter(pick -> associatedPicks.indexOf(pick) < 0).collect(Collectors.toList());
+            this.associatedPicks.removeAll(shouldRemove);
         } else {
             this.associatedPicks.clear();
         }
@@ -269,6 +273,10 @@ public class Waveform {
     }
 
     public Boolean isActive() {
+        return active;
+    }
+
+    public Boolean getActive() {
         return active;
     }
 
@@ -282,21 +290,27 @@ public class Waveform {
     }
 
     public Waveform mergeNonNullOrEmptyFields(Waveform waveformOverlay) {
-        if (waveformOverlay.getStream() != null) {
-            this.setStream(waveformOverlay.getStream());
-        }
         if (waveformOverlay.getEvent() != null) {
             this.setEvent(waveformOverlay.getEvent());
         }
+        if (waveformOverlay.getStream() != null) {
+            this.setStream(waveformOverlay.getStream());
+        }
+        if (waveformOverlay.getLowFrequency() != null) {
+            this.setLowFrequency(waveformOverlay.getLowFrequency());
+        }
+        if (waveformOverlay.getHighFrequency() != null) {
+            this.setHighFrequency(waveformOverlay.getHighFrequency());
+        }
 
+        if (waveformOverlay.getSegment() != null) {
+            this.setSegment(waveformOverlay.getSegment());
+        }
         if (!StringUtils.isEmpty(waveformOverlay.getSegmentType())) {
             this.setSegmentType(waveformOverlay.getSegmentType());
         }
         if (!StringUtils.isEmpty(waveformOverlay.getSegmentUnits())) {
             this.setSegmentUnits(waveformOverlay.getSegmentUnits());
-        }
-        if (waveformOverlay.getSegment() != null) {
-            this.setSegment(waveformOverlay.getSegment());
         }
         if (waveformOverlay.getSampleRate() != null) {
             this.setSampleRate(waveformOverlay.getSampleRate());
@@ -307,7 +321,7 @@ public class Waveform {
         if (waveformOverlay.getEndTime() != null) {
             this.setEndTime(waveformOverlay.getEndTime());
         }
-        if (waveformOverlay.getAssociatedPicks() != null) {
+        if (waveformOverlay.getAssociatedPicks() != null && !waveformOverlay.getAssociatedPicks().isEmpty()) {
             this.setAssociatedPicks(waveformOverlay.getAssociatedPicks());
         }
         if (waveformOverlay.isActive() != null) {
@@ -320,14 +334,13 @@ public class Waveform {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((active == null) ? 0 : active.hashCode());
         result = prime * result + ((beginTime == null) ? 0 : beginTime.hashCode());
         result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
         result = prime * result + ((event == null) ? 0 : event.hashCode());
         result = prime * result + ((highFrequency == null) ? 0 : highFrequency.hashCode());
         result = prime * result + ((lowFrequency == null) ? 0 : lowFrequency.hashCode());
         result = prime * result + ((sampleRate == null) ? 0 : sampleRate.hashCode());
-        result = prime * result + Arrays.hashCode(segment);
+        result = prime * result + ((segment == null) ? 0 : segment.hashCode());
         result = prime * result + ((segmentType == null) ? 0 : segmentType.hashCode());
         result = prime * result + ((segmentUnits == null) ? 0 : segmentUnits.hashCode());
         result = prime * result + ((stream == null) ? 0 : stream.hashCode());
@@ -346,13 +359,6 @@ public class Waveform {
             return false;
         }
         Waveform other = (Waveform) obj;
-        if (active == null) {
-            if (other.active != null) {
-                return false;
-            }
-        } else if (!active.equals(other.active)) {
-            return false;
-        }
         if (beginTime == null) {
             if (other.beginTime != null) {
                 return false;
@@ -395,7 +401,11 @@ public class Waveform {
         } else if (!sampleRate.equals(other.sampleRate)) {
             return false;
         }
-        if (!Arrays.equals(segment, other.segment)) {
+        if (segment == null) {
+            if (other.segment != null) {
+                return false;
+            }
+        } else if (!segment.equals(other.segment)) {
             return false;
         }
         if (segmentType == null) {
@@ -447,11 +457,9 @@ public class Waveform {
                .append(highFrequency)
                .append(", sampleRate=")
                .append(sampleRate)
-               .append(", segment=")
-               .append(segment)
                .append(", active=")
                .append(active)
-               .append("]");
+               .append(']');
         return builder.toString();
     }
 }

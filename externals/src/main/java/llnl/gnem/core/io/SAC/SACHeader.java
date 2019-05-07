@@ -10,11 +10,11 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -278,7 +278,7 @@ public class SACHeader implements Closeable {
     }
 
     public SACHeader(File file) throws IOException {
-        this(new FileInputStream(file));
+        this(Files.newInputStream(file.toPath()));
     }
 
     public SACHeader(ObjectInput objectInput) throws IOException {

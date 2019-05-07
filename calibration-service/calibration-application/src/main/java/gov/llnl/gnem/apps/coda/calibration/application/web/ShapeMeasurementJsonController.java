@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.application.web;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -42,9 +43,19 @@ public class ShapeMeasurementJsonController {
         return service.findAll();
     }
 
+    @GetMapping(path = "/metadata/all/", name = "getMeasurementsMetadata")
+    public List<ShapeMeasurement> getMeasurementsMetadata() {
+        return service.findAllMetadataOnly().stream().map(md -> new ShapeMeasurement(md)).collect(Collectors.toList());
+    }
+
     @GetMapping("/byWaveformId/{id}")
     public ShapeMeasurement getMeasurementByWaveformId(@PathVariable Long id) {
         return service.findOneByWaveformId(id);
+    }
+
+    @GetMapping("/metadata/byWaveformId/{id}")
+    public ShapeMeasurement getMeasurementMetadataByWaveformId(@PathVariable Long id) {
+        return new ShapeMeasurement(service.findOneMetadataByWaveformId(id));
     }
 
     public ShapeMeasurementService getService() {

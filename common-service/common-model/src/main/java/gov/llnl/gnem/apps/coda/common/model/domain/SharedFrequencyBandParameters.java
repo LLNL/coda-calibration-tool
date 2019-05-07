@@ -38,8 +38,7 @@ public class SharedFrequencyBandParameters {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @Embedded
     private FrequencyBand frequencyBand = new FrequencyBand();
@@ -108,13 +107,8 @@ public class SharedFrequencyBandParameters {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return this.version;
-    }
-
-    public SharedFrequencyBandParameters setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public double getLowFrequency() {

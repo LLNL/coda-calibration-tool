@@ -15,7 +15,6 @@
 package gov.llnl.gnem.apps.coda.common.model.domain;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Date;
 
 import javax.persistence.Basic;
@@ -35,6 +34,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
 
+import org.eclipse.collections.impl.list.mutable.primitive.DoubleArrayList;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.NumberFormat;
 
@@ -50,10 +50,9 @@ public class SyntheticCoda implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
-    @ManyToOne(optional = false, cascade = { CascadeType.MERGE })
+    @ManyToOne(optional = false)
     private Waveform sourceWaveform;
 
     @Column(name = "sampleRate")
@@ -64,7 +63,7 @@ public class SyntheticCoda implements Serializable {
     @NotNull
     @Lob
     @Basic(fetch = FetchType.LAZY)
-    private Double[] segment;
+    private DoubleArrayList segment = new DoubleArrayList(0);
 
     @Column(name = "beginTime")
     @Temporal(TemporalType.TIMESTAMP)
@@ -76,7 +75,7 @@ public class SyntheticCoda implements Serializable {
     @DateTimeFormat(style = "M-")
     private Date endTime;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, cascade = { CascadeType.MERGE })
     private SharedFrequencyBandParameters sourceModel;
 
     private Double measuredV;
@@ -93,13 +92,8 @@ public class SyntheticCoda implements Serializable {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return version;
-    }
-
-    public SyntheticCoda setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public Waveform getSourceWaveform() {
@@ -119,17 +113,17 @@ public class SyntheticCoda implements Serializable {
         return sampleRate;
     }
 
-    public SyntheticCoda setSampleRate(Double sampleRate) {
+    public SyntheticCoda setSampleRate(double sampleRate) {
         this.sampleRate = sampleRate;
         return this;
     }
 
-    public Double[] getSegment() {
-        return segment;
+    public double[] getSegment() {
+        return segment.toArray();
     }
 
-    public SyntheticCoda setSegment(Double[] segment) {
-        this.segment = segment;
+    public SyntheticCoda setSegment(double[] segment) {
+        this.segment = new DoubleArrayList(segment);
         return this;
     }
 
@@ -198,7 +192,7 @@ public class SyntheticCoda implements Serializable {
         result = prime * result + ((measuredG == null) ? 0 : measuredG.hashCode());
         result = prime * result + ((measuredV == null) ? 0 : measuredV.hashCode());
         result = prime * result + ((sampleRate == null) ? 0 : sampleRate.hashCode());
-        result = prime * result + Arrays.hashCode(segment);
+        result = prime * result + ((segment == null) ? 0 : segment.hashCode());
         result = prime * result + ((sourceModel == null) ? 0 : sourceModel.hashCode());
         result = prime * result + ((sourceWaveform == null) ? 0 : sourceWaveform.hashCode());
         result = prime * result + ((version == null) ? 0 : version.hashCode());
@@ -266,7 +260,11 @@ public class SyntheticCoda implements Serializable {
         } else if (!sampleRate.equals(other.sampleRate)) {
             return false;
         }
-        if (!Arrays.equals(segment, other.segment)) {
+        if (segment == null) {
+            if (other.segment != null) {
+                return false;
+            }
+        } else if (!segment.equals(other.segment)) {
             return false;
         }
         if (sourceModel == null) {
@@ -303,8 +301,6 @@ public class SyntheticCoda implements Serializable {
                 + sourceWaveform
                 + ", sampleRate="
                 + sampleRate
-                + ", segment="
-                + Arrays.toString(segment)
                 + ", beginTime="
                 + beginTime
                 + ", endTime="
@@ -335,10 +331,6 @@ public class SyntheticCoda implements Serializable {
 
         if (overlay.getSampleRate() != null) {
             this.setSampleRate(overlay.getSampleRate());
-        }
-
-        if (overlay.getVersion() != null) {
-            this.setVersion(overlay.getVersion());
         }
 
         if (overlay.getSourceWaveform() != null) {

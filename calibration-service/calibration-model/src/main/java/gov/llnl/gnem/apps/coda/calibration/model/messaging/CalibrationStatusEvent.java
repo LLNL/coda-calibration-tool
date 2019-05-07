@@ -22,7 +22,7 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 public class CalibrationStatusEvent {
 
     public enum Status {
-        STARTING, COMPLETE, ERROR
+        STARTING, PEAK_STARTING, SHAPE_STARTING, PATH_STARTING, SITE_STARTING, COMPLETE, ERROR
     };
 
     private Long id;

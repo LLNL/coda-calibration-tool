@@ -41,7 +41,7 @@ public class PeakVelocityWebClient implements PeakVelocityClient {
     @Override
     public Flux<PeakVelocityMeasurement> getMeasuredPeakVelocities() {
         return client.get()
-                     .uri("/peak-velocity-measurements")
+                     .uri("/peak-velocity-measurements/all")
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(PeakVelocityMeasurement.class))
@@ -51,7 +51,7 @@ public class PeakVelocityWebClient implements PeakVelocityClient {
     @Override
     public Flux<PeakVelocityMeasurement> getMeasuredPeakVelocitiesMetadata() {
         return client.get()
-                     .uri("/peak-velocity-measurements/metadata")
+                     .uri("/peak-velocity-measurements/metadata/all")
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(PeakVelocityMeasurement.class))
@@ -61,7 +61,7 @@ public class PeakVelocityWebClient implements PeakVelocityClient {
     @Override
     public Mono<PeakVelocityMeasurement> getNoiseForWaveform(Long id) {
         return client.get()
-                     .uri("/peak-velocity-measurements/metadata-by-id/" + id)
+                     .uri("/peak-velocity-measurements/metadata/by-id/" + id)
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
                      .flatMap(response -> response.bodyToMono(PeakVelocityMeasurement.class))

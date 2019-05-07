@@ -26,6 +26,8 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.repository.MeasuredMwsRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.ReferenceMwParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.SpectraMeasurementRepository;
@@ -46,11 +48,12 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
     private SpectraMeasurementRepository spectraRepo;
 
     private ReferenceMwParametersRepository referenceEventRepo;
-    
+
     private MeasuredMwsRepository measuredEventRepo;
 
     @Autowired
-    public SpectraMeasurementServiceImpl(SpectraMeasurementRepository spectraRepo, SpectraCalculator spectraCalc,MeasuredMwsRepository measuredEventRepo, ReferenceMwParametersRepository referenceEventRepo) {
+    public SpectraMeasurementServiceImpl(SpectraMeasurementRepository spectraRepo, SpectraCalculator spectraCalc, MeasuredMwsRepository measuredEventRepo,
+            ReferenceMwParametersRepository referenceEventRepo) {
         this.spectraRepo = spectraRepo;
         this.spectraCalc = spectraCalc;
         this.measuredEventRepo = measuredEventRepo;
@@ -73,8 +76,18 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
     }
 
     @Override
+    public List<SpectraMeasurementMetadata> findAllMetadataOnly(Iterable<Long> ids) {
+        return spectraRepo.findAllMetadataById(ids);
+    }
+
+    @Override
     public List<SpectraMeasurement> findAll() {
         return spectraRepo.findAll();
+    }
+
+    @Override
+    public List<SpectraMeasurementMetadata> findAllMetadataOnly() {
+        return spectraRepo.findAllMetadataOnly();
     }
 
     @Override
@@ -83,8 +96,9 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
     }
 
     @Override
-    public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled) {
-        List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, autoPickingEnabled);
+    public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled,
+            VelocityConfiguration velocityConfig) {
+        List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, autoPickingEnabled, velocityConfig);
         if (!measurements.isEmpty()) {
             spectraRepo.deleteAllInBatch();
             measurements = spectraRepo.saveAll(measurements);
@@ -94,8 +108,8 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
 
     @Override
     public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled,
-            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap) {
-        List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, autoPickingEnabled, frequencyBandSiteParameterMap);
+            VelocityConfiguration velocityConfig, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap) {
+        List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, autoPickingEnabled, velocityConfig, frequencyBandSiteParameterMap);
         if (!measurements.isEmpty()) {
             spectraRepo.deleteAllInBatch();
             measurements = spectraRepo.saveAll(measurements);
@@ -115,11 +129,11 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
 
     @Override
     public Spectra getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
-            Spectra fitSpectra = new Spectra();
-            MeasuredMwParameters event = measuredEventRepo.findOneByEventId(eventId);
-            if (event != null) {
-                fitSpectra = spectraCalc.computeFitSpectra(event, frequencyBands, selectedPhase);
-            }
-            return fitSpectra;
+        Spectra fitSpectra = new Spectra();
+        MeasuredMwParameters event = measuredEventRepo.findOneByEventId(eventId);
+        if (event != null) {
+            fitSpectra = spectraCalc.computeFitSpectra(event, frequencyBands, selectedPhase);
         }
+        return fitSpectra;
+    }
 }

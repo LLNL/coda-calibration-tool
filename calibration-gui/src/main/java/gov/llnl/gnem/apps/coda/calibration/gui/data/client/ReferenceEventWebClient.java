@@ -24,6 +24,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -74,6 +75,16 @@ public class ReferenceEventWebClient implements ReferenceEventClient {
     @Override
     public Mono<Event> getEvent(String eventId) {
         return client.get().uri("/events/" + eventId).accept(MediaType.APPLICATION_JSON).exchange().flatMap(response -> response.bodyToMono(Event.class)).onErrorReturn(new Event());
+    }
+
+    @Override
+    public Flux<MeasuredMwDetails> getMeasuredEventDetails() {
+        return client.get()
+                     .uri("/measured-mws/details")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(MeasuredMwDetails.class))
+                     .onErrorReturn(new MeasuredMwDetails());
     }
 
 }

@@ -186,7 +186,7 @@ public class SharedBandController {
 
     @FXML
     private void removeBands() {
-        List<SharedFrequencyBandParameters> sfb = new ArrayList<>();
+        List<SharedFrequencyBandParameters> sfb = new ArrayList<>(codaSharedTableView.getSelectionModel().getSelectedIndices().size());
         codaSharedTableView.getSelectionModel().getSelectedIndices().forEach(i -> sfb.add(sharedFbData.get(i)));
         if (!sfb.isEmpty()) {
             sfb.forEach(x -> client.removeSharedFrequencyBandParameter(x).subscribe());

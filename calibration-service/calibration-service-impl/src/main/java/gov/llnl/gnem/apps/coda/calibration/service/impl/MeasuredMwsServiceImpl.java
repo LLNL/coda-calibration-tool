@@ -15,73 +15,74 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.repository.MeasuredMwsRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.ReferenceMwParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
+import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 
 @Service
 @Transactional
 public class MeasuredMwsServiceImpl implements MeasuredMwsService {
 
     private MeasuredMwsRepository measuredMwsRepository;
-
-    public MeasuredMwsRepository getMeasuredMwsRepository() {
-        return measuredMwsRepository;
-    }
-
-    public void setMeasuredMwsRepository(MeasuredMwsRepository measuredMwsRepository) {
-        this.measuredMwsRepository = measuredMwsRepository;
-    }
+    private ReferenceMwParametersRepository referenceMwsRepository;
+    private WaveformService eventRepository;
 
     @Autowired
-    public MeasuredMwsServiceImpl(MeasuredMwsRepository measuredMwsRepository) {
-        setMeasuredMwsRepository(measuredMwsRepository);
+    public MeasuredMwsServiceImpl(MeasuredMwsRepository measuredMwsRepository, ReferenceMwParametersRepository referenceMwsRepository, WaveformService eventRepository) {
+        this.measuredMwsRepository = measuredMwsRepository;
+        this.referenceMwsRepository = referenceMwsRepository;
+        this.eventRepository = eventRepository;
     }
 
     @Transactional
     public void delete(MeasuredMwParameters MeasuredMwParameters) {
-        getMeasuredMwsRepository().delete(MeasuredMwParameters);
+        measuredMwsRepository.delete(MeasuredMwParameters);
     }
 
     @Transactional
     public List<MeasuredMwParameters> save(Iterable<MeasuredMwParameters> entities) {
-        return getMeasuredMwsRepository().saveAll(entities);
+        return measuredMwsRepository.saveAll(entities);
     }
 
     @Transactional
     public void delete(Iterable<Long> ids) {
-        List<MeasuredMwParameters> toDelete = getMeasuredMwsRepository().findAllById(ids);
-        getMeasuredMwsRepository().deleteInBatch(toDelete);
+        List<MeasuredMwParameters> toDelete = measuredMwsRepository.findAllById(ids);
+        measuredMwsRepository.deleteInBatch(toDelete);
     }
 
     @Transactional
     public MeasuredMwParameters save(MeasuredMwParameters entity) {
-        return getMeasuredMwsRepository().save(entity);
+        return measuredMwsRepository.save(entity);
     }
 
     public MeasuredMwParameters findOne(Long id) {
-        return getMeasuredMwsRepository().findOneDetached(id);
+        return measuredMwsRepository.findOneDetached(id);
     }
 
     public MeasuredMwParameters findOneForUpdate(Long id) {
-        return getMeasuredMwsRepository().findOneDetached(id);
+        return measuredMwsRepository.findOneDetached(id);
     }
 
     public List<MeasuredMwParameters> findAll(Iterable<Long> ids) {
-        return getMeasuredMwsRepository().findAllById(ids);
+        return measuredMwsRepository.findAllById(ids);
     }
 
     public List<MeasuredMwParameters> findAll() {
-        return getMeasuredMwsRepository().findAll();
+        return measuredMwsRepository.findAll();
     }
 
     public long count() {
-        return getMeasuredMwsRepository().count();
+        return measuredMwsRepository.count();
     }
 
     public Class<MeasuredMwParameters> getEntityType() {
@@ -90,10 +91,27 @@ public class MeasuredMwsServiceImpl implements MeasuredMwsService {
 
     @Override
     public void deleteAll() {
-        getMeasuredMwsRepository().deleteAllInBatch();
+        measuredMwsRepository.deleteAllInBatch();
     }
 
     public Class<Long> getIdType() {
         return Long.class;
+    }
+
+    @Override
+    public List<MeasuredMwDetails> findAllDetails() {
+        List<MeasuredMwParameters> measured = measuredMwsRepository.findAll();
+        List<ReferenceMwParameters> reference = referenceMwsRepository.findAll();
+        List<MeasuredMwDetails> details = measured.stream().map(meas -> {
+            ReferenceMwParameters rmw = reference.stream().filter(ref -> ref.getEventId().equals(meas.getEventId())).findAny().orElseGet(() -> null);
+            return new MeasuredMwDetails(meas, rmw, eventRepository.findEventById(meas.getEventId()));
+        }).collect(Collectors.toList());
+
+        details.addAll(reference.stream()
+                                .filter(ref -> measured.stream().noneMatch(meas -> ref.getEventId().equals(meas.getEventId())))
+                                .map(ref -> new MeasuredMwDetails(null, ref, eventRepository.findEventById(ref.getEventId())))
+                                .collect(Collectors.toList()));
+
+        return details;
     }
 }

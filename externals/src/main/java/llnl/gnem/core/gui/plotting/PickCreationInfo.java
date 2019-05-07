@@ -26,14 +26,15 @@ import llnl.gnem.core.gui.plotting.transforms.Coordinate;
  */
 public class PickCreationInfo {
     public PlotObject getSelectedObject() {
-        if (clickedObject != null && clickedObject instanceof Line) {
+        if (clickedObject instanceof Line) {
             return clickedObject;
         } else {
             if (owningPlot != null && owningPlot.getLineCount() == 1) {
                 Line[] lines = owningPlot.getLines();
                 return lines[0];
-            } else
+            } else {
                 return null;
+            }
         }
     }
 

@@ -14,8 +14,12 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.repository;
 
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import io.springlets.data.jpa.repository.DetachableJpaRepository;
 

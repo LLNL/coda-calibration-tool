@@ -26,7 +26,13 @@ public class MeasuredMwDetails {
 
     private Double mw;
 
-    private Double stressDropInMpa;
+    private Double refMw;
+
+    private Double apparentStressInMpa;
+
+    private Double refApparentStressInMpa;
+
+    private Integer dataCount;
 
     private Double latitude;
 
@@ -34,19 +40,31 @@ public class MeasuredMwDetails {
 
     private String datetime;
 
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_INSTANT;
-
-    public MeasuredMwDetails(MeasuredMwParameters meas, Event event) {
-        if (meas != null && event != null) {
-            setEventId(meas.getEventId());
-            setMw(meas.getMw());
-            setStressDropInMpa(meas.getStressDropInMpa());
-            setLatitude(event.getLatitude());
-            setLongitude(event.getLongitude());
+    public MeasuredMwDetails(MeasuredMwParameters meas, ReferenceMwParameters ref, Event event) {
+        if (meas != null) {
+            this.mw = meas.getMw();
+            this.apparentStressInMpa = meas.getApparentStressInMpa();
+            this.dataCount = meas.getDataCount();
+        }
+        if (event != null) {
+            this.eventId = event.getEventId();
+            this.latitude = event.getLatitude();
+            this.longitude = event.getLongitude();
             if (event.getOriginTime() != null) {
-                setDatetime(dateFormatter.format(event.getOriginTime().toInstant()));
+                this.datetime = DateTimeFormatter.ISO_INSTANT.format(event.getOriginTime().toInstant());
             }
         }
+        if (ref != null) {
+            if (eventId == null) {
+                this.eventId = ref.getEventId();
+            }
+            this.refApparentStressInMpa = ref.getRefApparentStressInMpa();
+            this.refMw = ref.getRefMw();
+        }
+    }
+
+    public MeasuredMwDetails() {
+        //nop
     }
 
     public String getEventId() {
@@ -67,12 +85,39 @@ public class MeasuredMwDetails {
         return this;
     }
 
-    public Double getStressDropInMpa() {
-        return stressDropInMpa;
+    public Double getRefMw() {
+        return refMw;
     }
 
-    public MeasuredMwDetails setStressDropInMpa(Double stressDropInMpa) {
-        this.stressDropInMpa = stressDropInMpa;
+    public MeasuredMwDetails setRefMw(Double refMw) {
+        this.refMw = refMw;
+        return this;
+    }
+
+    public Double getApparentStressInMpa() {
+        return apparentStressInMpa;
+    }
+
+    public MeasuredMwDetails setApparentStressInMpa(Double apparentStressInMpa) {
+        this.apparentStressInMpa = apparentStressInMpa;
+        return this;
+    }
+
+    public Double getRefApparentStressInMpa() {
+        return refApparentStressInMpa;
+    }
+
+    public MeasuredMwDetails setRefApparentStressInMpa(Double refApparentStressInMpa) {
+        this.refApparentStressInMpa = refApparentStressInMpa;
+        return this;
+    }
+
+    public Integer getDataCount() {
+        return dataCount;
+    }
+
+    public MeasuredMwDetails setDataCount(Integer dataCount) {
+        this.dataCount = dataCount;
         return this;
     }
 
@@ -107,16 +152,14 @@ public class MeasuredMwDetails {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + ((apparentStressInMpa == null) ? 0 : apparentStressInMpa.hashCode());
         result = prime * result + ((datetime == null) ? 0 : datetime.hashCode());
         result = prime * result + ((eventId == null) ? 0 : eventId.hashCode());
-        long temp;
-        temp = Double.doubleToLongBits(latitude);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(longitude);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(mw);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((stressDropInMpa == null) ? 0 : stressDropInMpa.hashCode());
+        result = prime * result + ((latitude == null) ? 0 : latitude.hashCode());
+        result = prime * result + ((longitude == null) ? 0 : longitude.hashCode());
+        result = prime * result + ((mw == null) ? 0 : mw.hashCode());
+        result = prime * result + ((refApparentStressInMpa == null) ? 0 : refApparentStressInMpa.hashCode());
+        result = prime * result + ((refMw == null) ? 0 : refMw.hashCode());
         return result;
     }
 
@@ -132,6 +175,13 @@ public class MeasuredMwDetails {
             return false;
         }
         MeasuredMwDetails other = (MeasuredMwDetails) obj;
+        if (apparentStressInMpa == null) {
+            if (other.apparentStressInMpa != null) {
+                return false;
+            }
+        } else if (!apparentStressInMpa.equals(other.apparentStressInMpa)) {
+            return false;
+        }
         if (datetime == null) {
             if (other.datetime != null) {
                 return false;
@@ -146,20 +196,39 @@ public class MeasuredMwDetails {
         } else if (!eventId.equals(other.eventId)) {
             return false;
         }
-        if (Double.doubleToLongBits(latitude) != Double.doubleToLongBits(other.latitude)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(longitude) != Double.doubleToLongBits(other.longitude)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(mw) != Double.doubleToLongBits(other.mw)) {
-            return false;
-        }
-        if (stressDropInMpa == null) {
-            if (other.stressDropInMpa != null) {
+        if (latitude == null) {
+            if (other.latitude != null) {
                 return false;
             }
-        } else if (!stressDropInMpa.equals(other.stressDropInMpa)) {
+        } else if (!latitude.equals(other.latitude)) {
+            return false;
+        }
+        if (longitude == null) {
+            if (other.longitude != null) {
+                return false;
+            }
+        } else if (!longitude.equals(other.longitude)) {
+            return false;
+        }
+        if (mw == null) {
+            if (other.mw != null) {
+                return false;
+            }
+        } else if (!mw.equals(other.mw)) {
+            return false;
+        }
+        if (refApparentStressInMpa == null) {
+            if (other.refApparentStressInMpa != null) {
+                return false;
+            }
+        } else if (!refApparentStressInMpa.equals(other.refApparentStressInMpa)) {
+            return false;
+        }
+        if (refMw == null) {
+            if (other.refMw != null) {
+                return false;
+            }
+        } else if (!refMw.equals(other.refMw)) {
             return false;
         }
         return true;
@@ -167,25 +236,27 @@ public class MeasuredMwDetails {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("\"")
-               .append(eventId)
-               .append("\", \"")
-               .append(mw)
-               .append("\", \"")
-               .append(stressDropInMpa)
-               .append("\", \"")
-               .append(latitude)
-               .append("\", \"")
-               .append(longitude)
-               .append("\", \"")
-               .append(datetime)
-               .append("\"");
-        return builder.toString();
+        return "MeasuredMwDetails [eventId="
+                + eventId
+                + ", mw="
+                + mw
+                + ", refMw="
+                + refMw
+                + ", apparentStressInMpa="
+                + apparentStressInMpa
+                + ", refApparentStressInMpa="
+                + refApparentStressInMpa
+                + ", latitude="
+                + latitude
+                + ", longitude="
+                + longitude
+                + ", datetime="
+                + datetime
+                + "]";
     }
 
     @JsonIgnore
     public boolean isValid() {
-        return eventId != null && mw != null && stressDropInMpa != null && latitude != null && longitude != null && datetime != null;
+        return eventId != null;
     }
 }

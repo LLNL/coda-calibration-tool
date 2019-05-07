@@ -20,5 +20,5 @@ import java.util.List;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 
 public interface MeasuredMwTempFileWriter {
-    void writeParams(Path folder, List<MeasuredMwDetails> measuredMwsDetails);
+    void writeMeasuredMws(Path folder, List<MeasuredMwDetails> measuredMwsDetails);
 }

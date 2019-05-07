@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -38,7 +37,6 @@ import org.glassfish.tyrus.client.ClientProperties;
 import org.glassfish.tyrus.client.SslEngineConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -58,15 +56,11 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
+import gov.llnl.gnem.apps.coda.common.gui.WebclientConfig;
 import gov.llnl.gnem.apps.coda.common.gui.events.SocketDisconnectEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.SslUtils;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
-import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
-import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
-import io.netty.handler.ssl.ApplicationProtocolNames;
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.IdentityCipherSuiteFilter;
-import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeExecutor;
 import net.jodah.failsafe.RetryPolicy;
@@ -74,20 +68,12 @@ import reactor.netty.http.client.HttpClient;
 
 @Service
 @Scope(scopeName = "singleton")
-@ConfigurationProperties(prefix = "webclient")
 @Configuration
 public class CodaWebClientBuilder {
 
+    private WebclientConfig config;
     private static final Logger log = LoggerFactory.getLogger(CodaWebClientBuilder.class);
-    private String basePath = "localhost:2222";
-    private String httpPrefix = "https://";
-    private String websocketPrefix = "https://";
-    private String apiPath = "/api/v1/";
-    private String socketPath = "/websocket-guide/";
     private String websocketBase;
-
-    private List<String> subscriptions = new ArrayList<>();
-
     private String trustStoreName = "coda-truststore.jks";
 
     private final HostnameVerifier defaultHostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
@@ -95,7 +81,7 @@ public class CodaWebClientBuilder {
         if (hostname == null) {
             return false;
         }
-        boolean local = basePath.toLowerCase(Locale.ENGLISH).startsWith(hostname.toLowerCase(Locale.ENGLISH));
+        boolean local = config.getBasePath().toLowerCase(Locale.ENGLISH).startsWith(hostname.toLowerCase(Locale.ENGLISH));
         if (!local) {
             return defaultHostnameVerifier.verify(hostname, session);
         }
@@ -114,42 +100,34 @@ public class CodaWebClientBuilder {
     private SslEngineConfigurator sslEngineConfigurator;
     private ReactorClientHttpConnector connector;
 
-    public CodaWebClientBuilder(EventBus bus, StompSessionHandlerAdapter frameHandler) {
+    public CodaWebClientBuilder(EventBus bus, WebclientConfig config, StompSessionHandlerAdapter frameHandler) {
+        this.config = config;
         bus.register(this);
         this.frameHandler = frameHandler;
-        if (subscriptions.isEmpty()) {
-            subscriptions.add("/topic/status-events");
+        if (config.getSubscriptions().isEmpty()) {
+            config.getSubscriptions().add("/topic/status-events");
         }
         HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        SSLContext sc;
         try (InputStream keyStore = classLoader.getResourceAsStream(trustStoreName)) {
-            sc = SslUtils.initMergedSSLTrustStore(keyStore);
+            SSLContext sc = SslUtils.initMergedSSLTrustStore(keyStore);
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            System.setProperty("sun.security.ssl.allowUnsafeRenegotiation", "true");
+            sslEngineConfigurator = new SslEngineConfigurator(sc);
+            sslEngineConfigurator.setHostnameVerifier(hostnameVerifier);
         } catch (IOException | GeneralSecurityException e) {
             throw new IllegalStateException("Unable to load trust store.", e);
         }
-
-        JdkSslContext sslContext = new JdkSslContext(sc,
-                                                     true,
-                                                     Arrays.asList(sc.getSupportedSSLParameters().getCipherSuites()),
-                                                     IdentityCipherSuiteFilter.INSTANCE,
-                                                     new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
-                                                                                   SelectorFailureBehavior.CHOOSE_MY_LAST_PROTOCOL,
-                                                                                   SelectedListenerFailureBehavior.ACCEPT,
-                                                                                   ApplicationProtocolNames.HTTP_1_1),
-                                                     ClientAuth.OPTIONAL,
-                                                     new String[] { "TLSv1.2" },
-                                                     false);
-        connector = new ReactorClientHttpConnector(HttpClient.create().secure(t -> t.sslContext(sslContext)));
-        sslEngineConfigurator = new SslEngineConfigurator(sc);
-        sslEngineConfigurator.setHostnameVerifier(hostnameVerifier);
+        try (InputStream keyStore = classLoader.getResourceAsStream(trustStoreName)) {
+            SslContext sslContext = SslUtils.initMergedSSLTrustStore(() -> SslContextBuilder.forClient(), keyStore);
+            connector = new ReactorClientHttpConnector(HttpClient.create().secure(t -> t.sslContext(sslContext)));
+        } catch (IOException | GeneralSecurityException e) {
+            throw new IllegalStateException("Unable to load trust store.", e);
+        }
     }
 
     @PostConstruct
     private void initialize() throws InterruptedException, ExecutionException {
-        websocketBase = websocketPrefix + basePath + socketPath;
+        websocketBase = config.getWebsocketPrefix() + config.getBasePath() + config.getSocketPath();
         ClientManager client = ClientManager.createClient();
         client.getProperties().put(ClientProperties.SSL_ENGINE_CONFIGURATOR, sslEngineConfigurator);
         StandardWebSocketClient standardClient = new StandardWebSocketClient(client);
@@ -185,7 +163,7 @@ public class CodaWebClientBuilder {
             log.trace("Attempting to connect to stomp: {}", evt);
         }).runAsync(r -> {
             stompSession = stompClient.connect(websocketBase, frameHandler).get(1, TimeUnit.SECONDS);
-            subscriptions.forEach(topic -> stompSession.subscribe(topic.replaceAll("\"", ""), frameHandler));
+            config.getSubscriptions().forEach(topic -> stompSession.subscribe(topic.replaceAll("\"", ""), frameHandler));
         });
     }
 
@@ -197,47 +175,7 @@ public class CodaWebClientBuilder {
         retryExecutor.shutdownNow();
     }
 
-    public String getHttpPrefix() {
-        return httpPrefix;
-    }
-
-    public void setHttpPrefix(String httpPrefix) {
-        this.httpPrefix = httpPrefix;
-    }
-
-    public String getWebsocketPrefix() {
-        return websocketPrefix;
-    }
-
-    public void setWebsocketPrefix(String websocketPrefix) {
-        this.websocketPrefix = websocketPrefix;
-    }
-
-    public String getHTTPPath() {
-        return httpPrefix + basePath + apiPath;
-    }
-
-    public String getWebSocketPath() {
-        return websocketPrefix + basePath + socketPath;
-    }
-
-    public String getBasePath() {
-        return basePath;
-    }
-
-    public void setBasePath(String baseURL) {
-        this.basePath = baseURL;
-    }
-
     public @Bean @Scope("prototype") WebClient getWebClient() {
-        return WebClient.builder().clientConnector(connector).baseUrl(getHTTPPath()).build();
-    }
-
-    public List<String> getSubscriptions() {
-        return subscriptions;
-    }
-
-    public void setSubscriptions(List<String> subscriptions) {
-        this.subscriptions = subscriptions;
+        return WebClient.builder().clientConnector(connector).baseUrl(config.getHTTPPath()).build();
     }
 }

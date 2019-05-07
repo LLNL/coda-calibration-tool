@@ -14,11 +14,21 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.repository;
 
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
 import io.springlets.data.jpa.repository.DetachableJpaRepository;
 
 @Transactional
 public interface SpectraMeasurementRepository extends DetachableJpaRepository<SpectraMeasurement, Long> {
+
+    @Query("select v from SpectraMeasurement v")
+    public List<SpectraMeasurementMetadata> findAllMetadataOnly();
+
+    @Query("select v from SpectraMeasurement v where v.id in :ids ")
+    public List<SpectraMeasurementMetadata> findAllMetadataById(Iterable<Long> ids);
 }

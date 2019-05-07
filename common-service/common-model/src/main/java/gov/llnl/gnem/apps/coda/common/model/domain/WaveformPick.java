@@ -41,8 +41,7 @@ public class WaveformPick implements Serializable {
     private Long id;
 
     @Version
-    @Column(name = "version")
-    private Long version;
+    private Integer version = 0;
 
     @JsonBackReference(value = "waveform-picks")
     @ManyToOne(optional = false, cascade = { CascadeType.PERSIST })
@@ -66,13 +65,8 @@ public class WaveformPick implements Serializable {
         return this;
     }
 
-    public Long getVersion() {
+    public Integer getVersion() {
         return this.version;
-    }
-
-    public WaveformPick setVersion(Long version) {
-        this.version = version;
-        return this;
     }
 
     public Waveform getWaveform() {
@@ -142,20 +136,6 @@ public class WaveformPick implements Serializable {
             return false;
         }
         WaveformPick other = (WaveformPick) obj;
-        if (pickName == null) {
-            if (other.pickName != null) {
-                return false;
-            }
-        } else if (!pickName.equals(other.pickName)) {
-            return false;
-        }
-        if (pickTimeSecFromOrigin == null) {
-            if (other.pickTimeSecFromOrigin != null) {
-                return false;
-            }
-        } else if (!pickTimeSecFromOrigin.equals(other.pickTimeSecFromOrigin)) {
-            return false;
-        }
         if (pickType == null) {
             if (other.pickType != null) {
                 return false;
@@ -163,13 +143,20 @@ public class WaveformPick implements Serializable {
         } else if (!pickType.equals(other.pickType)) {
             return false;
         }
-        if (waveform == null) {
-            if (other.waveform != null) {
-                return false;
-            }
-        } else if (!waveform.equals(other.waveform)) {
-            return false;
-        }
         return true;
+    }
+
+    public WaveformPick mergeNonNullOrEmptyFields(WaveformPick pickOverlay) {
+        if (pickOverlay.getPickName() != null) {
+            this.setPickName(pickOverlay.getPickName());
+        }
+        if (pickOverlay.getPickTimeSecFromOrigin() != null) {
+            this.setPickTimeSecFromOrigin(pickOverlay.getPickTimeSecFromOrigin());
+        }
+
+        if (pickOverlay.getPickType() != null) {
+            this.setPickType(pickOverlay.getPickType());
+        }
+        return this;
     }
 }

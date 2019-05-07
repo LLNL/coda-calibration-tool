@@ -67,12 +67,12 @@ public class MdacCalculatorService {
      * @param phase
      *            The phase to use for the MDAC calculation. Should be one of
      *            the phases in {@link PICK_TYPES}.
-     * @param stressDrop
-     *            Stress drop in MPA to use. May be null to use the MDAC
-     *            parameters instead. Otherwise Psi=0 and Sigma=stressDrop
+     * @param stress
+     *            Apparent stress in MPA to use. May be null to use the MDAC
+     *            parameters instead. Otherwise Psi=0 and Sigma=stress
      * @return logAmp In Dyne-CM
      */
-    public double calculateMdacAmplitudeForMw(MdacParametersPS psEntry, MdacParametersFI fiEntry, double Mw, double frequency, PICK_TYPES phase, Double stressDrop) {
+    public double calculateMdacAmplitudeForMw(MdacParametersPS psEntry, MdacParametersFI fiEntry, double Mw, double frequency, PICK_TYPES phase, Double stress) {
         // M0 in N-m units
         double M0 = MdacCalculator.DYNE_CM_TO_NEWTON_M * Math.pow(10, 1.5 * (Mw + 10.73));
 
@@ -91,8 +91,8 @@ public class MdacCalculatorService {
         mdc.initializePhaseSpecificVariables(distance, psEntry, fiEntry, M0);
 
         //FIXME: Use the calibrations phase for this!
-        if (stressDrop != null) {
-            mdacM0 = mdc.calculateMomentRateSpectra(frequency, M0, stressDrop, 0.0, phase);
+        if (stress != null) {
+            mdacM0 = mdc.calculateMomentRateSpectra(frequency, M0, stress, 0.0, phase);
         } else {
             mdacM0 = mdc.calculateMomentRateSpectra(frequency, M0, fiEntry.getSigma(), fiEntry.getPsi(), phase);
         }
@@ -129,7 +129,7 @@ public class MdacCalculatorService {
         return MdacCalculator.mwToM0(Mw);
     }
 
-    public double getMwInDyne(double testMw) {        
+    public double getMwInDyne(double testMw) {
         return MdacCalculator.mwInDyne(testMw);
     }
 }

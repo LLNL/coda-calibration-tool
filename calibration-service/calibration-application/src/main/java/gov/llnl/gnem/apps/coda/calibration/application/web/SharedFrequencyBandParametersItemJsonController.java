@@ -27,7 +27,6 @@ import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
-import io.springlets.web.NotFoundException;
 
 @RestController
 @RequestMapping(value = "/api/v1/params/shared-fb-parameters/{sharedFrequencyBandParameters}", name = "SharedFrequencyBandParametersItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,7 +51,7 @@ public class SharedFrequencyBandParametersItemJsonController {
     public SharedFrequencyBandParameters getSharedFrequencyBandParameters(@PathVariable("sharedFrequencyBandParameters") Long id) {
         SharedFrequencyBandParameters sharedFrequencyBandParameters = sharedFrequencyBandParametersService.findOne(id);
         if (sharedFrequencyBandParameters == null) {
-            throw new NotFoundException(String.format("SharedFrequencyBandParameters with identifier '%s' not found", id));
+            throw new IllegalStateException(String.format("SharedFrequencyBandParameters with identifier '%s' not found", id));
         }
         return sharedFrequencyBandParameters;
     }

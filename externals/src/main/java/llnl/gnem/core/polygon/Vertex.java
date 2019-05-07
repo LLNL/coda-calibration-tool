@@ -110,7 +110,7 @@ public class Vertex implements Serializable {
      * @return The hash code
      */
     public int hashCode() {
-        return new Double(lat).hashCode() ^ new Double(lon).hashCode();
+        return Double.valueOf(lat).hashCode() ^ Double.valueOf(lon).hashCode();
     }
 
     /**

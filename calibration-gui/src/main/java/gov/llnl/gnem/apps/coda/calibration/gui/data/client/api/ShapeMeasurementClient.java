@@ -23,4 +23,8 @@ public interface ShapeMeasurementClient {
     public Flux<ShapeMeasurement> getMeasuredShapes();
 
     public Mono<ShapeMeasurement> getMeasuredShape(Long id);
+
+    public Flux<ShapeMeasurement> getMeasuredShapesMetadata();
+
+    public Mono<ShapeMeasurement> getMeasuredShapeMetadata(Long id);
 }

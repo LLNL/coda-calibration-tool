@@ -102,12 +102,6 @@ public class CodaWaveformPlot extends SeriesPlot {
 
     private static final long serialVersionUID = 1L;
 
-    private static final int FULL_LENGTH = 1000;
-
-    private static final Color LIGHT_RED = new Color(250, 100, 100);
-
-    private static final Color PINK_HALF_TRANS = new Color(238, 200, 200, 128);
-
     public void setWaveform(Waveform waveform) {
         setWaveform(waveform, null);
     }
@@ -155,7 +149,13 @@ public class CodaWaveformPlot extends SeriesPlot {
                 // a pick is before/after the bounds of the
                 // waveform so we need to check that
                 for (WaveformPick pick : picks) {
-                    double pickTime = new TimeT(waveform.getEvent().getOriginTime()).getEpochTime() + pick.getPickTimeSecFromOrigin();
+                    double pickTime;
+                    //"'Bad' pick, plot it at begin time 
+                    if (pick.getPickTimeSecFromOrigin() < 0) {
+                        pickTime = new TimeT(waveform.getBeginTime()).getEpochTime();
+                    } else {
+                        pickTime = new TimeT(waveform.getEvent().getOriginTime()).getEpochTime() + pick.getPickTimeSecFromOrigin();
+                    }
                     if (pickTime >= new TimeT(waveform.getBeginTime()).getEpochTime() && pickTime <= new TimeT(waveform.getEndTime()).getEpochTime()) {
                         Collection<VPickLine> pickLines = this.addPick(pick.getPickName(), pickTime);
                         for (VPickLine pickLine : pickLines) {
@@ -201,9 +201,6 @@ public class CodaWaveformPlot extends SeriesPlot {
                         velocityClient.getNoiseForWaveform(waveform.getId()).subscribe(measurement -> {
                             if (measurement != null && measurement.getNoiseEndSecondsFromOrigin() != 0.0) {
                                 int lineLength = (int) (waveform.getSegment().length / waveform.getSampleRate()) + 10;
-                                //                                int timeStart = (int) (new TimeT(measurement.getNoiseStartSecondsFromOrigin()).subtractD(beginTime) - 0.5);
-                                //                                int timeEnd = (int) (new TimeT(measurement.getNoiseEndSecondsFromOrigin()).subtractD(beginTime) - 0.5);
-                                //                                subplot.AddPlotObject(createRectangle(timeStart, timeEnd, -FULL_LENGTH, FULL_LENGTH, PINK_HALF_TRANS), PLOT_ORDERING.NOISE_BOX.getZOrder());
                                 subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel(), lineLength, Color.BLACK, PenStyle.DASH), PLOT_ORDERING.NOISE_LINE.getZOrder());
                                 subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel() + params.getMinSnr(), lineLength, Color.BLACK, PenStyle.SOLID), PLOT_ORDERING.NOISE_LINE.getZOrder());
                                 repaint();
@@ -213,7 +210,7 @@ public class CodaWaveformPlot extends SeriesPlot {
                         if (synth != null) {
                             plotSynthetic(waveform, synth, beginTime, waveformSegment, subplot, event, distance, labelText, legendRef, params);
                             this.synthetic = synth;
-                        } else if (this.synthetic != null && synthetic.getSourceWaveform() != null && synthetic.getSourceWaveform().getId() == waveform.getId()) {
+                        } else if (this.synthetic != null && synthetic.getSourceWaveform() != null && synthetic.getSourceWaveform().getId().equals(waveform.getId())) {
                             plotSynthetic(waveform, synthetic, beginTime, waveformSegment, subplot, event, distance, labelText, legendRef, params);
                         }
                     } catch (IllegalArgumentException e) {
@@ -230,7 +227,8 @@ public class CodaWaveformPlot extends SeriesPlot {
             PlotObject legendRef, SharedFrequencyBandParameters params) {
         TimeSeries interpolatedSeries = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
         float[] synthSegment = doublesToFloats(synth.getSegment());
-        TimeSeries synthSeries = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
+        TimeSeries synthSeriesBeforeEndMarker = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
+        TimeSeries synthSeriesRemaining = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
         WaveformPick endPick = null;
         for (WaveformPick p : waveform.getAssociatedPicks()) {
             if (p.getPickType() != null && PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType().trim())) {
@@ -239,19 +237,25 @@ public class CodaWaveformPlot extends SeriesPlot {
             }
         }
         TimeT endTime;
+        TimeT originTime;
+        if (event != null) {
+            originTime = new TimeT(event.getOriginTime());
+        } else {
+            originTime = new TimeT(synth.getBeginTime());
+        }
+
         if (endPick != null && event != null) {
-            endTime = new TimeT(event.getOriginTime()).add(endPick.getPickTimeSecFromOrigin());
+            endTime = new TimeT(originTime).add(endPick.getPickTimeSecFromOrigin());
         } else {
             endTime = new TimeT(synth.getEndTime());
         }
 
-        interpolatedSeries.interpolate(synthSeries.getSamprate());
+        interpolatedSeries.interpolate(synthSeriesBeforeEndMarker.getSamprate());
 
         double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
         if (vr == 0.0) {
             vr = 1.0;
         }
-        TimeT originTime = new TimeT(event.getOriginTime());
         TimeT startTime;
         TimeT trimTime = originTime.add(distance / vr);
         if (trimTime.lt(endTime)) {
@@ -266,15 +270,18 @@ public class CodaWaveformPlot extends SeriesPlot {
 
             if (startTime.lt(endTime)) {
                 interpolatedSeries.cut(startTime, endTime);
-                synthSeries.cut(startTime, endTime);
+                synthSeriesBeforeEndMarker.cut(startTime, endTime);
+                synthSeriesRemaining.cutBefore(endTime);
 
-                TimeSeries diffSeis = interpolatedSeries.subtract(synthSeries);
-                int timeShift = (int) (startTime.subtractD(beginTime) + 0.5);
+                TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
+                int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
+                int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
                 double median = diffSeis.getMedian();
 
                 subplot.DeletePlotObject(legendRef);
                 subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
-                subplot.AddPlotObject(createLine(timeShift, median, synthSeries, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                subplot.AddPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, 3, PenStyle.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
                 repaint();
             }
         }
@@ -284,12 +291,34 @@ public class CodaWaveformPlot extends SeriesPlot {
         return new PinnedText(5d, 5d, text, HorizPinEdge.RIGHT, VertPinEdge.TOP, getTitle().getFontName(), getTitle().getFontSize(), Color.black, HorizAlignment.RIGHT, VertAlignment.TOP);
     }
 
+    private PlotObject createLine(int timeShift, double valueShift, TimeSeries timeSeries, Color lineColor) {
+        return createLine(timeShift, valueShift, timeSeries, lineColor, 3, PenStyle.SOLID);
+    }
+
+    private PlotObject createLine(int timeShift, double valueShift, TimeSeries timeSeries, Color lineColor, int width, PenStyle style) {
+        Line line = new Line(timeShift, timeSeries.getDelta(), SeriesMath.add(timeSeries.getData(), valueShift), 1);
+        line.setPenStyle(style);
+        line.setColor(lineColor);
+        line.setWidth(width);
+        return line;
+    }
+
     //Only used for Waveforms
     @Override
     public AbstractLine addLine(TimeSeries seismogram, Color lineColor) {
         Line line = new Line(0.0, seismogram.getDelta(), seismogram.getData(), 1);
         line.setColor(lineColor);
         getSubplot(seismogram).AddPlotObject(line, PLOT_ORDERING.WAVEFORM.getZOrder());
+        return line;
+    }
+
+    private PlotObject createFixedLine(double value, int length, Color lineColor, PenStyle penStyle) {
+        float[] data = new float[length];
+        Arrays.fill(data, (float) value);
+        Line line = new Line(0, 1.0, data, 1);
+        line.setColor(lineColor);
+        line.setPenStyle(penStyle);
+        line.setWidth(3);
         return line;
     }
 
@@ -303,23 +332,6 @@ public class CodaWaveformPlot extends SeriesPlot {
         JDataRectangle rect = new JDataRectangle(timeStart, heightMin, timeEnd - timeStart, heightMax - heightMin);
         rect.setFillColor(pink);
         return rect;
-    }
-
-    private PlotObject createLine(int timeShift, double valueShift, TimeSeries timeSeries, Color lineColor) {
-        Line line = new Line(timeShift, timeSeries.getDelta(), SeriesMath.add(timeSeries.getData(), valueShift), 1);
-        line.setColor(lineColor);
-        line.setWidth(3);
-        return line;
-    }
-
-    private PlotObject createFixedLine(double value, int length, Color lineColor, PenStyle penStyle) {
-        float[] data = new float[length];
-        Arrays.fill(data, (float) value);
-        Line line = new Line(0, 1.0, data, 1);
-        line.setColor(lineColor);
-        line.setPenStyle(penStyle);
-        line.setWidth(3);
-        return line;
     }
 
     /*
@@ -357,10 +369,10 @@ public class CodaWaveformPlot extends SeriesPlot {
         }
     }
 
-    public static float[] doublesToFloats(Double[] x) {
+    public static float[] doublesToFloats(double[] x) {
         float[] xfloats = new float[x.length];
         for (int i = 0; i < x.length; i++) {
-            xfloats[i] = x[i].floatValue();
+            xfloats[i] = (float) x[i];
         }
         return xfloats;
     }
