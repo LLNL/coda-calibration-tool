@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,7 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
 
     @Autowired
     public ReferenceMwParametersServiceImpl(ReferenceMwParametersRepository referenceMwParametersRepository) {
-        setReferenceMwParametersRepository(referenceMwParametersRepository);
+        this.referenceMwParametersRepository = referenceMwParametersRepository;
     }
 
     public ReferenceMwParametersRepository getReferenceMwParametersRepository() {
@@ -44,11 +45,13 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
         this.referenceMwParametersRepository = referenceMwParametersRepository;
     }
 
+    @Override
     @Transactional
     public void delete(ReferenceMwParameters referenceMwParameters) {
-        getReferenceMwParametersRepository().delete(referenceMwParameters);
+        referenceMwParametersRepository.delete(referenceMwParameters);
     }
 
+    @Override
     @Transactional
     public List<ReferenceMwParameters> save(Iterable<ReferenceMwParameters> entities) {
         List<ReferenceMwParameters> results = new ArrayList<>();
@@ -58,12 +61,14 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
         return results;
     }
 
+    @Override
     @Transactional
     public void delete(Iterable<Long> ids) {
-        List<ReferenceMwParameters> toDelete = getReferenceMwParametersRepository().findAllById(ids);
-        getReferenceMwParametersRepository().deleteInBatch(toDelete);
+        List<ReferenceMwParameters> toDelete = referenceMwParametersRepository.findAllById(ids);
+        referenceMwParametersRepository.deleteInBatch(toDelete);
     }
 
+    @Override
     @Transactional
     public ReferenceMwParameters save(ReferenceMwParameters entity) {
         ReferenceMwParameters persistentRef = referenceMwParametersRepository.findOneByEventId(entity.getEventId());
@@ -72,27 +77,32 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
         } else {
             persistentRef.merge(entity);
         }
-        return getReferenceMwParametersRepository().save(persistentRef);
+        return referenceMwParametersRepository.save(persistentRef);
     }
 
+    @Override
     public ReferenceMwParameters findOne(Long id) {
-        return getReferenceMwParametersRepository().findOneDetached(id);
+        return referenceMwParametersRepository.findOneDetached(id);
     }
 
+    @Override
     public ReferenceMwParameters findOneForUpdate(Long id) {
-        return getReferenceMwParametersRepository().findOneDetached(id);
+        return referenceMwParametersRepository.findOneDetached(id);
     }
 
+    @Override
     public List<ReferenceMwParameters> findAll(Iterable<Long> ids) {
-        return getReferenceMwParametersRepository().findAllById(ids);
+        return referenceMwParametersRepository.findAllById(ids);
     }
 
+    @Override
     public List<ReferenceMwParameters> findAll() {
-        return getReferenceMwParametersRepository().findAll();
+        return referenceMwParametersRepository.findAll();
     }
 
+    @Override
     public long count() {
-        return getReferenceMwParametersRepository().count();
+        return referenceMwParametersRepository.count();
     }
 
     public Class<ReferenceMwParameters> getEntityType() {
@@ -101,5 +111,10 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
 
     public Class<Long> getIdType() {
         return Long.class;
+    }
+
+    @Override
+    public List<ReferenceMwParameters> findAllByEventIds(Collection<String> eventIds) {
+        return referenceMwParametersRepository.findAllByEventIds(eventIds);
     }
 }

@@ -31,7 +31,7 @@
             "items": {
                 "$id": "#/properties/bands/band",
                 "type": "object",
-                "title": "A specific frequency band definitions.",
+                "title": "A specific frequency band definition.",
                 "required": [
                     "lowFreqHz",
                     "highFreqHz"
@@ -220,6 +220,65 @@
                 }
             }
         },
+        "site-corrections": {
+            "$id": "#/properties/site-corrections",
+            "type": "array",
+            "title": "Array of site correction definitions for stations.",
+            "items": {
+                "$id": "#/properties/site-corrections/network",
+                "type": "object",
+                "title": "Seismic network to which the station belongs.",
+                "required": [
+                    "station"
+                ],
+                "properties": {
+                    "station": {
+                        "$id": "#/properties/site-corrections/network/properties/station",
+                        "type": "array",
+                        "title": "Array of network-station site corrections by frequency band.",
+                        "items": {
+                            "$id": "#/properties/site-corrections/network/properties/station/band",
+                            "type": "object",
+                            "title": "A specific frequency band site correction definition.",
+                            "required": [
+                                "lowFreqHz",
+                                "highFreqHz",
+                                "siteTerm"
+                            ],
+                            "properties": {
+                                "lowFreqHz": {
+                                    "$id": "#/properties/site-corrections/network/properties/station/band/properties/lowFreqHz",
+                                    "type": "number",
+                                    "title": "Low Frequency of the band",
+                                    "default": false,
+                                    "examples": [
+                                        0.5
+                                    ]
+                                },
+                                "highFreqHz": {
+                                    "$id": "#/properties/site-corrections/network/properties/station/band/properties/highFreqHz",
+                                    "type": "number",
+                                    "title": "High Frequency of the band",
+                                    "default": false,
+                                    "examples": [
+                                        1
+                                    ]
+                                },
+                                "siteTerm": {
+                                    "$id": "#/properties/site-corrections/network/properties/station/band/properties/siteTerm",
+                                    "type": "number",
+                                    "title": "Site correction term for the band at this network-station",
+                                    "default": false,
+                                    "examples": [
+                                        21.0
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "mdac-ps": {
             "$id": "#/properties/mdac-ps",
             "type": "array",
@@ -247,7 +306,10 @@
                         "title": "Identifies the phase corresponding to these parameters",
                         "default": false,
                         "examples": [
-                            "Pg", "Pn", "Sn", "Lg"
+                            "Pg",
+                            "Pn",
+                            "Sn",
+                            "Lg"
                         ]
                     },
                     "q0": {
@@ -435,7 +497,7 @@
                     "examples": [
                         2500
                     ]
-                },                
+                },
                 "rhos": {
                     "$id": "#/properties/mdac-fi/properties/rhos",
                     "type": "number",
@@ -520,7 +582,8 @@
                         "title": "An optional measure of the apparent stress term for this specific event. If present it will be used in lieu of the MDAC2 Sigma-Psi terms loaded for calibrating tie points for this event.",
                         "default": false,
                         "examples": [
-                            0.0, 0.5
+                            0.0,
+                            0.5
                         ]
                     }
                 }
@@ -584,8 +647,8 @@
                     "examples": [
                         300.0
                     ]
-                }                     
-            }            
-        }                  
+                }
+            }
+        }
     }
-}      
+}

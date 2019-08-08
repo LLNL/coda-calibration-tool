@@ -1,0 +1,926 @@
+[
+    {
+        "lowFreqHz": 0.2,
+        "highFreqHz": 0.3,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.160301172988373
+    },
+    {
+        "lowFreqHz": 0.3,
+        "highFreqHz": 0.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.078495953084072
+    },
+    {
+        "lowFreqHz": 0.5,
+        "highFreqHz": 0.7,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.00135341977889
+    },
+    {
+        "lowFreqHz": 0.7,
+        "highFreqHz": 1.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.03492718945587
+    },
+    {
+        "lowFreqHz": 1.0,
+        "highFreqHz": 1.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 18.94226636451329
+    },
+    {
+        "lowFreqHz": 1.5,
+        "highFreqHz": 2.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 18.92723226138862
+    },
+    {
+        "lowFreqHz": 2.0,
+        "highFreqHz": 3.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.184367156400697
+    },
+    {
+        "lowFreqHz": 3.0,
+        "highFreqHz": 4.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.14718589386693
+    },
+    {
+        "lowFreqHz": 4.0,
+        "highFreqHz": 6.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.211116316565025
+    },
+    {
+        "lowFreqHz": 6.0,
+        "highFreqHz": 8.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 19.57881986308872
+    },
+    {
+        "lowFreqHz": 8.0,
+        "highFreqHz": 10.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 20.164195454405423
+    },
+    {
+        "lowFreqHz": 10.0,
+        "highFreqHz": 15.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 20.325371990356185
+    },
+    {
+        "lowFreqHz": 15.0,
+        "highFreqHz": 20.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 21.24328806924078
+    },
+    {
+        "lowFreqHz": 20.0,
+        "highFreqHz": 25.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "SAO"
+        },
+        "siteTerm": 21.48709133874192
+    },
+    {
+        "lowFreqHz": 0.2,
+        "highFreqHz": 0.3,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.99512062088609
+    },
+    {
+        "lowFreqHz": 0.3,
+        "highFreqHz": 0.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.712207283591184
+    },
+    {
+        "lowFreqHz": 0.5,
+        "highFreqHz": 0.7,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.688751493057524
+    },
+    {
+        "lowFreqHz": 0.7,
+        "highFreqHz": 1.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.84134477372329
+    },
+    {
+        "lowFreqHz": 1.0,
+        "highFreqHz": 1.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.891154656359777
+    },
+    {
+        "lowFreqHz": 1.5,
+        "highFreqHz": 2.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.82400240637313
+    },
+    {
+        "lowFreqHz": 2.0,
+        "highFreqHz": 3.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.949633953462328
+    },
+    {
+        "lowFreqHz": 3.0,
+        "highFreqHz": 4.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 18.961351413110204
+    },
+    {
+        "lowFreqHz": 4.0,
+        "highFreqHz": 6.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 19.06547621563001
+    },
+    {
+        "lowFreqHz": 6.0,
+        "highFreqHz": 8.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 19.591903909961985
+    },
+    {
+        "lowFreqHz": 8.0,
+        "highFreqHz": 10.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 20.181175758798673
+    },
+    {
+        "lowFreqHz": 10.0,
+        "highFreqHz": 15.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 20.371678739288434
+    },
+    {
+        "lowFreqHz": 15.0,
+        "highFreqHz": 20.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 21.34581922180849
+    },
+    {
+        "lowFreqHz": 20.0,
+        "highFreqHz": 25.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "CVS"
+        },
+        "siteTerm": 21.607084224674125
+    },
+    {
+        "lowFreqHz": 0.2,
+        "highFreqHz": 0.3,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 18.736694993008697
+    },
+    {
+        "lowFreqHz": 0.3,
+        "highFreqHz": 0.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 18.6085082031463
+    },
+    {
+        "lowFreqHz": 0.5,
+        "highFreqHz": 0.7,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 18.580578107370048
+    },
+    {
+        "lowFreqHz": 0.7,
+        "highFreqHz": 1.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 18.661130492426334
+    },
+    {
+        "lowFreqHz": 1.0,
+        "highFreqHz": 1.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 18.587026724834214
+    },
+    {
+        "lowFreqHz": 1.5,
+        "highFreqHz": 2.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 18.495225296106195
+    },
+    {
+        "lowFreqHz": 2.0,
+        "highFreqHz": 3.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 18.802400569430816
+    },
+    {
+        "lowFreqHz": 3.0,
+        "highFreqHz": 4.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 19.062474655337304
+    },
+    {
+        "lowFreqHz": 4.0,
+        "highFreqHz": 6.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 19.293388411261628
+    },
+    {
+        "lowFreqHz": 6.0,
+        "highFreqHz": 8.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 19.927795134546052
+    },
+    {
+        "lowFreqHz": 8.0,
+        "highFreqHz": 10.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 20.71777025105482
+    },
+    {
+        "lowFreqHz": 10.0,
+        "highFreqHz": 15.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 20.95605674566051
+    },
+    {
+        "lowFreqHz": 15.0,
+        "highFreqHz": 20.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 21.977061937887687
+    },
+    {
+        "lowFreqHz": 20.0,
+        "highFreqHz": 25.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "WENL"
+        },
+        "siteTerm": 22.434419365054662
+    },
+    {
+        "lowFreqHz": 0.2,
+        "highFreqHz": 0.3,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.16939859693607
+    },
+    {
+        "lowFreqHz": 0.3,
+        "highFreqHz": 0.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.017950318784074
+    },
+    {
+        "lowFreqHz": 0.5,
+        "highFreqHz": 0.7,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.009162895220566
+    },
+    {
+        "lowFreqHz": 0.7,
+        "highFreqHz": 1.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.092002502327013
+    },
+    {
+        "lowFreqHz": 1.0,
+        "highFreqHz": 1.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.003217210334803
+    },
+    {
+        "lowFreqHz": 1.5,
+        "highFreqHz": 2.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 18.82289301772976
+    },
+    {
+        "lowFreqHz": 2.0,
+        "highFreqHz": 3.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 18.971415371018573
+    },
+    {
+        "lowFreqHz": 3.0,
+        "highFreqHz": 4.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.04471931436847
+    },
+    {
+        "lowFreqHz": 4.0,
+        "highFreqHz": 6.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.18005864178982
+    },
+    {
+        "lowFreqHz": 6.0,
+        "highFreqHz": 8.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 19.699135341247306
+    },
+    {
+        "lowFreqHz": 8.0,
+        "highFreqHz": 10.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 20.567061588389226
+    },
+    {
+        "lowFreqHz": 10.0,
+        "highFreqHz": 15.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 20.881575622400995
+    },
+    {
+        "lowFreqHz": 15.0,
+        "highFreqHz": 20.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 21.583272275826253
+    },
+    {
+        "lowFreqHz": 20.0,
+        "highFreqHz": 25.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "MHC"
+        },
+        "siteTerm": 21.71934534466365
+    },
+    {
+        "lowFreqHz": 0.2,
+        "highFreqHz": 0.3,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 19.04877726147648
+    },
+    {
+        "lowFreqHz": 0.3,
+        "highFreqHz": 0.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 18.94587417634078
+    },
+    {
+        "lowFreqHz": 0.5,
+        "highFreqHz": 0.7,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 18.9446945401333
+    },
+    {
+        "lowFreqHz": 0.7,
+        "highFreqHz": 1.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 19.130348029868408
+    },
+    {
+        "lowFreqHz": 1.0,
+        "highFreqHz": 1.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 19.132496348352337
+    },
+    {
+        "lowFreqHz": 1.5,
+        "highFreqHz": 2.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 18.99038581312458
+    },
+    {
+        "lowFreqHz": 2.0,
+        "highFreqHz": 3.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 19.095240446941464
+    },
+    {
+        "lowFreqHz": 3.0,
+        "highFreqHz": 4.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 19.086051904658667
+    },
+    {
+        "lowFreqHz": 4.0,
+        "highFreqHz": 6.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 19.21581849365575
+    },
+    {
+        "lowFreqHz": 6.0,
+        "highFreqHz": 8.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 19.47267090338083
+    },
+    {
+        "lowFreqHz": 8.0,
+        "highFreqHz": 10.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 20.214852088102568
+    },
+    {
+        "lowFreqHz": 10.0,
+        "highFreqHz": 15.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 20.308757170743476
+    },
+    {
+        "lowFreqHz": 15.0,
+        "highFreqHz": 20.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 21.204031822475724
+    },
+    {
+        "lowFreqHz": 20.0,
+        "highFreqHz": 25.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BRK"
+        },
+        "siteTerm": 21.488165687721498
+    },
+    {
+        "lowFreqHz": 0.2,
+        "highFreqHz": 0.3,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.870102595771428
+    },
+    {
+        "lowFreqHz": 0.3,
+        "highFreqHz": 0.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.803226473636485
+    },
+    {
+        "lowFreqHz": 0.5,
+        "highFreqHz": 0.7,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.806428510906798
+    },
+    {
+        "lowFreqHz": 0.7,
+        "highFreqHz": 1.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.973413963390275
+    },
+    {
+        "lowFreqHz": 1.0,
+        "highFreqHz": 1.5,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.794734140992663
+    },
+    {
+        "lowFreqHz": 1.5,
+        "highFreqHz": 2.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.76183221756704
+    },
+    {
+        "lowFreqHz": 2.0,
+        "highFreqHz": 3.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.94993618865584
+    },
+    {
+        "lowFreqHz": 3.0,
+        "highFreqHz": 4.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 18.991833402259537
+    },
+    {
+        "lowFreqHz": 4.0,
+        "highFreqHz": 6.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 19.162600501197556
+    },
+    {
+        "lowFreqHz": 6.0,
+        "highFreqHz": 8.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 19.83031072662833
+    },
+    {
+        "lowFreqHz": 8.0,
+        "highFreqHz": 10.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 20.602040969603
+    },
+    {
+        "lowFreqHz": 10.0,
+        "highFreqHz": 15.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 20.72615229242341
+    },
+    {
+        "lowFreqHz": 15.0,
+        "highFreqHz": 20.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 21.538993894177555
+    },
+    {
+        "lowFreqHz": 20.0,
+        "highFreqHz": 25.0,
+        "station": {
+            "networkName": "BK",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "stationName": "BKS"
+        },
+        "siteTerm": 22.061618316796142
+    }
+]

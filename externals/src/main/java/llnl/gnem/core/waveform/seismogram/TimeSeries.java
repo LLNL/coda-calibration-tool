@@ -641,6 +641,11 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            thrown.
      */
     public void cut(TimeT start, TimeT end) {
+        log.trace("Trying to cut seismogram, startcut {}, endcut {}, starttime {}, endtime {}", 
+            start.getMilliseconds(), 
+            end.getMilliseconds(), 
+            getTime().getMilliseconds(), 
+            getEndtime().getMilliseconds());
         if (start.ge(end)) {
             throw new IllegalArgumentException("Start time of cut is >= end time of cut.");
         }

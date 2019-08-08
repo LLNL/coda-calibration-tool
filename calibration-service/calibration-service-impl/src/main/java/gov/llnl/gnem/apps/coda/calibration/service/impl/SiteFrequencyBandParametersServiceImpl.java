@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,45 +44,98 @@ public class SiteFrequencyBandParametersServiceImpl implements SiteFrequencyBand
         this.siteFrequencyBandParametersRepository = siteFrequencyBandParametersRepository;
     }
 
+    @Override
     @Transactional
     public void delete(SiteFrequencyBandParameters siteFrequencyBandParameters) {
-        getSiteFrequencyBandParametersRepository().delete(siteFrequencyBandParameters);
+        siteFrequencyBandParametersRepository.delete(siteFrequencyBandParameters);
     }
 
+    @Override
     @Transactional
     public List<SiteFrequencyBandParameters> save(Iterable<SiteFrequencyBandParameters> entities) {
-        return getSiteFrequencyBandParametersRepository().saveAll(entities);
+        List<SiteFrequencyBandParameters> saved = new LinkedList<>();
+        for (SiteFrequencyBandParameters entity : entities) {
+            saved.add(save(entity));
+        }
+        return saved;
     }
 
-    @Transactional
-    public void delete(Iterable<Long> ids) {
-        List<SiteFrequencyBandParameters> toDelete = getSiteFrequencyBandParametersRepository().findAllById(ids);
-        getSiteFrequencyBandParametersRepository().deleteInBatch(toDelete);
-    }
-
+    @Override
     @Transactional
     public SiteFrequencyBandParameters save(SiteFrequencyBandParameters entity) {
-        return getSiteFrequencyBandParametersRepository().save(entity);
+        SiteFrequencyBandParameters entry;
+        if (entity.getId() != null) {
+            entry = siteFrequencyBandParametersRepository.save(entity);
+        } else {
+            entry = update(entity);
+        }
+        return entry;
     }
 
+    @Transactional
+    @Override
+    public SiteFrequencyBandParameters update(SiteFrequencyBandParameters entry) {
+        SiteFrequencyBandParameters mergedEntry = siteFrequencyBandParametersRepository.saveAndFlush(attachIfAvailableInRepository(entry));
+        return mergedEntry;
+    }
+
+    private SiteFrequencyBandParameters attachIfAvailableInRepository(SiteFrequencyBandParameters entry) {
+        SiteFrequencyBandParameters mergedEntry = null;
+        if (entry != null) {
+            if (entry.getId() != null) {
+                mergedEntry = siteFrequencyBandParametersRepository.findById(entry.getId()).get();
+            } else if (entry.getSiteTerm() != 0.0 && entry.getStation() != null && entry.getStation().getStationName() != null && entry.getLowFrequency() != 0.0 && entry.getHighFrequency() != 0.0) {
+                mergedEntry = siteFrequencyBandParametersRepository.findByUniqueFields(
+                        entry.getStation().getNetworkName(),
+                            entry.getStation().getStationName(),
+                            entry.getSiteTerm(),
+                            entry.getLowFrequency(),
+                            entry.getHighFrequency());
+            }
+            if (mergedEntry != null) {
+                mergedEntry = mergedEntry.mergeNonNullOrEmptyFields(entry);
+            } else {
+                mergedEntry = entry;
+            }
+        }
+        return mergedEntry;
+    }
+
+    @Override
+    @Transactional
+    public void delete(Iterable<Long> ids) {
+        List<SiteFrequencyBandParameters> toDelete = siteFrequencyBandParametersRepository.findAllById(ids);
+        siteFrequencyBandParametersRepository.deleteInBatch(toDelete);
+    }
+
+    @Override
     public SiteFrequencyBandParameters findOne(Long id) {
-        return getSiteFrequencyBandParametersRepository().findOneDetached(id);
+        return siteFrequencyBandParametersRepository.findOneDetached(id);
     }
 
+    @Override
     public SiteFrequencyBandParameters findOneForUpdate(Long id) {
-        return getSiteFrequencyBandParametersRepository().findOneDetached(id);
+        return siteFrequencyBandParametersRepository.findOneDetached(id);
     }
 
+    @Override
     public List<SiteFrequencyBandParameters> findAll(Iterable<Long> ids) {
-        return getSiteFrequencyBandParametersRepository().findAllById(ids);
+        return siteFrequencyBandParametersRepository.findAllById(ids);
     }
 
+    @Override
     public List<SiteFrequencyBandParameters> findAll() {
-        return getSiteFrequencyBandParametersRepository().findAll();
+        return siteFrequencyBandParametersRepository.findAll();
     }
 
+    @Override
+    public List<String> findDistinctStationNames() {
+        return siteFrequencyBandParametersRepository.findDistinctStationNames();
+    }
+
+    @Override
     public long count() {
-        return getSiteFrequencyBandParametersRepository().count();
+        return siteFrequencyBandParametersRepository.count();
     }
 
     public Class<SiteFrequencyBandParameters> getEntityType() {

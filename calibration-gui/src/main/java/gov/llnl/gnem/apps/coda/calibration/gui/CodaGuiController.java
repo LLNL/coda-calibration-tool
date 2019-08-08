@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -17,6 +17,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +73,7 @@ import javafx.scene.input.TransferMode;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Modality;
 
 @Component
 public class CodaGuiController {
@@ -85,7 +88,7 @@ public class CodaGuiController {
     private ParametersController param;
     private ShapeController shape;
     private PathController path;
-    private SiteController site;        
+    private SiteController site;
 
     @FXML
     private Tab dataTab;
@@ -152,6 +155,7 @@ public class CodaGuiController {
 
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread thread = new Thread(r);
+        thread.setName("CodaGui-Scheduled");
         thread.setDaemon(true);
         return thread;
     });
@@ -232,16 +236,39 @@ public class CodaGuiController {
     @FXML
     private void openCalibrationDataSavingWindow(ActionEvent e) {
         //Save all parameters to an archive file and prompt the user about where to save it.
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Resource File");
-        fileChooser.getExtensionFilters().addAll(new ExtensionFilter("Archive File", "*.zip"));
-        fileChooser.setInitialFileName("Calibration_Data.zip");
-        File selectedFile = fileChooser.showSaveDialog(rootElement.getScene().getWindow());
+        File selectedFile = openFileSaveDialog("Calibration_Data", ".zip");
+        File exportArchive;
 
         if (selectedFile != null) {
-
-            File exportArchive;
             try {
+                if (ensureFileIsWritable(selectedFile)) {
+                    exportArchive = paramExporter.createExportArchive();
+                    if (exportArchive != null) {
+                        Files.move(exportArchive.toPath(), selectedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+            } catch (IOException e1) {
+                fileIoErrorAlert(e1);
+            }
+        }
+    }
+
+    private void fileIoErrorAlert(IOException e1) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("File IO Error");
+            alert.setHeaderText("Unable to export results");
+            alert.setContentText(e1.getMessage());
+            alert.show();
+        });
+    }
+
+    private boolean ensureFileIsWritable(File selectedFile) {
+        boolean existsAndWritable = true;
+        try {
+            if (selectedFile == null) {
+                existsAndWritable = false;
+            } else {
                 if (!selectedFile.exists()) {
                     selectedFile.createNewFile();
                 } else if (!selectedFile.canWrite()) {
@@ -252,21 +279,24 @@ public class CodaGuiController {
                         alert.setContentText("Unable to write file, do you have write permissions on the selected directory?");
                         alert.show();
                     });
+                    existsAndWritable = false;
                 }
-                exportArchive = paramExporter.createExportArchive();
-                if (exportArchive != null) {
-                    Files.move(exportArchive.toPath(), selectedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                }
-            } catch (IOException e1) {
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(AlertType.ERROR);
-                    alert.setTitle("File IO Error");
-                    alert.setHeaderText("Unable to export results");
-                    alert.setContentText(e1.getMessage());
-                    alert.show();
-                });
             }
+        } catch (IOException e1) {
+            fileIoErrorAlert(e1);
+            existsAndWritable = false;
         }
+
+        return existsAndWritable;
+    }
+
+    private File openFileSaveDialog(String filename, String extension) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Resource File");
+        fileChooser.getExtensionFilters().addAll(new ExtensionFilter("Output Format", "*" + extension));
+        fileChooser.setInitialFileName(filename + extension);
+        File selectedFile = fileChooser.showSaveDialog(rootElement.getScene().getWindow());
+        return selectedFile;
     }
 
     @FXML
@@ -307,6 +337,25 @@ public class CodaGuiController {
     @FXML
     private void runCalibration() {
         calibrationClient.runCalibration(Boolean.FALSE).subscribe(value -> log.trace(value), err -> log.trace(err.getMessage(), err));
+    }
+
+    @FXML
+    private void measureMwAllLoaded() {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Measuring Mws");
+        alert.setHeaderText(null);
+        alert.initModality(Modality.NONE);
+        alert.setContentText("Measuring Mws using all active stacks for loaded events.");
+        alert.show();
+        calibrationClient.makeMwMeasurements(Boolean.TRUE).subscribe(value -> {
+            Platform.runLater(() -> {
+                alert.close();
+                File file = openFileSaveDialog("Measured_Mws", ".json");
+                if (file != null && ensureFileIsWritable(file)) {
+                    paramExporter.writeMeasuredMws(Paths.get(FilenameUtils.getFullPath(file.getAbsolutePath())), "Measured_Mws.json", value);
+                }
+            });
+        }, err -> log.trace(err.getMessage(), err));
     }
 
     @FXML

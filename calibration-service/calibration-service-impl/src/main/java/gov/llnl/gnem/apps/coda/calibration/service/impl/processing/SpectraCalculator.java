@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -97,21 +97,21 @@ public class SpectraCalculator {
         this.PHASE_SPEED_KM_S = velConf.getPhaseSpeedInKms();
     }
 
-    public List<SpectraMeasurement> measureAmplitudes(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled,
+    public List<SpectraMeasurement> measureAmplitudes(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
             VelocityConfiguration velocityConfig) {
-        return measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, autoPickingEnabled, velocityConfig, null);
+        return measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, velocityConfig, null);
     }
 
-    public List<SpectraMeasurement> measureAmplitudes(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap, Boolean autoPickingEnabled,
+    public List<SpectraMeasurement> measureAmplitudes(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
             VelocityConfiguration velocityConfig, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap) {
         return generatedSynthetics.parallelStream()
-                                  .map(synth -> measureAmplitudeForSynthetic(synth, frequencyBandParameterMap, frequencyBandSiteParameterMap, autoPickingEnabled, velocityConfig))
+                                  .map(synth -> measureAmplitudeForSynthetic(synth, frequencyBandParameterMap, frequencyBandSiteParameterMap, velocityConfig))
                                   .filter(Objects::nonNull)
                                   .collect(Collectors.toList());
     }
 
     private SpectraMeasurement measureAmplitudeForSynthetic(SyntheticCoda synth, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
-            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap, Boolean autoPickingEnabled, VelocityConfiguration velocityConfig) {
+            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap, VelocityConfiguration velocityConfig) {
 
         FrequencyBand frequencyBand = new FrequencyBand(synth.getSourceWaveform().getLowFrequency(), synth.getSourceWaveform().getHighFrequency());
         SharedFrequencyBandParameters params = frequencyBandParameterMap.get(frequencyBand);
@@ -438,16 +438,13 @@ public class SpectraCalculator {
 
     /**
      * An estimate of the Mw and corner frequency based on Mdac spectra Based on
-     * the MDAC2 spectra calculations published by Walters and Taylor, 2001
+     * the MDAC2 spectra calculations published by Walter and Taylor, 2001
      * UCRL-ID-146882
      *
      */
     public List<MeasuredMwParameters> measureMws(final Map<Event, Map<FrequencyBand, SummaryStatistics>> evidMap, Map<Event, Function<Map<Double, Double>, Map<Double, Double>>> eventWeights,
-            final PICK_TYPES selectedPhase) {
-        final MdacParametersFI mdacFi = mdacFiService.findFirst();
-        final MdacParametersPS mdacPs = mdacPsService.findMatchingPhase(selectedPhase.getPhase());
+            final PICK_TYPES selectedPhase, MdacParametersPS mdacPs, MdacParametersFI mdacFi) {
         List<MeasuredMwParameters> measuredMws = new ArrayList<>(evidMap.entrySet().size());
-
         for (Entry<Event, Map<FrequencyBand, SummaryStatistics>> entry : evidMap.entrySet()) {
             Map<FrequencyBand, SummaryStatistics> measurements = entry.getValue();
             double[] MoMw = fitMw(measurements, selectedPhase, mdacFi, mdacPs, eventWeights.get(entry.getKey()));
@@ -464,7 +461,7 @@ public class SpectraCalculator {
      * Grid search across a range of corner frequency and stress parameters
      * looking for the best fit theoretical source spectra and return the
      * resulting MW measurement.
-     * 
+     *
      * @param measurements
      *            - the measured spectra values by frequency band
      * @param phase
@@ -526,7 +523,7 @@ public class SpectraCalculator {
             }
         };
 
-        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.001, 0.001, 100000);
+        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.00001, 0.00001, 100000);
         CMAESOptimizer optimizer = new CMAESOptimizer(1000000, 0, true, 0, 10, new MersenneTwister(), true, convergenceChecker);
         PointValuePair optimizerResult = optimizer.optimize(
                 new MaxEval(1000000),

@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -27,12 +27,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.TableUtils;
 import gov.llnl.gnem.apps.coda.envelope.gui.data.api.EnvelopeParamsClient;
+import gov.llnl.gnem.apps.coda.envelope.gui.events.EnvelopeJobConfigLoadCompleteEvent;
 import gov.llnl.gnem.apps.coda.envelope.model.domain.EnvelopeBandParameters;
 import gov.llnl.gnem.apps.coda.envelope.model.domain.EnvelopeJobConfiguration;
 import gov.llnl.gnem.apps.coda.envelope.model.domain.SpacingType;
@@ -89,6 +91,9 @@ public class EnvelopeParamsController {
     @FXML
     private TableColumn<EnvelopeBandParameters, String> smoothingCol;
 
+    @FXML
+    private TableColumn<EnvelopeBandParameters, String> interpolationCol;
+
     private ObservableList<EnvelopeBandParameters> bands = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
 
     private EnvelopeJobConfiguration config;
@@ -106,6 +111,7 @@ public class EnvelopeParamsController {
         this.bus = bus;
         this.client = client;
         this.config = defaultConfig;
+        bus.register(this);
     }
 
     @FXML
@@ -124,6 +130,9 @@ public class EnvelopeParamsController {
         CellBindingUtils.attachEditableIntegerCellFactories(smoothingCol, EnvelopeBandParameters::getSmoothing, EnvelopeBandParameters::setSmoothing);
         smoothingCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
+        CellBindingUtils.attachEditableIntegerCellFactories(interpolationCol, EnvelopeBandParameters::getInterpolation, EnvelopeBandParameters::setInterpolation);
+        interpolationCol.comparatorProperty().set(new MaybeNumericStringComparator());
+
         bandNumField.textProperty().bind(Bindings.size(bands).asString());
 
         Optional.ofNullable(config).ifPresent(x -> bands.addAll(x.getFrequencyBandConfiguration()));
@@ -132,7 +141,7 @@ public class EnvelopeParamsController {
 
     @FXML
     public void generateTable() {
-        //TODO: populate these fields with defaults on edit commits when the new value is empty 
+        //TODO: populate these fields with defaults on edit commits when the new value is empty
         if (!minFreqField.getText().isEmpty() && !maxFreqField.getText().isEmpty() && !overlapField.getText().isEmpty() && !spacingField.getText().isEmpty()) {
             try {
                 //TODO: Validators for these fields
@@ -184,6 +193,13 @@ public class EnvelopeParamsController {
                 config.setFrequencyBandConfiguration(bands);
                 TableUtils.revertValueInCell(e, oldValue);
             }).subscribe();
+        }
+    }
+
+    @Subscribe
+    public void loadFinishedListener(EnvelopeJobConfigLoadCompleteEvent event) {
+        if (event != null) {
+            requestData();
         }
     }
 

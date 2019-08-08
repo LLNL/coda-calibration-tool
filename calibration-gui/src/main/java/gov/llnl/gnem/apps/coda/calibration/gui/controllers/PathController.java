@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -51,6 +51,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
+import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
@@ -232,7 +233,7 @@ public class PathController implements MapListeningController, RefreshableContro
                         if (po instanceof Symbol) {
                             Platform.runLater(() -> {
                                 stationPlotTooltip.setText(((Symbol) po).getText());
-                                Point p = MouseInfo.getPointerInfo().getLocation();
+                                Point p = CommonGuiUtils.getScaledMouseLocation(stationPlotSwingNode.getScene(), MouseInfo.getPointerInfo());
                                 stationPlotTooltip.show(stationPlotSwingNode, p.getX() + 10, p.getY() + 10);
                             });
                         }
@@ -266,7 +267,7 @@ public class PathController implements MapListeningController, RefreshableContro
                         if (po instanceof Symbol) {
                             Platform.runLater(() -> {
                                 sdPlotTooltip.setText(((Symbol) po).getText());
-                                Point p = MouseInfo.getPointerInfo().getLocation();
+                                Point p = CommonGuiUtils.getScaledMouseLocation(sdPlotSwingNode.getScene(), MouseInfo.getPointerInfo());
                                 sdPlotTooltip.show(sdPlotSwingNode, p.getX() + 10, p.getY() + 10);
                             });
                         }
@@ -731,11 +732,11 @@ public class PathController implements MapListeningController, RefreshableContro
                                     stationSymbolMap.put(point1, waveformMetadata);
                                     stationSymbolMap.put(point2, waveformMetadata);
                                     waveformMetadata.forEach(waveform -> {
-                                        List<Symbol> entries = stationWaveformMap.computeIfAbsent(waveform.getEvent().getEventId(), key -> new ArrayList<Symbol>());
+                                        List<Symbol> entries = stationWaveformMap.computeIfAbsent(waveform.getEvent().getEventId(), key -> new ArrayList<>());
                                         entries.add(plotObj);
                                         entries.add(plotObj2);
 
-                                        entries = stationWaveformMap.computeIfAbsent(waveform.getStream().getStation().getStationName(), key -> new ArrayList<Symbol>());
+                                        entries = stationWaveformMap.computeIfAbsent(waveform.getStream().getStation().getStationName(), key -> new ArrayList<>());
                                         entries.add(plotObj);
                                         entries.add(plotObj2);
                                     });
@@ -794,7 +795,7 @@ public class PathController implements MapListeningController, RefreshableContro
     private void handlePlotObjectClicked(PlotObjectClicked poc, List<Waveform> waveforms) {
         if (waveforms != null) {
             if (SwingUtilities.isLeftMouseButton(poc.getMouseEvent())) {
-                TreeSet<Waveform> sortedSet = new TreeSet<Waveform>(evStaComparator);
+                TreeSet<Waveform> sortedSet = new TreeSet<>(evStaComparator);
                 sortedSet.addAll(waveforms);
                 List<Long> ids = sortedSet.stream().sequential().map(w -> w.getId()).collect(Collectors.toList());
                 selectSymbolsForWaveforms(sortedSet);

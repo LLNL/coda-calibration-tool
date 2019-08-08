@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -45,6 +45,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParamet
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ReferenceMwParametersFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SiteFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -64,6 +65,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         mapper.setSerializationInclusion(Include.NON_NULL);
         mapper.setSerializationInclusion(Include.NON_EMPTY);
         mapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersFileMixin.class);
+        mapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersFileMixin.class);
         mapper.addMixIn(ReferenceMwParameters.class, ReferenceMwParametersFileMixin.class);
         mapper.addMixIn(VelocityConfiguration.class, VelocityConfigurationFileMixin.class);
     }
@@ -92,9 +94,14 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
 
     @Override
     public void writeMeasuredMws(Path folder, List<MeasuredMwDetails> measuredMwsDetails) {
+        writeMeasuredMws(folder, MW_JSON_NAME, measuredMwsDetails);
+    }
+
+    @Override
+    public void writeMeasuredMws(Path folder, String filename, List<MeasuredMwDetails> measuredMwsDetails) {
         try {
-            JsonNode document = createOrGetDocument(folder, MW_JSON_NAME);
-            writeMeasuredEvents(createOrGetFile(folder, MW_JSON_NAME), document, measuredMwsDetails);
+            JsonNode document = createOrGetDocument(folder, filename);
+            writeMeasuredEvents(createOrGetFile(folder, filename), document, measuredMwsDetails);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -103,6 +110,18 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
     private void writeParams(File file, JsonNode document, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand,
             Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters, VelocityConfiguration velocityConfig) throws IOException {
         writeArrayNodeToFile(file, document, sharedParametersByFreqBand.values(), CalibrationJsonConstants.BAND_FIELD);
+        if (siteParameters != null && !siteParameters.isEmpty()) {
+            Map<String, Map<String, List<SiteFrequencyBandParameters>>> siteBands = siteParameters.entrySet()
+                                                                                                  .stream()
+                                                                                                  .collect(
+                                                                                                          Collectors.groupingBy(
+                                                                                                                  e -> e.getKey().getNetworkName(),
+                                                                                                                      Collectors.toMap(
+                                                                                                                              e -> e.getKey().getStationName(),
+                                                                                                                                  e -> e.getValue().values().stream().collect(Collectors.toList()))));
+
+            writeArrayNodeToFile(file, document, siteBands.entrySet(), CalibrationJsonConstants.SITE_CORRECTION_FIELD);
+        }
         if (velocityConfig != null) {
             writeFieldNodeToFile(file, document, CalibrationJsonConstants.VELOCITY_CONFIGURATION, mapper.valueToTree(velocityConfig));
         }
@@ -166,6 +185,10 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         if (Files.exists(filePath) && Files.isRegularFile(filePath)) {
             rootNode = new ObjectMapper().readTree(filePath.toFile());
         } else {
+            rootNode = mapper.createObjectNode();
+        }
+
+        if (rootNode == null) {
             rootNode = mapper.createObjectNode();
         }
         return rootNode;

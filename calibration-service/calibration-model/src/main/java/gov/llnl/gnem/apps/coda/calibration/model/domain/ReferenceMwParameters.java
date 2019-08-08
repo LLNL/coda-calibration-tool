@@ -96,7 +96,7 @@ public class ReferenceMwParameters implements Serializable {
 
     @Override
     public String toString() {
-        return "ReferenceMwParams [id=" + id + ", version=" + version + ", eventId=" + eventId + ", refMw=" + refMw + ", apparentStressInMpa=" + refApparentStressInMpa + "]";
+        return "ReferenceMwParams [id=" + id + ", version=" + version + ", eventId=" + eventId + ", refMw=" + refMw + ", refApparentStressInMpa=" + refApparentStressInMpa + "]";
     }
 
     @Override

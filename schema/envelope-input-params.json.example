@@ -1,0 +1,88 @@
+{
+    "frequencyBandConfiguration": [
+        {
+            "lowFrequency": 0.02,
+            "highFrequency": 0.03,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 0.03,
+            "highFrequency": 0.05,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 0.05,
+            "highFrequency": 0.1,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 0.1,
+            "highFrequency": 0.2,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 0.2,
+            "highFrequency": 0.3,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 0.3,
+            "highFrequency": 0.5,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 0.5,
+            "highFrequency": 0.7,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 0.7,
+            "highFrequency": 1.0,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 1.0,
+            "highFrequency": 1.5,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 1.5,
+            "highFrequency": 2.0,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 2.0,
+            "highFrequency": 3.0,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 3.0,
+            "highFrequency": 4.0,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 4.0,
+            "highFrequency": 6.0,
+            "smoothing": 2,
+            "interpolation": 4
+        },
+        {
+            "lowFrequency": 6.0,
+            "highFrequency": 8.0,
+            "smoothing": 2,
+            "interpolation": 4
+        }
+    ]
+}

@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -120,7 +120,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 vphase = phase;
             }
         }
-        
+
         List<PathCalibrationMeasurement> measurements = new ArrayList<>();
         Map<FrequencyBand, SharedFrequencyBandParameters> pathCorrectedFrequencyBandParameters = new HashMap<>();
 
@@ -213,7 +213,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
                 // starting residual
                 Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, 2.0);
-                log.info("Band {} initial cost: {}", frequencyBand.getLowFrequency(), initialResidual);
+                log.debug("Band {} initial cost: {}", frequencyBand.getLowFrequency(), initialResidual);
 
                 List<double[]> paramPoints = makeParamPoints(NUM_TERMS, agressiveOptimization, optimizationLowBounds, optimizationHighBounds);
                 PointValuePair optimizedResult = IntStream.range(0, paramPoints.size()).parallel().mapToObj(i -> {
@@ -223,13 +223,14 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                     MultivariateFunction prediction = new ESHPathMultivariate(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand);
                     PointValuePair opt = null;
                     try {
-                        opt = optimizer.optimize(new MaxEval(1000000),
-                                                 new ObjectiveFunction(prediction),
-                                                 GoalType.MINIMIZE,
-                                                 new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
-                                                 new InitialGuess(paramPoints.get(i)),
-                                                 new CMAESOptimizer.PopulationSize(POP_SIZE),
-                                                 new CMAESOptimizer.Sigma(sigmaArray));
+                        opt = optimizer.optimize(
+                                new MaxEval(1000000),
+                                    new ObjectiveFunction(prediction),
+                                    GoalType.MINIMIZE,
+                                    new SimpleBounds(optimizationLowBounds, optimizationHighBounds),
+                                    new InitialGuess(paramPoints.get(i)),
+                                    new CMAESOptimizer.PopulationSize(POP_SIZE),
+                                    new CMAESOptimizer.Sigma(sigmaArray));
                     } catch (TooManyEvaluationsException e) {
                     }
                     log.debug("frequency: {}, iteration: {}, residual: {}", frequencyBand.getLowFrequency(), i, opt.getValue());
@@ -246,7 +247,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 // final residual
                 Double finalResults = costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams);
                 Double finalResidual = Math.pow(finalResults / totalDataCount, 2.0);
-                log.info("Band {} final cost: {}", frequencyBand.getLowFrequency(), finalResidual);
+                log.debug("Band {} final cost: {}", frequencyBand.getLowFrequency(), finalResidual);
 
                 PathCalibrationMeasurement measurement = new PathCalibrationMeasurement();
                 measurement.setInitialResidual(initialResidual);

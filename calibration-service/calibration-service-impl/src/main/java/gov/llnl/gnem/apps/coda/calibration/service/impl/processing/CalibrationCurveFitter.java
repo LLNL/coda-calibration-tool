@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -298,7 +298,7 @@ public class CalibrationCurveFitter {
         return curve;
     }
 
-    private double lossFunction(double sum, final Double X, double Y) {
+    private double lossFunction(double sum, final double X, double Y) {
         return sum + Math.pow(.5d, 2.0) + (Math.sqrt(1d + Math.pow(Math.abs(X - Y) / .5d, 2.0)) - 1d);
     }
 
@@ -498,7 +498,7 @@ public class CalibrationCurveFitter {
      * This method will skip over input Frequency Bands that have no matching
      * entry in freqBandMap as the output Velocity0-2 values are updated in
      * place on the SharedFrequencyBandParameters object.
-     * 
+     *
      * @param velocityDistancePairsFreqMap
      * @param freqBandMap
      * @return Map<FrequencyBand, SharedFrequencyBandParameters> with updated
@@ -510,7 +510,7 @@ public class CalibrationCurveFitter {
 
         velocityDistancePairsFreqMap.entrySet().parallelStream().filter(velDistPairs -> freqBandMap.get(velDistPairs.getKey()) != null).forEach(velDistPairs -> {
             double[] curve = gridSearch(
-                    velDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getVelocity(), v.getDistance())).collect(Collectors.toList()),
+                    velDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<>(v.getVelocity(), v.getDistance())).collect(Collectors.toList()),
                         new ApacheGridSearchV(),
                         new BasicGridSearchV());
 
@@ -525,7 +525,7 @@ public class CalibrationCurveFitter {
      * will skip over input Frequency Bands that have no matching entry in
      * freqBandMap as the output Beta0-2 values are updated in place on the
      * SharedFrequencyBandParameters object.
-     * 
+     *
      * @param betaDistancePairsFreqMap
      * @param freqBandMap
      * @return Map<FrequencyBand, SharedFrequencyBandParameters> with updated
@@ -537,7 +537,7 @@ public class CalibrationCurveFitter {
 
         betaDistancePairsFreqMap.entrySet().parallelStream().filter(betaDistPairs -> freqBandMap.get(betaDistPairs.getKey()) != null).forEach(betaDistPairs -> {
             double[] curve = gridSearch(
-                    betaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getMeasuredBeta(), v.getDistance())).collect(Collectors.toList()),
+                    betaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<>(v.getMeasuredBeta(), v.getDistance())).collect(Collectors.toList()),
                         new ApacheGridSearchB(),
                         new BasicGridSearchB());
             // Artificially lower the intercept value, b0 to 95%
@@ -555,7 +555,7 @@ public class CalibrationCurveFitter {
      * method will skip over input Frequency Bands that have no matching entry
      * in freqBandMap as the output Gamma0-2 values are updated in place on the
      * SharedFrequencyBandParameters object.
-     * 
+     *
      * @param gammaDistancePairsFreqMap
      * @param freqBandMap
      * @return Map<FrequencyBand, SharedFrequencyBandParameters> with updated
@@ -567,7 +567,7 @@ public class CalibrationCurveFitter {
 
         gammaDistancePairsFreqMap.entrySet().parallelStream().filter(gammaDistPairs -> freqBandMap.get(gammaDistPairs.getKey()) != null).forEach(gammaDistPairs -> {
             double[] curve = gridSearch(
-                    gammaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<Double, Double>(v.getMeasuredGamma(), v.getDistance())).collect(Collectors.toList()),
+                    gammaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<>(v.getMeasuredGamma(), v.getDistance())).collect(Collectors.toList()),
                         new ApacheGridSearchG(),
                         new BasicGridSearchG());
             freqBandMap.put(gammaDistPairs.getKey(), freqBandMap.get(gammaDistPairs.getKey()).setGamma0(curve[0]).setGamma1(curve[1]).setGamma2(curve[2]));

@@ -58,6 +58,7 @@ public class WaveformGui {
     private PeakVelocityClient peakVelocityClient;
     private GeoMap map;
     private MapPlottingUtilities mapPlotUtilities;
+    private boolean shouldFocus = true;
 
     @Autowired
     public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, PeakVelocityClient peakVelocityClient, GeoMap map,
@@ -105,7 +106,11 @@ public class WaveformGui {
         if (waveformPlotManager != null) {
             if (event != null && event.getWaveformIDs() != null && !event.getWaveformIDs().isEmpty()) {
                 waveformPlotManager.setOrderedWaveformIDs(event.getWaveformIDs());
-                show();
+                if (shouldFocus) {
+                    toFront();
+                } else {
+                    show();
+                }
                 repaintWaveformWindow();
             }
         }

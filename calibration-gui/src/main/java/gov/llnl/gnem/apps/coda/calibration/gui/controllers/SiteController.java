@@ -2,11 +2,11 @@
 * Copyright (c) 2019, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -521,8 +521,8 @@ public class SiteController implements MapListeningController, RefreshableContro
                 for (MeasuredMwDetails ev : evs) {
                     mwParameters.add(ev);
                     if (ev.getMw() != null && ev.getMw() != 0.0 && ev.getRefMw() != null && ev.getRefMw() != 0.0) {
-                        double mw = ev.getMw();
-                        double ref = ev.getRefMw();
+                        Double mw = ev.getMw();
+                        Double ref = ev.getRefMw();
                         if (mw < minMw) {
                             minMw = mw;
                         }
@@ -536,26 +536,34 @@ public class SiteController implements MapListeningController, RefreshableContro
                             maxMw = ref;
                         }
 
-                        double stress = ev.getApparentStressInMpa();
-                        double refStress = ev.getRefApparentStressInMpa();
-                        if (stress < minStress) {
-                            minStress = stress;
-                        }
-                        if (stress > maxStress) {
-                            maxStress = stress;
-                        }
-                        if (refStress < minStress) {
-                            minStress = refStress;
-                        }
-                        if (refStress > maxStress) {
-                            maxStress = refStress;
+                        Double stress = ev.getApparentStressInMpa();
+                        Double refStress = ev.getRefApparentStressInMpa();
+
+                        if (stress != null) {
+                            if (stress < minStress) {
+                                minStress = stress;
+                            }
+                            if (stress > maxStress) {
+                                maxStress = stress;
+                            }
+
+                            if (refStress == null) {
+                                refStress = 0.0;
+                            }
+
+                            if (refStress < minStress) {
+                                minStress = refStress;
+                            }
+                            if (refStress > maxStress) {
+                                maxStress = refStress;
+                            }
+
+                            Circle stressSym = new Circle(stress, refStress, 2.0, Color.RED, Color.RED, Color.RED, ev.getEventId(), true, false, 6.0);
+                            stressPlotFigure.AddPlotObject(stressSym);
                         }
 
                         Circle mwSym = new Circle(mw, ref, 2.0, Color.RED, Color.RED, Color.RED, ev.getEventId(), true, false, 6.0);
                         mwPlotFigure.AddPlotObject(mwSym);
-
-                        Circle stressSym = new Circle(stress, refStress, 2.0, Color.RED, Color.RED, Color.RED, ev.getEventId(), true, false, 6.0);
-                        stressPlotFigure.AddPlotObject(stressSym);
                     }
                 }
 

@@ -53,6 +53,11 @@
 								<MenuItem mnemonicParsing="false" onAction="#runAutoPickingCalibration" text="Run Calibration (Auto Pick)" />
 							</items>
 						</Menu>
+						<Menu mnemonicParsing="false" text="Measurement">
+							<items>
+								<MenuItem fx:id="measureMwAllLoaded" mnemonicParsing="false" onAction="#measureMwAllLoaded" text="Mw (All Active)" />
+							</items>
+						</Menu>						
 						<Menu mnemonicParsing="false" text="Window">
 							<items>
 								<MenuItem mnemonicParsing="false" onAction="#openWaveformDisplay" text="Waveform View" />

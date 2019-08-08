@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,31 +53,40 @@ public class EnvelopeGuiController {
     private Node rootElement;
 
     private WaveformLoadingController waveformLoadingController;
+    private EnvelopeParamsPorter envelopeParamsPorter;
 
     private DirectoryChooser sacDirFileChooser = new DirectoryChooser();
     private DirectoryChooser sacSaveDirChooser = new DirectoryChooser();
     private FileChooser sacFileChooser = new FileChooser();
+    private FileChooser confSaveFileChooser = new FileChooser();
+    private FileChooser confLoadFileChooser = new FileChooser();
 
     private EventBus bus;
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread thread = new Thread(r);
+        thread.setName("Envelope-Scheduled");
         thread.setDaemon(true);
         return thread;
     });
 
     @Autowired
-    public EnvelopeGuiController(WaveformLoadingController waveformLoadingController, EventBus bus) throws IOException {
+    public EnvelopeGuiController(WaveformLoadingController waveformLoadingController, EventBus bus, EnvelopeParamsPorter envelopeParamsPorter) throws IOException {
         super();
         this.waveformLoadingController = waveformLoadingController;
         this.bus = bus;
+        this.envelopeParamsPorter = envelopeParamsPorter;
         sacDirFileChooser.setTitle("SAC File Directory");
         sacSaveDirChooser.setTitle("Output File Directory");
+        confSaveFileChooser.setTitle("Output File");
+        confLoadFileChooser.setTitle("Input Job Config JSON File");
         sacFileChooser.getExtensionFilters().addAll(new ExtensionFilter("Sac files (.sac)", "*.sac"), new ExtensionFilter("All files", "*.*"));
+        confSaveFileChooser.getExtensionFilters().addAll(new ExtensionFilter("JSON Config File", "*.json"), new ExtensionFilter("All files", "*.*"));
+        confLoadFileChooser.getExtensionFilters().addAll(new ExtensionFilter("JSON Config File", "*.json"), new ExtensionFilter("All files", "*.*"));
     }
 
     @FXML
     private void openWaveformLoadingWindow() {
-        Optional.ofNullable(sacFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(this::saveFiles);
+        Optional.ofNullable(sacFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(this::handleDroppedFiles);
     }
 
     @FXML
@@ -93,21 +103,40 @@ public class EnvelopeGuiController {
 
     @FXML
     private void openWaveformDirectoryLoadingWindow() {
-        Optional.ofNullable(sacDirFileChooser.showDialog(rootElement.getScene().getWindow())).map(Collections::singletonList).ifPresent(this::saveFiles);
+        Optional.ofNullable(sacDirFileChooser.showDialog(rootElement.getScene().getWindow())).map(Collections::singletonList).ifPresent(this::handleDroppedFiles);
     }
 
-    private void saveFiles(List<File> files) {
-        Optional<File> opt = openWaveformDirectorySavingWindow();
-        if (opt.isPresent()) {
-            waveformLoadingController.loadFiles(files);
-        } else {
-            Platform.runLater(() -> {
-                Alert alert = new Alert(AlertType.INFORMATION);
-                alert.setTitle("Load Canceled");
-                alert.setHeaderText("Load Canceled");
-                alert.setContentText("No output directory was selected; canceling data load.");
-                alert.show();
-            });
+    @FXML
+    private Optional<File> openJobSavingWindow() {
+        Optional<File> opt = Optional.ofNullable(confSaveFileChooser.showSaveDialog(rootElement.getScene().getWindow()));
+        opt.ifPresent(envelopeParamsPorter::saveParams);
+        return opt;
+    }
+
+    @FXML
+    private void openJobLoadingWindow() {
+        Optional.ofNullable(confLoadFileChooser.showOpenDialog(rootElement.getScene().getWindow())).map(Collections::singletonList).ifPresent(this::handleDroppedFiles);
+    }
+
+    private void handleDroppedFiles(List<File> files) {
+        boolean hasJson = files.stream().anyMatch(f -> f.getName().toLowerCase(Locale.ENGLISH).endsWith(".json"));
+        if (hasJson) {
+            envelopeParamsPorter.loadParams(files);
+        }
+
+        if (files.size() > 1 || files.size() > 0 && !hasJson) {
+            Optional<File> opt = openWaveformDirectorySavingWindow();
+            if (opt.isPresent()) {
+                waveformLoadingController.loadFiles(files);
+            } else {
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(AlertType.INFORMATION);
+                    alert.setTitle("Load Canceled");
+                    alert.setHeaderText("Load Canceled");
+                    alert.setContentText("No output directory was selected; canceling data load.");
+                    alert.show();
+                });
+            }
         }
     }
 
@@ -123,7 +152,7 @@ public class EnvelopeGuiController {
         rootElement.setOnDragDropped(event -> {
             boolean success = false;
             if (event.getGestureSource() != rootElement && event.getDragboard().hasFiles()) {
-                saveFiles(event.getDragboard().getFiles());
+                handleDroppedFiles(event.getDragboard().getFiles());
                 success = true;
             }
             event.setDropCompleted(success);

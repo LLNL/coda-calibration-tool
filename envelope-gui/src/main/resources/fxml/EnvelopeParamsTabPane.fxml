@@ -35,6 +35,8 @@
 							onEditCommit="#postUpdate" prefWidth="75.0" text="High" />
 						<TableColumn fx:id="smoothingCol"
 							onEditCommit="#postUpdate" prefWidth="75.0" text="Smoothing" />
+						<TableColumn fx:id="interpolationCol"
+							onEditCommit="#postUpdate" prefWidth="75.0" text="Interpolated Sample Rate" />							
 					</columns>
 					<columnResizePolicy>
 						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

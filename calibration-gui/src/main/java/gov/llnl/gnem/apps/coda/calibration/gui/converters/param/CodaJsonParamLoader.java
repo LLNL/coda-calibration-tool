@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -20,6 +20,7 @@ import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.Calibratio
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.REFERENCE_EVENTS_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SCHEMA_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SCHEMA_VALUE;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SITE_CORRECTION_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_VALUE;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VELOCITY_CONFIGURATION;
@@ -30,23 +31,32 @@ import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterConverter;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteCorrections;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SiteFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.model.util.LightweightIllegalStateException;
 import reactor.core.publisher.Flux;
@@ -62,6 +72,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersFileMixin.class);
+        mapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersFileMixin.class);
     }
 
     @Override
@@ -90,6 +101,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
 
             if (node.has(SCHEMA_FIELD) && node.get(SCHEMA_FIELD).asText().equalsIgnoreCase(SCHEMA_VALUE) && node.has(TYPE_FIELD) && node.get(TYPE_FIELD).asText().equalsIgnoreCase(TYPE_VALUE)) {
                 results.addAll(convertJsonFields(node, BAND_FIELD, x -> sharedFrequenyBandFromJsonNode(x)));
+                results.addAll(convertJsonFields(node, SITE_CORRECTION_FIELD, x -> siteFrequenyBandsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, MDAC_PS_FIELD, x -> mdacPsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, MDAC_FI_FIELD, x -> mdacFiFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, REFERENCE_EVENTS_FIELD, x -> refEventsFromJsonNode(x)));
@@ -122,7 +134,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         try {
             //TODO: Validate all fields
             VelocityConfiguration val = reader.readValue(node);
-            return new Result<Object>(true, val);
+            return new Result<>(true, val);
         } catch (IOException e) {
             return exceptionalResult(e);
         }
@@ -133,7 +145,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         try {
             //TODO: Validate all fields
             ReferenceMwParameters ref = reader.readValue(node);
-            return new Result<Object>(true, ref);
+            return new Result<>(true, ref);
         } catch (IOException e) {
             return exceptionalResult(e);
         }
@@ -144,7 +156,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         try {
             //TODO: Validate all fields
             MdacParametersPS ps = reader.readValue(node);
-            return new Result<Object>(true, ps);
+            return new Result<>(true, ps);
         } catch (IOException e) {
             return exceptionalResult(e);
         }
@@ -155,10 +167,37 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         try {
             //TODO: Validate all fields
             MdacParametersFI fi = reader.readValue(node);
-            return new Result<Object>(true, fi);
+            return new Result<>(true, fi);
         } catch (IOException e) {
             return exceptionalResult(e);
         }
+    }
+
+    protected Result<Object> siteFrequenyBandsFromJsonNode(JsonNode siteCorrections) {
+        SiteCorrections siteBands = new SiteCorrections();
+        try {
+            Iterator<Entry<String, JsonNode>> netItr = siteCorrections.fields();
+            while (netItr.hasNext()) {
+                Entry<String, JsonNode> netNode = netItr.next();
+                String networkName = netNode.getKey();
+
+                Iterator<Entry<String, JsonNode>> staItr = netNode.getValue().fields();
+                while (staItr.hasNext()) {
+                    Entry<String, JsonNode> staNode = staItr.next();
+                    String stationName = staNode.getKey();
+                    if (staNode.getValue() instanceof ArrayNode) {
+                        ArrayNode rawBands = ((ArrayNode) staNode.getValue());
+                        List<SiteFrequencyBandParameters> bands = mapper.readValue(rawBands.toString(), new TypeReference<List<SiteFrequencyBandParameters>>() {
+                        });
+                        bands.stream().map(e -> e.setStation(new Station().setNetworkName(networkName).setStationName(stationName))).collect(Collectors.toList());
+                        siteBands.getSiteCorrections().addAll(bands);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return new Result<>(false, null).setErrors(Collections.singletonList(e));
+        }
+        return new Result<>(true, siteBands);
     }
 
     protected Result<Object> sharedFrequenyBandFromJsonNode(JsonNode band) {
@@ -170,9 +209,9 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
                 ObjectReader reader = mapper.readerFor(SharedFrequencyBandParameters.class);
                 sfb = reader.readValue(band);
             } catch (IOException e) {
-                return new Result<Object>(false, null).setErrors(Collections.singletonList(e));
+                return new Result<>(false, null).setErrors(Collections.singletonList(e));
             }
-            return new Result<Object>(true, sfb);
+            return new Result<>(true, sfb);
         }
     }
 

@@ -1,0 +1,65 @@
+{
+    "$id": "root",
+    "type": "object",
+    "title": "Root Schema",
+    "version": "1",
+    "required": [
+        "frequencyBandConfiguration"
+    ],
+    "properties": {
+        "frequencyBandConfiguration": {
+            "$id": "#/properties/frequencyBandConfiguration",
+            "type": "array",
+            "title": "Array of frequency band definitions.",
+            "items": {
+                "$id": "#/properties/frequencyBandConfiguration/band",
+                "type": "object",
+                "title": "A specific frequency band definition.",
+                "required": [
+                    "lowFrequency",
+                    "highFrequency",
+                    "smoothing",
+                    "interpolation"
+                ],
+                "properties": {
+                    "lowFrequency": {
+                        "$id": "#/properties/frequencyBandConfiguration/band/properties/lowFrequency",
+                        "type": "number",
+                        "title": "Low Frequency of the band",
+                        "default": false,
+                        "examples": [
+                            0.5
+                        ]
+                    },
+                    "highFrequency": {
+                        "$id": "#/properties/frequencyBandConfiguration/band/properties/highFrequency",
+                        "type": "number",
+                        "title": "High Frequency of the band",
+                        "default": false,
+                        "examples": [
+                            1
+                        ]
+                    },
+                    "smoothing": {
+                        "$id": "#/properties/frequencyBandConfiguration/band/properties/smoothing",
+                        "type": "number",
+                        "title": "Smoothing factor to be applied to envelopes after formation.",
+                        "default": false,
+                        "examples": [
+                            1
+                        ]
+                    },
+                    "interpolation": {
+                        "$id": "#/properties/frequencyBandConfiguration/band/properties/interpolation",
+                        "type": "number",
+                        "title": "Sample rate to interpolate envelopes to after formation.",
+                        "default": false,
+                        "examples": [
+                            1
+                        ]
+                    }
+                }
+            }
+        }        
+    }
+}      

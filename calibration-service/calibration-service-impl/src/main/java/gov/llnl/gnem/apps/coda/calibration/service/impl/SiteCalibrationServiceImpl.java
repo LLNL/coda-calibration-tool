@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -64,10 +64,40 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
     }
 
     @Override
+    public List<MeasuredMwParameters> fitMws(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand, MdacParametersFI mdacFI, Map<PICK_TYPES, MdacParametersPS> mdacPS,
+            Map<String, List<ReferenceMwParameters>> refMws, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandParameters, PICK_TYPES selectedPhase) {
+        MdacParametersPS psRows = mdacPS.get(selectedPhase);
+        Map<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> freqBandEvidStaMeasurementsMap = mapToEventAndStation(dataByFreqBand);
+        Map<Event, Function<Map<Double, Double>, Map<Double, Double>>> weightFunctionMapByEvent = new HashMap<>();
+        Map<Event, Map<FrequencyBand, SummaryStatistics>> averageMapByEvent = new HashMap<>();
+
+        for (Entry<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> evidStaMap : freqBandEvidStaMeasurementsMap.entrySet()) {
+            FrequencyBand freqBand = evidStaMap.getKey();
+            for (Entry<Event, Map<Station, SpectraMeasurement>> staMwMap : evidStaMap.getValue().entrySet()) {
+                Event evid = staMwMap.getKey();
+
+                weightFunctionMapByEvent.put(evid, this::lowerFreqHigherWeights);
+                for (Entry<Station, SpectraMeasurement> staMwEntry : staMwMap.getValue().entrySet()) {
+                    double amp = staMwEntry.getValue().getPathAndSiteCorrected();
+                    if (amp != 0.0) {
+                        if (!averageMapByEvent.containsKey(evid)) {
+                            averageMapByEvent.put(evid, new HashMap<FrequencyBand, SummaryStatistics>());
+                        }
+                        if (!averageMapByEvent.get(evid).containsKey(freqBand)) {
+                            averageMapByEvent.get(evid).put(freqBand, new SummaryStatistics());
+                        }
+                        averageMapByEvent.get(evid).get(freqBand).addValue(amp);
+                    }
+                }
+            }
+        }
+        return spectraCalc.measureMws(averageMapByEvent, weightFunctionMapByEvent, selectedPhase, psRows, mdacFI);
+    }
+
+    @Override
     public Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> measureSiteCorrections(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand, MdacParametersFI mdacFI,
             Map<PICK_TYPES, MdacParametersPS> mdacPS, Map<String, List<ReferenceMwParameters>> refMws, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters,
             PICK_TYPES selectedPhase) {
-
         // TODO: Validate all the input exists and is sufficient to compute a
         // useful site correction.
 
@@ -87,7 +117,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         //Result
         Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> siteCorrections = new HashMap<>();
 
-        //0) Determine if we have a RefMW in the dataset with a GT stress
+        //0) Determine if we have a RefMw in the dataset with a GT stress
         //0-1A) If yes then omit everything above the corner frequency for MDAC model only events
         //0-1B) Add it to the GT spectra event map
         //0-1C) Weight the Mw fit for that event 1.0 at all bands
@@ -189,7 +219,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
             }
         }
 
-        //4) Re-average the events using the new site corrections 
+        //4) Re-average the events using the new site corrections
         averageMapByEvent.clear();
         for (Entry<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> evidStaMap : freqBandEvidStaMeasurementsMap.entrySet()) {
             FrequencyBand freqBand = evidStaMap.getKey();
@@ -212,11 +242,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         }
 
         //TODO: Weight bands by number of points and std-dev instead
-
-        // 5) Measure the MW values per event
-        List<MeasuredMwParameters> measuredMws = spectraCalc.measureMws(averageMapByEvent, weightFunctionMapByEvent, PICK_TYPES.LG);
-
-        //Return results as a set of Site corrections
+        // 5) Convert average map into a set of Site correction objects
         for (Entry<Station, Map<FrequencyBand, SummaryStatistics>> freqBandCorrectionMap : staFreqBandSiteCorrectionMapAverage.entrySet()) {
             Station station = freqBandCorrectionMap.getKey();
             Set<Entry<FrequencyBand, SummaryStatistics>> bandEntries = freqBandCorrectionMap.getValue().entrySet();
@@ -233,13 +259,23 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                 siteCorrections.get(freqBandEntry.getKey()).put(station, siteParam);
             }
         }
-        siteParamsService.deleteAll();
-        siteParamsService.save(siteCorrections.values().parallelStream().flatMap(staMap -> staMap.values().stream()).collect(Collectors.toList()));
+        overwriteSiteParams(siteCorrections);
 
+        // 6) Measure the MW values per event
+        List<MeasuredMwParameters> measuredMws = spectraCalc.measureMws(averageMapByEvent, weightFunctionMapByEvent, selectedPhase, psRows, mdacFI);
+
+        overwriteMeasuredMws(measuredMws);
+        return siteCorrections;
+    }
+
+    private void overwriteMeasuredMws(List<MeasuredMwParameters> measuredMws) {
         measuredMwsService.deleteAll();
         measuredMwsService.save(measuredMws);
+    }
 
-        return siteCorrections;
+    private void overwriteSiteParams(Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> siteCorrections) {
+        siteParamsService.deleteAll();
+        siteParamsService.save(siteCorrections.values().parallelStream().flatMap(staMap -> staMap.values().stream()).collect(Collectors.toList()));
     }
 
     private Map<Double, Double> noWeights(Map<Double, Double> frequencies) {

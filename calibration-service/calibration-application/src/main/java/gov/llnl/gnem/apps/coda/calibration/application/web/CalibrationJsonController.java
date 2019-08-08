@@ -40,7 +40,7 @@ public class CalibrationJsonController {
         if (autoPickingEnabled == null) {
             autoPickingEnabled = Boolean.FALSE;
         }
-        if (getService().start(autoPickingEnabled)) {
+        if (getService().startCalibration(autoPickingEnabled)) {
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.badRequest().build();

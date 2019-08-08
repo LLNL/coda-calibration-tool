@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -60,7 +60,7 @@ public class WaveformUtils {
      * <b>NOT</b> purely the same as the methods in the TimeSeries chain. Trying
      * to not use SacSeismogram directly as it will be moving out of Core > 1.1
      * and will introduce an extra dependency.
-     * 
+     *
      * @param waveform
      * @param originTime
      * @return double[] where 0 is the <i>origin</i> time shifted by the
@@ -92,6 +92,17 @@ public class WaveformUtils {
     }
 
     public static boolean isValidWaveform(Waveform w) {
-        return (w != null && w.getEvent() != null && w.getStream() != null && w.getStream().getStation() != null);
+        return (w != null
+                && w.getEvent() != null
+                && w.getLowFrequency() != null
+                && w.getHighFrequency() != null
+                && w.getEvent().getEventId() != null
+                && w.getEvent().getLatitude() != 0.0
+                && w.getEvent().getLongitude() != 0.0
+                && w.getStream() != null
+                && w.getStream().getStation() != null
+                && w.getStream().getStation().getStationName() != null
+                && w.getStream().getStation().getLatitude() != 0.0
+                && w.getStream().getStation().getLongitude() != 0.0);
     }
 }
