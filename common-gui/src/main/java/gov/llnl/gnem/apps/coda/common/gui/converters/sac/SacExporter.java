@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -42,8 +42,6 @@ import llnl.gnem.core.util.TimeT;
 @Component
 public class SacExporter {
     private static final String SEP = "_";
-    private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
-
     private static final Logger log = LoggerFactory.getLogger(SacExporter.class);
 
     public Result<String> writeWaveformToDirectory(File exportDirectory, Waveform w) {
@@ -104,24 +102,23 @@ public class SacExporter {
                     }
                     os.flush();
 
-                    return new Result<String>(true, filename);
+                    return new Result<>(true, filename);
                 }
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
-                return new Result<String>(false, e.toString()).setErrors(Collections.singletonList(e));
+                return new Result<>(false, e.toString()).setErrors(Collections.singletonList(e));
             }
         }
 
         String message = "Waveform is missing required information or is malformed; waveform: " + w;
         log.error(message);
-        return new Result<String>(false, message);
+        return new Result<>(false, message);
     }
 
     private boolean waveformFullySpecified(Waveform w) {
         return w != null
                 && w.getLowFrequency() != null
                 && w.getHighFrequency() != null
-                && present(w.getSegmentType())
                 && w.getSampleRate() != null
                 && w.getBeginTime() != null
                 && w.getEndTime() != null
@@ -136,6 +133,7 @@ public class SacExporter {
 
     public String getFileName(Waveform w) {
         if (waveformFullySpecified(w)) {
+            NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
             Stream stream = w.getStream();
             Event ev = w.getEvent();
 

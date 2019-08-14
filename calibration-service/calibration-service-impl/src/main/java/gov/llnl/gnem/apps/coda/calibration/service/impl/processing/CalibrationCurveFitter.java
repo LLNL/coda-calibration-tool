@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -159,6 +160,14 @@ public class CalibrationCurveFitter {
         return fit;
     }
 
+    private PointValuePair bestByFunction(MultivariateFunction prediction, Function<Integer, PointValuePair> mapper) {
+        return IntStream.range(0, 1 + ITER_COUNT)
+                        .parallel()
+                        .mapToObj(mapper::apply)
+                        .reduce((left, right) -> left.getValue() < right.getValue() ? left : right)
+                        .orElseGet(() -> new PointValuePair(new double[4], Double.MAX_VALUE));
+    }
+
     public double[] gridSearchCodaVApacheCMAES(List<Entry<Double, Double>> velocityDistancePairs) {
         return gridSearchCodaVApacheCMAES(velocityDistancePairs, YVV_MIN, YVV_MAX, 0, V_DIST_MAX);
     }
@@ -192,23 +201,14 @@ public class CalibrationCurveFitter {
             return sum;
         };
 
-        PointValuePair bestResult = optimizeCMAES(
+        Function<Integer, PointValuePair> mapper = (i) -> optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
                             ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
                     new CMAESOptimizer.Sigma(new double[] { 1, 75, 100 }),
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
-        for (int i = 1; i < ITER_COUNT; i++) {
-            PointValuePair result = optimizeCMAES(
-                    prediction,
-                        new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
-                                ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
-                        new CMAESOptimizer.Sigma(new double[] { 1, 75, 100 }),
-                        new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
-            if (result.getValue() < bestResult.getValue()) {
-                bestResult = result;
-            }
-        }
+
+        PointValuePair bestResult = bestByFunction(prediction, mapper);
 
         double[] curve = new double[4];
         curve[0] = bestResult.getPoint()[0] / V0_REG;
@@ -256,25 +256,15 @@ public class CalibrationCurveFitter {
             return sum;
         };
 
-        PointValuePair bestResult = optimizeCMAES(
+        Function<Integer, PointValuePair> mapper = (i) -> optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
                             ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
                     new CMAESOptimizer.Sigma(new double[] { .05, 0.5, 750 }),
                     50,
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
-        for (int i = 1; i < ITER_COUNT; i++) {
-            PointValuePair result = optimizeCMAES(
-                    prediction,
-                        new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
-                                ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
-                        new CMAESOptimizer.Sigma(new double[] { .05, 0.5, 750 }),
-                        50,
-                        new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
-            if (result.getValue() < bestResult.getValue()) {
-                bestResult = result;
-            }
-        }
+
+        PointValuePair bestResult = bestByFunction(prediction, mapper);
 
         double[] curve = new double[4];
         curve[0] = bestResult.getPoint()[0] / B0_REG;
@@ -338,27 +328,15 @@ public class CalibrationCurveFitter {
 
         ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.005, 0.005, 100000);
 
-        PointValuePair bestResult = optimizeCMAES(
+        Function<Integer, PointValuePair> mapper = (i) -> optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), minP2, minP3 }),
                     new CMAESOptimizer.Sigma(new double[] { 1, 50, 50 }),
                     convergenceChecker,
                     50,
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
-        for (int i = 1; i < ITER_COUNT; i++) {
 
-            PointValuePair result = optimizeCMAES(
-                    prediction,
-                        new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
-                                ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
-                        new CMAESOptimizer.Sigma(new double[] { 1, 50, 50 }),
-                        convergenceChecker,
-                        50,
-                        new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
-            if (result.getValue() < bestResult.getValue()) {
-                bestResult = result;
-            }
-        }
+        PointValuePair bestResult = bestByFunction(prediction, mapper);
 
         double[] curve = new double[4];
         curve[0] = bestResult.getPoint()[0] / G0_REG;

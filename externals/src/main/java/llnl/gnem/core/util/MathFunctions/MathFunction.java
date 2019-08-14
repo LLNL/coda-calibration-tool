@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -15,7 +15,7 @@
 package llnl.gnem.core.util.MathFunctions;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -293,7 +293,7 @@ public class MathFunction {
      * @return cos(theta)
      *
      */
-    public Double getCosineTheta(ArrayList<Double> vectorA, ArrayList<Double> vectorB) {
+    public Double getCosineTheta(List<Double> vectorA, List<Double> vectorB) {
         Double AdotB = dotprod(vectorA, vectorB);
         Double normA = L2norm(vectorA);
         Double normB = L2norm(vectorB);
@@ -302,7 +302,7 @@ public class MathFunction {
         return costheta;
     }
 
-    public Double dotprod(ArrayList<Double> vectorA, ArrayList<Double> vectorB) {
+    public Double dotprod(List<Double> vectorA, List<Double> vectorB) {
         Double result = 0.;
 
         if (vectorA.size() == vectorB.size()) {
@@ -324,7 +324,7 @@ public class MathFunction {
      * @param ndimensionalvector
      * @return
      */
-    public static double L2norm(ArrayList<Double> ndimensionalvector) {
+    public static double L2norm(List<Double> ndimensionalvector) {
         double sumofsquares = 0;
         for (Double element : ndimensionalvector) {
             double squarevalue = element * element;

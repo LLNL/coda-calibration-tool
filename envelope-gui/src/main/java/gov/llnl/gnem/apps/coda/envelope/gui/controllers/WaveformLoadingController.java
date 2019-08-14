@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -20,10 +20,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +44,11 @@ import gov.llnl.gnem.apps.coda.common.gui.converters.api.FileToWaveformConverter
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.StackInfo;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacExporter;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacLoader;
+import gov.llnl.gnem.apps.coda.common.gui.util.ProgressEventProgressListener;
+import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
+import gov.llnl.gnem.apps.coda.common.model.messaging.ProgressEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.envelope.gui.data.api.EnvelopeClient;
 import llnl.gnem.core.io.SAC.SACHeader;
@@ -60,6 +68,12 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
 
     private CodaFilenameParser filenameParser;
 
+    private ProgressMonitor progressMonitor;
+
+    private ProgressEvent progressEvent;
+
+    private Progress progress;
+
     @Autowired
     public WaveformLoadingController(List<FileToWaveformConverter> fileConverters, EnvelopeClient client, EnvelopeParamsController params, EventBus bus, SacExporter sacExporter, SacLoader sacLoader,
             CodaFilenameParser filenameParser) {
@@ -67,12 +81,16 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
         this.sacLoader = sacLoader;
         this.filenameParser = filenameParser;
         this.loadClient = (id, waveforms) -> client.postEnvelopes(id, waveforms).doOnNext(w -> {
-            this.sacExporter.writeWaveformToDirectory(getExportPath(w).toFile(), w);
+            CompletableFuture.runAsync(() -> this.sacExporter.writeWaveformToDirectory(getExportPath(w).toFile(), w));
         });
         this.setCompletionCallback(() -> {
             stackEnvelopes(createEnvelopeMapping(getSacFiles(getExportPath())));
         });
         this.setMaxBatching(50);
+
+        progress = new Progress(-1l, 0l);
+        progressEvent = new ProgressEvent(idCounter.getAndIncrement(), progress);
+        progressMonitor = new ProgressMonitor("Saving Event-Sta-Freq pairs", new ProgressEventProgressListener(bus, progressEvent));
     }
 
     private List<File> getSacFiles(Path path) {
@@ -91,7 +109,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
     public void loadFiles(List<File> inputFiles) {
         try {
             Files.createDirectories(getExportPath());
-            super.loadFiles(inputFiles);
+            super.loadFiles(inputFiles, this.getCompletionCallback(), progressMonitor);
         } catch (IOException ex) {
             // TODO: bus.post(new DisplayableExceptionEvent("Unable to create directory for envelopes.", ex));
             log.error(ex.getMessage(), ex);
@@ -99,7 +117,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
     }
 
     public TreeMap<String, List<File>> createEnvelopeMapping(List<File> files) {
-        TreeMap<String, List<File>> evidStaFreqMap = new TreeMap<String, List<File>>();
+        TreeMap<String, List<File>> evidStaFreqMap = new TreeMap<>();
         for (int ii = 0; ii < files.size(); ii++) {
             try {
                 File file = files.get(ii);
@@ -142,100 +160,113 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
     }
 
     public void stackEnvelopes(TreeMap<String, List<File>> evidStaFreqMap) {
+        final AtomicLong count = new AtomicLong(0);
+        progress.setTotal((long) evidStaFreqMap.size());
+        progress.setCurrent(count.get());
+        progressEvent.setProgress(progress);
+        bus.post(progressEvent);
+
         evidStaFreqMap.entrySet().parallelStream().forEach(entry -> {
             if (entry.getValue().size() > 1) {
                 List<File> files = entry.getValue();
-                TimeSeries stackedSeries = null;
-                Waveform stackedWaveform = null;
-                int nseismograms = 0;
+                Map<String, List<Waveform>> waveformsByFreqAndSta = new HashMap<>();
 
                 for (int i = 0; i < files.size(); i++) {
-                    Result<Waveform> result = sacLoader.convertSacFileToWaveform(files.get(i));
-                    if (result.isSuccess() && result.getResultPayload().isPresent()) {
-                        Waveform rawWaveform = result.getResultPayload().get();
-                        if (rawWaveform != null && rawWaveform.getSegment() != null && rawWaveform.getSegment().length > 0) {
-                            float[] fData = new float[rawWaveform.getSegment().length];
-                            for (int j = 0; j < fData.length; ++j) {
-                                fData[j] = (float) rawWaveform.getSegment()[j];
-                            }
-                            TimeSeries seis = new TimeSeries(fData, rawWaveform.getSampleRate(), new TimeT(rawWaveform.getBeginTime()));
-                            if (stackedSeries == null) {
-                                stackedSeries = seis;
-                                stackedWaveform = rawWaveform;
-                                nseismograms = 1;
+                    Result<StackInfo> res = filenameParser.parse(files.get(i).getName().toUpperCase(Locale.ENGLISH));
+                    if (res != null && res.isSuccess() && res.getResultPayload().isPresent()) {
+                        StackInfo stackInfo = res.getResultPayload().get();
+                        Result<Waveform> result = sacLoader.convertSacFileToWaveform(files.get(i));
+
+                        if (result.isSuccess() && result.getResultPayload().isPresent()) {
+                            Waveform rawWaveform = result.getResultPayload().get();
+                            rawWaveform.setLowFrequency(stackInfo.getLowFrequency());
+                            rawWaveform.setHighFrequency(stackInfo.getHighFrequency());
+                            if (rawWaveform != null
+                                    && rawWaveform.getSegment() != null
+                                    && rawWaveform.getSegment().length > 0
+                                    && rawWaveform.getStream() != null
+                                    && rawWaveform.getStream().getStation() != null) {
+                                waveformsByFreqAndSta.computeIfAbsent(entry.getKey() + " " + rawWaveform.getStream().getStation().hashCode(), k -> new ArrayList<>()).add(rawWaveform);
                             } else {
-                                try {
-                                    if (seis.getTime().gt(stackedSeries.getTime())) {
-                                        stackedSeries.cutBefore(seis.getTime());
-                                    } else {
-                                        seis.cutBefore(stackedSeries.getTime());
-                                    }
-
-                                    if (seis.getEndtime().lt(stackedSeries.getEndtime())) {
-                                        stackedSeries.cutAfter(seis.getEndtime());
-                                    } else {
-                                        seis.cutAfter(stackedSeries.getEndtime());
-                                    }
-
-                                    if (stackedSeries.AddSeismogram(seis)) {
-                                        nseismograms++;
-                                    } else {
-                                        log.warn("{}. Unabled to stack series {} and {}; sample rate or timing mismatch.", entry.getKey(), stackedSeries, seis);
-                                    }
-                                } catch (IllegalArgumentException e) {
-                                    log.warn("{}. Unabled to stack series {} and {}; {}", entry.getKey(), stackedSeries, seis, e.getMessage());
-                                }
+                                log.warn("No data or bad station specification for waveform {}.", rawWaveform);
                             }
-                            if (stackedWaveform != null && (stackedWaveform.getLowFrequency() == null || stackedWaveform.getHighFrequency() == null)) {
-                                Result<StackInfo> res = filenameParser.parse(files.get(i).getName().toUpperCase(Locale.ENGLISH));
-                                if (res.isSuccess() && res.getResultPayload().isPresent()) {
-                                    StackInfo info = res.getResultPayload().get();
-                                    stackedWaveform.setLowFrequency(info.getLowFrequency());
-                                    stackedWaveform.setHighFrequency(info.getHighFrequency());
-                                }
-                            }
+                        } else {
+                            log.warn("Unable to read envelope file {}. {}", files.get(i), result.getErrors());
                         }
                     } else {
-                        log.warn("Unabled to read envelope file {}. {}", files.get(i), result.getErrors());
+                        log.warn("Unable to parse envelope filename for frequency band {}. {}", files.get(i), res.getErrors());
                     }
-
-                    // TODO: Implement array processing
-                    // TODO: Profile to improve perf
-                    // TODO: Progress bars for stacking
-                    // TODO: Export envelopes and stacks to separate dirs
-                    // TODO: Create folder hierarchy for output (Year->Month->Evid->Sta)
-
-                    // 1. For each element envelope, find record begin and end of each
-                    // trace ( b and e may have changed because of time shifting)
-                    // 2. Keep the largest begin and smallest end times of all elements
-                    // 3. Form an average envelope by summing each trace and then
-                    // dividing by the total number of envelopes used
-                    // 4. TODO ? Decimate the averaged envelopes using interp d 0.5
-                    // where d is the inverse of the number of samples per second TODO
-                    // == didn't we already do this?
-                    // 5. Change station header location lat and lon to the reference
-                    // (array center?) and re-compute hypocentral distance
-                    // 6. Store the envelope for coda amplitude measurement
                 }
 
-                if (nseismograms > 1) {
-                    stackedSeries.MultiplyScalar(1 / ((double) nseismograms));
-                    float[] stackedData = stackedSeries.getData();
-                    double[] data = new double[stackedData.length];
-                    for (int i = 0; i < data.length; ++i) {
-                        data[i] = stackedData[i];
-                    }
-                    stackedWaveform.setSegment(data);
-                    stackedWaveform.getStream().setChannelName("STACK");
+                List<Waveform> stackedWaveforms = waveformsByFreqAndSta.entrySet().stream().map(e -> stackEnvelopes(e.getValue())).collect(Collectors.toList());
 
+                // TODO: Export envelopes and stacks to separate dirs
+                for (Waveform stackedWaveform : stackedWaveforms) {
                     File stackFolder = getExportPath(stackedWaveform).toFile();
                     sacExporter.writeWaveformToDirectory(stackFolder, stackedWaveform);
-                } else {
-                    log.warn("No valid seismograms available to stack for inputs: {}", files);
                 }
+            }
 
+            long currentCount = count.getAndIncrement();
+            if (currentCount % this.getMaxBatching() == 0) {
+                progress.setCurrent(currentCount);
+                progressEvent.setProgress(progress);
+                bus.post(progressEvent);
             }
         });
+
+        progress.setCurrent(progress.getTotal());
+        progressEvent.setProgress(progress);
+        bus.post(progressEvent);
+    }
+
+    private Waveform stackEnvelopes(List<Waveform> waves) {
+        // FIXME: Duplicate of the one in service.
+        //             Need a common-utils because this pulls in stuff from Externals for TimeSeries etc so I can't cheat and slam it into the common model.
+        Waveform base = null;
+        if (waves != null && waves.size() > 1) {
+            try {
+                base = waves.get(0);
+                TimeSeries seis = convertToTimeSeries(base);
+
+                //                int nseismograms = 0;
+                for (int i = 1; i < waves.size(); i++) {
+                    TimeSeries seis2 = convertToTimeSeries(waves.get(i));
+                    seis = seis.add(seis2);
+                }
+                seis.MultiplyScalar(1d / waves.size());
+
+                double[] data = new double[seis.getData().length];
+                for (int j = 0; j < data.length; ++j) {
+                    data[j] = seis.getData()[j];
+                }
+                base.setSegment(data);
+                if (base.getSegment() == null || base.getSegment().length == 0) {
+                    return null;
+                }
+
+                base.setSampleRate(seis.getSamprate());
+                base.setBeginTime(seis.getTime().getDate());
+                base.setEndTime(seis.getEndtime().getDate());
+                if (base.getStream() != null) {
+                    base.getStream().setChannelName("STACK");
+                }
+            } catch (Exception e) {
+                log.info(e.getMessage(), e);
+            }
+        } else {
+            log.info("Waveform with only one channel found for list {}, skipping stacking", waves);
+        }
+        return base;
+    }
+
+    private TimeSeries convertToTimeSeries(Waveform base) {
+        float[] fData = new float[base.getSegment().length];
+        for (int j = 0; j < fData.length; ++j) {
+            fData[j] = (float) base.getSegment()[j];
+        }
+        TimeSeries seis = new TimeSeries(fData, base.getSampleRate(), new TimeT(base.getBeginTime()));
+        return seis;
     }
 
     public Path getExportPath() {

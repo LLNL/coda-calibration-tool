@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -1029,7 +1029,7 @@ public class SeriesMath {
     public static int[] find(long[] array, String condition, long value) {
         int[] indexes;
         Integer temp;
-        Vector<Integer> indexV = new Vector<Integer>();
+        Vector<Integer> indexV = new Vector<>();
 
         if (condition.equals("==")) {
             for (int i = 0; i < array.length; i++) {
@@ -1582,26 +1582,7 @@ public class SeriesMath {
             return median;
         }
 
-        ArrayList<Double> tmp = new ArrayList<>(data);
-        Collections.sort(tmp);
-        int nhalf = Nsamps / 2;
-        if (2 * nhalf == Nsamps) {
-            median = 0.5 * (tmp.get(nhalf) + tmp.get(nhalf - 1));
-        } else {
-            median = tmp.get(nhalf);
-        }
-        return median;
-
-    }
-
-    public static double getMedian(ArrayList<Double> data) {
-        int Nsamps = data.size();
-        double median = 0.0;
-        if (Nsamps < 1) {
-            return median;
-        }
-
-        ArrayList<Double> tmp = new ArrayList<>(data);
+        List<Double> tmp = new ArrayList<>(data);
         Collections.sort(tmp);
         int nhalf = Nsamps / 2;
         if (2 * nhalf == Nsamps) {
@@ -2580,7 +2561,7 @@ public class SeriesMath {
     /**
      * Check whether the data series has flat segments - where every element of
      * the segment is identical
-     * 
+     *
      * @param minsegmentlength
      *            the shortest number of datapoints that must be identical
      *            before it qualifies as "flat"

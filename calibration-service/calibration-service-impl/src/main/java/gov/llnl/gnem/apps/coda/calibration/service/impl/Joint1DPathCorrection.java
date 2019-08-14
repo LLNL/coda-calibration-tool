@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.ConvergenceChecker;
@@ -37,7 +36,7 @@ import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.eclipse.collections.impl.list.mutable.primitive.DoubleArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -348,7 +347,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
             Event evid = evidEntry.getKey();
             Map<Station, SpectraMeasurement> stationMapData = evidEntry.getValue();
 
-            List<Double> dataVec = new ArrayList<>(optimizationParams.length);
+            DoubleArrayList dataVec = new DoubleArrayList(stationMapData.size());
             for (Entry<Station, SpectraMeasurement> entry : stationMapData.entrySet()) {
                 double del = distanceMap.get(evid).get(entry.getKey());
                 double site = optimizationParams[stationIdxMap.get(entry.getKey())];
@@ -367,7 +366,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
             if (dataVec.size() > 1) {
                 double huberDel = .5d;
-                double median = new DescriptiveStatistics(ArrayUtils.toPrimitive(dataVec.toArray(new Double[0]))).getPercentile(50d);
+                double median = dataVec.median();
                 for (Entry<Station, SpectraMeasurement> entry1 : stationMapData.entrySet()) {
                     double diff = Math.abs(localDataMap.get(evid).get(entry1.getKey()) - median);
                     cost = cost + (Math.pow(huberDel, 2.0) + (Math.sqrt(1d + Math.pow(diff / huberDel, 2.0)) - 1d));

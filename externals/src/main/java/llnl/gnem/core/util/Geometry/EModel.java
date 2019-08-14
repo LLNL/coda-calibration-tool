@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -16,6 +16,7 @@ package llnl.gnem.core.util.Geometry;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -117,7 +118,7 @@ public class EModel {
      *            The Vector of event-station azimuths
      * @return The azgap value
      */
-    public static double getAzGapFromAzVector(ArrayList<Double> az) {
+    public static double getAzGapFromAzVector(List<Double> az) {
         Collections.sort(az);
         double maxGap = 0.0;
         double dif;
@@ -147,12 +148,12 @@ public class EModel {
      *            A Vector of station longitudes
      * @return The azgap value
      */
-    public static double getAzgap(double evla, double evlo, ArrayList<Double> stla, ArrayList<Double> stlo) {
+    public static double getAzgap(double evla, double evlo, List<Double> stla, List<Double> stlo) {
         int nsta = stla.size();
         if (nsta < 1 || nsta != stlo.size()) {
             return -1.0;
         }
-        ArrayList<Double> az = new ArrayList<>();
+        List<Double> az = new ArrayList<>();
 
         //Calculate event-station azimuths for all stations...
         for (int j = 0; j < nsta; ++j) {
@@ -733,9 +734,9 @@ public class EModel {
 
     /*
      * function to compute a great circle arc on a sphere
-     * 
+     *
      * after the fortran routine by Dave Harris to do the same.
-     * 
+     *
      */
     public static void getGreatCircleArc(GeographicCoordinate coord1, GeographicCoordinate coord2, double az, double dist, double[] lats, double[] lons, int npts) {
 

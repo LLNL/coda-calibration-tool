@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -56,6 +56,7 @@ public strictfp class TimeT implements Comparable, Serializable {
     private static final String[] MONTH_ABBREVIATION = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
     private final long milliseconds;
     private final int microseconds;
+    private static final TimeZone tz = TimeZone.getTimeZone("GMT");
     public static final double MAX_EPOCH_TIME = 9999999999.999;
 
     /**
@@ -93,7 +94,7 @@ public strictfp class TimeT implements Comparable, Serializable {
         // Get the fractional part of the seconds
         int tmp = (int) Math.rint((second - (int) second) * 1000000);
         microseconds = tmp % 1000;
-        GregorianCalendar d = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+        GregorianCalendar d = new GregorianCalendar(tz);
         d.set(year, month - 1, day, hour, minute, (int) second);
         d.set(Calendar.MILLISECOND, tmp / 1000);
         milliseconds = d.getTime().getTime();
@@ -141,7 +142,7 @@ public strictfp class TimeT implements Comparable, Serializable {
      *            Description of the Parameter
      */
     public TimeT(int year, int jday, int hour, int min, int sec, int msec) {
-        GregorianCalendar d = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+        GregorianCalendar d = new GregorianCalendar(tz);
         d.clear();
         d.set(Calendar.MILLISECOND, msec);
         d.set(Calendar.SECOND, sec);
@@ -230,7 +231,6 @@ public strictfp class TimeT implements Comparable, Serializable {
     }
 
     public TimeT(Date date) {
-        TimeZone tz = TimeZone.getTimeZone("GMT");
         GregorianCalendar d = new GregorianCalendar(tz);
 
         d.setTime(date);
@@ -573,7 +573,6 @@ public strictfp class TimeT implements Comparable, Serializable {
     }
 
     public Date getDate() {
-        TimeZone tz = TimeZone.getTimeZone("Etc/UTC");
         GregorianCalendar d = new GregorianCalendar(tz);
         long tmp = milliseconds;
         tmp -= d.get(Calendar.DST_OFFSET);
@@ -582,7 +581,7 @@ public strictfp class TimeT implements Comparable, Serializable {
     }
 
     private GregorianCalendar getCalendar() {
-        GregorianCalendar d = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+        GregorianCalendar d = new GregorianCalendar(tz);
         Date date = new Date(milliseconds);
         d.setTime(date);
         return d;
@@ -605,7 +604,6 @@ public strictfp class TimeT implements Comparable, Serializable {
      * @see SimpleDateFormat for format rules.
      */
     public String toString(String format) {
-        TimeZone tz = TimeZone.getTimeZone("GMT");
         GregorianCalendar d = new GregorianCalendar(tz);
         Date date = new Date(milliseconds + (int) Math.rint(microseconds / 1000.0));
         d.setTime(date);
@@ -678,7 +676,7 @@ public strictfp class TimeT implements Comparable, Serializable {
 
     public static Date getDateFrom(String timeString, String formatString) throws ParseException {
         SimpleDateFormat df = new SimpleDateFormat(formatString);
-        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+        df.setTimeZone(tz);
         return df.parse(timeString);
     }
 
@@ -748,7 +746,7 @@ public strictfp class TimeT implements Comparable, Serializable {
      * @return True if the year is a leap year.
      */
     public static boolean isLeapYear(int year) {
-        GregorianCalendar d = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+        GregorianCalendar d = new GregorianCalendar(tz);
         return d.isLeapYear(year);
     }
 

@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -150,7 +150,7 @@ public class CodaWaveformPlot extends SeriesPlot {
                 // waveform so we need to check that
                 for (WaveformPick pick : picks) {
                     double pickTime;
-                    //"'Bad' pick, plot it at begin time 
+                    //"'Bad' pick, plot it at begin time
                     if (pick.getPickTimeSecFromOrigin() < 0) {
                         pickTime = new TimeT(waveform.getBeginTime()).getEpochTime();
                     } else {
@@ -271,17 +271,20 @@ public class CodaWaveformPlot extends SeriesPlot {
             if (startTime.lt(endTime)) {
                 interpolatedSeries.cut(startTime, endTime);
                 synthSeriesBeforeEndMarker.cut(startTime, endTime);
-                synthSeriesRemaining.cutBefore(endTime);
 
                 TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
                 int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
-                int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
                 double median = diffSeis.getMedian();
 
                 subplot.DeletePlotObject(legendRef);
                 subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
                 subplot.AddPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
-                subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, 3, PenStyle.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
+
+                if (endTime.lt(synthSeriesRemaining.getEndtime())) {
+                    synthSeriesRemaining.cutBefore(endTime);
+                    int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
+                    subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, 3, PenStyle.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                }
                 repaint();
             }
         }
@@ -336,7 +339,7 @@ public class CodaWaveformPlot extends SeriesPlot {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * llnl.gnem.core.gui.waveform.WaveformPlot#handlePickMovedState(java.lang.
      * Object)T
