@@ -99,7 +99,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     private static final double efact = Math.log10(Math.E);
     private PathCalibrationMeasurementService pathCalibrationMeasurementService;
-    private List<double[]> paramPoints;
+
     @Value(value = "${path.use-aggressive-opt:true}")
     private boolean agressiveOptimization;
 
@@ -387,9 +387,6 @@ public class Joint1DPathCorrection implements PathCalibrationService {
      *             if optimizationBounds.length < 2
      */
     private List<double[]> makeParamPoints(int numberOfTerms, boolean agressiveOptimization, double[]... optimizationBounds) {
-        if (paramPoints != null && !paramPoints.isEmpty() && paramPoints.get(0).length == numberOfTerms) {
-            return paramPoints;
-        }
         if (optimizationBounds.length < 2) {
             throw new IllegalStateException("Optmization bounds needs at least two entries for the low and high boundary conditions. Got: " + optimizationBounds.length);
         }
@@ -421,8 +418,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
             params.add(param);
         }
 
-        paramPoints = params;
-        return paramPoints;
+        return params;
     }
 
     private int[] nextIndex(int[] selectionIndex, int base) {

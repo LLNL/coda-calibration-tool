@@ -24,6 +24,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -47,6 +49,8 @@ import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 
 @Service
 public class SiteCalibrationServiceImpl implements SiteCalibrationService {
+
+    private static final Logger log = LoggerFactory.getLogger(SiteCalibrationServiceImpl.class);
 
     private static final double UNUSED_DISTANCE = -1d;
     private static final double DYNE_LOG10_ADJUSTMENT = 7d;
@@ -131,7 +135,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
             double centerFreq = (highFreq + lowFreq) / 2;
             for (Entry<Event, Map<Station, SpectraMeasurement>> staMwMap : evidStaMap.getValue().entrySet()) {
                 Event evid = staMwMap.getKey();
-                if (refMws.containsKey(evid.getEventId())) {
+                if (refMws != null && refMws.containsKey(evid.getEventId())) {
                     List<ReferenceMwParameters> refMwsParams = refMws.get(evid.getEventId());
                     ReferenceMwParameters refMw = refMwsParams.stream().findFirst().orElse(null);
                     if (refMw != null) {
@@ -163,6 +167,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                         }
                     }
                 }
+                weightFunctionMapByEvent.putIfAbsent(evid, this::lowerFreqHigherWeights);
             }
         }
 
@@ -195,9 +200,6 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                 Event evid = evidStaEntry.getKey();
                 if (averageMapByEvent.containsKey(evid) && averageMapByEvent.get(evid).containsKey(freqBand)) {
                     for (Entry<Station, SpectraMeasurement> staMwEntry : evidStaEntry.getValue().entrySet()) {
-                        if (!weightFunctionMapByEvent.containsKey(evid)) {
-                            weightFunctionMapByEvent.put(evid, this::lowerFreqHigherWeights);
-                        }
                         double amp = staMwEntry.getValue().getPathCorrected();
                         if (!staFreqBandSiteCorrectionMapAverage.containsKey(staMwEntry.getKey())) {
                             staFreqBandSiteCorrectionMapAverage.put(staMwEntry.getKey(), new HashMap<FrequencyBand, SummaryStatistics>());
@@ -315,10 +317,48 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                         }
                         Map<Station, SpectraMeasurement> stationMap = eventMap.get(event);
                         stationMap.put(station, entry);
+                    } else {
+                        log.debug("No valid waveform for {}", entry);
                     }
                 }
             }
         }
         return data;
+    }
+
+    public MdacCalculatorService getMdac() {
+        return mdac;
+    }
+
+    public SiteCalibrationServiceImpl setMdac(MdacCalculatorService mdac) {
+        this.mdac = mdac;
+        return this;
+    }
+
+    public SiteFrequencyBandParametersService getSiteParamsService() {
+        return siteParamsService;
+    }
+
+    public SiteCalibrationServiceImpl setSiteParamsService(SiteFrequencyBandParametersService siteParamsService) {
+        this.siteParamsService = siteParamsService;
+        return this;
+    }
+
+    public MeasuredMwsService getMeasuredMwsService() {
+        return measuredMwsService;
+    }
+
+    public SiteCalibrationServiceImpl setMeasuredMwsService(MeasuredMwsService measuredMwsService) {
+        this.measuredMwsService = measuredMwsService;
+        return this;
+    }
+
+    public SpectraCalculator getSpectraCalc() {
+        return spectraCalc;
+    }
+
+    public SiteCalibrationServiceImpl setSpectraCalc(SpectraCalculator spectraCalc) {
+        this.spectraCalc = spectraCalc;
+        return this;
     }
 }

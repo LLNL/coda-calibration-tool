@@ -114,7 +114,7 @@ public class CodaWaveformPlot extends SeriesPlot {
         this.clear();
         pickLineMap.clear();
 
-        if (waveform != null && waveform.getSegment() != null && waveform.getBeginTime() != null) {
+        if (waveform != null && waveform.hasData() && waveform.getBeginTime() != null) {
             final TimeT beginTime = new TimeT(waveform.getBeginTime());
             final float[] waveformSegment = doublesToFloats(waveform.getSegment());
             final TimeSeries rawSeries = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
@@ -200,7 +200,7 @@ public class CodaWaveformPlot extends SeriesPlot {
                     try {
                         velocityClient.getNoiseForWaveform(waveform.getId()).subscribe(measurement -> {
                             if (measurement != null && measurement.getNoiseEndSecondsFromOrigin() != 0.0) {
-                                int lineLength = (int) (waveform.getSegment().length / waveform.getSampleRate()) + 10;
+                                int lineLength = (int) (waveform.getSegmentLength() / waveform.getSampleRate()) + 10;
                                 subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel(), lineLength, Color.BLACK, PenStyle.DASH), PLOT_ORDERING.NOISE_LINE.getZOrder());
                                 subplot.AddPlotObject(createFixedLine(measurement.getNoiseLevel() + params.getMinSnr(), lineLength, Color.BLACK, PenStyle.SOLID), PLOT_ORDERING.NOISE_LINE.getZOrder());
                                 repaint();

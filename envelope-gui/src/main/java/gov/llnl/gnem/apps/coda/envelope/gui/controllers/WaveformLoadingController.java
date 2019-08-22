@@ -26,14 +26,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
@@ -74,6 +76,9 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
 
     private Progress progress;
 
+    @Value(value = "${envelope-app.max-batching:50}")
+    private int batchSize;
+
     @Autowired
     public WaveformLoadingController(List<FileToWaveformConverter> fileConverters, EnvelopeClient client, EnvelopeParamsController params, EventBus bus, SacExporter sacExporter, SacLoader sacLoader,
             CodaFilenameParser filenameParser) {
@@ -81,16 +86,20 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
         this.sacLoader = sacLoader;
         this.filenameParser = filenameParser;
         this.loadClient = (id, waveforms) -> client.postEnvelopes(id, waveforms).doOnNext(w -> {
-            CompletableFuture.runAsync(() -> this.sacExporter.writeWaveformToDirectory(getExportPath(w).toFile(), w));
+            this.sacExporter.writeWaveformToDirectory(getExportPath(w).toFile(), w);
         });
         this.setCompletionCallback(() -> {
             stackEnvelopes(createEnvelopeMapping(getSacFiles(getExportPath())));
         });
-        this.setMaxBatching(50);
+    }
 
-        progress = new Progress(-1l, 0l);
-        progressEvent = new ProgressEvent(idCounter.getAndIncrement(), progress);
-        progressMonitor = new ProgressMonitor("Saving Event-Sta-Freq pairs", new ProgressEventProgressListener(bus, progressEvent));
+    @PostConstruct
+    private void setup() {
+        if (batchSize > 0) {
+            this.setMaxBatching(batchSize);
+        } else {
+            log.warn("Invalid batch size {} defined. Defaulting to {} instead.", batchSize, maxBatching);
+        }
     }
 
     private List<File> getSacFiles(Path path) {
@@ -108,6 +117,9 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
     @Override
     public void loadFiles(List<File> inputFiles) {
         try {
+            progress = new Progress(-1l, 0l);
+            progressEvent = new ProgressEvent(idCounter.getAndIncrement(), progress);
+            progressMonitor = new ProgressMonitor("Saving Event-Sta-Freq pairs", new ProgressEventProgressListener(bus, progressEvent));
             Files.createDirectories(getExportPath());
             super.loadFiles(inputFiles, this.getCompletionCallback(), progressMonitor);
         } catch (IOException ex) {
@@ -181,11 +193,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                             Waveform rawWaveform = result.getResultPayload().get();
                             rawWaveform.setLowFrequency(stackInfo.getLowFrequency());
                             rawWaveform.setHighFrequency(stackInfo.getHighFrequency());
-                            if (rawWaveform != null
-                                    && rawWaveform.getSegment() != null
-                                    && rawWaveform.getSegment().length > 0
-                                    && rawWaveform.getStream() != null
-                                    && rawWaveform.getStream().getStation() != null) {
+                            if (rawWaveform != null && rawWaveform.hasData() && rawWaveform.getSegmentLength() > 0 && rawWaveform.getStream() != null && rawWaveform.getStream().getStation() != null) {
                                 waveformsByFreqAndSta.computeIfAbsent(entry.getKey() + " " + rawWaveform.getStream().getStation().hashCode(), k -> new ArrayList<>()).add(rawWaveform);
                             } else {
                                 log.warn("No data or bad station specification for waveform {}.", rawWaveform);
@@ -229,19 +237,19 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                 base = waves.get(0);
                 TimeSeries seis = convertToTimeSeries(base);
 
-                //                int nseismograms = 0;
+                float[] seisData = seis.getData();
                 for (int i = 1; i < waves.size(); i++) {
                     TimeSeries seis2 = convertToTimeSeries(waves.get(i));
                     seis = seis.add(seis2);
                 }
                 seis.MultiplyScalar(1d / waves.size());
 
-                double[] data = new double[seis.getData().length];
+                double[] data = new double[seisData.length];
                 for (int j = 0; j < data.length; ++j) {
-                    data[j] = seis.getData()[j];
+                    data[j] = seisData[j];
                 }
                 base.setSegment(data);
-                if (base.getSegment() == null || base.getSegment().length == 0) {
+                if (!base.hasData() || base.getSegmentLength() == 0) {
                     return null;
                 }
 
@@ -261,9 +269,10 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
     }
 
     private TimeSeries convertToTimeSeries(Waveform base) {
-        float[] fData = new float[base.getSegment().length];
+        double[] segment = base.getSegment();
+        float[] fData = new float[segment.length];
         for (int j = 0; j < fData.length; ++j) {
-            fData[j] = (float) base.getSegment()[j];
+            fData[j] = (float) segment[j];
         }
         TimeSeries seis = new TimeSeries(fData, base.getSampleRate(), new TimeT(base.getBeginTime()));
         return seis;

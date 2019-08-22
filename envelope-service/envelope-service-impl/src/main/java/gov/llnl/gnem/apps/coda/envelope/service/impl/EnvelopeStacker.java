@@ -69,7 +69,7 @@ public class EnvelopeStacker implements WaveformStacker {
                 seis.MultiplyScalar(1d / (waves.size()));
                 base.setSegment(WaveformUtils.floatsToDoubles(seis.getData()));
 
-                if (base.getSegment() == null || base.getSegment().length == 0) {
+                if (!base.hasData() || base.getSegmentLength() == 0) {
                     return null;
                 }
 

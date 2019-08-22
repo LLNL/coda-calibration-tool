@@ -124,7 +124,6 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
             if (maxNeededRate < bandConfig.getInterpolation()) {
                 maxNeededRate = bandConfig.getInterpolation();
             }
-            seis.interpolate(maxNeededRate);
 
             seis.RemoveMean();
             seis.removeTrend();
@@ -144,6 +143,8 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
             // final cut to eliminate smoothing edge effects
             double trimlength = 2 * smoothing / seis.getSamprate();
             seis.cut(seis.getTime().add(trimlength), seis.getEndtime().add(-1 * trimlength));
+
+            seis.interpolate(maxNeededRate);
 
             seisWave.setSampleRate(seis.getSamprate());
             seisWave.setSegment(WaveformUtils.floatsToDoubles(seis.getData()));

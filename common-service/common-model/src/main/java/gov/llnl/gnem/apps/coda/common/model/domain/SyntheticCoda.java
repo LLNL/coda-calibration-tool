@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -37,6 +37,8 @@ import javax.validation.constraints.NotNull;
 import org.eclipse.collections.impl.list.mutable.primitive.DoubleArrayList;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.NumberFormat;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "Synthetic_Coda", indexes = { @Index(columnList = "source_waveform_id", name = "source_waveform_id_index") })
@@ -124,6 +126,31 @@ public class SyntheticCoda implements Serializable {
 
     public SyntheticCoda setSegment(double[] segment) {
         this.segment = new DoubleArrayList(segment);
+        return this;
+    }
+
+    @JsonIgnore
+    public int getSegmentLength() {
+        int len = 0;
+        if (hasData()) {
+            len = segment.size();
+        }
+        return len;
+    }
+
+    @JsonIgnore
+    public boolean hasData() {
+        return segment != null;
+    }
+
+    @JsonIgnore
+    public DoubleArrayList getData() {
+        return segment;
+    }
+
+    @JsonIgnore
+    public SyntheticCoda setData(DoubleArrayList segment) {
+        this.segment = segment;
         return this;
     }
 
@@ -325,8 +352,8 @@ public class SyntheticCoda implements Serializable {
             this.setEndTime(overlay.getEndTime());
         }
 
-        if (overlay.getSegment() != null) {
-            this.setSegment(overlay.getSegment());
+        if (overlay.hasData()) {
+            this.setData(overlay.getData());
         }
 
         if (overlay.getSampleRate() != null) {
