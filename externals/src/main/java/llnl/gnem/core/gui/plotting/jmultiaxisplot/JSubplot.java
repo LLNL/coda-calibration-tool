@@ -37,6 +37,7 @@ import llnl.gnem.core.gui.plotting.plotobject.Line;
 import llnl.gnem.core.gui.plotting.plotobject.LineBounds;
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
 import llnl.gnem.core.gui.plotting.transforms.CartesianTransform;
+import llnl.gnem.core.gui.plotting.transforms.CoordinateTransform;
 import llnl.gnem.core.util.TimeT;
 
 /**
@@ -223,12 +224,22 @@ public class JSubplot extends JBasicPlot {
     }
 
     public void setAxisLimits(double xmin, double xmax, double ymin, double ymax) {
-        TickMetrics ticks = PlotAxis.defineAxis(xmin, xmax);
+        CoordinateTransform ct = this.getCoordinateTransform();
+        TickMetrics ticks;
+        if (AxisScale.LOG == ct.getXScale()) {
+            ticks = PlotAxis.defineLogAxis(xmin, xmax, false);
+        } else {
+            ticks = PlotAxis.defineAxis(xmin, xmax);
+        }
         setXmax(ticks.getMax());
         setXmin(ticks.getMin());
 
         // Now set up the Y-axis dimensions...
-        ticks = PlotAxis.defineAxis(ymin, ymax);
+        if (AxisScale.LOG == ct.getYScale()) {
+            ticks = PlotAxis.defineLogAxis(ymin, ymax, false);
+        } else {
+            ticks = PlotAxis.defineAxis(ymin, ymax);
+        }
         yaxis.setMin(ticks.getMin());
         yaxis.setMax(ticks.getMax());
     }

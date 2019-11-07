@@ -129,7 +129,7 @@ public class LeafletIcon implements Icon {
 
     @Override
     public String getFriendlyName() {
-        return Optional.ofNullable(friendlyName).orElse("");
+        return Optional.ofNullable(friendlyName).orElse(id);
     }
 
     @Override

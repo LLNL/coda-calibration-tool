@@ -16,6 +16,8 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -26,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -35,6 +38,8 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class ParameterWebClient implements ParameterClient {
+
+    private static final Logger log = LoggerFactory.getLogger(ParameterWebClient.class);
 
     private WebClient client;
 
@@ -49,7 +54,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/shared-fb-parameters/update")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(parameters)
+                     .bodyValue(parameters)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -60,7 +65,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/shared-fb-parameters/delete")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(parameters)
+                     .bodyValue(parameters)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -73,6 +78,7 @@ public class ParameterWebClient implements ParameterClient {
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(SharedFrequencyBandParameters.class))
                      .onErrorReturn(new SharedFrequencyBandParameters());
+
     }
 
     @Override
@@ -81,7 +87,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/site-fb-parameters/batch")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(parameters)
+                     .bodyValue(parameters)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -102,7 +108,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/ps/update")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(parameters)
+                     .bodyValue(parameters)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -113,7 +119,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/ps/delete")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(parameters)
+                     .bodyValue(parameters)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -129,7 +135,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/fi/update")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(parameters)
+                     .bodyValue(parameters)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -140,7 +146,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/fi/delete")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(parameters)
+                     .bodyValue(parameters)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -156,7 +162,7 @@ public class ParameterWebClient implements ParameterClient {
                      .uri("/params/shared-fb-parameters/find-by-band")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(frequencyBand)
+                     .bodyValue(frequencyBand)
                      .exchange()
                      .flatMap(response -> response.bodyToMono(SharedFrequencyBandParameters.class));
     }
@@ -173,7 +179,21 @@ public class ParameterWebClient implements ParameterClient {
 
     @Override
     public Mono<String> updateVelocityConfiguration(VelocityConfiguration velConf) {
-        return client.post().uri("/config/velocity/update").accept(MediaType.APPLICATION_JSON).syncBody(velConf).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
+        return client.post().uri("/config/velocity/update").accept(MediaType.APPLICATION_JSON).bodyValue(velConf).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
     }
 
+    @Override
+    public Mono<ShapeFitterConstraints> getShapeFitterConstraints() {
+        return client.get()
+                     .uri("/config/shape/")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMap(response -> response.bodyToMono(ShapeFitterConstraints.class))
+                     .onErrorReturn(new ShapeFitterConstraints());
+    }
+
+    @Override
+    public Mono<String> updateShapeFitterConstraints(ShapeFitterConstraints conf) {
+        return client.post().uri("/config/shape/update").accept(MediaType.APPLICATION_JSON).bodyValue(conf).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
+    }
 }

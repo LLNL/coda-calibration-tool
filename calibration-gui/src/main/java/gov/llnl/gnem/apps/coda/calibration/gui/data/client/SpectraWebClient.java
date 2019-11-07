@@ -62,7 +62,7 @@ public class SpectraWebClient implements SpectraClient {
                      .uri("/spectra-measurements/reference-spectra")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(eventId)
+                     .bodyValue(eventId)
                      .exchange()
                      .flatMap(response -> response.bodyToMono(Spectra.class))
                      .onErrorReturn(new Spectra());
@@ -74,7 +74,7 @@ public class SpectraWebClient implements SpectraClient {
                      .uri("/spectra-measurements/fit-spectra")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(eventId)
+                     .bodyValue(eventId)
                      .exchange()
                      .flatMap(response -> response.bodyToMono(Spectra.class))
                      .onErrorReturn(new Spectra());

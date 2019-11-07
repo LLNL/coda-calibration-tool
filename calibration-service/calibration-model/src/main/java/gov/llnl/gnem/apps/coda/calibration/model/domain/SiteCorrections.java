@@ -14,17 +14,17 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.model.domain;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SiteCorrections {
-    private List<SiteFrequencyBandParameters> siteCorrections = new ArrayList<>(0);
+    private Set<SiteFrequencyBandParameters> siteCorrections = new HashSet<>(0);
 
-    public List<SiteFrequencyBandParameters> getSiteCorrections() {
+    public Set<SiteFrequencyBandParameters> getSiteCorrections() {
         return siteCorrections;
     }
 
-    public SiteCorrections setSiteCorrections(List<SiteFrequencyBandParameters> siteCorrections) {
+    public SiteCorrections setSiteCorrections(Set<SiteFrequencyBandParameters> siteCorrections) {
         this.siteCorrections = siteCorrections;
         return this;
     }

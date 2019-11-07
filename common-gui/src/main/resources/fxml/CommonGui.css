@@ -46,3 +46,10 @@
 .red-bar {
     -fx-accent: red;
 }
+
+.text-input:readonly {
+    -fx-background-color: transparent;
+}
+.text-input:readonly {
+    -fx-background-color: transparent;
+}

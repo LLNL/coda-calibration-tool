@@ -58,6 +58,15 @@ public class ReferenceEventsJsonController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping(value = "/delete/batch-by-evids", name = "deleteBatchByEvids")
+    public ResponseEntity<?> deleteBatchByEvids(@Valid @RequestBody Collection<String> eventIds, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }
+        service.deleteAllByEventIds(eventIds);
+        return ResponseEntity.ok().build();
+    }
+
     public ReferenceMwParametersService getService() {
         return service;
     }

@@ -18,6 +18,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
@@ -56,5 +57,9 @@ public interface ParameterClient {
     public Mono<VelocityConfiguration> getVelocityConfiguration();
 
     public Mono<String> updateVelocityConfiguration(VelocityConfiguration velConf);
+
+    public Mono<ShapeFitterConstraints> getShapeFitterConstraints();
+
+    public Mono<String> updateShapeFitterConstraints(ShapeFitterConstraints conf);
 
 }

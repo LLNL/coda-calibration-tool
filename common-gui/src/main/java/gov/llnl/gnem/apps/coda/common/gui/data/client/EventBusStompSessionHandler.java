@@ -59,8 +59,10 @@ public class EventBusStompSessionHandler extends StompSessionHandlerAdapter {
 
     @Override
     public void handleFrame(StompHeaders headers, Object payload) {
-        log.trace("Message {}", payload);
-        bus.post(payload);
+        if (payload != null) {
+            log.trace("Message {}", payload);
+            bus.post(payload);
+        }
     }
 
     @Override

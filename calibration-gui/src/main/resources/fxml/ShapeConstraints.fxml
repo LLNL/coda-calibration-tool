@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="shapeConfig" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ShapeConfigurationController">
+	<children>
+		<ScrollPane fitToHeight="true" fitToWidth="true">
+			<content>
+            <VBox>
+               <children>
+      				<TableView fx:id="shapeVelConfTableView" editable="true" prefHeight="200.0" tableMenuButtonVisible="true">
+      					<columns>
+      						<TableColumn fx:id="maxVP1" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxVP1" />	
+      						<TableColumn fx:id="minVP1" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minVP1" />	
+      						<TableColumn fx:id="v0reg" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="v0reg" />	
+      						<TableColumn fx:id="maxVP2" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxVP2" />	
+      						<TableColumn fx:id="minVP2" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minVP2" />	
+      						<TableColumn fx:id="maxVP3" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxVP3" />	
+      						<TableColumn fx:id="minVP3" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minVP3" />	
+      						<TableColumn fx:id="yvvMin" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="yvvMin" />	
+      						<TableColumn fx:id="yvvMax" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="yvvMax" />	
+      						<TableColumn fx:id="vDistMax" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="vDistMax" />	
+      						<TableColumn fx:id="vDistMin" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="vDistMin" />													
+      					</columns>
+      					<columnResizePolicy>
+      						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+      					</columnResizePolicy>
+      				</TableView>
+                  <TableView fx:id="shapeBetaConfTableView" editable="true" prefHeight="200.0" tableMenuButtonVisible="true">
+                    <columns>
+      						<TableColumn fx:id="maxBP1" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxBP1" />	
+      						<TableColumn fx:id="minBP1" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minBP1" />	
+      						<TableColumn fx:id="b0reg" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="b0reg" />	
+      						<TableColumn fx:id="maxBP2" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxBP2" />	
+      						<TableColumn fx:id="minBP2" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minBP2" />	
+      						<TableColumn fx:id="maxBP3" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxBP3" />	
+      						<TableColumn fx:id="minBP3" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minBP3" />	
+      						<TableColumn fx:id="ybbMin" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="ybbMin" />	
+      						<TableColumn fx:id="ybbMax" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="ybbMax" />	
+      						<TableColumn fx:id="bDistMax" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="bDistMax" />	
+      						<TableColumn fx:id="bDistMin" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="bDistMin" />					
+      						<TableColumn fx:id="minBeta" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minBeta" />	
+      						<TableColumn fx:id="maxBeta" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxBeta" />		
+                    </columns>
+      					<columnResizePolicy>
+      						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+      					</columnResizePolicy>
+                  </TableView>
+                  <TableView fx:id="shapeGammaConfTableView" editable="true" prefHeight="200.0" tableMenuButtonVisible="true">
+                     <columns>
+      						<TableColumn fx:id="maxGP1" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxGP1" />	
+      						<TableColumn fx:id="minGP1" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minGP1" />	
+      						<TableColumn fx:id="g0reg" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="g0reg" />	
+      						<TableColumn fx:id="maxGP2" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxGP2" />	
+      						<TableColumn fx:id="minGP2" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minGP2" />	
+      						<TableColumn fx:id="g1reg" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="g1reg" />	
+      						<TableColumn fx:id="maxGP3" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxGP3" />	
+      						<TableColumn fx:id="minGP3" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minGP3" />							
+      						<TableColumn fx:id="yggMin" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="yggMin" />	
+      						<TableColumn fx:id="yggMax" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="yggMax" />							
+      						<TableColumn fx:id="gDistMin" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="gDistMin" />	
+      						<TableColumn fx:id="gDistMax" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="gDistMax" />							
+      						<TableColumn fx:id="minGamma" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minGamma" />	
+      						<TableColumn fx:id="maxGamma" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxGamma" />			
+                     </columns>
+      					<columnResizePolicy>
+      						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+      					</columnResizePolicy>                     
+                  </TableView>
+                  <TableView fx:id="shapeMiscConfTableView" editable="true" prefHeight="200.0" tableMenuButtonVisible="true">
+                     <columns>
+      						<TableColumn fx:id="minIntercept" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minIntercept" />	
+      						<TableColumn fx:id="maxIntercept" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxIntercept" />	
+      						<TableColumn fx:id="iterations" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="iterations" />					
+                     </columns>
+      					<columnResizePolicy>
+      						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+      					</columnResizePolicy>                     
+                  </TableView>
+               </children>
+            </VBox>
+			</content>
+		</ScrollPane>
+	</children>
+</StackPane>

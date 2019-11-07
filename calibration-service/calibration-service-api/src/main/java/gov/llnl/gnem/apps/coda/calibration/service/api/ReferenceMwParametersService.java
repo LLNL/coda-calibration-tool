@@ -23,4 +23,6 @@ import gov.llnl.gnem.apps.coda.common.service.api.BaseService;
 public interface ReferenceMwParametersService extends BaseService<ReferenceMwParameters, Long> {
 
     public List<ReferenceMwParameters> findAllByEventIds(Collection<String> eventIds);
+
+    public void deleteAllByEventIds(Collection<String> eventIds);
 }

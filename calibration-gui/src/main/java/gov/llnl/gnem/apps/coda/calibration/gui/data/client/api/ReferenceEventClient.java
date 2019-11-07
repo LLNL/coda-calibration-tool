@@ -36,4 +36,6 @@ public interface ReferenceEventClient {
     public Mono<Event> getEvent(String eventId);
 
     public Flux<MeasuredMwDetails> getMeasuredEventDetails();
+
+    public Mono<Void> removeReferenceEventsByEventId(List<String> evids);
 }

@@ -18,8 +18,8 @@
 			"gamma0": 7,
 			"gamma1": 8,
 			"gamma2": 9,
-			"s1": 10,
-			"s2": 11,
+			"p1": 10,
+			"p2": 11,
 			"xc": 12,
 			"xt": 13,
 			"q": 14
@@ -193,10 +193,58 @@
 			"apparentStressInMpa": 0.7
 		}
 	],
+    "shape-constraints" : {
+        "maxVP1" : 1600.0,
+        "minVP1" : 150.0,
+        "v0reg" : 1100.0,
+        "maxVP2" : 15000.0,
+        "minVP2" : 11.0,
+        "maxVP3" : 15000.0,
+        "minVP3" : 11.0,
+        "maxBP1" : 11000.0,
+        "minBP1" : -1500.0,
+        "b0reg" : 110000.0,
+        "maxBP2" : 120.0,
+        "minBP2" : 10.1,
+        "maxBP3" : 11500.0,
+        "minBP3" : 11.0E-4,
+        "maxGP1" : 1100.0,
+        "minGP1" : 10.0,
+        "g0reg" : 1100.0,
+        "maxGP2" : 1101.0,
+        "minGP2" : 10.0,
+        "g1reg" : -11.0,
+        "maxGP3" : 1101.0,
+        "minGP3" : 11.0,
+        "yvvMin" : 10.5,
+        "yvvMax" : 16.01,
+        "vDistMax" : 11600.0,
+        "vDistMin" : 10.0,
+        "ybbMin" : -10.12,
+        "ybbMax" : 15.0E-4,
+        "bDistMax" : 11550.0,
+        "bDistMin" : 10.0,
+        "yggMin" : 10.01,
+        "yggMax" : 1100.0,
+        "gDistMin" : 1600.0,
+        "gDistMax" : 10.0,
+        "minIntercept" : 10.001,
+        "maxIntercept" : 120.0,
+        "minBeta" : -14.0,
+        "maxBeta" : -11.0E-4,
+        "minGamma" : 10.001,
+        "maxGamma" : 14.0,
+        "iterations" : 110
+    },        
 	"site-corrections": [
-		{
+		{			
 			"BK": {
 				"SAO": [
+					{
+						"siteTerm": 19.160301172988373,
+						"lowFreqHz": 0.2,
+						"highFreqHz": 0.3
+					},
 					{
 						"siteTerm": 19.160301172988373,
 						"lowFreqHz": 0.2,
@@ -412,6 +460,85 @@
 						"highFreqHz": 25.0
 					}
 				]
+			},
+			"UNK": {
+				"SAO": [
+					{
+						"siteTerm": 19.160301172988373,
+						"lowFreqHz": 0.2,
+						"highFreqHz": 0.3
+					},
+					{
+						"siteTerm": 19.160301172988373,
+						"lowFreqHz": 0.2,
+						"highFreqHz": 0.3
+					},
+					{
+						"siteTerm": 19.078495953084072,
+						"lowFreqHz": 0.3,
+						"highFreqHz": 0.5
+					},
+					{
+						"siteTerm": 19.00135341977889,
+						"lowFreqHz": 0.5,
+						"highFreqHz": 0.7
+					},
+					{
+						"siteTerm": 19.03492718945587,
+						"lowFreqHz": 0.7,
+						"highFreqHz": 1.0
+					},
+					{
+						"siteTerm": 18.94226636451329,
+						"lowFreqHz": 1.0,
+						"highFreqHz": 1.5
+					},
+					{
+						"siteTerm": 18.92723226138862,
+						"lowFreqHz": 1.5,
+						"highFreqHz": 2.0
+					},
+					{
+						"siteTerm": 19.184367156400697,
+						"lowFreqHz": 2.0,
+						"highFreqHz": 3.0
+					},
+					{
+						"siteTerm": 19.14718589386693,
+						"lowFreqHz": 3.0,
+						"highFreqHz": 4.0
+					},
+					{
+						"siteTerm": 19.211116316565025,
+						"lowFreqHz": 4.0,
+						"highFreqHz": 6.0
+					},
+					{
+						"siteTerm": 19.57881986308872,
+						"lowFreqHz": 6.0,
+						"highFreqHz": 8.0
+					},
+					{
+						"siteTerm": 20.164195454405423,
+						"lowFreqHz": 8.0,
+						"highFreqHz": 10.0
+					},
+					{
+						"siteTerm": 20.325371990356185,
+						"lowFreqHz": 10.0,
+						"highFreqHz": 15.0
+					},
+					{
+						"siteTerm": 21.24328806924078,
+						"lowFreqHz": 15.0,
+						"highFreqHz": 20.0
+					},
+					{
+						"siteTerm": 21.48709133874192,
+						"lowFreqHz": 20.0,
+						"highFreqHz": 25.0
+					}
+				]				
 			}
 		}
 	]

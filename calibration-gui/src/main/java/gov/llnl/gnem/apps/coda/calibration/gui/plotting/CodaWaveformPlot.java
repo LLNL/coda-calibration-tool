@@ -144,6 +144,8 @@ public class CodaWaveformPlot extends SeriesPlot {
             PlotObject legendRef = subplot.AddPlotObject(legend);
 
             List<WaveformPick> picks = waveform.getAssociatedPicks();
+            double beginEpochTime = new TimeT(waveform.getBeginTime()).getEpochTime();
+            double endEpochTime = new TimeT(waveform.getEndTime()).getEpochTime();
             if (picks != null) {
                 // 1221: Plotting throws a runtime error if
                 // a pick is before/after the bounds of the
@@ -152,19 +154,23 @@ public class CodaWaveformPlot extends SeriesPlot {
                     double pickTime;
                     //"'Bad' pick, plot it at begin time
                     if (pick.getPickTimeSecFromOrigin() < 0) {
-                        pickTime = new TimeT(waveform.getBeginTime()).getEpochTime();
+                        pickTime = beginEpochTime;
                     } else {
                         pickTime = new TimeT(waveform.getEvent().getOriginTime()).getEpochTime() + pick.getPickTimeSecFromOrigin();
                     }
-                    if (pickTime >= new TimeT(waveform.getBeginTime()).getEpochTime() && pickTime <= new TimeT(waveform.getEndTime()).getEpochTime()) {
-                        Collection<VPickLine> pickLines = this.addPick(pick.getPickName(), pickTime);
-                        for (VPickLine pickLine : pickLines) {
-                            pickLine.setDraggable(true);
-                            if (!pickLine.getText().equalsIgnoreCase("f")) {
-                                pickLine.setColor(Color.LIGHT_GRAY);
-                            }
-                            pickLineMap.put(pickLine, pick);
+                    if (pickTime < beginEpochTime) {
+                        pickTime = beginEpochTime + 5;
+                    }
+                    if (pickTime >= endEpochTime) {
+                        pickTime = endEpochTime;
+                    }
+                    Collection<VPickLine> pickLines = this.addPick(pick.getPickName(), pickTime);
+                    for (VPickLine pickLine : pickLines) {
+                        pickLine.setDraggable(true);
+                        if (!pickLine.getText().equalsIgnoreCase("f")) {
+                            pickLine.setColor(Color.LIGHT_GRAY);
                         }
+                        pickLineMap.put(pickLine, pick);
                     }
                 }
             }

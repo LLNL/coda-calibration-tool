@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,10 +51,15 @@ import org.springframework.transaction.annotation.Transactional;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadataImpl;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.MeasurementStatusEvent;
@@ -151,10 +157,10 @@ public class CalibrationServiceImpl implements CalibrationService {
     }
 
     @Override
-    public Future<Result<List<MeasuredMwDetails>>> makeMwMeasurements(Boolean autoPickingEnabled) {
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled) {
         final Long id = atomicLong.getAndIncrement();
-        Future<Result<List<MeasuredMwDetails>>> future = CompletableFuture.completedFuture(new Result<>(false, Collections.emptyList()));
-        Supplier<List<MeasuredMwDetails>> measurementFunc = () -> {
+        Future<Result<MeasuredMwReportByEvent>> future = CompletableFuture.completedFuture(new Result<>(false, new MeasuredMwReportByEvent()));
+        Supplier<MeasuredMwReportByEvent> measurementFunc = () -> {
             List<String> stationNames = siteParamsService.findDistinctStationNames();
             List<Waveform> stacks = waveformService.getAllActiveStacksInStationNames(stationNames);
             return makeMwMeasurements(id, autoPickingEnabled, stacks);
@@ -165,10 +171,10 @@ public class CalibrationServiceImpl implements CalibrationService {
     }
 
     @Override
-    public Future<Result<List<MeasuredMwDetails>>> makeMwMeasurements(Boolean autoPickingEnabled, Set<String> eventIds) {
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Set<String> eventIds) {
         final Long id = atomicLong.getAndIncrement();
-        Supplier<List<MeasuredMwDetails>> measurementFunc = () -> {
-            List<MeasuredMwDetails> measuredMws = new ArrayList<>(0);
+        Supplier<MeasuredMwReportByEvent> measurementFunc = () -> {
+            MeasuredMwReportByEvent measuredMws = new MeasuredMwReportByEvent();
             List<String> stationNames = siteParamsService.findDistinctStationNames();
             List<Waveform> stacks = eventIds.stream().flatMap(eventId -> waveformService.findAllActiveStacksByEventIdAndStationNames(eventId, stationNames).stream()).collect(Collectors.toList());
             if (stacks != null && !stacks.isEmpty()) {
@@ -189,10 +195,10 @@ public class CalibrationServiceImpl implements CalibrationService {
     }
 
     @Override
-    public Future<Result<List<MeasuredMwDetails>>> makeMwMeasurements(Boolean autoPickingEnabled, List<Waveform> waveforms) {
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, List<Waveform> waveforms) {
         final Long id = atomicLong.getAndIncrement();
-        Supplier<List<MeasuredMwDetails>> measurementFunc = () -> {
-            List<MeasuredMwDetails> measuredMws = new ArrayList<>(0);
+        Supplier<MeasuredMwReportByEvent> measurementFunc = () -> {
+            MeasuredMwReportByEvent measuredMws = new MeasuredMwReportByEvent();
             List<String> stationNames = siteParamsService.findDistinctStationNames();
             if (waveforms != null) {
                 List<Waveform> stacks = waveforms.stream()
@@ -213,13 +219,13 @@ public class CalibrationServiceImpl implements CalibrationService {
         return getMeasurementFuture(id, measurementFunc);
     }
 
-    private Future<Result<List<MeasuredMwDetails>>> getMeasurementFuture(final Long id, Supplier<List<MeasuredMwDetails>> measurementFunc) {
-        Future<Result<List<MeasuredMwDetails>>> future;
+    private Future<Result<MeasuredMwReportByEvent>> getMeasurementFuture(final Long id, Supplier<MeasuredMwReportByEvent> measurementFunc) {
+        Future<Result<MeasuredMwReportByEvent>> future;
         try {
             future = measureService.submit(() -> {
                 try {
                     notificationService.post(new MeasurementStatusEvent(id, MeasurementStatusEvent.Status.STARTING));
-                    List<MeasuredMwDetails> measurements = measurementFunc.get();
+                    MeasuredMwReportByEvent measurements = measurementFunc.get();
                     return new Result<>(true, measurements);
                 } catch (Exception ex) {
                     log.error(ex.getMessage(), ex);
@@ -229,15 +235,14 @@ public class CalibrationServiceImpl implements CalibrationService {
             });
         } catch (RejectedExecutionException e) {
             notificationService.post(new MeasurementStatusEvent(id, MeasurementStatusEvent.Status.ERROR, new Result<Exception>(false, e)));
-            future = CompletableFuture.completedFuture(new Result<>(false, Collections.singletonList(e), Collections.emptyList()));
+            future = CompletableFuture.completedFuture(new Result<>(false, Collections.singletonList(e), new MeasuredMwReportByEvent()));
         }
         return future;
     }
 
-    private List<MeasuredMwDetails> makeMwMeasurements(Long id, Boolean autoPickingEnabled, List<Waveform> stacks) {
+    private MeasuredMwReportByEvent makeMwMeasurements(Long id, Boolean autoPickingEnabled, List<Waveform> stacks) {
         log.info("Starting measurement at {}", LocalDateTime.now());
-        List<MeasuredMwDetails> measuredMws = Collections.emptyList();
-
+        MeasuredMwReportByEvent details = new MeasuredMwReportByEvent();
         if (stacks != null) {
             List<Event> eventsInStacks = stacks.stream().map(w -> w.getEvent()).filter(Objects::nonNull).distinct().collect(Collectors.toList());
             VelocityConfiguration velocityConfig = configService.getVelocityConfiguration();
@@ -279,31 +284,46 @@ public class CalibrationServiceImpl implements CalibrationService {
 
             log.trace("measured mw params {}", measuredMwsParams);
 
-            measuredMws = Optional.ofNullable(measuredMwsParams)
-                                  .orElseGet(ArrayList::new)
-                                  .stream()
-                                  .map(
-                                          mwp -> new MeasuredMwDetails(mwp,
-                                                                       null,
-                                                                       Optional.ofNullable(waveformService.findEventById(mwp.getEventId()))
-                                                                               .filter(Objects::nonNull)
-                                                                               .filter(e -> e.getEventId() != null)
-                                                                               .orElseGet(
-                                                                                       () -> eventsInStacks.stream()
-                                                                                                           .filter(e -> e.getEventId().equalsIgnoreCase(mwp.getEventId()))
-                                                                                                           .findAny()
-                                                                                                           .orElseGet(null))))
-                                  .collect(Collectors.toList());
+            Map<Event, MeasuredMwParameters> measuredMwsMap = Optional.ofNullable(measuredMwsParams).orElseGet(ArrayList::new).stream().map(mwp -> {
+                Event event = getEventForId(mwp.getEventId(), eventsInStacks);
+                if (event != null) {
+                    return new AbstractMap.SimpleEntry<>(event, mwp);
+                } else {
+                    return null;
+                }
+            }).collect(Collectors.toMap(kv -> kv.getKey(), kv -> kv.getValue()));
 
-            log.trace("mw details {}", measuredMws);
+            Map<String, Spectra> fitSpectra = measuredMwsMap.entrySet()
+                                                            .parallelStream()
+                                                            .map(
+                                                                    mw -> new AbstractMap.SimpleEntry<>(mw.getKey().getEventId(),
+                                                                                                        spectraCalc.computeFitSpectra(
+                                                                                                                mw.getValue(),
+                                                                                                                    frequencyBandParameterMap.keySet(),
+                                                                                                                    PICK_TYPES.LG)))
+                                                            .collect(Collectors.toConcurrentMap(kv -> kv.getKey(), kv -> kv.getValue()));
+            details.setFitSpectra(fitSpectra);
 
-            notificationService.post(new MeasurementStatusEvent(id, MeasurementStatusEvent.Status.COMPLETE));
+            details.setMeasuredMwDetails(
+                    measuredMwsMap.entrySet().parallelStream().collect(Collectors.toConcurrentMap(kv -> kv.getKey().getEventId(), kv -> new MeasuredMwDetails(kv.getValue(), null, kv.getKey()))));
 
-            log.info("Measurement complete at {}", LocalDateTime.now());
+            details.setSpectraMeasurements(
+                    spectra.parallelStream()
+                           .map(s -> new AbstractMap.SimpleEntry<String, SpectraMeasurementMetadata>(s.getWaveform().getEvent().getEventId(), new SpectraMeasurementMetadataImpl(s)))
+                           .collect(Collectors.groupingByConcurrent(kv -> kv.getKey(), Collectors.mapping(kv -> kv.getValue(), Collectors.toList()))));
         } else {
             log.info("Unable to measure Mws, no waveforms were provided.");
         }
-        return measuredMws;
+        notificationService.post(new MeasurementStatusEvent(id, MeasurementStatusEvent.Status.COMPLETE));
+        log.info("Measurement complete at {}", LocalDateTime.now());
+        return details;
+    }
+
+    private Event getEventForId(String eventId, List<Event> eventsInStacks) {
+        return Optional.ofNullable(waveformService.findEventById(eventId))
+                       .filter(Objects::nonNull)
+                       .filter(e -> e.getEventId() != null)
+                       .orElseGet(() -> eventsInStacks.stream().filter(e -> e.getEventId().equalsIgnoreCase(eventId)).findAny().orElseGet(null));
     }
 
     @Override
@@ -327,6 +347,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // consumes
 
                     VelocityConfiguration velocityConfig = configService.getVelocityConfiguration();
+                    ShapeFitterConstraints constraints = configService.getCalibrationShapeFitterConstraints();
 
                     // 1) Compute the peak velocity, amplitude, and SNR values
                     // for the given coda stacks using theoretical group velocities
@@ -353,7 +374,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // models to each of those parameters for each frequency band that can be used
                     // to generate synthetic coda at any given distance and frequency band
                     // combination
-                    frequencyBandParameterMap = shapeCalibrationService.measureShapes(snrFilteredVelocity, frequencyBandParameterMap, autoPickingEnabled);
+                    frequencyBandParameterMap = shapeCalibrationService.measureShapes(snrFilteredVelocity, frequencyBandParameterMap, constraints, autoPickingEnabled);
 
                     frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
 

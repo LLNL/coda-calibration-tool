@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -72,7 +73,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
             Map<String, List<ReferenceMwParameters>> refMws, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandParameters, PICK_TYPES selectedPhase) {
         MdacParametersPS psRows = mdacPS.get(selectedPhase);
         Map<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> freqBandEvidStaMeasurementsMap = mapToEventAndStation(dataByFreqBand);
-        Map<Event, Function<Map<Double, Double>, Map<Double, Double>>> weightFunctionMapByEvent = new HashMap<>();
+        Map<Event, Function<Map<Double, Double>, SortedMap<Double, Double>>> weightFunctionMapByEvent = new HashMap<>();
         Map<Event, Map<FrequencyBand, SummaryStatistics>> averageMapByEvent = new HashMap<>();
 
         for (Entry<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> evidStaMap : freqBandEvidStaMeasurementsMap.entrySet()) {
@@ -110,7 +111,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         //Input
         Map<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> freqBandEvidStaMeasurementsMap = mapToEventAndStation(dataByFreqBand);
 
-        Map<Event, Function<Map<Double, Double>, Map<Double, Double>>> weightFunctionMapByEvent = new HashMap<>();
+        Map<Event, Function<Map<Double, Double>, SortedMap<Double, Double>>> weightFunctionMapByEvent = new HashMap<>();
 
         //Step 1
         Map<Station, Map<FrequencyBand, SummaryStatistics>> staFreqBandSiteCorrectionMapReferenceEvents = new HashMap<>();
@@ -280,16 +281,16 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         siteParamsService.save(siteCorrections.values().parallelStream().flatMap(staMap -> staMap.values().stream()).collect(Collectors.toList()));
     }
 
-    private Map<Double, Double> noWeights(Map<Double, Double> frequencies) {
-        Map<Double, Double> weightMap = new TreeMap<>();
+    private SortedMap<Double, Double> noWeights(Map<Double, Double> frequencies) {
+        SortedMap<Double, Double> weightMap = new TreeMap<>();
         for (Double frequency : frequencies.keySet()) {
             weightMap.put(frequency, 1d);
         }
         return weightMap;
     }
 
-    private Map<Double, Double> lowerFreqHigherWeights(Map<Double, Double> frequencies) {
-        Map<Double, Double> weightMap = new TreeMap<>(frequencies);
+    private SortedMap<Double, Double> lowerFreqHigherWeights(Map<Double, Double> frequencies) {
+        SortedMap<Double, Double> weightMap = new TreeMap<>(frequencies);
         int count = 0;
         for (Entry<Double, Double> entry : weightMap.entrySet()) {
             entry.setValue(count == 0 || count == 2 ? 0.5 : count == 1 ? 1.0 : count == 3 ? 0.25 : 0.1);

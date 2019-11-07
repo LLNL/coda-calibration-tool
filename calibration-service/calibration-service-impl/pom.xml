@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>calibration-service</artifactId>
-		<version>1.0.6</version>
+		<version>1.0.7</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -37,11 +37,6 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 			<artifactId>externals</artifactId>
 		</dependency>
@@ -62,16 +57,6 @@
 			<artifactId>commons-math3</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>gov.llnl.gnem.apps.coda.common</groupId>
 			<artifactId>common-model</artifactId>
 		</dependency>
@@ -90,6 +75,46 @@
 		<dependency>
 			<groupId>javax.annotation</groupId>
 			<artifactId>javax.annotation-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-test-autoconfigure</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+				<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>

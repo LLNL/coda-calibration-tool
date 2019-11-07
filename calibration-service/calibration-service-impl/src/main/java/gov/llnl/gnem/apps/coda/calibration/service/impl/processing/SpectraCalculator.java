@@ -16,17 +16,23 @@ package gov.llnl.gnem.apps.coda.calibration.service.impl.processing;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.exception.TooManyIterationsException;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.MaxEval;
@@ -38,9 +44,11 @@ import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.stat.descriptive.SynchronizedMultivariateSummaryStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
@@ -70,7 +78,7 @@ import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 @Component
 public class SpectraCalculator {
-    private double PHASE_SPEED_KM_S;
+    private double PHASE_VELOCITY_KM_S;
 
     private static final Logger log = LoggerFactory.getLogger(SpectraCalculator.class);
 
@@ -80,11 +88,31 @@ public class SpectraCalculator {
     private MdacParametersFiService mdacFiService;
     private MdacParametersPsService mdacPsService;
 
+    @Value("${spectra-calc.iteration-cutoff:50}")
+    private int iterationCutoff = 50;
+    @Value("${spectra-calc.min-mw:0.01}")
+    private double minMW = 0.01;
+    @Value("${spectra-calc.max-mw:8.0}")
+    private double maxMW = 8.0;
+    @Value("${spectra-calc.min-stress-mpa:0.00001}")
+    private double minMPA = 0.00001;
+    @Value("${spectra-calc.max-stress-mpa:10.00}")
+    private double maxMPA = 10.00;
+
     private static final int LOG10_M0 = 0;
     private static final int MW_FIT = 1;
     private static final int DATA_COUNT = 2;
     private static final int RMS_FIT = 3;
     private static final int STRESS = 4;
+    private static final int MW_MEAN = 5;
+    private static final int MPA_MEAN = 6;
+    private static final int FIT_MEAN = 7;
+    private static final int MW_SD = 8;
+    private static final int MPA_SD = 9;
+    private static final int FIT_SD = 10;
+    private static final int MW = 0;
+    private static final int MPA = 1;
+    private static final int FIT = 2;
 
     @Autowired
     public SpectraCalculator(WaveformToTimeSeriesConverter converter, SyntheticCodaModel syntheticCodaModel, MdacCalculatorService mdacService, MdacParametersFiService mdacFiService,
@@ -94,7 +122,7 @@ public class SpectraCalculator {
         this.mdacService = mdacService;
         this.mdacFiService = mdacFiService;
         this.mdacPsService = mdacPsService;
-        this.PHASE_SPEED_KM_S = velConf.getPhaseSpeedInKms();
+        this.PHASE_VELOCITY_KM_S = velConf.getPhaseVelocityInKms();
     }
 
     public List<SpectraMeasurement> measureAmplitudes(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
@@ -153,7 +181,7 @@ public class SpectraCalculator {
             double eshCorrection = log10ESHcorrection(
                     synth.getSourceWaveform().getLowFrequency(),
                         synth.getSourceWaveform().getHighFrequency(),
-                        params.getS1(),
+                        params.getP1(),
                         params.getS2(),
                         params.getXc(),
                         params.getXt(),
@@ -338,10 +366,10 @@ public class SpectraCalculator {
         double f0 = Math.sqrt(lowfreq * highfreq);
         double efact = Math.log10(Math.E);
         double vphase;
-        if (velocityConfig != null && velocityConfig.getPhaseSpeedInKms() != null && velocityConfig.getPhaseSpeedInKms() != 0.0) {
-            vphase = velocityConfig.getPhaseSpeedInKms();
+        if (velocityConfig != null && velocityConfig.getPhaseVelocityInKms() != null && velocityConfig.getPhaseVelocityInKms() != 0.0) {
+            vphase = velocityConfig.getPhaseVelocityInKms();
         } else {
-            vphase = PHASE_SPEED_KM_S;
+            vphase = PHASE_VELOCITY_KM_S;
         }
         double distQ = distance * Math.PI * f0 * efact / (q * vphase);
         // We want to return a positive number for path correction
@@ -383,32 +411,29 @@ public class SpectraCalculator {
 
         List<Point2D.Double> xyPoints = new ArrayList<>();
         for (FrequencyBand band : bands) {
-
             double centerFreq = band.getLowFrequency() + (band.getHighFrequency() - band.getLowFrequency()) / 2.;
+            double logFreq = Math.log10(centerFreq);
 
-            double amplitude;
             if (refEvent.getRefApparentStressInMpa() != null && refEvent.getRefApparentStressInMpa() > 0.0) {
                 // If we know an apparent stress in MPA for this reference event we want
                 // to use that stress so we set Psi == 0.0 to use Sigma
                 mdacFiEntry.setSigma(refEvent.getRefApparentStressInMpa());
                 mdacFiEntry.setPsi(0.0);
-                amplitude = mdacService.calculateMdacAmplitudeForMw(psRows, mdacFiEntry, refEvent.getRefMw(), centerFreq, selectedPhase, refEvent.getRefApparentStressInMpa());
-            } else {
-                amplitude = mdacService.calculateMdacAmplitudeForMw(psRows, mdacFiEntry, refEvent.getRefMw(), centerFreq, selectedPhase);
             }
 
+            double amplitude = mdacService.calculateMdacAmplitudeForMw(psRows, mdacFiEntry, refEvent.getRefMw(), centerFreq, selectedPhase);
+
             if (amplitude > 0) {
-                Point2D.Double point = new Point2D.Double(Math.log10(centerFreq), amplitude);
+                Point2D.Double point = new Point2D.Double(logFreq, amplitude);
                 xyPoints.add(point);
             }
         }
 
         Collections.sort(xyPoints, (p1, p2) -> Double.compare(p1.getX(), p2.getX()));
-
         return new Spectra(SPECTRA_TYPES.REF, xyPoints, refEvent.getRefMw(), refEvent.getRefApparentStressInMpa());
     }
 
-    public Spectra computeFitSpectra(MeasuredMwParameters event, List<FrequencyBand> bands, PICK_TYPES selectedPhase) {
+    public Spectra computeFitSpectra(MeasuredMwParameters event, Collection<FrequencyBand> bands, PICK_TYPES selectedPhase) {
 
         MdacParametersFI mdacFiEntry = mdacFiService.findFirst();
         MdacParametersPS psRows = mdacPsService.findMatchingPhase(selectedPhase.getPhase());
@@ -416,23 +441,21 @@ public class SpectraCalculator {
         List<Point2D.Double> xyPoints = new ArrayList<>();
         for (FrequencyBand band : bands) {
             double centerFreq = band.getLowFrequency() + (band.getHighFrequency() - band.getLowFrequency()) / 2.;
-            double amplitude;
+            double logFreq = Math.log10(centerFreq);
+
             if (event.getApparentStressInMpa() != null && event.getApparentStressInMpa() > 0.0) {
                 mdacFiEntry.setSigma(event.getApparentStressInMpa());
                 mdacFiEntry.setPsi(0.0);
-                amplitude = mdacService.calculateMdacAmplitudeForMw(psRows, mdacFiEntry, event.getMw(), centerFreq, selectedPhase, event.getApparentStressInMpa());
-            } else {
-                amplitude = mdacService.calculateMdacAmplitudeForMw(psRows, mdacFiEntry, event.getMw(), centerFreq, selectedPhase);
             }
 
+            double amplitude = mdacService.calculateMdacAmplitudeForMw(psRows, mdacFiEntry, event.getMw(), centerFreq, selectedPhase);
+
             if (amplitude > 0) {
-                Point2D.Double point = new Point2D.Double(Math.log10(centerFreq), amplitude);
+                Point2D.Double point = new Point2D.Double(logFreq, amplitude);
                 xyPoints.add(point);
             }
         }
-
         Collections.sort(xyPoints, (p1, p2) -> Double.compare(p1.getX(), p2.getX()));
-
         return new Spectra(SPECTRA_TYPES.FIT, xyPoints, event.getMw(), event.getApparentStressInMpa());
     }
 
@@ -442,17 +465,28 @@ public class SpectraCalculator {
      * UCRL-ID-146882
      *
      */
-    public List<MeasuredMwParameters> measureMws(final Map<Event, Map<FrequencyBand, SummaryStatistics>> evidMap, Map<Event, Function<Map<Double, Double>, Map<Double, Double>>> eventWeights,
+    public List<MeasuredMwParameters> measureMws(final Map<Event, Map<FrequencyBand, SummaryStatistics>> evidMap, Map<Event, Function<Map<Double, Double>, SortedMap<Double, Double>>> eventWeights,
             final PICK_TYPES selectedPhase, MdacParametersPS mdacPs, MdacParametersFI mdacFi) {
         List<MeasuredMwParameters> measuredMws = new ArrayList<>(evidMap.entrySet().size());
         for (Entry<Event, Map<FrequencyBand, SummaryStatistics>> entry : evidMap.entrySet()) {
             Map<FrequencyBand, SummaryStatistics> measurements = entry.getValue();
-            double[] MoMw = fitMw(measurements, selectedPhase, mdacFi, mdacPs, eventWeights.get(entry.getKey()));
+            double[] MoMw = fitMw(entry.getKey(), measurements, selectedPhase, mdacFi, mdacPs, eventWeights.get(entry.getKey()));
             if (MoMw == null) {
                 log.warn("MoMw calculation returned null value");
                 continue;
             }
-            measuredMws.add(new MeasuredMwParameters().setEventId(entry.getKey().getEventId()).setDataCount((int) MoMw[DATA_COUNT]).setMw(MoMw[MW_FIT]).setApparentStressInMpa(MoMw[STRESS]));
+            measuredMws.add(
+                    new MeasuredMwParameters().setEventId(entry.getKey().getEventId())
+                                              .setDataCount((int) MoMw[DATA_COUNT])
+                                              .setMw(MoMw[MW_FIT])
+                                              .setMeanMw(MoMw[MW_MEAN])
+                                              .setMwSd(MoMw[MW_SD])
+                                              .setApparentStressInMpa(MoMw[STRESS])
+                                              .setMeanApparentStressInMpa(MoMw[MPA_MEAN])
+                                              .setStressSd(MoMw[MPA_SD])
+                                              .setMisfit(MoMw[RMS_FIT])
+                                              .setMeanMisfit(MoMw[FIT_MEAN])
+                                              .setMisfitSd(MoMw[FIT_SD]));
         }
         return measuredMws;
     }
@@ -462,6 +496,8 @@ public class SpectraCalculator {
      * looking for the best fit theoretical source spectra and return the
      * resulting MW measurement.
      *
+     * @param event
+     *
      * @param measurements
      *            - the measured spectra values by frequency band
      * @param phase
@@ -469,15 +505,11 @@ public class SpectraCalculator {
      *            parameter set
      * @return double[] containing the final fit measurements
      */
-    public double[] fitMw(final Map<FrequencyBand, SummaryStatistics> measurements, final PICK_TYPES phase, final MdacParametersFI mdacFi, final MdacParametersPS mdacPs,
-            Function<Map<Double, Double>, Map<Double, Double>> weightFunction) {
-        double[] result = new double[5];
+    public double[] fitMw(Event event, final Map<FrequencyBand, SummaryStatistics> measurements, final PICK_TYPES phase, final MdacParametersFI mdacFi, final MdacParametersPS mdacPs,
+            Function<Map<Double, Double>, SortedMap<Double, Double>> weightFunction) {
+        double[] result = new double[11];
 
-        final Map<Double, Double> frequencyBands = new HashMap<>();
-        final double minMW = 0.5;
-        final double maxMW = 8.0;
-        final double minMPA = 0.00001;
-        final double maxMPA = 10.00;
+        final SortedMap<Double, Double> frequencyBands = new TreeMap<>();
         long dataCount = 0l;
 
         for (Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
@@ -492,7 +524,12 @@ public class SpectraCalculator {
         }
 
         final Map<Double, Double> weightMap = weightFunction.apply(frequencyBands);
+        //TODO: Thinking about ways to flatten spectra fit for missing low frequencies.
+        //TODO: Devise uncertainty quantification on site fit. Distribution of misfit vs mws evaluated maybe?
+        //           Would need to add the extremes for the mw/mpa range to the misfit dist to get a good estimate of the range.
+        //           Misfit is log normal probably; should check.
 
+        final SynchronizedMultivariateSummaryStatistics stats = new SynchronizedMultivariateSummaryStatistics(3, false);
         MultivariateFunction mdacFunction = new MultivariateFunction() {
 
             @Override
@@ -519,33 +556,70 @@ public class SpectraCalculator {
                     }
                 }
 
-                return WCVRMSD(weightMap, dataMap);
+                double fit = WCVRMSD(weightMap, dataMap);
+                stats.addValue(new double[] { testMw, testSigma, fit });
+                return fit;
             }
         };
 
         ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.00001, 0.00001, 100000);
-        CMAESOptimizer optimizer = new CMAESOptimizer(1000000, 0, true, 0, 10, new MersenneTwister(), true, convergenceChecker);
-        PointValuePair optimizerResult = optimizer.optimize(
-                new MaxEval(1000000),
-                    new ObjectiveFunction(mdacFunction),
-                    GoalType.MINIMIZE,
-                    new SimpleBounds(new double[] { minMW, minMPA }, new double[] { maxMW, maxMPA }),
-                    new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minMW, maxMW), ThreadLocalRandom.current().nextDouble(minMPA, maxMPA) }),
-                    new CMAESOptimizer.Sigma(new double[] { 0.05, 1.0 }),
-                    new CMAESOptimizer.PopulationSize(50));
+        CMAESOptimizer optimizer = new CMAESOptimizer(1000000, 0, true, 0, 10, new MersenneTwister(), false, convergenceChecker);
+        int iterations = iterationCutoff;
+        try {
+            PointValuePair optimizerResult = optimizer.optimize(
+                    new MaxEval(1000000),
+                        new ObjectiveFunction(mdacFunction),
+                        GoalType.MINIMIZE,
+                        new SimpleBounds(new double[] { minMW, minMPA }, new double[] { maxMW, maxMPA }),
+                        new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minMW, maxMW), ThreadLocalRandom.current().nextDouble(minMPA, maxMPA) }),
+                        new CMAESOptimizer.Sigma(new double[] { 0.5, 1.0 }),
+                        new CMAESOptimizer.PopulationSize(50));
 
-        // converted back into dyne-cm to match Kevin's format
-        double testMw = optimizerResult.getPoint()[0];
-        // log10M0
-        result[LOG10_M0] = Math.log10(mdacService.getMwInDyne(testMw));
-        result[MW_FIT] = testMw; // best Mw fit
-        // this is the number of elements that have a signal measurement
-        result[DATA_COUNT] = dataCount;
-        // this is the rmsfit measurement
-        result[RMS_FIT] = optimizerResult.getValue();
-        // this is the stress
-        result[STRESS] = optimizerResult.getPoint()[1];
+            // converted back into dyne-cm to match Kevin's format
+            double testMw = optimizerResult.getPoint()[0];
+            // log10M0
+            result[LOG10_M0] = Math.log10(mdacService.getMwInDyne(testMw));
+            result[MW_FIT] = testMw; // best Mw fit
+            // this is the number of elements that have a signal measurement
+            result[DATA_COUNT] = dataCount;
+            // this is the rmsfit measurement
+            result[RMS_FIT] = optimizerResult.getValue();
+            // this is the stress
+            result[STRESS] = optimizerResult.getPoint()[1];
+            iterations = optimizer.getIterations();
+        } catch (TooManyEvaluationsException | TooManyIterationsException e) {
+            log.warn("Failed to converge while attempting to fit an Mw to this event {}, falling back to a grid search.", event);
+        }
 
+        if (iterations >= iterationCutoff) {
+            double best = Double.MAX_VALUE;
+            double mwVal = 0;
+            double stressVal = 0;
+            for (double mw = minMW; mw < maxMW; mw = mw + ((maxMW - minMW) / 100.)) {
+                for (double stress = minMPA; stress < maxMPA; stress = stress + ((maxMPA - minMPA) / 100.)) {
+                    double res = mdacFunction.value(new double[] { mw, stress });
+                    stats.addValue(new double[] { mw, stress, res });
+                    if (res < best) {
+                        best = res;
+                        mwVal = mw;
+                        stressVal = stress;
+                    }
+                }
+            }
+
+            result[LOG10_M0] = Math.log10(mdacService.getMwInDyne(mwVal));
+            result[MW_FIT] = mwVal;
+            result[RMS_FIT] = best;
+            result[STRESS] = stressVal;
+        }
+
+        RealMatrix C = stats.getCovariance();
+        result[MW_MEAN] = stats.getMean()[MW];
+        result[MW_SD] = Math.sqrt(C.getEntry(MW, MW));
+        result[MPA_MEAN] = stats.getMean()[MPA];
+        result[MPA_SD] = Math.sqrt(C.getEntry(MPA, MPA));
+        result[FIT_MEAN] = stats.getMean()[FIT];
+        result[FIT_SD] = Math.sqrt(C.getEntry(FIT, FIT));
         return result;
     }
 

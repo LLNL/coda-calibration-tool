@@ -41,11 +41,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClient.Builder;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.RestTemplateXhrTransport;
@@ -100,9 +103,11 @@ public class CodaWebClientBuilder {
     private WebSocketStompClient stompClient;
     private SslEngineConfigurator sslEngineConfigurator;
     private ReactorClientHttpConnector connector;
+    private ExchangeStrategies strategies;
 
-    public CodaWebClientBuilder(EventBus bus, WebclientConfig config, StompSessionHandlerAdapter frameHandler) {
+    public CodaWebClientBuilder(EventBus bus, WebclientConfig config, StompSessionHandlerAdapter frameHandler, @Nullable ExchangeStrategies strategies) {
         this.config = config;
+        this.strategies = strategies;
         bus.register(this);
         this.frameHandler = frameHandler;
         if (config.getSubscriptions().isEmpty()) {
@@ -177,6 +182,10 @@ public class CodaWebClientBuilder {
     }
 
     public @Bean @Scope("prototype") WebClient getWebClient() {
-        return WebClient.builder().clientConnector(connector).baseUrl(config.getHTTPPath()).build();
+        Builder builder = WebClient.builder().clientConnector(connector).baseUrl(config.getHTTPPath());
+        if (strategies != null) {
+            builder.exchangeStrategies(strategies);
+        }
+        return builder.build();
     }
 }

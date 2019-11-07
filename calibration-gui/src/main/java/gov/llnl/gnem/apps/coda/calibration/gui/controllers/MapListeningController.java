@@ -18,4 +18,6 @@ public interface MapListeningController {
 
     public void refreshView();
 
+    public void setVisible(boolean b);
+
 }

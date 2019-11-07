@@ -67,24 +67,27 @@ public class SiteFrequencyBandParameters {
         return this.lowFrequency;
     }
 
-    public void setLowFrequency(double lowFrequency) {
+    public SiteFrequencyBandParameters setLowFrequency(double lowFrequency) {
         this.lowFrequency = lowFrequency;
+        return this;
     }
 
     public double getHighFrequency() {
         return this.highFrequency;
     }
 
-    public void setHighFrequency(double highFrequency) {
+    public SiteFrequencyBandParameters setHighFrequency(double highFrequency) {
         this.highFrequency = highFrequency;
+        return this;
     }
 
     public double getSiteTerm() {
         return this.siteTerm;
     }
 
-    public void setSiteTerm(double siteTerm) {
+    public SiteFrequencyBandParameters setSiteTerm(double siteTerm) {
         this.siteTerm = siteTerm;
+        return this;
     }
 
     public Station getStation() {
@@ -103,13 +106,9 @@ public class SiteFrequencyBandParameters {
         long temp;
         temp = Double.doubleToLongBits(highFrequency);
         result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
         temp = Double.doubleToLongBits(lowFrequency);
         result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(siteTerm);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
         result = prime * result + ((station == null) ? 0 : station.hashCode());
-        result = prime * result + ((version == null) ? 0 : version.hashCode());
         return result;
     }
 
@@ -118,27 +117,14 @@ public class SiteFrequencyBandParameters {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof SiteFrequencyBandParameters)) {
             return false;
         }
         SiteFrequencyBandParameters other = (SiteFrequencyBandParameters) obj;
         if (Double.doubleToLongBits(highFrequency) != Double.doubleToLongBits(other.highFrequency)) {
             return false;
         }
-        if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.id)) {
-            return false;
-        }
         if (Double.doubleToLongBits(lowFrequency) != Double.doubleToLongBits(other.lowFrequency)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(siteTerm) != Double.doubleToLongBits(other.siteTerm)) {
             return false;
         }
         if (station == null) {
@@ -146,13 +132,6 @@ public class SiteFrequencyBandParameters {
                 return false;
             }
         } else if (!station.equals(other.station)) {
-            return false;
-        }
-        if (version == null) {
-            if (other.version != null) {
-                return false;
-            }
-        } else if (!version.equals(other.version)) {
             return false;
         }
         return true;
@@ -177,12 +156,20 @@ public class SiteFrequencyBandParameters {
 
     public SiteFrequencyBandParameters mergeNonNullOrEmptyFields(SiteFrequencyBandParameters overlay) {
         if (overlay != null) {
+            if (overlay.getId() != null) {
+                id = overlay.getId();
+            }
+            if (overlay.getVersion() != null) {
+                version = overlay.getVersion();
+            }
             if (overlay.getStation() != null) {
                 if (station == null) {
                     station = overlay.getStation();
                 } else {
                     if (overlay.getStation().getNetworkName() != null) {
-                        station.setNetworkName(overlay.getStation().getNetworkName());
+                        if (!overlay.getStation().getNetworkName().equals("UNK") || station.getNetworkName() == null) {
+                            station.setNetworkName(overlay.getStation().getNetworkName());
+                        }
                     }
                     if (overlay.getStation().getStationName() != null) {
                         station.setStationName(overlay.getStation().getStationName());

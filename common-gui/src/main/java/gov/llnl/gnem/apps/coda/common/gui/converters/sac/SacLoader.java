@@ -344,17 +344,23 @@ public class SacLoader implements FileToWaveformConverter {
     }
 
     public String getOrCreateEvid(Waveform waveform) {
-        int evid = 0;
+        String evid = "0";
         Double time = 0d;
         if (waveform.getEvent() != null && waveform.getEvent().getOriginTime() != null) {
             time = new TimeT(waveform.getEvent().getOriginTime()).getEpochTime();
         }
-        evid = createJDateMinuteResolutionFromEpoch(time);
-        return Integer.toString(evid);
+        if (waveform.getEvent() != null && waveform.getEvent().getEventId() != null) {
+            evid = waveform.getEvent().getEventId();
+        }
+        
+        if (evid == null || evid == "0") {
+            evid = String.valueOf(createJDateMinuteResolutionFromEpoch(time));
+        }
+        return evid;
     }
 
     public String getOrCreateEvid(SACHeader header) {
-        int evid = 0;
+        String evid = "0";
         Double time = 0d;
         TimeT relTime = header.getOriginTime();
         if (relTime != null) {
@@ -365,8 +371,19 @@ public class SacLoader implements FileToWaveformConverter {
                 time = relTime.getEpochTime();
             }
         }
-        evid = createJDateMinuteResolutionFromEpoch(time);
-        return Integer.toString(evid);
+        
+        if (header.kevnm != null && header.kevnm.matches("[0-9]*")) {
+            evid = header.kevnm.trim();
+        }
+        else if (header.nevid > 0) {
+            evid = String.valueOf(header.nevid);
+        }
+        
+        if (evid == null || evid == "0") {
+            evid = String.valueOf(createJDateMinuteResolutionFromEpoch(time));
+        }
+        
+        return evid;
     }
 
     private int createJDateMinuteResolutionFromEpoch(Double instant) {

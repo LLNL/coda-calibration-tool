@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
 import gov.llnl.gnem.apps.coda.calibration.service.api.CalibrationService;
 import reactor.core.publisher.Mono;
 
@@ -49,7 +49,7 @@ public class CalibrationLocalClient implements CalibrationClient {
     }
 
     @Override
-    public Mono<List<MeasuredMwDetails>> makeMwMeasurements(Boolean autoPickingEnabled) {
+    public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled) {
         try {
             return Mono.just(service.makeMwMeasurements(autoPickingEnabled).get(100l, TimeUnit.SECONDS).getResultPayload().get());
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -59,7 +59,7 @@ public class CalibrationLocalClient implements CalibrationClient {
     }
 
     @Override
-    public Mono<List<MeasuredMwDetails>> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds) {
+    public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds) {
         try {
             return Mono.just(service.makeMwMeasurements(autoPickingEnabled, new HashSet<>(eventIds)).get(100l, TimeUnit.SECONDS).getResultPayload().get());
         } catch (InterruptedException | ExecutionException | TimeoutException e) {

@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 
@@ -28,9 +28,9 @@ public interface CalibrationService {
 
     public boolean clearData();
 
-    public Future<Result<List<MeasuredMwDetails>>> makeMwMeasurements(Boolean autoPickingEnabled);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled);
 
-    public Future<Result<List<MeasuredMwDetails>>> makeMwMeasurements(Boolean autoPickingEnabled, Set<String> eventIds);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Set<String> eventIds);
 
-    public Future<Result<List<MeasuredMwDetails>>> makeMwMeasurements(Boolean autoPickingEnabled, List<Waveform> stacks);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, List<Waveform> stacks);
 }

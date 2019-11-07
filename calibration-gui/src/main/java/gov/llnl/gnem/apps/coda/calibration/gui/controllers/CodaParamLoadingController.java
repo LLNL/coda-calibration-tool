@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteCorrections;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -110,7 +112,7 @@ public class CodaParamLoadingController {
                                                                                 } else if (res.get() instanceof SiteCorrections) {
                                                                                     try {
                                                                                         Mono<String> request = paramsClient.setSiteSpecificFrequencyBandParameter(
-                                                                                                ((SiteCorrections) res.get()).getSiteCorrections());
+                                                                                                new ArrayList<>(((SiteCorrections) res.get()).getSiteCorrections()));
                                                                                         if (request != null) {
                                                                                             request.retry(3).subscribe();
                                                                                         } else {
@@ -167,10 +169,19 @@ public class CodaParamLoadingController {
                                                                                     } else {
                                                                                         log.error("Returned a null request from the parameter client while posting VelocityConfiguration {}", entry);
                                                                                     }
+                                                                                } else if (res.get() instanceof ShapeFitterConstraints) {
+                                                                                    ShapeFitterConstraints entry = (ShapeFitterConstraints) res.get();
+                                                                                    Mono<String> request = paramsClient.updateShapeFitterConstraints(entry);
+                                                                                    if (request != null) {
+                                                                                        request.retry(3).subscribe();
+                                                                                    } else {
+                                                                                        log.error("Returned a null request from the parameter client while posting ShapeFitterConstraints {}", entry);
+                                                                                    }
                                                                                 }
                                                                             }
                                                                         }
                                                                     }));
+
     }
 
     private boolean validPath(Path p) {

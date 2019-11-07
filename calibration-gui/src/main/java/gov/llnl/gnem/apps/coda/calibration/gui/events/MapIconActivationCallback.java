@@ -33,10 +33,10 @@ public class MapIconActivationCallback implements Consumer<MapCallbackEvent> {
             Icon icon = evtVal.getIcon();
             switch (icon.getType()) {
             case CIRCLE:
-                client.setWaveformsActiveByEventId(icon.getId(), evtVal.getFlag()).subscribe();
+                client.setWaveformsActiveByEventId(icon.getFriendlyName(), evtVal.getFlag()).subscribe();
                 break;
             case TRIANGLE_UP:
-                client.setWaveformsActiveByStationName(icon.getId(), evtVal.getFlag()).subscribe();
+                client.setWaveformsActiveByStationName(icon.getFriendlyName(), evtVal.getFlag()).subscribe();
                 break;
             case DEFAULT:
             default:

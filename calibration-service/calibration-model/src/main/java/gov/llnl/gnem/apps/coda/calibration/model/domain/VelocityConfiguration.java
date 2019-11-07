@@ -2,11 +2,11 @@
 * Copyright (c) 2019, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -26,6 +26,8 @@ import javax.persistence.Version;
 
 import org.springframework.format.annotation.NumberFormat;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import gov.llnl.gnem.apps.coda.common.model.util.Durable;
 
 @Durable
@@ -43,8 +45,9 @@ public class VelocityConfiguration implements Serializable {
     @Version
     private Integer version = 0;
 
+    @JsonAlias("phaseSpeedInKms")
     @NumberFormat
-    private Double phaseSpeedInKms;
+    private Double phaseVelocityInKms;
 
     @NumberFormat
     private Double groupVelocity1InKmsGtDistance;
@@ -69,12 +72,12 @@ public class VelocityConfiguration implements Serializable {
         return version;
     }
 
-    public Double getPhaseSpeedInKms() {
-        return phaseSpeedInKms;
+    public Double getPhaseVelocityInKms() {
+        return phaseVelocityInKms;
     }
 
-    public VelocityConfiguration setPhaseSpeedInKms(Double phaseSpeedInKms) {
-        this.phaseSpeedInKms = phaseSpeedInKms;
+    public VelocityConfiguration setPhaseVelocityInKms(Double phaseVelocityInKms) {
+        this.phaseVelocityInKms = phaseVelocityInKms;
         return this;
     }
 
@@ -124,8 +127,8 @@ public class VelocityConfiguration implements Serializable {
     }
 
     public VelocityConfiguration merge(VelocityConfiguration overlay) {
-        if (overlay.phaseSpeedInKms != null && overlay.phaseSpeedInKms != 0.0) {
-            this.phaseSpeedInKms = overlay.phaseSpeedInKms;
+        if (overlay.phaseVelocityInKms != null && overlay.phaseVelocityInKms != 0.0) {
+            this.phaseVelocityInKms = overlay.phaseVelocityInKms;
         }
         if (overlay.groupVelocity1InKmsGtDistance != null && overlay.groupVelocity1InKmsGtDistance != 0.0) {
             this.groupVelocity1InKmsGtDistance = overlay.groupVelocity1InKmsGtDistance;
@@ -155,7 +158,7 @@ public class VelocityConfiguration implements Serializable {
         result = prime * result + ((groupVelocity2InKmsGtDistance == null) ? 0 : groupVelocity2InKmsGtDistance.hashCode());
         result = prime * result + ((groupVelocity2InKmsLtDistance == null) ? 0 : groupVelocity2InKmsLtDistance.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
-        result = prime * result + ((phaseSpeedInKms == null) ? 0 : phaseSpeedInKms.hashCode());
+        result = prime * result + ((phaseVelocityInKms == null) ? 0 : phaseVelocityInKms.hashCode());
         result = prime * result + ((version == null) ? 0 : version.hashCode());
         return result;
     }
@@ -207,11 +210,11 @@ public class VelocityConfiguration implements Serializable {
         } else if (!groupVelocity2InKmsLtDistance.equals(other.groupVelocity2InKmsLtDistance)) {
             return false;
         }
-        if (phaseSpeedInKms == null) {
-            if (other.phaseSpeedInKms != null) {
+        if (phaseVelocityInKms == null) {
+            if (other.phaseVelocityInKms != null) {
                 return false;
             }
-        } else if (!phaseSpeedInKms.equals(other.phaseSpeedInKms)) {
+        } else if (!phaseVelocityInKms.equals(other.phaseVelocityInKms)) {
             return false;
         }
         return true;
@@ -224,8 +227,8 @@ public class VelocityConfiguration implements Serializable {
                .append(id)
                .append(", version=")
                .append(version)
-               .append(", phaseSpeedInKms=")
-               .append(phaseSpeedInKms)
+               .append(", phaseVelocityInKms=")
+               .append(phaseVelocityInKms)
                .append(", groupVelocity1InKmsGtDistance=")
                .append(groupVelocity1InKmsGtDistance)
                .append(", groupVelocity2InKmsGtDistance=")

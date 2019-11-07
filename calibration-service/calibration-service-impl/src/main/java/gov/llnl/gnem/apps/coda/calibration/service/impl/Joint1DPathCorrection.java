@@ -94,7 +94,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     private double xtrans = Math.log10(Math.log10(2.0));
     private double xcross = Math.log10(500.0);
 
-    @Value("#{'${path.phase-speed-kms:${phase.phase-speed-kms:${phase-speed-kms:3.5}}}'}")
+    @Value("#{'${path.phase-velocity-kms:${phase.phase-velocity-kms:${phase-velocity-kms:3.5}}}'}")
     private double vphase;
 
     private static final double efact = Math.log10(Math.E);
@@ -114,10 +114,14 @@ public class Joint1DPathCorrection implements PathCalibrationService {
             Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, VelocityConfiguration velConf) {
 
         if (velConf != null) {
-            Double phase = velConf.getPhaseSpeedInKms();
+            Double phase = velConf.getPhaseVelocityInKms();
             if (phase != null && phase != 0.0) {
                 vphase = phase;
+            } else {
+                log.debug("Null or zero phase velocity passed in {}, using phase velocity {} instead", phase, vphase);
             }
+        } else {
+            log.debug("Null or zero velocity config passed in {}, using phase velocity {} instead", velConf, vphase);
         }
 
         List<PathCalibrationMeasurement> measurements = new ArrayList<>();
@@ -254,7 +258,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 measurement.setFrequencyBand(frequencyBand);
                 measurements.add(measurement);
 
-                pathCorrectedParams.setS1(Math.pow(10.0, optimizationParams[P1_IDX]));
+                pathCorrectedParams.setP1(Math.pow(10.0, optimizationParams[P1_IDX]));
                 pathCorrectedParams.setS2(p2);
                 pathCorrectedParams.setQ(Math.pow(10.0, optimizationParams[Q_IDX]));
                 pathCorrectedParams.setXc(Math.pow(10.0, optimizationParams[XCROSS_IDX]));

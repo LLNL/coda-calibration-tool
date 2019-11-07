@@ -39,11 +39,17 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonCo
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.MdacFiFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.MdacPsFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ReferenceMwParametersFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ShapeFitterConstraintsFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SiteFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -68,14 +74,17 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         mapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersFileMixin.class);
         mapper.addMixIn(ReferenceMwParameters.class, ReferenceMwParametersFileMixin.class);
         mapper.addMixIn(VelocityConfiguration.class, VelocityConfigurationFileMixin.class);
+        mapper.addMixIn(ShapeFitterConstraints.class, ShapeFitterConstraintsFileMixin.class);
+        mapper.addMixIn(MdacParametersFI.class, MdacFiFileMixin.class);
+        mapper.addMixIn(MdacParametersPS.class, MdacPsFileMixin.class);
     }
 
     @Override
     public void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
-            VelocityConfiguration velocityConfig) {
+            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig, ShapeFitterConstraints shapeConstraints) {
         try {
             JsonNode document = createOrGetDocument(folder, CALIBRATION_JSON_NAME);
-            writeParams(createOrGetFile(folder, CALIBRATION_JSON_NAME), document, sharedParametersByFreqBand, siteParameters, velocityConfig);
+            writeParams(createOrGetFile(folder, CALIBRATION_JSON_NAME), document, sharedParametersByFreqBand, siteParameters, fi, ps, velocityConfig, shapeConstraints);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -108,7 +117,8 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
     }
 
     private void writeParams(File file, JsonNode document, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand,
-            Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters, VelocityConfiguration velocityConfig) throws IOException {
+            Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters, List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig,
+            ShapeFitterConstraints shapeConstraints) throws IOException {
         writeArrayNodeToFile(file, document, sharedParametersByFreqBand.values(), CalibrationJsonConstants.BAND_FIELD);
         if (siteParameters != null && !siteParameters.isEmpty()) {
             Map<String, Map<String, List<SiteFrequencyBandParameters>>> siteBands = siteParameters.entrySet()
@@ -122,8 +132,17 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
 
             writeArrayNodeToFile(file, document, siteBands.entrySet(), CalibrationJsonConstants.SITE_CORRECTION_FIELD);
         }
+        if (fi != null && !fi.isEmpty()) {
+            writeArrayNodeToFile(file, document, fi, CalibrationJsonConstants.MDAC_FI_FIELD);
+        }
+        if (ps != null && !ps.isEmpty()) {
+            writeArrayNodeToFile(file, document, ps, CalibrationJsonConstants.MDAC_PS_FIELD);
+        }
         if (velocityConfig != null) {
             writeFieldNodeToFile(file, document, CalibrationJsonConstants.VELOCITY_CONFIGURATION, mapper.valueToTree(velocityConfig));
+        }
+        if (shapeConstraints != null) {
+            writeFieldNodeToFile(file, document, CalibrationJsonConstants.SHAPE_CONSTRAINTS, mapper.valueToTree(shapeConstraints));
         }
     }
 

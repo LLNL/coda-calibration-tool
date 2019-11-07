@@ -57,7 +57,7 @@ public class ReferenceEventWebClient implements ReferenceEventClient {
                      .uri("/reference-events/batch")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(refEvents)
+                     .bodyValue(refEvents)
                      .exchange()
                      .flatMap(resp -> resp.bodyToMono(String.class));
     }
@@ -85,6 +85,17 @@ public class ReferenceEventWebClient implements ReferenceEventClient {
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(MeasuredMwDetails.class))
                      .onErrorReturn(new MeasuredMwDetails());
+    }
+
+    @Override
+    public Mono<Void> removeReferenceEventsByEventId(List<String> evids) {
+        return client.post()
+                     .uri("/reference-events/delete/batch-by-evids")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(evids)
+                     .exchange()
+                     .flatMap(resp -> Mono.empty());
     }
 
 }

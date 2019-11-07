@@ -54,15 +54,15 @@ public class SpectralPlot extends JMultiAxisPlot {
 
     private transient JSubplot jsubplot;
 
-    private double xmin = Double.MAX_VALUE;
+    private double xmin = 0.0;
     private double xmax = -xmin;
     private double ymin = xmin;
     private double ymax = xmax;
 
     private transient PlotProperties properties = new PlotProperties();
 
-    private double defaultXMin = -1.;
-    private double defaultXMax = 1.;
+    private double defaultXMin = 0.0;
+    private double defaultXMax = 0.0;
     private double defaultYMin = 19.0;
     private double defaultYMax = 27.0;
 
@@ -355,15 +355,42 @@ public class SpectralPlot extends JMultiAxisPlot {
         }
     }
 
+    @Override
+    public void setAllXlimits(double xmin, double xmax) {
+        super.setAllXlimits(xmin, xmax);
+        properties.setMaxXAxisValue(xmax);
+        properties.setMinXAxisValue(xmin);
+    }
+
+    @Override
+    public void setAllXlimits() {
+        super.setAllXlimits();
+        properties.setMaxXAxisValue(xmax);
+        properties.setMinXAxisValue(xmin);
+    }
+
     public void refreshPlotAxes() {
+        double xMin;
+        double xMax;
+        double yMin;
+        double yMax;
+
         if (properties.getAutoCalculateYaxisRange()) {
-            jsubplot.setAxisLimits(xmin, xmax, ymin, ymax);
+            yMin = ymin;
+            yMax = ymax;
         } else {
-            jsubplot.getYaxis().setMin(properties.getMinYAxisValue());
-            jsubplot.getYaxis().setMax(properties.getMaxYAxisValue());
-            jsubplot.getXaxis().setMax(xmax);
-            jsubplot.getXaxis().setMin(xmin);
+            yMin = properties.getMinYAxisValue();
+            yMax = properties.getMaxYAxisValue();
         }
+
+        if (properties.getAutoCalculateXaxisRange()) {
+            xMin = xmin;
+            xMax = xmax;
+        } else {
+            xMin = properties.getMinXAxisValue();
+            xMax = properties.getMaxXAxisValue();
+        }
+        jsubplot.setAxisLimits(xMin, xMax, yMin, yMax);
     }
 
     /** Set the Title, X and Y axis labels simultaneously */
@@ -412,6 +439,14 @@ public class SpectralPlot extends JMultiAxisPlot {
 
     public void setDefaultXMax(double defaultXMax) {
         this.defaultXMax = defaultXMax;
+    }
+
+    public void setAutoCalculateXaxisRange(boolean autoCalculateXaxisRange) {
+        properties.setAutoCalculateXaxisRange(autoCalculateXaxisRange);
+    }
+
+    public void setAutoCalculateYaxisRange(boolean autoCalculateYaxisRange) {
+        properties.setAutoCalculateYaxisRange(autoCalculateYaxisRange);
     }
 
     public void selectPoint(Point2D.Double xyPoint) {

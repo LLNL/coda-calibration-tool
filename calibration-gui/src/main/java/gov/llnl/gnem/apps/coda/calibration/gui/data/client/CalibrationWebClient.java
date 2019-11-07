@@ -16,17 +16,21 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
 import reactor.core.publisher.Mono;
 
 @Component
 public class CalibrationWebClient implements CalibrationClient {
+
+    private static final Logger log = LoggerFactory.getLogger(CalibrationWebClient.class);
 
     private WebClient client;
 
@@ -41,18 +45,18 @@ public class CalibrationWebClient implements CalibrationClient {
     }
 
     @Override
-    public Mono<List<MeasuredMwDetails>> makeMwMeasurements(Boolean autoPickingEnabled) {
-        return client.get().uri("/measurement/measure-mws/" + autoPickingEnabled).accept(MediaType.APPLICATION_JSON).exchange().flatMap(resp -> resp.bodyToFlux(MeasuredMwDetails.class).collectList());
+    public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled) {
+        return client.get().uri("/measurement/measure-mws/" + autoPickingEnabled).accept(MediaType.APPLICATION_JSON).exchange().flatMap(resp -> resp.bodyToMono(MeasuredMwReportByEvent.class));
     }
 
     @Override
-    public Mono<List<MeasuredMwDetails>> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds) {
+    public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds) {
         return client.post()
                      .uri("/measurement/measure-mws/" + autoPickingEnabled)
-                     .syncBody(eventIds)
+                     .bodyValue(eventIds)
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
-                     .flatMap(resp -> resp.bodyToFlux(MeasuredMwDetails.class).collectList());
+                     .flatMap(resp -> resp.bodyToMono(MeasuredMwReportByEvent.class));
     }
 
     @Override

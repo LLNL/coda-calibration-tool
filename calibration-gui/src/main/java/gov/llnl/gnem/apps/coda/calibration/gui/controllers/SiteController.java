@@ -20,9 +20,11 @@ import java.awt.geom.Point2D;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +33,9 @@ import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -45,7 +49,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
@@ -62,9 +68,9 @@ import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
-import gov.llnl.gnem.apps.coda.common.model.domain.Station;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -73,12 +79,16 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.embed.swing.SwingNode;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
@@ -172,7 +182,14 @@ public class SiteController implements MapListeningController, RefreshableContro
     @FXML
     private TableColumn<LabeledPlotPoint, String> stationCol;
 
+    @FXML
+    private TextField eventTime;
+
+    @FXML
+    private TextField eventLoc;
+
     private SpectraClient spectraClient;
+    private ParameterClient paramClient;
     private List<SpectraMeasurement> spectralMeasurements = new ArrayList<>();
     private ObservableList<String> evids = FXCollections.observableArrayList();
 
@@ -209,11 +226,22 @@ public class SiteController implements MapListeningController, RefreshableContro
     private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
 
     private ColorMap colorMap = new ViridisColorMap();
+    private final AtomicReference<Double> minFreq = new AtomicReference<>(1.0);
+    private final AtomicReference<Double> maxFreq = new AtomicReference<>(-0.0);
+
+    @FXML
+    private Button xAxisShrink;
+    private boolean shouldXAxisShrink = false;
+    private Label xAxisShrinkOn;
+    private Label xAxisShrinkOff;
+
+    private boolean isVisible = false;
 
     @Autowired
-    private SiteController(SpectraClient spectraClient, ReferenceEventClient referenceEventClient, WaveformClient waveformClient, SymbolStyleMapFactory styleFactory, GeoMap map,
-            MapPlottingUtilities iconFactory, EventBus bus) {
+    private SiteController(SpectraClient spectraClient, ParameterClient paramClient, ReferenceEventClient referenceEventClient, WaveformClient waveformClient, SymbolStyleMapFactory styleFactory,
+            GeoMap map, MapPlottingUtilities iconFactory, EventBus bus) {
         this.spectraClient = spectraClient;
+        this.paramClient = paramClient;
         this.referenceEventClient = referenceEventClient;
         this.waveformClient = waveformClient;
         this.symbolStyleMapFactory = styleFactory;
@@ -228,11 +256,34 @@ public class SiteController implements MapListeningController, RefreshableContro
         stationSelectionCallback = (selected, stationId) -> {
             selectDataByCriteria(selected, stationId);
         };
+
+        this.bus.register(this);
     }
 
     @FXML
     public void initialize() {
         evidCombo.setItems(evids);
+
+        xAxisShrinkOn = new Label("><");
+        xAxisShrinkOn.setStyle("-fx-font-weight:bold; -fx-font-size: 12px;");
+        xAxisShrinkOn.setPadding(Insets.EMPTY);
+        xAxisShrinkOff = new Label("<>");
+        xAxisShrinkOff.setStyle("-fx-font-weight:bold; -fx-font-size: 12px;");
+        xAxisShrinkOff.setPadding(Insets.EMPTY);
+        xAxisShrink.setGraphic(xAxisShrinkOn);
+        double topPad = xAxisShrink.getPadding().getTop();
+        double bottomPad = xAxisShrink.getPadding().getBottom();
+        xAxisShrink.setPadding(new Insets(topPad, 0, bottomPad, 0));
+        xAxisShrink.prefHeightProperty().bind(evidCombo.heightProperty());
+        xAxisShrink.setOnAction(e -> {
+            shouldXAxisShrink = !shouldXAxisShrink;
+            if (shouldXAxisShrink) {
+                xAxisShrink.setGraphic(xAxisShrinkOff);
+            } else {
+                xAxisShrink.setGraphic(xAxisShrinkOn);
+            }
+            refreshView();
+        });
 
         SwingUtilities.invokeLater(() -> {
 
@@ -392,6 +443,16 @@ public class SiteController implements MapListeningController, RefreshableContro
         siteSymbolMap.clear();
         plotPointMap.clear();
         List<SpectraMeasurement> filteredMeasurements;
+
+        rawPlot.setAutoCalculateXaxisRange(shouldXAxisShrink);
+        pathPlot.setAutoCalculateXaxisRange(shouldXAxisShrink);
+        sitePlot.setAutoCalculateXaxisRange(shouldXAxisShrink);
+        if (!shouldXAxisShrink) {
+            rawPlot.setAllXlimits(minFreq.get(), maxFreq.get());
+            pathPlot.setAllXlimits(minFreq.get(), maxFreq.get());
+            sitePlot.setAllXlimits(minFreq.get(), maxFreq.get());
+        }
+
         if (evidCombo != null && evidCombo.getSelectionModel().getSelectedIndex() > 0) {
             filteredMeasurements = filterToEvent(evidCombo.getSelectionModel().getSelectedItem(), spectralMeasurements);
             Spectra referenceSpectra = spectraClient.getReferenceSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
@@ -399,7 +460,16 @@ public class SiteController implements MapListeningController, RefreshableContro
             rawPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.TRUE);
             pathPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathCorrected), Boolean.TRUE);
             sitePlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.TRUE, referenceSpectra, theoreticalSpectra);
+            if (filteredMeasurements != null && filteredMeasurements.size() > 0 && filteredMeasurements.get(0).getWaveform() != null) {
+                Event event = filteredMeasurements.get(0).getWaveform().getEvent();
+                eventTime.setText("Date: " + DateTimeFormatter.ISO_INSTANT.format(event.getOriginTime().toInstant()));
+                eventLoc.setText("Lat: " + dfmt4.format(event.getLatitude()) + " Lon: " + dfmt4.format(event.getLongitude()));
+                eventTime.setVisible(true);
+                eventLoc.setVisible(true);
+            }
         } else {
+            eventTime.setVisible(false);
+            eventLoc.setVisible(false);
             filteredMeasurements = spectralMeasurements;
             rawPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.FALSE);
             pathPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathCorrected), Boolean.FALSE);
@@ -408,22 +478,17 @@ public class SiteController implements MapListeningController, RefreshableContro
         rawSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime));
         pathSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathCorrected));
         siteSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected));
-        mapImpl.addIcons(mapMeasurements(filteredMeasurements));
-
+        mapMeasurements(filteredMeasurements);
     }
 
-    private Collection<Icon> mapMeasurements(List<SpectraMeasurement> filteredMeasurements) {
-        return filteredMeasurements.stream().map(meas -> meas.getWaveform()).filter(Objects::nonNull).flatMap(w -> {
-            List<Icon> icons = new ArrayList<>();
-            if (w.getStream() != null && w.getStream().getStation() != null) {
-                Station station = w.getStream().getStation();
-                icons.add(iconFactory.createStationIcon(station).setIconSelectionCallback(stationSelectionCallback));
-            }
-            if (w.getEvent() != null) {
-                icons.add(iconFactory.createEventIcon(w.getEvent()).setIconSelectionCallback(eventSelectionCallback));
-            }
-            return icons.stream();
-        }).collect(Collectors.toList());
+    private void mapMeasurements(List<SpectraMeasurement> measurements) {
+        if (measurements != null) {
+            mapImpl.addIcons(
+                    iconFactory.genIconsFromWaveforms(
+                            eventSelectionCallback,
+                                stationSelectionCallback,
+                                measurements.stream().map(m -> m.getWaveform()).filter(Objects::nonNull).collect(Collectors.toList())));
+        }
     }
 
     private void clearSpectraPlots() {
@@ -513,6 +578,19 @@ public class SiteController implements MapListeningController, RefreshableContro
                                                                   .collect(Collectors.toList())
                                                                   .subscribeOn(Schedulers.elastic())
                                                                   .block(Duration.ofSeconds(10l));
+
+                maxFreq.set(-0.0);
+                minFreq.set(1.0);
+
+                DoubleSummaryStatistics stats = paramClient.getSharedFrequencyBandParameters()
+                                                           .filter(Objects::nonNull)
+                                                           .collectList()
+                                                           .block(Duration.of(10l, ChronoUnit.SECONDS))
+                                                           .stream()
+                                                           .map(sfb -> Math.log10(centerFreq(sfb.getLowFrequency(), sfb.getHighFrequency())))
+                                                           .collect(Collectors.summarizingDouble(Double::doubleValue));
+                maxFreq.set(stats.getMax());
+                minFreq.set(stats.getMin());
 
                 double minMw = 10.0;
                 double maxMw = 0.0;
@@ -704,13 +782,15 @@ public class SiteController implements MapListeningController, RefreshableContro
 
     @Override
     public void refreshView() {
-        mapImpl.clearIcons();
-        plotSpectra();
-        Platform.runLater(() -> {
-            rawPlot.repaint();
-            pathPlot.repaint();
-            sitePlot.repaint();
-        });
+        if (isVisible) {
+            mapImpl.clearIcons();
+            plotSpectra();
+            Platform.runLater(() -> {
+                rawPlot.repaint();
+                pathPlot.repaint();
+                sitePlot.repaint();
+            });
+        }
     }
 
     @Override
@@ -821,6 +901,30 @@ public class SiteController implements MapListeningController, RefreshableContro
         waveformClient.setWaveformsActiveByIds(waveforms.stream().map(w -> w.getId()).collect(Collectors.toList()), active).subscribe(s -> activationFunc.accept(plotObjects, active));
     }
 
+    @Subscribe
+    private void listener(WaveformChangeEvent wce) {
+        List<Long> nonNull = wce.getIds().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        synchronized (spectralMeasurements) {
+            Map<Long, SpectraMeasurement> activeMeasurements = spectralMeasurements.stream().collect(Collectors.toMap(x -> x.getWaveform().getId(), Function.identity()));
+            if (wce.isAddOrUpdate()) {
+                waveformClient.getWaveformMetadataFromIds(nonNull).collect(Collectors.toList()).block(Duration.ofSeconds(10l)).forEach(md -> {
+                    SpectraMeasurement measurement = activeMeasurements.get(md.getId());
+                    if (measurement != null) {
+                        measurement.getWaveform().setActive(md.isActive());
+                    }
+                });
+            } else if (wce.isDelete()) {
+                nonNull.forEach(id -> {
+                    SpectraMeasurement measurement = activeMeasurements.remove(id);
+                    if (measurement != null) {
+                        spectralMeasurements.remove(measurement);
+                    }
+                });
+            }
+        }
+        refreshView();
+    }
+
     private void handlePlotObjectClicked(Object obj, Function<Symbol, SpectraMeasurement> measurementFunc) {
         if (obj instanceof PlotObjectClicked && ((PlotObjectClicked) obj).getMouseEvent().getID() == MouseEvent.MOUSE_RELEASED) {
             PlotObjectClicked poc = (PlotObjectClicked) obj;
@@ -841,6 +945,31 @@ public class SiteController implements MapListeningController, RefreshableContro
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        isVisible = visible;
+    }
+
+    @FXML
+    private void clearRefEvents() {
+        removeRefEvents(mwParameters);
+    }
+
+    @FXML
+    private void removeRefEvents() {
+        List<MeasuredMwDetails> evs = new ArrayList<>(eventTable.getSelectionModel().getSelectedIndices().size());
+        eventTable.getSelectionModel().getSelectedIndices().forEach(i -> evs.add(mwParameters.get(i)));
+        removeRefEvents(evs);
+    }
+
+    private void removeRefEvents(List<MeasuredMwDetails> evs) {
+        if (evs != null && !evs.isEmpty()) {
+            referenceEventClient.removeReferenceEventsByEventId(evs.stream().map(mwd -> mwd.getEventId()).distinct().collect(Collectors.toList()))
+                                .doOnSuccess((v) -> CompletableFuture.runAsync(() -> reloadData()))
+                                .subscribe();
         }
     }
 }

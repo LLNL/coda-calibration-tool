@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,6 +44,8 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 @RestController
 @RequestMapping(value = "/api/v1/synthetics", name = "SyntheticCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SyntheticCollectionJsonController {
+
+    private static final Logger log = LoggerFactory.getLogger(SyntheticCollectionJsonController.class);
 
     private SyntheticService syntheticService;
 
@@ -67,11 +71,9 @@ public class SyntheticCollectionJsonController {
                 }
             }
         }
-        if (!data.isEmpty()) {
-            return ResponseEntity.ok().body(data);
-        } else {
-            throw new IllegalStateException(String.format("SyntheticCoda with identifiers '%s' not found", ids));
-        }
+
+        log.trace("SyntheticCoda with identifiers {} not found", ids);
+        return ResponseEntity.ok().body(data);
     }
 
     @GetMapping(value = "/single/{id}", name = "getSyntheticCoda")
@@ -80,7 +82,7 @@ public class SyntheticCollectionJsonController {
         if (synthetic == null) {
             synthetic = syntheticService.findOneByWaveformId(id);
             if (synthetic == null) {
-                throw new IllegalStateException(String.format("SyntheticCoda with identifier '%s' not found", id));
+                log.trace("SyntheticCoda with identifier {} not found", id);
             }
         }
         return ResponseEntity.ok().body(synthetic);

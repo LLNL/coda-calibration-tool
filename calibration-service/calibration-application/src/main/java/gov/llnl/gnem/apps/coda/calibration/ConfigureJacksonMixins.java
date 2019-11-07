@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersJsonMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SiteFrequencyBandParametersJsonMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 
@@ -37,7 +37,7 @@ public class ConfigureJacksonMixins {
     public MappingJackson2HttpMessageConverter configureJackson() {
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         ObjectMapper mapper = new ObjectMapper();
-        mapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersFileMixin.class);
+        mapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersJsonMixin.class);
         mapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersJsonMixin.class);
         converter.setObjectMapper(mapper);
         return converter;

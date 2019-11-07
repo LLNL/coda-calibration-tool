@@ -172,19 +172,19 @@
                             0
                         ]
                     },
-                    "s1": {
-                        "$id": "#/properties/bands/band/properties/s1",
+                    "p1": {
+                        "$id": "#/properties/bands/band/properties/p1",
                         "type": "number",
-                        "title": "Defines the S1 parameter for the ESH path correction model.",
+                        "title": "Defines the P1/S1 parameter for the ESH path correction model.",
                         "default": 0,
                         "examples": [
                             0
                         ]
                     },
-                    "s2": {
-                        "$id": "#/properties/bands/band/properties/s2",
+                    "p2": {
+                        "$id": "#/properties/bands/band/properties/p2",
                         "type": "number",
-                        "title": "Defines the S2 parameter for the ESH path correction model.",
+                        "title": "Defines the P2/S2 parameter for the ESH path correction model.",
                         "default": 0,
                         "examples": [
                             0
@@ -594,10 +594,10 @@
             "type": "object",
             "title": "Configuration properties related to group velocities that should be used by the calibration code.",
             "properties": {
-                "phaseSpeedInKms": {
-                    "$id": "#/properties/velocity-configuration/properties/phaseSpeedInKms",
+                "phaseVelocityInKms": {
+                    "$id": "#/properties/velocity-configuration/properties/phaseVelocityInKms",
                     "type": "number",
-                    "title": "Phase speed (Km/S) to use for the spectra calibration. Note: path calibration will use this value if it is available but path.phaseSpeedKmS isn't.",
+                    "title": "Phase velocity (Km/S) to use for the spectra calibration. Note: path calibration will use this value if it is available but path.phaseVelocityKmS isn't.",
                     "default": 0,
                     "examples": [
                         3.5
@@ -606,7 +606,7 @@
                 "groupVelocity1InKmsGtDistance": {
                     "$id": "#/properties/velocity-configuration/properties/groupVelocity1InKmsGtDistance",
                     "type": "number",
-                    "title": "Starting velocity (in Km/S) for windowing distances after the distance threshold.",
+                    "title": "Starting group velocity (in Km/S) for windowing distances after the critical distance.",
                     "default": 0,
                     "examples": [
                         4.7
@@ -615,7 +615,7 @@
                 "groupVelocity2InKmsGtDistance": {
                     "$id": "#/properties/velocity-configuration/properties/groupVelocity2InKmsGtDistance",
                     "type": "number",
-                    "title": "Ending velocity (in Km/S) for windowing distances after the distance threshold.",
+                    "title": "Ending group velocity (in Km/S) for windowing distances after the critical distance.",
                     "default": 0,
                     "examples": [
                         2.3
@@ -624,7 +624,7 @@
                 "groupVelocity1InKmsLtDistance": {
                     "$id": "#/properties/velocity-configuration/properties/groupVelocity1InKmsLtDistance",
                     "type": "number",
-                    "title": "Starting velocity (in Km/S) for windowing distances before the distance threshold.",
+                    "title": "Starting group velocity (in Km/S) for windowing distances before the critical distance.",
                     "default": 0,
                     "examples": [
                         3.9
@@ -633,7 +633,7 @@
                 "groupVelocity2InKmsLtDistance": {
                     "$id": "#/properties/velocity-configuration/properties/groupVelocity2InKmsLtDistance",
                     "type": "number",
-                    "title": "Ending velocity (in Km/S) for windowing distances before the distance threshold.",
+                    "title": "Ending group velocity (in Km/S) for windowing distances before the critical distance.",
                     "default": 0,
                     "examples": [
                         1.9
@@ -642,13 +642,389 @@
                 "distanceThresholdInKm": {
                     "$id": "#/properties/velocity-configuration/properties/distanceThresholdInKm",
                     "type": "number",
-                    "title": "Distance threshold to use (in Km) to use for selected which group velocity to use.",
+                    "title": "Critical distance to use (in Km) to use for selecting which group velocity to use.",
                     "default": 0,
                     "examples": [
                         300.0
                     ]
                 }
             }
-        }
+        },
+        "shape-constraints": {
+            "$id": "#/properties/shape-constraints",
+            "type": "object",
+            "title": "Configuration properties related to constraints on the shape model fitting optimization used by the calibration code.",
+            "properties": {
+                "maxVP1": {
+                    "$id": "#/properties/shape-constraints/properties/maxVP1",
+                    "type": "number",
+                    "title": "",
+                    "default": 600.00,
+                    "examples": [
+                        600.0
+                    ]
+                },
+                "minVP1": {
+                    "$id": "#/properties/shape-constraints/properties/minVP1",
+                    "type": "number",
+                    "title": "",
+                    "default": 50.0,
+                    "examples": [
+                        50.0
+                    ]
+                },
+                "v0reg": {
+                    "$id": "#/properties/shape-constraints/properties/v0reg",
+                    "type": "number",
+                    "title": "",
+                    "default": 100.0,
+                    "examples": [
+                        100.0
+                    ]
+                },
+                "maxVP2": {
+                    "$id": "#/properties/shape-constraints/properties/maxVP2",
+                    "type": "number",
+                    "title": "",
+                    "default": 5000.0,
+                    "examples": [
+                        5000.0
+                    ]
+                },
+                "minVP2": {
+                    "$id": "#/properties/shape-constraints/properties/minVP2",
+                    "type": "number",
+                    "title": "",
+                    "default": 1.0,
+                    "examples": [
+                        1.0
+                    ]
+                },
+                "maxVP3": {
+                    "$id": "#/properties/shape-constraints/properties/maxVP3",
+                    "type": "number",
+                    "title": "",
+                    "default": 5000.0,
+                    "examples": [
+                        5000.0
+                    ]
+                },
+                "minVP3": {
+                    "$id": "#/properties/shape-constraints/properties/minVP3",
+                    "type": "number",
+                    "title": "",
+                    "default": 1.0,
+                    "examples": [
+                        1.0
+                    ]
+                },
+                "maxBP1": {
+                    "$id": "#/properties/shape-constraints/properties/maxBP1",
+                    "type": "number",
+                    "title": "",
+                    "default": 1000.0,
+                    "examples": [
+                        1000.0
+                    ]
+                },
+                "minBP1": {
+                    "$id": "#/properties/shape-constraints/properties/minBP1",
+                    "type": "number",
+                    "title": "",
+                    "default": -500.0,
+                    "examples": [
+                        -500.0
+                    ]
+                },
+                "b0reg": {
+                    "$id": "#/properties/shape-constraints/properties/b0reg",
+                    "type": "number",
+                    "title": "",
+                    "default": 10000.0,
+                    "examples": [
+                        10000.0
+                    ]
+                },
+                "maxBP2": {
+                    "$id": "#/properties/shape-constraints/properties/maxBP2",
+                    "type": "number",
+                    "title": "",
+                    "default": 20.0,
+                    "examples": [
+                        20.0
+                    ]
+                },
+                "minBP2": {
+                    "$id": "#/properties/shape-constraints/properties/minBP2",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.1,
+                    "examples": [
+                        0.1
+                    ]
+                },
+                "maxBP3": {
+                    "$id": "#/properties/shape-constraints/properties/maxBP3",
+                    "type": "number",
+                    "title": "",
+                    "default": 1500.0,
+                    "examples": [
+                        1500.0
+                    ]
+                },
+                "minBP3": {
+                    "$id": "#/properties/shape-constraints/properties/minBP3",
+                    "type": "number",
+                    "title": "",
+                    "default": 1.0E-4,
+                    "examples": [
+                        1.0E-4
+                    ]
+                },
+                "maxGP1": {
+                    "$id": "#/properties/shape-constraints/properties/maxGP1",
+                    "type": "number",
+                    "title": "",
+                    "default": 100.0,
+                    "examples": [
+                        100.0
+                    ]
+                },
+                "minGP1": {
+                    "$id": "#/properties/shape-constraints/properties/minGP1",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.0,
+                    "examples": [
+                        0.0
+                    ]
+                },
+                "g0reg": {
+                    "$id": "#/properties/shape-constraints/properties/g0reg",
+                    "type": "number",
+                    "title": "",
+                    "default": 100.0,
+                    "examples": [
+                        100.0
+                    ]
+                },
+                "maxGP2": {
+                    "$id": "#/properties/shape-constraints/properties/maxGP2",
+                    "type": "number",
+                    "title": "",
+                    "default": 101.0,
+                    "examples": [
+                        101.0
+                    ]
+                },
+                "minGP2": {
+                    "$id": "#/properties/shape-constraints/properties/minGP2",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.0,
+                    "examples": [
+                        0.0
+                    ]
+                },
+                "g1reg": {
+                    "$id": "#/properties/shape-constraints/properties/g1reg",
+                    "type": "number",
+                    "title": "",
+                    "default": -1.0,
+                    "examples": [
+                        -1.0
+                    ]
+                },
+                "maxGP3": {
+                    "$id": "#/properties/shape-constraints/properties/maxGP3",
+                    "type": "number",
+                    "title": "",
+                    "default": 101.0,
+                    "examples": [
+                        101.0
+                    ]
+                },
+                "minGP3": {
+                    "$id": "#/properties/shape-constraints/properties/minGP3",
+                    "type": "number",
+                    "title": "",
+                    "default": 1.0,
+                    "examples": [
+                        1.0
+                    ]
+                },
+                "yvvMin": {
+                    "$id": "#/properties/shape-constraints/properties/yvvMin",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.5,
+                    "examples": [
+                        0.5
+                    ]
+                },
+                "yvvMax": {
+                    "$id": "#/properties/shape-constraints/properties/yvvMax",
+                    "type": "number",
+                    "title": "",
+                    "default": 6.01,
+                    "examples": [
+                        6.01
+                    ]
+                },
+                "vDistMax": {
+                    "$id": "#/properties/shape-constraints/properties/vDistMax",
+                    "type": "number",
+                    "title": "",
+                    "default": 1600.0,
+                    "examples": [
+                        1600.0
+                    ]
+                },
+                "vDistMin": {
+                    "$id": "#/properties/shape-constraints/properties/vDistMin",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.0,
+                    "examples": [
+                        0.0
+                    ]
+                },
+                "ybbMin": {
+                    "$id": "#/properties/shape-constraints/properties/ybbMin",
+                    "type": "number",
+                    "title": "",
+                    "default": -0.12,
+                    "examples": [
+                        -0.12
+                    ]
+                },
+                "ybbMax": {
+                    "$id": "#/properties/shape-constraints/properties/ybbMax",
+                    "type": "number",
+                    "title": "",
+                    "default": 5.0E-4,
+                    "examples": [
+                        5.0E-4
+                    ]
+                },
+                "bDistMax": {
+                    "$id": "#/properties/shape-constraints/properties/bDistMax",
+                    "type": "number",
+                    "title": "",
+                    "default": 1550.0,
+                    "examples": [
+                        1550.0
+                    ]
+                },
+                "bDistMin": {
+                    "$id": "#/properties/shape-constraints/properties/bDistMin",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.0,
+                    "examples": [
+                        0.0
+                    ]
+                },
+                "yggMin": {
+                    "$id": "#/properties/shape-constraints/properties/yggMin",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.01,
+                    "examples": [
+                        0.01
+                    ]
+                },
+                "yggMax": {
+                    "$id": "#/properties/shape-constraints/properties/yggMax",
+                    "type": "number",
+                    "title": "",
+                    "default": 100.0,
+                    "examples": [
+                        100.0
+                    ]
+                },
+                "gDistMin": {
+                    "$id": "#/properties/shape-constraints/properties/gDistMin",
+                    "type": "number",
+                    "title": "",
+                    "default": 600.0,
+                    "examples": [
+                        600.0
+                    ]
+                },
+                "gDistMax": {
+                    "$id": "#/properties/shape-constraints/properties/gDistMax",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.0,
+                    "examples": [
+                        0.0
+                    ]
+                },
+                "minIntercept": {
+                    "$id": "#/properties/shape-constraints/properties/minIntercept",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.001,
+                    "examples": [
+                        0.001
+                    ]
+                },
+                "maxIntercept": {
+                    "$id": "#/properties/shape-constraints/properties/maxIntercept",
+                    "type": "number",
+                    "title": "",
+                    "default": 20.0,
+                    "examples": [
+                        20.0
+                    ]
+                },
+                "minBeta": {
+                    "$id": "#/properties/shape-constraints/properties/minBeta",
+                    "type": "number",
+                    "title": "",
+                    "default": -4.0,
+                    "examples": [
+                        -4.0
+                    ]
+                },
+                "maxBeta": {
+                    "$id": "#/properties/shape-constraints/properties/maxBeta",
+                    "type": "number",
+                    "title": "",
+                    "default": -1.0E-4,
+                    "examples": [
+                        -1.0E-4
+                    ]
+                },
+                "minGamma": {
+                    "$id": "#/properties/shape-constraints/properties/minGamma",
+                    "type": "number",
+                    "title": "",
+                    "default": 0.001,
+                    "examples": [
+                        0.001
+                    ]
+                },
+                "maxGamma": {
+                    "$id": "#/properties/shape-constraints/properties/maxGamma",
+                    "type": "number",
+                    "title": "",
+                    "default": 4.0,
+                    "examples": [
+                        4.0
+                    ]
+                },
+                "iterations": {
+                    "$id": "#/properties/shape-constraints/properties/iterations",
+                    "type": "number",
+                    "title": "",
+                    "default": 1,
+                    "examples": [
+                        1
+                    ]
+                }
+            }
+        }        
     }
 }

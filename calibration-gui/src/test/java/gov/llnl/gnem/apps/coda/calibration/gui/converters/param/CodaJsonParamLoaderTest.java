@@ -14,6 +14,9 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.converters.param;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.stream.Stream;
@@ -27,6 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteCorrections;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
@@ -68,7 +72,7 @@ public class CodaJsonParamLoaderTest {
                                                                    .getResultPayload()
                                                                    .orElseGet(null);
         Assert.assertNotNull("Expected to have 1 site correction object", siteCorrections);
-        Assert.assertEquals("Expected to have 1 network", 1, siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getNetworkName()).distinct().count());
+        Assert.assertEquals("Expected to have 1 networks", 1, siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getNetworkName()).distinct().count());
         Assert.assertEquals("Expected to have 3 stations", 3, siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getStationName()).distinct().count());
         Assert.assertEquals(
                 "Expected to have 14 bands for the first station",
@@ -111,5 +115,18 @@ public class CodaJsonParamLoaderTest {
                 "Expected to have 2 valid reference event definitions",
                     Long.valueOf(2l),
                     results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ReferenceMwParameters).count().block());
+    }
+
+    @ParameterizedTest
+    @MethodSource("filePaths")
+    public final void testShapeConstraint(String filePath) throws Exception {
+        Flux<Result<Object>> results = convertFile(filePath);
+        Assert.assertEquals(
+                "Expected to have 1 valid shape constraint definition",
+                    Long.valueOf(1l),
+                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ShapeFitterConstraints).count().block());
+        assertThat(((ShapeFitterConstraints) results.filter(r -> r.getResultPayload().orElse(null) instanceof ShapeFitterConstraints).blockFirst().getResultPayload().get()).getMaxBeta()).isCloseTo(
+                -11.0E-4,
+                    within(0.001)).describedAs("Expected values containing 'E-' scientific notation serialize correctly");
     }
 }

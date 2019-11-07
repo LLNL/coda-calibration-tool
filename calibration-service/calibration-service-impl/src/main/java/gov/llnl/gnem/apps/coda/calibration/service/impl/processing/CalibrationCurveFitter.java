@@ -41,6 +41,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.EnvelopeFit;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
@@ -52,64 +53,15 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters
  */
 public class CalibrationCurveFitter {
 
-    private static final Logger log = LoggerFactory.getLogger(CalibrationCurveFitter.class);
+    private Logger log = LoggerFactory.getLogger(CalibrationCurveFitter.class);
 
-    // 6.0
-    protected static final double MAX_V_P1 = 600;
-    // .5
-    protected static final double MIN_V_P1 = 50.0;
-    protected static final double V0_REG = 100;
-    protected static final double MAX_V_P2 = 5000;
-    protected static final double MIN_V_P2 = 1;
-    protected static final double MAX_V_P3 = 5000;
-    protected static final double MIN_V_P3 = 1;
-
-    // .1
-    protected static final double MAX_B_P1 = 1000;
-    // -0.05
-    protected static final double MIN_B_P1 = -500;
-    protected static final double B0_REG = 10000;
-
-    protected static final double MAX_B_P2 = 20;
-    protected static final double MIN_B_P2 = 0.1;
-    protected static final double MAX_B_P3 = 1500;
-    protected static final double MIN_B_P3 = 0.0001;
-
-    // 1
-    protected static final double MAX_G_P1 = 100;
-    // -0.1
-    protected static final double MIN_G_P1 = 0;
-    protected static final double G0_REG = 100;
-
-    protected static final double MAX_G_P2 = 101;
-    protected static final double MIN_G_P2 = 0;
-    protected static final double G1_REG = -1;
-
-    protected static final double MAX_G_P3 = 101;
-    protected static final double MIN_G_P3 = 1;
-
-    protected static final double YVV_MIN = 0.5;
-    protected static final double YVV_MAX = 6.01;
-    protected static final double V_DIST_MAX = 1600;
-
-    protected static final double YBB_MIN = -12.0E-2;
-    protected static final double YBB_MAX = 0.0005;
-    protected static final double B_DIST_MAX = 1550;
-
-    protected static final double YGG_MIN = 0.01;
-    protected static final double YGG_MAX = 100.0;
-    protected static final double G_DIST_MAX = 600;
-
-    private static final int ITER_COUNT = 10;
-
-    public EnvelopeFit fitCodaCMAES(final float[] segment) {
-
-        double minInt = 0.01;
-        double maxInt = 10.0;
-        double minGamma = 0.01;
-        double maxGamma = 1.00;
-        double minBeta = -1.0;
-        double maxBeta = -0.001;
+    public EnvelopeFit fitCodaCMAES(final float[] segment, ShapeFitterConstraints constraints) {
+        double minInt = constraints.getMinIntercept();
+        double maxInt = constraints.getMaxIntercept();
+        double minGamma = constraints.getMinGamma();
+        double maxGamma = constraints.getMaxGamma();
+        double minBeta = constraints.getMinBeta();
+        double maxBeta = constraints.getMaxBeta();
 
         EnvelopeFit fit = new EnvelopeFit();
 
@@ -160,34 +112,30 @@ public class CalibrationCurveFitter {
         return fit;
     }
 
-    private PointValuePair bestByFunction(MultivariateFunction prediction, Function<Integer, PointValuePair> mapper) {
-        return IntStream.range(0, 1 + ITER_COUNT)
+    private PointValuePair bestByFunction(MultivariateFunction prediction, Function<Integer, PointValuePair> mapper, ShapeFitterConstraints constraints) {
+        return IntStream.range(0, 1 + constraints.getIterations())
                         .parallel()
                         .mapToObj(mapper::apply)
                         .reduce((left, right) -> left.getValue() < right.getValue() ? left : right)
                         .orElseGet(() -> new PointValuePair(new double[4], Double.MAX_VALUE));
     }
 
-    public double[] gridSearchCodaVApacheCMAES(List<Entry<Double, Double>> velocityDistancePairs) {
-        return gridSearchCodaVApacheCMAES(velocityDistancePairs, YVV_MIN, YVV_MAX, 0, V_DIST_MAX);
-    }
-
-    public double[] gridSearchCodaVApacheCMAES(final List<Entry<Double, Double>> velocityDistancePairs, final double yvvMin, final double yvvMax, final double distMin, final double distMax) {
-        double maxP1 = MAX_V_P1;
-        double minP1 = MIN_V_P1;
-        double maxP2 = MAX_V_P2;
-        double minP2 = MIN_V_P2;
-        double maxP3 = MAX_V_P3;
-        double minP3 = MIN_V_P3;
+    public double[] gridSearchCodaVApacheCMAES(final List<Entry<Double, Double>> velocityDistancePairs, ShapeFitterConstraints constraints) {
+        double maxP1 = constraints.getMaxVP1();
+        double minP1 = constraints.getMinVP1();
+        double maxP2 = constraints.getMaxVP2();
+        double minP2 = constraints.getMinVP2();
+        double maxP3 = constraints.getMaxVP3();
+        double minP3 = constraints.getMinVP3();
 
         MultivariateFunction prediction = point -> {
-            double v0 = point[0] / V0_REG;
+            double v0 = point[0] / constraints.getV0reg();
             double v1 = point[1];
             double v2 = point[2];
 
-            double vDistMin = v0 - v1 / (distMin + v2);
-            double vDistMax = v0 - v1 / (distMax + v2);
-            if (vDistMin < yvvMin || vDistMax > yvvMax) {
+            double vDistMin = v0 - v1 / (constraints.getvDistMin() + v2);
+            double vDistMax = v0 - v1 / (constraints.getvDistMax() + v2);
+            if (vDistMin < constraints.getYvvMin() || vDistMax > constraints.getYvvMax()) {
                 return Double.MAX_VALUE;
             }
 
@@ -208,10 +156,10 @@ public class CalibrationCurveFitter {
                     new CMAESOptimizer.Sigma(new double[] { 1, 75, 100 }),
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
 
-        PointValuePair bestResult = bestByFunction(prediction, mapper);
+        PointValuePair bestResult = bestByFunction(prediction, mapper, constraints);
 
         double[] curve = new double[4];
-        curve[0] = bestResult.getPoint()[0] / V0_REG;
+        curve[0] = bestResult.getPoint()[0] / constraints.getV0reg();
         curve[1] = bestResult.getPoint()[1];
         curve[2] = bestResult.getPoint()[2];
         curve[3] = bestResult.getValue();
@@ -223,26 +171,22 @@ public class CalibrationCurveFitter {
         return curve;
     }
 
-    public double[] gridSearchCodaBApacheCMAES(List<Entry<Double, Double>> betaDistancePairs) {
-        return gridSearchCodaBApacheCMAES(betaDistancePairs, YBB_MIN, YBB_MAX, 0, B_DIST_MAX);
-    }
-
-    public double[] gridSearchCodaBApacheCMAES(final List<Entry<Double, Double>> betaDistancePairs, final double ybbMin, final double ybbMax, final double distMin, final double distMax) {
-        double maxP1 = MAX_B_P1;
-        double minP1 = MIN_B_P1;
-        double maxP2 = MAX_B_P2;
-        double minP2 = MIN_B_P2;
-        double maxP3 = MAX_B_P3;
-        double minP3 = MIN_B_P3;
+    public double[] gridSearchCodaBApacheCMAES(final List<Entry<Double, Double>> betaDistancePairs, ShapeFitterConstraints constraints) {
+        double maxP1 = constraints.getMaxBP1();
+        double minP1 = constraints.getMinBP1();
+        double maxP2 = constraints.getMaxBP2();
+        double minP2 = constraints.getMinBP2();
+        double maxP3 = constraints.getMaxBP3();
+        double minP3 = constraints.getMinBP3();
 
         MultivariateFunction prediction = point -> {
-            double b0 = point[0] / B0_REG;
+            double b0 = point[0] / constraints.getB0reg();
             double b1 = point[1];
             double b2 = point[2];
 
-            double ybbDistMin = b0 - b1 / (distMin + b2);
-            double ybbDistMax = b0 - b1 / (distMax + b2);
-            if (ybbDistMin < ybbMin || ybbDistMax > ybbMax) {
+            double ybbDistMin = b0 - b1 / (constraints.getbDistMin() + b2);
+            double ybbDistMax = b0 - b1 / (constraints.getbDistMax() + b2);
+            if (ybbDistMin < constraints.getYbbMin() || ybbDistMax > constraints.getYbbMax()) {
                 return Double.MAX_VALUE;
             }
 
@@ -264,10 +208,10 @@ public class CalibrationCurveFitter {
                     50,
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
 
-        PointValuePair bestResult = bestByFunction(prediction, mapper);
+        PointValuePair bestResult = bestByFunction(prediction, mapper, constraints);
 
         double[] curve = new double[4];
-        curve[0] = bestResult.getPoint()[0] / B0_REG;
+        curve[0] = bestResult.getPoint()[0] / constraints.getB0reg();
         curve[1] = bestResult.getPoint()[1];
         curve[2] = bestResult.getPoint()[2];
         curve[3] = bestResult.getValue();
@@ -292,27 +236,23 @@ public class CalibrationCurveFitter {
         return sum + Math.pow(.5d, 2.0) + (Math.sqrt(1d + Math.pow(Math.abs(X - Y) / .5d, 2.0)) - 1d);
     }
 
-    public double[] gridSearchCodaGApacheCMAES(List<Entry<Double, Double>> gammaDistancePairs) {
-        return gridSearchCodaGApacheCMAES(gammaDistancePairs, YGG_MIN, YGG_MAX, 0, G_DIST_MAX);
-    }
-
-    public double[] gridSearchCodaGApacheCMAES(final List<Entry<Double, Double>> gammaDistancePairs, final double gMin, final double gMax, final double distMin, final double distMax) {
-        double maxP1 = MAX_G_P1;
-        double minP1 = MIN_G_P1;
-        double maxP2 = MAX_G_P2;
-        double minP2 = MIN_G_P2;
-        double maxP3 = MAX_G_P3;
-        double minP3 = MIN_G_P3;
+    public double[] gridSearchCodaGApacheCMAES(final List<Entry<Double, Double>> gammaDistancePairs, ShapeFitterConstraints constraints) {
+        double maxP1 = constraints.getMaxGP1();
+        double minP1 = constraints.getMinGP1();
+        double maxP2 = constraints.getMaxGP2();
+        double minP2 = constraints.getMinGP2();
+        double maxP3 = constraints.getMaxGP3();
+        double minP3 = constraints.getMinGP3();
 
         MultivariateFunction prediction = point -> {
-            double g0 = point[0] / G0_REG;
-            double g1 = point[1] * G1_REG;
+            double g0 = point[0] / constraints.getG0reg();
+            double g1 = point[1] * constraints.getG1reg();
             double g2 = point[2];
 
-            double gDistMin = g0 - g1 / (distMin + g2);
-            double gDistMinNext = g0 - g1 / ((distMin + 1.0) + g2);
-            double gDistMax = g0 - g1 / (distMax + g2);
-            if (gDistMin < gMin || gDistMax > gMax || gDistMin < gDistMinNext) {
+            double gDistMin = g0 - g1 / (constraints.getgDistMin() + g2);
+            double gDistMinNext = g0 - g1 / ((constraints.getgDistMin() + 1.0) + g2);
+            double gDistMax = g0 - g1 / (constraints.getgDistMax() + g2);
+            if (gDistMin < constraints.getYggMin() || gDistMax > constraints.getYggMax() || gDistMin < gDistMinNext) {
                 return Double.MAX_VALUE;
             }
 
@@ -336,11 +276,11 @@ public class CalibrationCurveFitter {
                     50,
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
 
-        PointValuePair bestResult = bestByFunction(prediction, mapper);
+        PointValuePair bestResult = bestByFunction(prediction, mapper, constraints);
 
         double[] curve = new double[4];
-        curve[0] = bestResult.getPoint()[0] / G0_REG;
-        curve[1] = bestResult.getPoint()[1] * G1_REG;
+        curve[0] = bestResult.getPoint()[0] / constraints.getG0reg();
+        curve[1] = bestResult.getPoint()[1] * constraints.getG1reg();
         curve[2] = bestResult.getPoint()[2];
         curve[3] = bestResult.getValue();
         if (curve[3] == Double.MAX_VALUE) {
@@ -364,11 +304,7 @@ public class CalibrationCurveFitter {
         return optimizer.optimize(new MaxEval(1000000), new ObjectiveFunction(prediction), GoalType.MINIMIZE, bounds, initialGuess, stepSize, new CMAESOptimizer.PopulationSize(popSize));
     }
 
-    public double[] gridSearchCodaV(List<Entry<Double, Double>> velocityDistancePairs) {
-        return gridSearchCodaV(velocityDistancePairs, YVV_MIN, YVV_MAX, 0, V_DIST_MAX);
-    }
-
-    public double[] gridSearchCodaV(final List<Entry<Double, Double>> velocityDistancePairs, final double yvvMin, final double yvvMax, final double distMin, final double distMax) {
+    public double[] gridSearchCodaV(final List<Entry<Double, Double>> velocityDistancePairs, ShapeFitterConstraints constraints) {
 
         final Double[] baseResult = new Double[] { 0.0, 0.0, 0.0, 9E29 };
         return ArrayUtils.toPrimitive(IntStream.rangeClosed(0, 45).parallel().mapToObj(iv0 -> {
@@ -380,9 +316,9 @@ public class CalibrationCurveFitter {
                     double v2 = 1.0 + (iv2) * 1.0;
 
                     // avoid "unphysical" situations
-                    double yvvDistMin = v0 - v1 / (distMin + v2);
-                    double yvvDistMax = v0 - v1 / (distMax + v2);
-                    if (yvvDistMin < yvvMin || yvvDistMax > yvvMax) {
+                    double yvvDistMin = v0 - v1 / (constraints.getvDistMin() + v2);
+                    double yvvDistMax = v0 - v1 / (constraints.getvDistMax() + v2);
+                    if (yvvDistMin < constraints.getYvvMin() || yvvDistMax > constraints.getYvvMax()) {
                         return baseResult;
                     }
 
@@ -399,11 +335,7 @@ public class CalibrationCurveFitter {
         }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult));
     }
 
-    public double[] gridSearchCodaB(List<Entry<Double, Double>> betaDistancePairs) {
-        return gridSearchCodaB(betaDistancePairs, YBB_MIN, YBB_MAX, 0, B_DIST_MAX);
-    }
-
-    public double[] gridSearchCodaB(final List<Entry<Double, Double>> betaDistancePairs, final double ybbMin, final double ybbMax, final double distMin, final double distMax) {
+    public double[] gridSearchCodaB(final List<Entry<Double, Double>> betaDistancePairs, ShapeFitterConstraints constraints) {
         final Double[] baseResult = new Double[] { 0.0, 0.0, 0.0, 9E29 };
         return ArrayUtils.toPrimitive(IntStream.rangeClosed(-50, 201).parallel().mapToObj(ib0 -> {
             double b0 = -(ib0 - 1.0) * 0.001;
@@ -413,9 +345,9 @@ public class CalibrationCurveFitter {
                     double b2 = ib2 * 1.50;
 
                     // avoid "unphysical" situations
-                    double ybbDistMin = b0 - b1 / (distMin + b2);
-                    double ybbDistMax = b0 - b1 / (distMax + b2);
-                    if (ybbDistMin < ybbMin || ybbDistMax > ybbMax) {
+                    double ybbDistMin = b0 - b1 / (constraints.getbDistMin() + b2);
+                    double ybbDistMax = b0 - b1 / (constraints.getbDistMax() + b2);
+                    if (ybbDistMin < constraints.getYbbMin() || ybbDistMax > constraints.getYbbMax()) {
                         return baseResult;
                     }
 
@@ -432,11 +364,7 @@ public class CalibrationCurveFitter {
         }).min((o1, o2) -> o1[3] > o2[3] ? 1 : -1).orElseGet(() -> baseResult));
     }
 
-    public double[] gridSearchCodaG(List<Entry<Double, Double>> gammaDistancePairs) {
-        return gridSearchCodaG(gammaDistancePairs, YGG_MIN, YGG_MAX, 0, G_DIST_MAX);
-    }
-
-    public double[] gridSearchCodaG(final List<Entry<Double, Double>> gammaDistancePairs, final double yggMin, final double yggMax, final double distMin, final double distMax) {
+    public double[] gridSearchCodaG(final List<Entry<Double, Double>> gammaDistancePairs, ShapeFitterConstraints constraints) {
         final Double[] baseResult = new Double[] { 0.0, 0.0, 0.0, 9E29 };
         return ArrayUtils.toPrimitive(IntStream.rangeClosed(1, 21).parallel().mapToObj(ig0 -> {
             double g0 = 2.001 - (ig0 - 1.0) * 0.1;
@@ -449,10 +377,10 @@ public class CalibrationCurveFitter {
 
                     // avoid "unphysical" situations
 
-                    double yggDistMin = g0 - g1 / (distMin + g2);
-                    double yggDistMinNext = g0 - g1 / ((distMin + 1.0) + g2);
-                    double yggDistMax = g0 - g1 / (distMax + g2);
-                    if (yggDistMin < yggMin || yggDistMax > yggMax || yggDistMin < yggDistMinNext) {
+                    double yggDistMin = g0 - g1 / (constraints.getgDistMin() + g2);
+                    double yggDistMinNext = g0 - g1 / ((constraints.getgDistMin() + 1.0) + g2);
+                    double yggDistMax = g0 - g1 / (constraints.getgDistMax() + g2);
+                    if (yggDistMin < constraints.getYggMin() || yggDistMax > constraints.getYggMax() || yggDistMin < yggDistMinNext) {
                         return baseResult;
                     }
 
@@ -484,13 +412,14 @@ public class CalibrationCurveFitter {
      *         input velocityDistancePairsFreqMap
      */
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllVelocity(Map<FrequencyBand, List<PeakVelocityMeasurement>> velocityDistancePairsFreqMap,
-            Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap) {
+            Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap, ShapeFitterConstraints constraints) {
 
         velocityDistancePairsFreqMap.entrySet().parallelStream().filter(velDistPairs -> freqBandMap.get(velDistPairs.getKey()) != null).forEach(velDistPairs -> {
             double[] curve = gridSearch(
                     velDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<>(v.getVelocity(), v.getDistance())).collect(Collectors.toList()),
                         new ApacheGridSearchV(),
-                        new BasicGridSearchV());
+                        new BasicGridSearchV(),
+                        constraints);
 
             freqBandMap.put(velDistPairs.getKey(), freqBandMap.get(velDistPairs.getKey()).setVelocity0(curve[0]).setVelocity1(curve[1]).setVelocity2(curve[2]));
         });
@@ -511,13 +440,14 @@ public class CalibrationCurveFitter {
      *         betaDistancePairsFreqMap
      */
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllBeta(Map<FrequencyBand, List<ShapeMeasurement>> betaDistancePairsFreqMap,
-            Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap) {
+            Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap, ShapeFitterConstraints constraints) {
 
         betaDistancePairsFreqMap.entrySet().parallelStream().filter(betaDistPairs -> freqBandMap.get(betaDistPairs.getKey()) != null).forEach(betaDistPairs -> {
             double[] curve = gridSearch(
                     betaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<>(v.getMeasuredBeta(), v.getDistance())).collect(Collectors.toList()),
                         new ApacheGridSearchB(),
-                        new BasicGridSearchB());
+                        new BasicGridSearchB(),
+                        constraints);
             // Artificially lower the intercept value, b0 to 95%
             // to account for possible noise contamination causing
             // too shallow decay
@@ -541,78 +471,79 @@ public class CalibrationCurveFitter {
      *         gammaDistancePairsFreqMap
      */
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllGamma(Map<FrequencyBand, List<ShapeMeasurement>> gammaDistancePairsFreqMap,
-            Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap) {
+            Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap, ShapeFitterConstraints constraints) {
 
         gammaDistancePairsFreqMap.entrySet().parallelStream().filter(gammaDistPairs -> freqBandMap.get(gammaDistPairs.getKey()) != null).forEach(gammaDistPairs -> {
             double[] curve = gridSearch(
                     gammaDistPairs.getValue().stream().map(v -> new AbstractMap.SimpleEntry<>(v.getMeasuredGamma(), v.getDistance())).collect(Collectors.toList()),
                         new ApacheGridSearchG(),
-                        new BasicGridSearchG());
+                        new BasicGridSearchG(),
+                        constraints);
             freqBandMap.put(gammaDistPairs.getKey(), freqBandMap.get(gammaDistPairs.getKey()).setGamma0(curve[0]).setGamma1(curve[1]).setGamma2(curve[2]));
         });
 
         return freqBandMap;
     }
 
-    private double[] gridSearch(List<Entry<Double, Double>> value, GridFitter main, GridFitter fallback) {
+    private double[] gridSearch(List<Entry<Double, Double>> value, GridFitter main, GridFitter fallback, ShapeFitterConstraints constraints) {
         double[] fit;
         try {
-            fit = main.fitGrid(value);
+            fit = main.fitGrid(value, constraints);
             // TODO: Evaluation metrics to decide if its a 'good' fit.
             if (fit[3] == -1) {
                 log.trace("Failed to fit using main method, using fallback.");
-                fit = fallback.fitGrid(value);
+                fit = fallback.fitGrid(value, constraints);
             }
         } catch (MaxCountExceededException e) {
             log.trace("Failed to fit using main method, using fallback. {}", e.getMessage(), e);
-            fit = fallback.fitGrid(value);
+            fit = fallback.fitGrid(value, constraints);
         }
         return fit;
     }
 
     public interface GridFitter {
-        public double[] fitGrid(List<Entry<Double, Double>> value);
+        public double[] fitGrid(List<Entry<Double, Double>> value, ShapeFitterConstraints constraints);
     };
 
     private class ApacheGridSearchV implements GridFitter {
         @Override
-        public double[] fitGrid(List<Entry<Double, Double>> value) {
-            return gridSearchCodaVApacheCMAES(value);
+        public double[] fitGrid(List<Entry<Double, Double>> value, ShapeFitterConstraints constraints) {
+            return gridSearchCodaVApacheCMAES(value, constraints);
         }
     }
 
     private class BasicGridSearchV implements GridFitter {
         @Override
-        public double[] fitGrid(List<Entry<Double, Double>> value) {
-            return gridSearchCodaV(value);
+        public double[] fitGrid(List<Entry<Double, Double>> value, ShapeFitterConstraints constraints) {
+            return gridSearchCodaV(value, constraints);
         }
     }
 
     private class ApacheGridSearchB implements GridFitter {
         @Override
-        public double[] fitGrid(List<Entry<Double, Double>> value) {
-            return gridSearchCodaBApacheCMAES(value);
+        public double[] fitGrid(List<Entry<Double, Double>> value, ShapeFitterConstraints constraints) {
+            return gridSearchCodaBApacheCMAES(value, constraints);
         }
     }
 
     private class BasicGridSearchB implements GridFitter {
         @Override
-        public double[] fitGrid(List<Entry<Double, Double>> value) {
-            return gridSearchCodaB(value);
+        public double[] fitGrid(List<Entry<Double, Double>> value, ShapeFitterConstraints constraints) {
+            return gridSearchCodaB(value, constraints);
         }
     }
 
     private class ApacheGridSearchG implements GridFitter {
         @Override
-        public double[] fitGrid(List<Entry<Double, Double>> value) {
-            return gridSearchCodaGApacheCMAES(value);
+        public double[] fitGrid(List<Entry<Double, Double>> value, ShapeFitterConstraints constraints) {
+            return gridSearchCodaGApacheCMAES(value, constraints);
         }
     }
 
     private class BasicGridSearchG implements GridFitter {
         @Override
-        public double[] fitGrid(List<Entry<Double, Double>> value) {
-            return gridSearchCodaG(value);
+        public double[] fitGrid(List<Entry<Double, Double>> value, ShapeFitterConstraints constraints) {
+            return gridSearchCodaG(value, constraints);
         }
     }
 }

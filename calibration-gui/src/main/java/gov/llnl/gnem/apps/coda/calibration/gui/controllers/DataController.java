@@ -46,7 +46,6 @@ import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
@@ -127,6 +126,8 @@ public class DataController implements MapListeningController, RefreshableContro
     private List<Long> dataUpdateList = Collections.synchronizedList(new ArrayList<>());
     private List<Long> dataDeleteList = Collections.synchronizedList(new ArrayList<>());
     private List<Waveform> updatedData = Collections.synchronizedList(new ArrayList<>());
+
+    private boolean isVisible = false;
 
     @Autowired
     public DataController(WaveformClient client, GeoMap mapImpl, MapPlottingUtilities iconFactory, EventBus bus) {
@@ -277,9 +278,11 @@ public class DataController implements MapListeningController, RefreshableContro
     }
 
     private void refreshMap() {
-        mapImpl.clearIcons();
-        synchronized (listData) {
-            listData.forEach(waveform -> mapImpl.addIcons(genIconsFromData(waveform)));
+        if (isVisible) {
+            mapImpl.clearIcons();
+            synchronized (listData) {
+                mapImpl.addIcons(iconFactory.genIconsFromWaveforms(eventSelectionCallback, stationSelectionCallback, listData));
+            }
         }
     }
 
@@ -360,9 +363,7 @@ public class DataController implements MapListeningController, RefreshableContro
                 });
                 tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
             }
-            if (tableView.isVisible()) {
-                refreshMap();
-            }
+            refreshMap();
         }
     }
 
@@ -376,15 +377,6 @@ public class DataController implements MapListeningController, RefreshableContro
 
     private List<Long> getSelectedWaveforms() {
         return getIds(tableView.getSelectionModel().getSelectedItems());
-    }
-
-    protected List<Icon> genIconsFromData(Waveform waveform) {
-        List<Icon> icons = new ArrayList<>();
-        if (waveform != null && waveform.getStream() != null && waveform.getEvent() != null) {
-            icons.add(iconFactory.createEventIcon(waveform.getEvent()).setIconSelectionCallback(eventSelectionCallback));
-            icons.add(iconFactory.createStationIcon(waveform.getStream().getStation()).setIconSelectionCallback(stationSelectionCallback));
-        }
-        return icons;
     }
 
     @Subscribe
@@ -403,5 +395,10 @@ public class DataController implements MapListeningController, RefreshableContro
     @PreDestroy
     private void cleanup() {
         scheduled.shutdownNow();
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        isVisible = visible;
     }
 }

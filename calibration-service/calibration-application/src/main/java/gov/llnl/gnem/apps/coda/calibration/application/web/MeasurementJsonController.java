@@ -14,7 +14,6 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.application.web;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -35,7 +34,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
 import gov.llnl.gnem.apps.coda.calibration.service.api.CalibrationService;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
@@ -75,7 +74,7 @@ public class MeasurementJsonController {
 
         ResponseEntity<?> resp = null;
         try {
-            Result<List<MeasuredMwDetails>> measuredMws;
+            Result<MeasuredMwReportByEvent> measuredMws;
             if (evids != null && !evids.isEmpty()) {
                 measuredMws = service.makeMwMeasurements(autoPickingEnabled, new HashSet<>(evids)).get(500, TimeUnit.SECONDS);
             } else if (stacks != null && !stacks.isEmpty()) {
@@ -85,7 +84,7 @@ public class MeasurementJsonController {
             }
             if (measuredMws != null) {
                 if (measuredMws.isSuccess()) {
-                    resp = ResponseEntity.ok().body(measuredMws.getResultPayload().orElseGet(() -> Collections.emptyList()));
+                    resp = ResponseEntity.ok().body(measuredMws.getResultPayload().orElseGet(() -> new MeasuredMwReportByEvent()));
                 } else {
                     String errorMessage = "";
                     if (measuredMws.getErrors() != null && !measuredMws.getErrors().isEmpty()) {

@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.6</version>
+		<version>1.0.7</version>
 	</parent>
 
 	<artifactId>envelope-gui</artifactId>
@@ -139,6 +139,7 @@
 						<goals>
 							<goal>unpack</goal>
 						</goals>
+						<phase>prepare-package</phase>
 						<configuration>
 							<artifactItems>
 								<artifactItem>

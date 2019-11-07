@@ -61,7 +61,7 @@ public class WaveformWebClient implements WaveformClient {
                      .uri("/single-waveform")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(segment)
+                     .bodyValue(segment)
                      .exchange()
                      .flatMap(response -> response.bodyToMono(Waveform.class));
     }
@@ -72,7 +72,7 @@ public class WaveformWebClient implements WaveformClient {
                      .uri("/waveforms/batch/" + sessionId)
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(segments)
+                     .bodyValue(segments)
                      .exchange()
                      .flatMapMany(resp -> Flux.just(resp.toString()));
     }
@@ -149,7 +149,7 @@ public class WaveformWebClient implements WaveformClient {
                      .uri("/waveforms/set-active/batch/" + active)
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(selectedWaveforms)
+                     .bodyValue(selectedWaveforms)
                      .exchange()
                      .flatMapMany(resp -> Flux.just(resp.toString()));
     }
@@ -160,7 +160,7 @@ public class WaveformWebClient implements WaveformClient {
                      .uri("/waveforms/set-active/by-event-id/" + active)
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(id)
+                     .bodyValue(id)
                      .exchange()
                      .flatMapMany(resp -> Flux.just(resp.toString()));
     }
@@ -171,7 +171,7 @@ public class WaveformWebClient implements WaveformClient {
                      .uri("/waveforms/set-active/by-station-name/" + active)
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(id)
+                     .bodyValue(id)
                      .exchange()
                      .flatMapMany(resp -> Flux.just(resp.toString()));
     }

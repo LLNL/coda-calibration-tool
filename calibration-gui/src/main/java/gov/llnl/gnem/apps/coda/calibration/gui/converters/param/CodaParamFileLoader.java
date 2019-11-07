@@ -85,7 +85,7 @@ public class CodaParamFileLoader implements FileToParameterConverter<SharedFrequ
                 sfb.setGamma1(Double.parseDouble(tokenizer.nextToken().trim()));
                 sfb.setGamma2(Double.parseDouble(tokenizer.nextToken().trim()));
 
-                sfb.setS1(Double.parseDouble(tokenizer.nextToken().trim()));
+                sfb.setP1(Double.parseDouble(tokenizer.nextToken().trim()));
                 sfb.setS2(Double.parseDouble(tokenizer.nextToken().trim()));
                 sfb.setXc(Double.parseDouble(tokenizer.nextToken().trim()));
                 sfb.setXt(Double.parseDouble(tokenizer.nextToken().trim()));

@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeCalibrationService;
@@ -60,7 +61,7 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
 
     @Override
     public Map<FrequencyBand, SharedFrequencyBandParameters> measureShapes(Collection<PeakVelocityMeasurement> velocityMeasurements,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, boolean autoPickingEnabled) {
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints, boolean autoPickingEnabled) {
         if (frequencyBandParameters.isEmpty()) {
             // TODO: Propagate warning to the status API
             log.warn("No frequency band parameters available, unable to compute shape parameters without them!");
@@ -72,7 +73,8 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                 velocityMeasurements.stream()
                                     .filter(vel -> vel.getWaveform() != null)
                                     .collect(Collectors.groupingBy(vel -> new FrequencyBand(vel.getWaveform().getLowFrequency(), vel.getWaveform().getHighFrequency()))),
-                    frequencyBandParameters);
+                    frequencyBandParameters,
+                    constraints);
 
         // 1) If auto-picking is enabled attempt to pick any envelopes that
         // don't already have F-picks in this set
@@ -86,7 +88,7 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
 
         // 3) For every Waveform remaining, measure picks based on start
         // (computed from velocity) and end (from 'End'/'F' picks)
-        List<ShapeMeasurement> betaAndGammaMeasurements = shapeCalc.fitShapelineToMeasuredEnvelopes(filteredVelocityMeasurements, frequencyBandCurveFits);
+        List<ShapeMeasurement> betaAndGammaMeasurements = shapeCalc.fitShapelineToMeasuredEnvelopes(filteredVelocityMeasurements, frequencyBandCurveFits, constraints);
 
         // Shape measurements are intermediary results so rather than trying to
         // merge them we want to just drop them wholesale if they exist and
@@ -102,8 +104,8 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                                                                                                                              meas -> new FrequencyBand(meas.getWaveform().getLowFrequency(),
                                                                                                                                                        meas.getWaveform().getHighFrequency())));
 
-        frequencyBandCurveFits = fitter.fitAllBeta(frequencyBandShapeMeasurementMap, frequencyBandCurveFits);
-        frequencyBandCurveFits = fitter.fitAllGamma(frequencyBandShapeMeasurementMap, frequencyBandCurveFits);
+        frequencyBandCurveFits = fitter.fitAllBeta(frequencyBandShapeMeasurementMap, frequencyBandCurveFits, constraints);
+        frequencyBandCurveFits = fitter.fitAllGamma(frequencyBandShapeMeasurementMap, frequencyBandCurveFits, constraints);
         return frequencyBandCurveFits;
     }
 

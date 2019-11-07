@@ -17,7 +17,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PreDestroy;
 
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +40,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.controllers.CodaParamLoadingContr
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.DataController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.EnvelopeLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MapListeningController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.PathController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ReferenceEventLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController;
@@ -53,6 +52,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.events.CalibrationStageShownEvent
 import gov.llnl.gnem.apps.coda.calibration.gui.events.MapIconActivationCallback;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.WaveformGui;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.CalibrationProgressListener;
+import gov.llnl.gnem.apps.coda.calibration.gui.util.FileDialogs;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent.Status;
 import gov.llnl.gnem.apps.coda.common.gui.controllers.ProgressGui;
@@ -64,16 +64,14 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.input.TransferMode;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.stage.Modality;
 
 @Component
 public class CodaGuiController {
@@ -85,10 +83,10 @@ public class CodaGuiController {
 
     private WaveformGui waveformGui;
     private DataController data;
-    private ParametersController param;
     private ShapeController shape;
     private PathController path;
     private SiteController site;
+    private MeasuredMwsController measuredMws;
 
     @FXML
     private Tab dataTab;
@@ -105,11 +103,15 @@ public class CodaGuiController {
     @FXML
     private Tab siteTab;
 
+    @FXML
+    private Tab measuredMwsTab;
+
     private Runnable dataRefresh;
     private Runnable paramRefresh;
     private Runnable shapeRefresh;
     private Runnable pathRefresh;
     private Runnable siteRefresh;
+    private Runnable measuredMwsRefresh;
     private Runnable activeTabRefresh;
 
     @FXML
@@ -117,6 +119,9 @@ public class CodaGuiController {
 
     @FXML
     private Button refreshButton;
+
+    @FXML
+    private CheckMenuItem waveformFocus;
 
     private Label activeMapIcon;
 
@@ -163,7 +168,7 @@ public class CodaGuiController {
     @Autowired
     public CodaGuiController(GeoMap mapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
             ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, WaveformGui waveformGui, DataController data,
-            ParametersController param, ShapeController shape, PathController path, SiteController site, EventBus bus) throws IOException {
+            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, EventBus bus) {
         super();
         this.mapController = mapController;
         this.waveformClient = waveformClient;
@@ -174,10 +179,10 @@ public class CodaGuiController {
         this.paramExporter = paramExporter;
         this.waveformGui = waveformGui;
         this.data = data;
-        this.param = param;
         this.shape = shape;
         this.path = path;
         this.site = site;
+        this.measuredMws = measuredMws;
         this.bus = bus;
         bus.register(this);
 
@@ -186,6 +191,7 @@ public class CodaGuiController {
         shapeRefresh = shape.getRefreshFunction();
         pathRefresh = path.getRefreshFunction();
         siteRefresh = site.getRefreshFunction();
+        measuredMwsRefresh = measuredMws.getRefreshFunction();
         activeTabRefresh = dataRefresh;
 
         sacDirFileChooser.setTitle("Coda STACK File Directory");
@@ -236,72 +242,31 @@ public class CodaGuiController {
     @FXML
     private void openCalibrationDataSavingWindow(ActionEvent e) {
         //Save all parameters to an archive file and prompt the user about where to save it.
-        File selectedFile = openFileSaveDialog("Calibration_Data", ".zip");
+        File selectedFile = FileDialogs.openFileSaveDialog("Calibration_Data", ".zip", rootElement.getScene().getWindow());
         File exportArchive;
 
         if (selectedFile != null) {
             try {
-                if (ensureFileIsWritable(selectedFile)) {
+                if (FileDialogs.ensureFileIsWritable(selectedFile)) {
                     exportArchive = paramExporter.createExportArchive();
                     if (exportArchive != null) {
                         Files.move(exportArchive.toPath(), selectedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     }
                 }
             } catch (IOException e1) {
-                fileIoErrorAlert(e1);
+                FileDialogs.fileIoErrorAlert(e1);
             }
         }
-    }
-
-    private void fileIoErrorAlert(IOException e1) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(AlertType.ERROR);
-            alert.setTitle("File IO Error");
-            alert.setHeaderText("Unable to export results");
-            alert.setContentText(e1.getMessage());
-            alert.show();
-        });
-    }
-
-    private boolean ensureFileIsWritable(File selectedFile) {
-        boolean existsAndWritable = true;
-        try {
-            if (selectedFile == null) {
-                existsAndWritable = false;
-            } else {
-                if (!selectedFile.exists()) {
-                    selectedFile.createNewFile();
-                } else if (!selectedFile.canWrite()) {
-                    Platform.runLater(() -> {
-                        Alert alert = new Alert(AlertType.ERROR);
-                        alert.setTitle("File Permissions Error");
-                        alert.setHeaderText("Unable to write to file or directory.");
-                        alert.setContentText("Unable to write file, do you have write permissions on the selected directory?");
-                        alert.show();
-                    });
-                    existsAndWritable = false;
-                }
-            }
-        } catch (IOException e1) {
-            fileIoErrorAlert(e1);
-            existsAndWritable = false;
-        }
-
-        return existsAndWritable;
-    }
-
-    private File openFileSaveDialog(String filename, String extension) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Resource File");
-        fileChooser.getExtensionFilters().addAll(new ExtensionFilter("Output Format", "*" + extension));
-        fileChooser.setInitialFileName(filename + extension);
-        File selectedFile = fileChooser.showSaveDialog(rootElement.getScene().getWindow());
-        return selectedFile;
     }
 
     @FXML
     private void openWaveformDirectorySavingWindow() {
         Optional.ofNullable(sacDirFileChooser.showDialog(rootElement.getScene().getWindow())).ifPresent(envelopeLoadingController::saveToDirectory);
+    }
+
+    @FXML
+    private void openMeasuredMwDirectorySavingWindow() {
+        measuredMws.exportMws();
     }
 
     @FXML
@@ -340,22 +305,8 @@ public class CodaGuiController {
     }
 
     @FXML
-    private void measureMwAllLoaded() {
-        Alert alert = new Alert(AlertType.INFORMATION);
-        alert.setTitle("Measuring Mws");
-        alert.setHeaderText(null);
-        alert.initModality(Modality.NONE);
-        alert.setContentText("Measuring Mws using all active stacks for loaded events.");
-        alert.show();
-        calibrationClient.makeMwMeasurements(Boolean.TRUE).subscribe(value -> {
-            Platform.runLater(() -> {
-                alert.close();
-                File file = openFileSaveDialog("Measured_Mws", ".json");
-                if (file != null && ensureFileIsWritable(file)) {
-                    paramExporter.writeMeasuredMws(Paths.get(FilenameUtils.getFullPath(file.getAbsolutePath())), "Measured_Mws.json", value);
-                }
-            });
-        }, err -> log.trace(err.getMessage(), err));
+    private void measureMws() {
+        measuredMws.getRefreshFunction().run();
     }
 
     @FXML
@@ -371,12 +322,15 @@ public class CodaGuiController {
     @FXML
     public void initialize() {
 
+        waveformFocus.selectedProperty().bindBidirectional(waveformGui.focusProperty());
+
         mapController.registerEventCallback(new MapIconActivationCallback(waveformClient));
 
         activeMapIcon = makeMapLabel();
         showMapIcon = makeMapLabel();
 
         addMapEnabledTabListeners(dataTab, data, dataRefresh);
+        data.setVisible(true);
 
         paramTab.setOnSelectionChanged(e -> {
             if (paramTab.isSelected()) {
@@ -388,6 +342,7 @@ public class CodaGuiController {
         addMapEnabledTabListeners(shapeTab, shape, shapeRefresh);
         addMapEnabledTabListeners(pathTab, path, pathRefresh);
         addMapEnabledTabListeners(siteTab, site, siteRefresh);
+        addMapEnabledTabListeners(measuredMwsTab, measuredMws, measuredMwsRefresh);
 
         rootElement.setOnDragOver(event -> {
             if (event.getGestureSource() != rootElement && event.getDragboard().hasFiles()) {
@@ -412,16 +367,19 @@ public class CodaGuiController {
         } catch (IllegalStateException e) {
             log.error("Unable to instantiate loading display {}", e.getMessage(), e);
         }
+
     }
 
     private void addMapEnabledTabListeners(Tab tab, MapListeningController controller, Runnable runnable) {
         tab.setOnSelectionChanged(e -> {
             if (tab.isSelected()) {
+                controller.setVisible(true);
                 controller.refreshView();
                 tab.setGraphic(activeMapIcon);
                 activeTabRefresh = runnable;
             } else {
                 tab.setGraphic(null);
+                controller.setVisible(false);
             }
         });
     }
@@ -455,12 +413,15 @@ public class CodaGuiController {
             ProgressMonitor monitor = new ProgressMonitor("Calibration Progress " + event.getId(), eventMonitor);
             monitors.put(event.getId(), monitor);
             loadingGui.addProgressMonitor(monitor);
+            loadingGui.show();
         }
 
         if (event.getStatus() == Status.COMPLETE || event.getStatus() == Status.ERROR) {
             final ProgressMonitor monitor = monitors.remove(event.getId());
-            monitor.setProgressStage("Finished");
-            service.schedule(() -> loadingGui.removeProgressMonitor(monitor), 15, TimeUnit.MINUTES);
+            if (monitor != null) {
+                monitor.setProgressStage("Finished");
+                service.schedule(() -> loadingGui.removeProgressMonitor(monitor), 15, TimeUnit.MINUTES);
+            }
         } else {
             ProgressMonitor monitor = monitors.get(event.getId());
             if (monitor != null) {
@@ -479,7 +440,6 @@ public class CodaGuiController {
                     break;
                 default:
                     break;
-
                 }
             }
         }

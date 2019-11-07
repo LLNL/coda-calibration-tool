@@ -33,9 +33,10 @@ public class Station implements Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(Station.class);
     private static final long serialVersionUID = 1L;
+    private static final String UNK = "UNK";
 
     @Column(name = "network_name")
-    private String networkName = "UNK";
+    private String networkName = UNK;
 
     @NotNull
     @Column(name = "stationLatitude")
@@ -91,7 +92,6 @@ public class Station implements Serializable {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((networkName == null) ? 0 : networkName.hashCode());
         result = prime * result + ((stationName == null) ? 0 : stationName.hashCode());
         return result;
     }
@@ -113,7 +113,7 @@ public class Station implements Serializable {
                 log.trace("Mismatched network names {} and {}", networkName, other.networkName);
                 return false;
             }
-        } else if (!networkName.equalsIgnoreCase(other.networkName)) {
+        } else if (!networkName.equals(UNK) && !other.networkName.equals(UNK) && !networkName.equalsIgnoreCase(other.networkName)) {
             log.trace("Mismatched network names {} and {}", networkName, other.networkName);
             return false;
         }

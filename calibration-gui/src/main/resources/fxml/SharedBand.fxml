@@ -47,8 +47,8 @@
 							</columns>
 						</TableColumn>
 						<TableColumn fx:id="minSnrCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Minimum SNR" visible="false" />
-						<TableColumn fx:id="s1Col" editable="false" prefWidth="75.0" text="S1" visible="false" />
-						<TableColumn fx:id="s2Col" editable="false" prefWidth="75.0" text="S2" visible="false" />
+						<TableColumn fx:id="p1Col" editable="false" prefWidth="75.0" text="P1/S1" visible="false" />
+						<TableColumn fx:id="p2Col" editable="false" prefWidth="75.0" text="P2/S2" visible="false" />
 						<TableColumn editable="false" prefWidth="75.0" text="XC" visible="false" fx:id="xcCol" />
 						<TableColumn editable="false" prefWidth="75.0" text="XT" visible="false" fx:id="xtCol" />
 						<TableColumn fx:id="qCol" editable="false" prefWidth="75.0" text="Q" visible="false" />

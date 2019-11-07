@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2019, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -26,4 +26,6 @@ public class CalibrationJsonConstants {
     public static final String REFERENCE_EVENTS_FIELD = "reference-events";
     public static final String MEASURED_EVENTS_FIELD = "measured-events";
     public static final String VELOCITY_CONFIGURATION = "velocity-configuration";
+    public static final String SHAPE_CONSTRAINTS = "shape-constraints";
+    public static final String ENVELOPE_JOB_NODE = "frequencyBandConfiguration";
 }

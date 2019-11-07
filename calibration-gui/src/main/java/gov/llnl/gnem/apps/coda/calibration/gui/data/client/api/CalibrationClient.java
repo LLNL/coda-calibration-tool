@@ -16,16 +16,16 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
 import java.util.List;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
 import reactor.core.publisher.Mono;
 
 public interface CalibrationClient {
 
     public Mono<String> runCalibration(Boolean autoPickingEnabled);
 
-    public Mono<List<MeasuredMwDetails>> makeMwMeasurements(Boolean autoPickingEnabled);
+    public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled);
 
-    public Mono<List<MeasuredMwDetails>> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds);
+    public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds);
 
     public Mono<String> clearData();
 }

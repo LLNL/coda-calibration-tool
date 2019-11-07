@@ -15,11 +15,13 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.converters.param;
 
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.BAND_FIELD;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.ENVELOPE_JOB_NODE;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.MDAC_FI_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.MDAC_PS_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.REFERENCE_EVENTS_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SCHEMA_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SCHEMA_VALUE;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SHAPE_CONSTRAINTS;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SITE_CORRECTION_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_VALUE;
@@ -50,6 +52,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterCon
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteCorrections;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
@@ -106,6 +109,9 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
                 results.addAll(convertJsonFields(node, MDAC_FI_FIELD, x -> mdacFiFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, REFERENCE_EVENTS_FIELD, x -> refEventsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, VELOCITY_CONFIGURATION, x -> velocityConfigurationFromJsonNode(x)));
+                results.addAll(convertJsonFields(node, SHAPE_CONSTRAINTS, x -> shapeConstraintsFromJsonNode(x)));
+            } else if (node.has(ENVELOPE_JOB_NODE)) {
+                results.addAll(convertJsonFields(node, ENVELOPE_JOB_NODE, x -> envelopeJobBandsToSharedBands(x)));
             }
         } catch (IOException e) {
             return Collections.singletonList(exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): %s", file.getName(), e.getMessage()), e)));
@@ -134,6 +140,17 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         try {
             //TODO: Validate all fields
             VelocityConfiguration val = reader.readValue(node);
+            return new Result<>(true, val);
+        } catch (IOException e) {
+            return exceptionalResult(e);
+        }
+    }
+
+    protected Result<Object> shapeConstraintsFromJsonNode(JsonNode node) {
+        ObjectReader reader = mapper.readerFor(ShapeFitterConstraints.class);
+        try {
+            //TODO: Validate all fields
+            ShapeFitterConstraints val = reader.readValue(node);
             return new Result<>(true, val);
         } catch (IOException e) {
             return exceptionalResult(e);
@@ -189,7 +206,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
                         ArrayNode rawBands = ((ArrayNode) staNode.getValue());
                         List<SiteFrequencyBandParameters> bands = mapper.readValue(rawBands.toString(), new TypeReference<List<SiteFrequencyBandParameters>>() {
                         });
-                        bands.stream().map(e -> e.setStation(new Station().setNetworkName(networkName).setStationName(stationName))).collect(Collectors.toList());
+                        bands = bands.stream().map(e -> e.setStation(new Station().setNetworkName(networkName).setStationName(stationName))).collect(Collectors.toList());
                         siteBands.getSiteCorrections().addAll(bands);
                     }
                 }
@@ -203,7 +220,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
     protected Result<Object> sharedFrequenyBandFromJsonNode(JsonNode band) {
         SharedFrequencyBandParameters sfb = new SharedFrequencyBandParameters();
         if (band.get("lowFreqHz").isNull() || band.get("highFreqHz").isNull()) {
-            return exceptionalResult(new LightweightIllegalStateException("Unable to parse frequency band " + sfb + "; received a empty frequency band."));
+            return exceptionalResult(new LightweightIllegalStateException("Unable to parse frequency band " + sfb + "; received an empty frequency band."));
         } else {
             try {
                 ObjectReader reader = mapper.readerFor(SharedFrequencyBandParameters.class);
@@ -212,6 +229,20 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
                 return new Result<>(false, null).setErrors(Collections.singletonList(e));
             }
             return new Result<>(true, sfb);
+        }
+    }
+
+    private Result<Object> envelopeJobBandsToSharedBands(JsonNode band) {
+        SharedFrequencyBandParameters sfb = new SharedFrequencyBandParameters();
+        if (band.get("lowFrequency").isNull() || band.get("highFrequency").isNull()) {
+            return exceptionalResult(new LightweightIllegalStateException("Unable to parse frequency band " + sfb + "; received an empty frequency band."));
+        } else {
+            sfb.setLowFrequency(band.get("lowFrequency").asDouble()).setHighFrequency(band.get("highFrequency").asDouble());
+            if (sfb.getLowFrequency() == 0.0 || sfb.getHighFrequency() == 0.0) {
+                return new Result<>(false, null).setErrors(Collections.singletonList(new LightweightIllegalStateException("Invalid band definition for json node " + band.asText())));
+            } else {
+                return new Result<>(true, sfb);
+            }
         }
     }
 

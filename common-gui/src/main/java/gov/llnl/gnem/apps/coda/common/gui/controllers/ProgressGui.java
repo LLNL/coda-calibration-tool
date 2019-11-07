@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -31,6 +31,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.text.Font;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
@@ -105,9 +106,6 @@ public class ProgressGui {
 
     public void addProgressMonitor(ProgressMonitor monitor) {
         monitors.add(monitor);
-        Platform.runLater(() -> {
-            stage.show();
-        });
     }
 
     public void removeProgressMonitor(ProgressMonitor monitor) {
@@ -123,6 +121,24 @@ public class ProgressGui {
     public void show() {
         Platform.runLater(() -> {
             stage.show();
+        });
+    }
+
+    public void initModality(Modality modality) {
+        Platform.runLater(() -> {
+            stage.initModality(modality);
+        });
+    }
+
+    public void setAlwaysOnTop(boolean onTop) {
+        Platform.runLater(() -> {
+            stage.setAlwaysOnTop(onTop);
+        });
+    }
+
+    public void toFront() {
+        Platform.runLater(() -> {
+            stage.toFront();
         });
     }
 }

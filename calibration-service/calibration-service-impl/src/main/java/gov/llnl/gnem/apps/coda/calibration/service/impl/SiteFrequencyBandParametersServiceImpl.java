@@ -17,6 +17,8 @@ package gov.llnl.gnem.apps.coda.calibration.service.impl;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,8 @@ import gov.llnl.gnem.apps.coda.calibration.service.api.SiteFrequencyBandParamete
 @Service
 @Transactional
 public class SiteFrequencyBandParametersServiceImpl implements SiteFrequencyBandParametersService {
+
+    private static final Logger log = LoggerFactory.getLogger(SiteFrequencyBandParametersServiceImpl.class);
 
     private SiteFrequencyBandParametersRepository siteFrequencyBandParametersRepository;
 
@@ -75,22 +79,42 @@ public class SiteFrequencyBandParametersServiceImpl implements SiteFrequencyBand
     @Transactional
     @Override
     public SiteFrequencyBandParameters update(SiteFrequencyBandParameters entry) {
-        SiteFrequencyBandParameters mergedEntry = siteFrequencyBandParametersRepository.saveAndFlush(attachIfAvailableInRepository(entry));
-        return mergedEntry;
+        SiteFrequencyBandParameters attachedEntry = attachIfAvailableInRepository(entry);
+        if (attachedEntry != null) {
+            attachedEntry = siteFrequencyBandParametersRepository.saveAndFlush(attachedEntry);
+        }
+        return attachedEntry;
     }
 
     private SiteFrequencyBandParameters attachIfAvailableInRepository(SiteFrequencyBandParameters entry) {
         SiteFrequencyBandParameters mergedEntry = null;
         if (entry != null) {
             if (entry.getId() != null) {
-                mergedEntry = siteFrequencyBandParametersRepository.findById(entry.getId()).get();
+                mergedEntry = siteFrequencyBandParametersRepository.findById(entry.getId()).orElse(null);
             } else if (entry.getSiteTerm() != 0.0 && entry.getStation() != null && entry.getStation().getStationName() != null && entry.getLowFrequency() != 0.0 && entry.getHighFrequency() != 0.0) {
-                mergedEntry = siteFrequencyBandParametersRepository.findByUniqueFields(
-                        entry.getStation().getNetworkName(),
+                if (entry.getStation().getNetworkName() == null || entry.getStation().getNetworkName().equals("UNK")) {
+                    List<SiteFrequencyBandParameters> values = siteFrequencyBandParametersRepository.findByUniqueFields(
                             entry.getStation().getStationName(),
-                            entry.getSiteTerm(),
-                            entry.getLowFrequency(),
-                            entry.getHighFrequency());
+                                entry.getLowFrequency(),
+                                entry.getHighFrequency());
+                    SiteFrequencyBandParameters val = null;
+                    if (values != null) {
+                        long hits = values.size();
+                        if (hits > 1) {
+                            log.warn("Could not unambiguously match entry {} given possible matches {}. This entry will not be saved.", entry, values);
+                            return null;
+                        } else if (hits == 1) {
+                            val = values.get(0);
+                        }
+                    }
+                    mergedEntry = val;
+                } else {
+                    mergedEntry = siteFrequencyBandParametersRepository.findByUniqueFields(
+                            entry.getStation().getNetworkName(),
+                                entry.getStation().getStationName(),
+                                entry.getLowFrequency(),
+                                entry.getHighFrequency());
+                }
             }
             if (mergedEntry != null) {
                 mergedEntry = mergedEntry.mergeNonNullOrEmptyFields(entry);

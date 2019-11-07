@@ -29,7 +29,10 @@ public interface SiteFrequencyBandParametersRepository extends DetachableJpaRepo
     @Query("select distinct sfb.station.stationName from SiteFrequencyBandParameters sfb")
     public List<String> findDistinctStationNames();
 
-    @Query("select sfb from SiteFrequencyBandParameters sfb where sfb.station.networkName = :networkName and sfb.station.stationName = :stationName and sfb.siteTerm = :siteTerm and sfb.lowFrequency = :lowFrequency and sfb.highFrequency = :highFrequency")
-    public SiteFrequencyBandParameters findByUniqueFields(@Param("networkName") String networkName, @Param("stationName") String stationName, @Param("siteTerm") double siteTerm,
-            @Param("lowFrequency") double lowFrequency, @Param("highFrequency") double highFrequency);
+    @Query("select sfb from SiteFrequencyBandParameters sfb where sfb.station.stationName = :stationName and sfb.lowFrequency = :lowFrequency and sfb.highFrequency = :highFrequency and sfb.station.networkName in ('UNK', :networkName)")
+    public SiteFrequencyBandParameters findByUniqueFields(@Param("networkName") String networkName, @Param("stationName") String stationName, @Param("lowFrequency") double lowFrequency,
+            @Param("highFrequency") double highFrequency);
+
+    @Query("select sfb from SiteFrequencyBandParameters sfb where sfb.station.stationName = :stationName and sfb.lowFrequency = :lowFrequency and sfb.highFrequency = :highFrequency")
+    public List<SiteFrequencyBandParameters> findByUniqueFields(@Param("stationName") String stationName, @Param("lowFrequency") double lowFrequency, @Param("highFrequency") double highFrequency);
 }

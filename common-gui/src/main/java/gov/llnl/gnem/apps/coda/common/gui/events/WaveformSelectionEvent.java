@@ -21,9 +21,13 @@ public class WaveformSelectionEvent {
     private List<Long> waveformIDs;
 
     public WaveformSelectionEvent(Long... ids) {
-        waveformIDs = new ArrayList<>(ids.length);
-        for (Long id : ids) {
-            waveformIDs.add(id);
+        if (ids != null) {
+            waveformIDs = new ArrayList<>(ids.length);
+            for (Long id : ids) {
+                waveformIDs.add(id);
+            }
+        } else {
+            waveformIDs = new ArrayList<>(0);
         }
     }
 

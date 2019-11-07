@@ -5,37 +5,23 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.StackPane?>
 
-<StackPane fx:id="velocityConfig" maxHeight="1.7976931348623157E308"
-	maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css"
-	xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.VelocityConfigurationController">
+<StackPane fx:id="velocityConfig" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.VelocityConfigurationController">
 	<children>
 		<ScrollPane fitToHeight="true" fitToWidth="true">
 			<content>
-				<TableView fx:id="velocityConfTableView"
-					tableMenuButtonVisible="true">
+				<TableView fx:id="velocityConfTableView" editable="true" tableMenuButtonVisible="true">
 					<columns>
-						<TableColumn editable="false" prefWidth="75.0" text="Frequency">
-							<columns>
-								<TableColumn fx:id="distanceThresholdCol" editable="false"
-									prefWidth="75.0" text="Distance Threshold (Km)" />
+								<TableColumn fx:id="distanceThresholdCol" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="Critical Distance Dc (Km)" />
 									
-								<TableColumn fx:id="lt1Col" editable="false"
-									prefWidth="75.0" text="Start speed before threshold (Km/s)" />
+								<TableColumn fx:id="lt1Col" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="Start group velocity before Dc (Km/s)" />
 									
-								<TableColumn fx:id="lt2Col" editable="false"
-									prefWidth="75.0" text="End speed before threshold (Km/s)" />
+								<TableColumn fx:id="lt2Col" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="End group velocity before Dc (Km/s)" />
 									
-								<TableColumn fx:id="gt1Col" editable="false"
-									prefWidth="75.0" text="Start speed after threshold (Km/s)" />
+								<TableColumn fx:id="gt1Col" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="Start group velocity after Dc (Km/s)" />
 														
-								<TableColumn fx:id="gt2Col" editable="false"
-									prefWidth="75.0" text="End speed after threshold (Km/s)" />																
+								<TableColumn fx:id="gt2Col" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="End group velocity after Dc (Km/s)" />																
 															
-								<TableColumn fx:id="phaseSpeedCol" editable="false"
-									prefWidth="75.0" text="Phase Speed (Km/s)" />														
-							</columns>
-						</TableColumn>
+								<TableColumn fx:id="phaseVelCol" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="Phase Velocity (Km/s)" />
 					</columns>
 					<columnResizePolicy>
 						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

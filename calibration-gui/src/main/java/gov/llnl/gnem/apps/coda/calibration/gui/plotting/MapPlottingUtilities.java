@@ -14,6 +14,13 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
@@ -24,6 +31,7 @@ import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Location;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
+import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 
 @Component
 public class MapPlottingUtilities {
@@ -43,7 +51,11 @@ public class MapPlottingUtilities {
     }
 
     public Icon createEventIconBackground(Event event) {
-        return createEventIcon(null, event, IconStyles.BACKGROUND);
+        return createEventIcon(event.getEventId(), event, IconStyles.BACKGROUND);
+    }
+
+    public Icon createEventIconBackground(String id, Event event) {
+        return createEventIcon(id, event, IconStyles.BACKGROUND);
     }
 
     private Icon createEventIcon(String id, Event event, IconStyles style) {
@@ -59,7 +71,11 @@ public class MapPlottingUtilities {
     }
 
     public Icon createStationIconBackground(Station station) {
-        return createStationIcon(null, station, IconStyles.BACKGROUND);
+        return createStationIcon(station.getStationName(), station, IconStyles.BACKGROUND);
+    }
+
+    public Icon createStationIconBackground(String id, Station station) {
+        return createStationIcon(id, station, IconStyles.BACKGROUND);
     }
 
     public Icon createStationIcon(Station station) {
@@ -76,5 +92,47 @@ public class MapPlottingUtilities {
 
     public GeoShape createStationToEventLine(Station station, Event event) {
         return geoShapeFactory.newLine(new Location(station.getLatitude(), station.getLongitude()), new Location(event.getLatitude(), event.getLongitude()));
+    }
+
+    public Boolean isIconBackground(Icon icon) {
+        return icon != null && IconStyles.BACKGROUND == icon.getStyle();
+    }
+
+    public Collection<Icon> genIconsFromWaveforms(BiConsumer<Boolean, String> eventSelectionCallback, BiConsumer<Boolean, String> stationSelectionCallback, List<Waveform> waveforms) {
+        List<Icon> icons = new ArrayList<>();
+        Map<Event, Icon> events = new HashMap<>();
+        Map<Station, Icon> stations = new HashMap<>();
+        for (Waveform waveform : waveforms) {
+            if (waveform != null && waveform.getStream() != null && waveform.getStream().getStation() != null && waveform.getEvent() != null) {
+                Icon icon = events.get(waveform.getEvent());
+                if (icon != null) {
+                    if (isIconBackground(icon) && waveform.isActive()) {
+                        events.put(waveform.getEvent(), createEventIcon(waveform.getEvent()).setIconSelectionCallback(eventSelectionCallback));
+                    } else {
+                        //Nop
+                    }
+                } else {
+                    icon = waveform.isActive() ? createEventIcon(waveform.getEvent()) : createEventIconBackground(waveform.getEvent());
+                    icon.setIconSelectionCallback(eventSelectionCallback);
+                    events.put(waveform.getEvent(), icon);
+                }
+
+                icon = stations.get(waveform.getStream().getStation());
+                if (icon != null) {
+                    if (isIconBackground(icon) && waveform.isActive()) {
+                        stations.put(waveform.getStream().getStation(), createStationIcon(waveform.getStream().getStation()).setIconSelectionCallback(stationSelectionCallback));
+                    } else {
+                        //Nop
+                    }
+                } else {
+                    icon = waveform.isActive() ? createStationIcon(waveform.getStream().getStation()) : createStationIconBackground(waveform.getStream().getStation());
+                    icon.setIconSelectionCallback(stationSelectionCallback);
+                    stations.put(waveform.getStream().getStation(), icon);
+                }
+            }
+        }
+        icons.addAll(events.values());
+        icons.addAll(stations.values());
+        return icons;
     }
 }

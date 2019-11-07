@@ -25,6 +25,8 @@ import javax.persistence.Version;
 
 import org.springframework.format.annotation.NumberFormat;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import gov.llnl.gnem.apps.coda.common.model.util.Durable;
 
 @Durable
@@ -73,11 +75,13 @@ public class SharedFrequencyBandParameters {
     @NumberFormat
     private double minSnr;
 
+    @JsonAlias("s1")
     @NumberFormat
-    private double s1;
+    private double p1;
 
+    @JsonAlias("s2")
     @NumberFormat
-    private double s2;
+    private double p2;
 
     @NumberFormat
     private double xc;
@@ -219,21 +223,21 @@ public class SharedFrequencyBandParameters {
         return this;
     }
 
-    public double getS1() {
-        return this.s1;
+    public double getP1() {
+        return this.p1;
     }
 
-    public SharedFrequencyBandParameters setS1(double s1) {
-        this.s1 = s1;
+    public SharedFrequencyBandParameters setP1(double p1) {
+        this.p1 = p1;
         return this;
     }
 
     public double getS2() {
-        return this.s2;
+        return this.p2;
     }
 
-    public SharedFrequencyBandParameters setS2(double s2) {
-        this.s2 = s2;
+    public SharedFrequencyBandParameters setS2(double p2) {
+        this.p2 = p2;
         return this;
     }
 
@@ -322,9 +326,9 @@ public class SharedFrequencyBandParameters {
                 + ", minSnr="
                 + minSnr
                 + ", s1="
-                + s1
+                + p1
                 + ", s2="
-                + s2
+                + p2
                 + ", xc="
                 + xc
                 + ", xt="
@@ -368,9 +372,9 @@ public class SharedFrequencyBandParameters {
         result = prime * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(q);
         result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(s1);
+        temp = Double.doubleToLongBits(p1);
         result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(s2);
+        temp = Double.doubleToLongBits(p2);
         result = prime * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(velocity0);
         result = prime * result + (int) (temp ^ (temp >>> 32));
@@ -437,10 +441,10 @@ public class SharedFrequencyBandParameters {
         if (Double.doubleToLongBits(q) != Double.doubleToLongBits(other.q)) {
             return false;
         }
-        if (Double.doubleToLongBits(s1) != Double.doubleToLongBits(other.s1)) {
+        if (Double.doubleToLongBits(p1) != Double.doubleToLongBits(other.p1)) {
             return false;
         }
-        if (Double.doubleToLongBits(s2) != Double.doubleToLongBits(other.s2)) {
+        if (Double.doubleToLongBits(p2) != Double.doubleToLongBits(other.p2)) {
             return false;
         }
         if (Double.doubleToLongBits(velocity0) != Double.doubleToLongBits(other.velocity0)) {
@@ -475,8 +479,8 @@ public class SharedFrequencyBandParameters {
         this.gamma1 = overlay.gamma1;
         this.gamma2 = overlay.gamma2;
         this.minSnr = overlay.minSnr;
-        this.s1 = overlay.s1;
-        this.s2 = overlay.s2;
+        this.p1 = overlay.p1;
+        this.p2 = overlay.p2;
         this.xc = overlay.xc;
         this.xt = overlay.xt;
         this.q = overlay.q;

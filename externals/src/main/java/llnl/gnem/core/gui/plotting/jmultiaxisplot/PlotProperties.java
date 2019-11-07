@@ -23,68 +23,95 @@ import llnl.gnem.core.gui.plotting.plotobject.SymbolStyle;
  * User: Eric Matzel Date: Oct 23, 2007
  */
 public class PlotProperties {
-    public SymbolStyle getSymbolStyle() {
-        return symbolStyle;
-    }
+    private SymbolStyle symbolStyle = SymbolStyle.DIAMOND;
 
-    public void setSymbolStyle(SymbolStyle symbolStyle) {
-        this.symbolStyle = symbolStyle;
-    }
+    private double symbolSize = 3;
 
-    public double getSymbolSize() {
-        return symbolSize;
-    }
+    private Color symbolEdgeColor = Color.black;
 
-    public void setSymbolSize(double symbolSize) {
-        this.symbolSize = symbolSize;
-    }
+    private Color symbolFillColor = Color.red;
 
-    public Color getSymbolEdgeColor() {
-        return symbolEdgeColor;
-    }
+    private double minYAxisValue = -1.0;
 
-    public void setSymbolEdgeColor(Color symbolEdgeColor) {
-        this.symbolEdgeColor = symbolEdgeColor;
-    }
+    private double maxYAxisValue = 1.0;
 
-    public Color getSymbolFillColor() {
-        return symbolFillColor;
-    }
+    private double minXAxisValue = -1.0;
 
-    public void setSymbolFillColor(Color symbolFillColor) {
-        this.symbolFillColor = symbolFillColor;
-    }
+    private double maxXAxisValue = 1.0;
 
-    public double getMinYAxisValue() {
-        return minYAxisValue;
-    }
+    private boolean autoCalculateYaxisRange = true;
 
-    public void setMinYAxisValue(double minYAxisValue) {
-        this.minYAxisValue = minYAxisValue;
-    }
+    private boolean autoCalculateXaxisRange = true;
 
-    public double getMaxYAxisValue() {
-        return maxYAxisValue;
-    }
-
-    public void setMaxYAxisValue(double maxYAxisValue) {
-        this.maxYAxisValue = maxYAxisValue;
+    public boolean getAutoCalculateXaxisRange() {
+        return autoCalculateXaxisRange;
     }
 
     public boolean getAutoCalculateYaxisRange() {
         return autoCalculateYaxisRange;
     }
 
+    public double getMaxXAxisValue() {
+        return maxXAxisValue;
+    }
+
+    public double getMaxYAxisValue() {
+        return maxYAxisValue;
+    }
+
+    public double getMinXAxisValue() {
+        return minXAxisValue;
+    }
+
+    public double getMinYAxisValue() {
+        return minYAxisValue;
+    }
+
+    public Color getSymbolEdgeColor() {
+        return symbolEdgeColor;
+    }
+
+    public Color getSymbolFillColor() {
+        return symbolFillColor;
+    }
+
+    public double getSymbolSize() {
+        return symbolSize;
+    }
+
+    public SymbolStyle getSymbolStyle() {
+        return symbolStyle;
+    }
+
+    public void setAutoCalculateXaxisRange(boolean autoCalculateXaxisRange) {
+        this.autoCalculateXaxisRange = autoCalculateXaxisRange;
+    }
     public void setAutoCalculateYaxisRange(boolean autoCalculateYaxisRange) {
         this.autoCalculateYaxisRange = autoCalculateYaxisRange;
     }
+    public void setMaxXAxisValue(double maxXAxisValue) {
+        this.maxXAxisValue = maxXAxisValue;
+    }
+    public void setMaxYAxisValue(double maxYAxisValue) {
+        this.maxYAxisValue = maxYAxisValue;
+    }
 
-    private SymbolStyle symbolStyle = SymbolStyle.DIAMOND;
-    private double symbolSize = 3;
-    private Color symbolEdgeColor = Color.black;
-    private Color symbolFillColor = Color.red;
-
-    private double minYAxisValue = -2.5;
-    private double maxYAxisValue = 2.5;
-    private boolean autoCalculateYaxisRange = true;;
+    public void setMinXAxisValue(double minXAxisValue) {
+        this.minXAxisValue = minXAxisValue;
+    }
+    public void setMinYAxisValue(double minYAxisValue) {
+        this.minYAxisValue = minYAxisValue;
+    }
+    public void setSymbolEdgeColor(Color symbolEdgeColor) {
+        this.symbolEdgeColor = symbolEdgeColor;
+    }
+    public void setSymbolFillColor(Color symbolFillColor) {
+        this.symbolFillColor = symbolFillColor;
+    }
+    public void setSymbolSize(double symbolSize) {
+        this.symbolSize = symbolSize;
+    }
+    public void setSymbolStyle(SymbolStyle symbolStyle) {
+        this.symbolStyle = symbolStyle;
+    }
 }

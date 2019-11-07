@@ -31,6 +31,8 @@ import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import javafx.application.Platform;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.embed.swing.SwingNode;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -58,7 +60,7 @@ public class WaveformGui {
     private PeakVelocityClient peakVelocityClient;
     private GeoMap map;
     private MapPlottingUtilities mapPlotUtilities;
-    private boolean shouldFocus = true;
+    private Property<Boolean> shouldFocus = new SimpleBooleanProperty(false);
 
     @Autowired
     public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, PeakVelocityClient peakVelocityClient, GeoMap map,
@@ -106,11 +108,7 @@ public class WaveformGui {
         if (waveformPlotManager != null) {
             if (event != null && event.getWaveformIDs() != null && !event.getWaveformIDs().isEmpty()) {
                 waveformPlotManager.setOrderedWaveformIDs(event.getWaveformIDs());
-                if (shouldFocus) {
-                    toFront();
-                } else {
-                    show();
-                }
+                show();
                 repaintWaveformWindow();
             }
         }
@@ -144,7 +142,7 @@ public class WaveformGui {
             if (waveformPlotManager != null) {
                 waveformPlotManager.setVisible(true);
             }
-            if (!showing) {
+            if (!showing || shouldFocus.getValue()) {
                 stage.toFront();
             }
         });
@@ -155,5 +153,9 @@ public class WaveformGui {
         Platform.runLater(() -> {
             stage.toFront();
         });
+    }
+
+    public Property<Boolean> focusProperty() {
+        return shouldFocus;
     }
 }

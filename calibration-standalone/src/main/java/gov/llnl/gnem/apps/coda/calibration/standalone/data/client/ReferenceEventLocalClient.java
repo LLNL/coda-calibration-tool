@@ -38,25 +38,25 @@ import reactor.core.publisher.Mono;
 @Primary
 public class ReferenceEventLocalClient implements ReferenceEventClient {
 
-    private ReferenceMwParametersService service;
+    private ReferenceMwParametersService refEventService;
     private MeasuredMwsService measureService;
     private WaveformService waveformService;
 
     @Autowired
-    public ReferenceEventLocalClient(ReferenceMwParametersService service, MeasuredMwsService measureService, WaveformService waveformService) {
-        this.service = service;
+    public ReferenceEventLocalClient(ReferenceMwParametersService refEventService, MeasuredMwsService measureService, WaveformService waveformService) {
+        this.refEventService = refEventService;
         this.measureService = measureService;
         this.waveformService = waveformService;
     }
 
     @Override
     public Flux<ReferenceMwParameters> getReferenceEvents() {
-        return Flux.fromIterable(service.findAll()).filter(Objects::nonNull).onErrorReturn(new ReferenceMwParameters());
+        return Flux.fromIterable(refEventService.findAll()).filter(Objects::nonNull).onErrorReturn(new ReferenceMwParameters());
     }
 
     @Override
     public Mono<String> postReferenceEvents(List<ReferenceMwParameters> refEvents) throws JsonProcessingException {
-        return Mono.just(service.save(refEvents).toString());
+        return Mono.just(refEventService.save(refEvents).toString());
     }
 
     @Override
@@ -76,6 +76,12 @@ public class ReferenceEventLocalClient implements ReferenceEventClient {
     @Override
     public Flux<MeasuredMwDetails> getMeasuredEventDetails() {
         return Flux.fromIterable(measureService.findAllDetails()).filter(Objects::nonNull).onErrorReturn(new MeasuredMwDetails());
+    }
+
+    @Override
+    public Mono<Void> removeReferenceEventsByEventId(List<String> evids) {
+        refEventService.deleteAllByEventIds(evids);
+        return Mono.empty();
     }
 
 }

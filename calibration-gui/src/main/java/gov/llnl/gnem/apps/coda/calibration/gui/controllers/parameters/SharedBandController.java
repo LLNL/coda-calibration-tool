@@ -91,10 +91,10 @@ public class SharedBandController {
     private TableColumn<SharedFrequencyBandParameters, String> minSnrCol;
 
     @FXML
-    private TableColumn<SharedFrequencyBandParameters, String> s1Col;
+    private TableColumn<SharedFrequencyBandParameters, String> p1Col;
 
     @FXML
-    private TableColumn<SharedFrequencyBandParameters, String> s2Col;
+    private TableColumn<SharedFrequencyBandParameters, String> p2Col;
 
     @FXML
     private TableColumn<SharedFrequencyBandParameters, String> xcCol;
@@ -164,8 +164,8 @@ public class SharedBandController {
 
         CellBindingUtils.attachEditableTextCellFactories(minSnrCol, SharedFrequencyBandParameters::getMinSnr, SharedFrequencyBandParameters::setMinSnr);
 
-        CellBindingUtils.attachTextCellFactories(s1Col, SharedFrequencyBandParameters::getS1);
-        CellBindingUtils.attachTextCellFactories(s2Col, SharedFrequencyBandParameters::getS2);
+        CellBindingUtils.attachTextCellFactories(p1Col, SharedFrequencyBandParameters::getP1);
+        CellBindingUtils.attachTextCellFactories(p2Col, SharedFrequencyBandParameters::getS2);
         CellBindingUtils.attachTextCellFactories(xcCol, SharedFrequencyBandParameters::getXc);
         CellBindingUtils.attachTextCellFactories(xtCol, SharedFrequencyBandParameters::getXt);
         CellBindingUtils.attachTextCellFactories(qCol, SharedFrequencyBandParameters::getQ);
@@ -205,7 +205,7 @@ public class SharedBandController {
             client.getSharedFrequencyBandParameters()
                   .filter(Objects::nonNull)
                   .filter(value -> null != value.getId())
-                  .doOnComplete(() -> codaSharedTableView.sort())
+                  .doOnComplete(() -> Optional.ofNullable(codaSharedTableView).ifPresent(TableView::sort))
                   .subscribe(value -> sharedFbData.add(value), err -> log.trace(err.getMessage(), err));
             Optional.ofNullable(codaSharedTableView).ifPresent(v -> v.refresh());
         });

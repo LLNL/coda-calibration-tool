@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -45,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
@@ -55,12 +57,12 @@ import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
@@ -97,6 +99,7 @@ public class PathController implements MapListeningController, RefreshableContro
     private JMultiAxisPlot sdPlot;
 
     private Map<FrequencyBand, List<SpectraMeasurement>> measurementsFreqBandMap = new TreeMap<>();
+    private Map<Long, List<SpectraMeasurement>> measurementsWaveformIdMap = new HashMap<>();
 
     private NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
 
@@ -142,6 +145,7 @@ public class PathController implements MapListeningController, RefreshableContro
     private MenuItem exclude;
     private MenuItem include;
     private ContextMenu menu;
+    private boolean isVisible = false;
 
     @Autowired
     public PathController(SpectraClient spectraMeasurementClient, WaveformClient waveformClient, EventBus bus, GeoMap mapImpl, MapPlottingUtilities mappingUtilities) {
@@ -159,6 +163,8 @@ public class PathController implements MapListeningController, RefreshableContro
         stationSelectionCallback = (selected, stationId) -> {
             selectDataByCriteria(bus, selected, stationId);
         };
+
+        this.bus.register(this);
     }
 
     private void selectDataByCriteria(EventBus bus, Boolean selected, String key) {
@@ -339,6 +345,32 @@ public class PathController implements MapListeningController, RefreshableContro
         });
     }
 
+    @Subscribe
+    private void listener(WaveformChangeEvent wce) {
+        List<Long> nonNull = wce.getIds().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        synchronized (stationWaveformMap) {
+            if (wce.isAddOrUpdate()) {
+                List<Waveform> metadata = waveformClient.getWaveformMetadataFromIds(nonNull).collect(Collectors.toList()).block(Duration.ofSeconds(10l));
+                SwingUtilities.invokeLater(() -> {
+                    metadata.forEach(w -> {
+                        List<SpectraMeasurement> measurements = measurementsWaveformIdMap.get(w.getId());
+                        if (measurements != null) {
+                            measurements.forEach(m -> m.getWaveform().setActive(w.getActive()));
+                        }
+                        Optional.ofNullable(stationWaveformMap.get(w.getEvent().getEventId())).orElseGet(() -> new ArrayList<>()).stream().forEach(sym -> {
+                            if (w.isActive()) {
+                                sym.setFillColor(sym.getEdgeColor());
+                            } else {
+                                sym.setFillColor(Color.GRAY);
+                            }
+                        });
+                    });
+                    refreshView();
+                });
+            }
+        }
+    }
+
     private void showContextMenu(List<Waveform> waveforms, MouseEvent t, BiConsumer<List<Waveform>, Boolean> activationFunc) {
         Platform.runLater(() -> {
             include.setOnAction(evt -> setActive(waveforms, true, activationFunc));
@@ -391,17 +423,21 @@ public class PathController implements MapListeningController, RefreshableContro
 
     private void reloadData() {
         measurementsFreqBandMap.clear();
+        measurementsWaveformIdMap.clear();
         stations.clear();
         station1ComboBox.getItems().clear();
         station2ComboBox.getItems().clear();
 
         frequencyBandComboBox.getItems().clear();
+
         measurementsFreqBandMap.putAll(
                 spectraMeasurementClient.getMeasuredSpectraMetadata()
                                         .filter(Objects::nonNull)
                                         .filter(spectra -> spectra.getWaveform() != null)
                                         .toStream()
                                         .collect(Collectors.groupingBy(spectra -> new FrequencyBand(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency()))));
+
+        measurementsWaveformIdMap.putAll(measurementsFreqBandMap.values().parallelStream().flatMap(List::parallelStream).collect(Collectors.groupingBy(s -> s.getWaveform().getId())));
 
         stations.addAll(measurementsFreqBandMap.values().parallelStream().flatMap(List::parallelStream).map(spectra -> spectra.getWaveform().getStream().getStation()).collect(Collectors.toList()));
 
@@ -419,13 +455,15 @@ public class PathController implements MapListeningController, RefreshableContro
 
     @Override
     public void refreshView() {
-        plotPaths();
-        plotBeforeAfter();
-        plotSd();
-        Platform.runLater(() -> {
-            stationPlot.repaint();
-            sdPlot.repaint();
-        });
+        if (isVisible) {
+            plotPaths();
+            plotBeforeAfter();
+            plotSd();
+            Platform.runLater(() -> {
+                stationPlot.repaint();
+                sdPlot.repaint();
+            });
+        }
     }
 
     @Override
@@ -450,26 +488,23 @@ public class PathController implements MapListeningController, RefreshableContro
                                                                                                 HashMap::new,
                                                                                                 Collectors.mapping(w -> w.getEvent(), Collectors.toList())));
 
-                    mapImpl.addIcons(stationToEvents.keySet().stream().distinct().map(station -> {
-                        List<Icon> icons = new ArrayList<>();
-                        if (station.equals(station1ComboBox.getSelectionModel().getSelectedItem()) || station.equals(station2ComboBox.getSelectionModel().getSelectedItem())) {
-                            icons.add(mappingUtilities.createStationIconForeground(station));
-                        }
-                        icons.add(mappingUtilities.createStationIconBackground(station).setIconSelectionCallback(stationSelectionCallback));
-                        return icons;
-                    }).flatMap(icons -> icons.stream()).collect(Collectors.toSet()));
-
-                    mapImpl.addIcons(
-                            stationToEvents.values()
-                                           .stream()
-                                           .flatMap(events -> events.stream().map(event -> mappingUtilities.createEventIcon(event).setIconSelectionCallback(eventSelectionCallback)))
-                                           .distinct()
-                                           .collect(Collectors.toSet()));
-
                     stationToEvents.entrySet().stream().flatMap(entry -> {
                         Station station = entry.getKey();
                         return entry.getValue().stream().map(event -> mappingUtilities.createStationToEventLine(station, event));
                     }).forEach(mapImpl::addShape);
+
+                    mapImpl.addIcons(
+                            stationToEvents.keySet()
+                                           .stream()
+                                           .filter(
+                                                   station -> station.equals(station1ComboBox.getSelectionModel().getSelectedItem())
+                                                           || station.equals(station2ComboBox.getSelectionModel().getSelectedItem()))
+                                           .distinct()
+                                           .map(station -> mappingUtilities.createStationIconForeground(station))
+                                           .collect(Collectors.toList()));
+
+                    mapImpl.addIcons(
+                            mappingUtilities.genIconsFromWaveforms(eventSelectionCallback, stationSelectionCallback, measurements.stream().map(m -> m.getWaveform()).collect(Collectors.toList())));
                 }
             });
         }
@@ -807,5 +842,10 @@ public class PathController implements MapListeningController, RefreshableContro
                 });
             }
         }
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        isVisible = visible;
     }
 }

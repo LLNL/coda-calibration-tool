@@ -44,8 +44,11 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventCli
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -103,10 +106,13 @@ public class ParamExporter {
                                                                                                                                       (a, b) -> b,
                                                                                                                                       TreeMap::new)));
 
+            List<MdacParametersFI> fi = paramClient.getFiParameters().toStream().filter(Objects::nonNull).collect(Collectors.toList());
+            List<MdacParametersPS> ps = paramClient.getPsParameters().toStream().filter(Objects::nonNull).collect(Collectors.toList());
             VelocityConfiguration velocity = paramClient.getVelocityConfiguration().subscribeOn(Schedulers.elastic()).block(Duration.ofSeconds(5l));
+            ShapeFitterConstraints shapeConstraints = paramClient.getShapeFitterConstraints().subscribeOn(Schedulers.elastic()).block(Duration.ofSeconds(5l));
 
             for (ParamTempFileWriter writer : paramWriters) {
-                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters, velocity);
+                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters, fi, ps, velocity, shapeConstraints);
             }
         }
 
