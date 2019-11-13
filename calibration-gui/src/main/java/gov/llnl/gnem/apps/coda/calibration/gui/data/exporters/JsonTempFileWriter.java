@@ -33,6 +33,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants;
@@ -206,8 +208,8 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         } else {
             rootNode = mapper.createObjectNode();
         }
-
-        if (rootNode == null) {
+        
+        if (rootNode == null || rootNode.getNodeType().equals(JsonNodeType.MISSING)) {
             rootNode = mapper.createObjectNode();
         }
         return rootNode;
@@ -215,8 +217,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
 
     private File createOrGetFile(Path folder, String filename) throws IOException {
         Files.deleteIfExists(folder.resolve(filename));
-        File file = Files.createFile(folder.resolve(filename)).toFile();
-        file.deleteOnExit();
+        File file = Files.createFile(folder.resolve(filename)).toFile();        
         return file;
     }
 }
