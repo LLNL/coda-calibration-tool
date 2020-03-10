@@ -15,6 +15,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 
 <VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
 	<children>
@@ -91,26 +92,32 @@
 				<GridPane styleClass="menu-bar" GridPane.columnIndex="2" GridPane.halignment="RIGHT">
 					<columnConstraints>
 						<ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" minWidth="10.0" />
-						<ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="30.0" />
+						<ColumnConstraints hgrow="NEVER" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="20.0" />
 						<ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" />
 					</columnConstraints>
 					<rowConstraints>
 						<RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
 					</rowConstraints>
-					<children>
+					<children>												
 						<Button fx:id="refreshButton" alignment="CENTER" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#refreshTab" prefHeight="27.0" prefWidth="100.0" text="Refresh" GridPane.columnIndex="2">
 							<GridPane.margin>
 								<Insets />
 							</GridPane.margin>
 						</Button>
-						<Button fx:id="showMapButton" alignment="CENTER_RIGHT" maxWidth="70.0" minHeight="25.0" minWidth="70.0" mnemonicParsing="false" onAction="#showMapWindow" prefWidth="70.0" text="Map" />
+						<HBox minHeight="25.0" alignment="CENTER">
+							<children>
+								<Button fx:id="snapshotButton" alignment="CENTER_RIGHT" minHeight="25.0" focusTraversable="false" mnemonicParsing="false" onAction="#snapshotTab"/>
+								<Pane minWidth="10.0" prefWidth="10.0" />								
+								<Button fx:id="showMapButton" alignment="CENTER_RIGHT" maxWidth="70.0" minHeight="25.0" minWidth="70.0" mnemonicParsing="false" onAction="#showMapWindow" prefWidth="70.0" text="Map" />
+							</children>
+						</HBox>			
 					</children>
 				</GridPane>
 			</children>
 		</GridPane>
 		<BorderPane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
 			<center>
-				<TabPane side="LEFT" BorderPane.alignment="CENTER">
+				<TabPane fx:id="mainTabPane" side="LEFT" BorderPane.alignment="CENTER">
 					<tabs>
 						<Tab fx:id="dataTab" closable="false" text="Data">
 							<content>

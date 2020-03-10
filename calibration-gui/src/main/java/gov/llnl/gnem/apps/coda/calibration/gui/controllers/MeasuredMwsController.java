@@ -18,6 +18,8 @@ import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.time.Duration;
@@ -41,11 +43,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
+import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,8 +81,10 @@ import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressListener;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
+import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import javafx.application.Platform;
@@ -95,6 +101,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
@@ -110,11 +117,14 @@ import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
 
 //TODO: This is effectively a subset of SiteController. Revisit and see if we can factor out common functions into a third shared class at some point.
 @Component
-public class MeasuredMwsController implements MapListeningController, RefreshableController {
+public class MeasuredMwsController implements MapListeningController, RefreshableController, ScreenshotEnabledController {
 
     private static final Logger log = LoggerFactory.getLogger(MeasuredMwsController.class);
 
     private static final String X_AXIS_LABEL = "center freq";
+
+    @FXML
+    private Tab plotsTab;
 
     @FXML
     private StackPane measuredMws;
@@ -138,8 +148,35 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
     @FXML
     private TableColumn<MeasuredMwDetails, String> measuredMwCol;
 
+    //    @FXML
+    //    private TableColumn<MeasuredMwDetails, String> measuredMwSdCol;
+
     @FXML
     private TableColumn<MeasuredMwDetails, String> measuredStressCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredCornerFreqCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> mistfitCol;
+
+    //    @FXML
+    //    private TableColumn<MeasuredMwDetails, String> measuredCornerFreqSdCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq1LowCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq1HighCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq2LowCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq2HighCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, Integer> iterationsCol;
 
     @FXML
     private TableColumn<MeasuredMwDetails, Integer> dataCountCol;
@@ -166,7 +203,7 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
     private MapPlottingUtilities iconFactory;
 
     private List<SpectraMeasurement> spectralMeasurements = new ArrayList<>();
-    private Map<String, Spectra> fitSpectra = new HashMap<>();
+    private Map<String, List<Spectra>> fitSpectra = new HashMap<>();
     private ObservableList<String> evids = FXCollections.observableArrayList();
     private ObservableList<MeasuredMwDetails> mwParameters = FXCollections.observableArrayList();
     private ObservableList<LabeledPlotPoint> stationSymbols = FXCollections.observableArrayList();
@@ -194,11 +231,20 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
     private final AtomicReference<Double> minFreq = new AtomicReference<>(1.0);
     private final AtomicReference<Double> maxFreq = new AtomicReference<>(-0.0);
 
+    private final AtomicReference<Double> minY = new AtomicReference<>(1.0);
+    private final AtomicReference<Double> maxY = new AtomicReference<>(-0.0);
+
     @FXML
     private Button xAxisShrink;
     private boolean shouldXAxisShrink = false;
     private Label xAxisShrinkOn;
     private Label xAxisShrinkOff;
+
+    @FXML
+    private Button yAxisShrink;
+    private boolean shouldYAxisShrink = false;
+    private Label yAxisShrinkOn;
+    private Label yAxisShrinkOff;
 
     private ThreadPoolExecutor exec = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
         Thread thread = new Thread(r);
@@ -270,6 +316,27 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
             refreshView();
         });
 
+        yAxisShrinkOn = new Label("><");
+        yAxisShrinkOn.setRotate(90.0);
+        yAxisShrinkOn.setStyle("-fx-font-weight:bold; -fx-font-size: 12px;");
+        yAxisShrinkOn.setPadding(Insets.EMPTY);
+        yAxisShrinkOff = new Label("<>");
+        yAxisShrinkOff.setRotate(90.0);
+        yAxisShrinkOff.setStyle("-fx-font-weight:bold; -fx-font-size: 12px;");
+        yAxisShrinkOff.setPadding(Insets.EMPTY);
+        yAxisShrink.setGraphic(yAxisShrinkOn);
+        yAxisShrink.setPadding(new Insets(yAxisShrink.getPadding().getTop(), 0, yAxisShrink.getPadding().getBottom(), 0));
+        yAxisShrink.prefHeightProperty().bind(evidCombo.heightProperty());
+        yAxisShrink.setOnAction(e -> {
+            shouldYAxisShrink = !shouldYAxisShrink;
+            if (shouldYAxisShrink) {
+                yAxisShrink.setGraphic(yAxisShrinkOff);
+            } else {
+                yAxisShrink.setGraphic(yAxisShrinkOn);
+            }
+            refreshView();
+        });
+
         SwingUtilities.invokeLater(() -> {
             fitPlot = new SpectralPlot();
             fitPlot.addPlotObjectObserver(new Observer() {
@@ -280,7 +347,7 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
             });
             fitPlotSwingNode.setContent(fitPlot);
 
-            fitPlot.setLabels("Mw Spectra", X_AXIS_LABEL, "log10(amplitude)");
+            fitPlot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
             fitPlot.setYaxisVisibility(true);
         });
 
@@ -294,7 +361,18 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
         evidCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
         CellBindingUtils.attachTextCellFactories(measuredMwCol, MeasuredMwDetails::getMw, dfmt4);
+        //        CellBindingUtils.attachTextCellFactories(measuredMwSdCol, MeasuredMwDetails::getMwSd, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredStressCol, MeasuredMwDetails::getApparentStressInMpa, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredCornerFreqCol, MeasuredMwDetails::getCornerFreq, dfmt4);
+        CellBindingUtils.attachTextCellFactories(mistfitCol, MeasuredMwDetails::getMisfit, dfmt4);
+        //        CellBindingUtils.attachTextCellFactories(measuredCornerFreqSdCol, MeasuredMwDetails::getCornerFreqSd, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq1LowCol, MeasuredMwDetails::getMw1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq1HighCol, MeasuredMwDetails::getMw1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
+
+        iterationsCol.setCellValueFactory(
+                x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getIterations).orElseGet(() -> 0)).asObject());
 
         dataCountCol.setCellValueFactory(
                 x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getDataCount).orElseGet(() -> 0)).asObject());
@@ -354,8 +432,9 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
         if (evidCombo != null && evidCombo.getSelectionModel().getSelectedIndex() > 0) {
             filteredMeasurements = filterToEvent(evidCombo.getSelectionModel().getSelectedItem(), spectralMeasurements);
             Spectra referenceSpectra = spectraClient.getReferenceSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
-            Spectra theoreticalSpectra = fitSpectra.get(evidCombo.getSelectionModel().getSelectedItem());
-            fitPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.TRUE, referenceSpectra, theoreticalSpectra);
+            List<Spectra> fittingSpectra = new ArrayList<>(fitSpectra.get(evidCombo.getSelectionModel().getSelectedItem()));
+            fittingSpectra.add(referenceSpectra);
+            fitPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.TRUE, fittingSpectra);
             if (filteredMeasurements != null && filteredMeasurements.size() > 0 && filteredMeasurements.get(0).getWaveform() != null) {
                 Event event = filteredMeasurements.get(0).getWaveform().getEvent();
                 eventTime.setText("Date: " + DateTimeFormatter.ISO_INSTANT.format(event.getOriginTime().toInstant()));
@@ -371,6 +450,23 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
         }
         fitSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected));
         mapMeasurements(filteredMeasurements);
+
+        minY.set(100.0);
+        maxY.set(0.0);
+        DoubleSummaryStatistics stats = filteredMeasurements.stream()
+                                                            .filter(Objects::nonNull)
+                                                            .map(spec -> spec.getPathAndSiteCorrected())
+                                                            .filter(v -> v != 0.0)
+                                                            .collect(Collectors.summarizingDouble(Double::doubleValue));
+        maxY.set(stats.getMax() + .1);
+        minY.set(stats.getMin() - .1);
+
+        fitPlot.setAutoCalculateYaxisRange(shouldYAxisShrink);
+        if (shouldYAxisShrink) {
+            fitPlot.setAllYlimits(minY.get(), maxY.get());
+        } else {
+            fitPlot.setAllYlimits();
+        }
     }
 
     private void mapMeasurements(List<SpectraMeasurement> measurements) {
@@ -454,6 +550,14 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
 
     private void reloadData() {
         try {
+            progressGui.show();
+            progressGui.toFront();
+
+            Platform.runLater(() -> {
+                evids.clear();
+                evids.add("All");
+            });
+
             exec.submit(() -> {
                 maxFreq.set(-0.0);
                 minFreq.set(1.0);
@@ -470,8 +574,8 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
 
                 MeasuredMwReportByEvent mfs = calibrationClient.makeMwMeasurements(Boolean.TRUE)
                                                                .doOnError(err -> log.trace(err.getMessage(), err))
-                                                               .doAfterTerminate(() -> Platform.runLater(() -> progressGui.hide()))
-                                                               .block(Duration.of(10l, ChronoUnit.SECONDS));
+                                                               .doFinally((s) -> Platform.runLater(() -> progressGui.hide()))
+                                                               .block(Duration.of(1000l, ChronoUnit.SECONDS));
 
                 fitSpectra.putAll(mfs.getFitSpectra());
                 spectralMeasurements.addAll(
@@ -508,13 +612,8 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
             clearSpectraPlots();
             spectralMeasurements.clear();
             fitSpectra.clear();
-            evids.clear();
-            evids.add("All");
-
-            progressGui.show();
-            progressGui.toFront();
         } catch (RejectedExecutionException e) {
-            /*nop*/
+            progressGui.hide();
         }
     }
 
@@ -542,6 +641,21 @@ public class MeasuredMwsController implements MapListeningController, Refreshabl
     @Override
     public Runnable getRefreshFunction() {
         return () -> reloadData();
+    }
+
+    @Override
+    public Consumer<File> getScreenshotFunction() {
+        return (folder) -> {
+            String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
+            SnapshotUtils.writePng(folder, new Pair<>("Measured_Mws", plotsTab.getContent()), timestamp);
+            try {
+                if (evidCombo.getValue() != null) {
+                    fitPlot.exportSVG(folder + File.separator + "Measured_Mws_" + evidCombo.getValue() + timestamp + ".svg");
+                }
+            } catch (UnsupportedEncodingException | FileNotFoundException | SVGGraphics2DIOException e) {
+                log.error("Error attempting to write plots for path controller : {}", e.getLocalizedMessage(), e);
+            }
+        };
     }
 
     private void selectDataByCriteria(Boolean selected, String key) {

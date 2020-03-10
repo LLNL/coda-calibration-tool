@@ -42,7 +42,7 @@ public class EnvelopeParamsWebClient implements EnvelopeParamsClient {
 
     @Override
     public Mono<String> postEnvelopeJobConfiguration(EnvelopeJobConfiguration config) {
-        return client.post().uri("/envelopes/job-configuration/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).syncBody(config).exchange().doOnSuccess(resp -> {
+        return client.post().uri("/envelopes/job-configuration/update").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).bodyValue(config).exchange().doOnSuccess(resp -> {
             if (!HttpStatus.OK.equals(resp.statusCode())) {
                 throw new LightweightIllegalStateException(resp.toString());
             }

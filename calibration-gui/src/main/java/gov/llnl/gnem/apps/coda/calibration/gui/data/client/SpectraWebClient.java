@@ -14,7 +14,11 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -45,7 +49,6 @@ public class SpectraWebClient implements SpectraClient {
                      .onErrorReturn(new SpectraMeasurement());
     }
 
-    
     @Override
     public Flux<SpectraMeasurement> getMeasuredSpectraMetadata() {
         return client.get()
@@ -55,7 +58,7 @@ public class SpectraWebClient implements SpectraClient {
                      .flatMapMany(response -> response.bodyToFlux(SpectraMeasurement.class))
                      .onErrorReturn(new SpectraMeasurement());
     }
-    
+
     @Override
     public Mono<Spectra> getReferenceSpectra(String eventId) {
         return client.post()
@@ -69,14 +72,15 @@ public class SpectraWebClient implements SpectraClient {
     }
 
     @Override
-    public Mono<Spectra> getFitSpectra(String eventId) {
+    public Mono<List<Spectra>> getFitSpectra(String eventId) {
         return client.post()
                      .uri("/spectra-measurements/fit-spectra")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(eventId)
                      .exchange()
-                     .flatMap(response -> response.bodyToMono(Spectra.class))
-                     .onErrorReturn(new Spectra());
+                     .flatMap(response -> response.bodyToMono(new ParameterizedTypeReference<List<Spectra>>() {
+                     }))
+                     .onErrorReturn(new ArrayList<Spectra>());
     }
 }

@@ -15,7 +15,5 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
 public interface RefreshableController {
-
-    Runnable getRefreshFunction();
-
+   public Runnable getRefreshFunction();
 }

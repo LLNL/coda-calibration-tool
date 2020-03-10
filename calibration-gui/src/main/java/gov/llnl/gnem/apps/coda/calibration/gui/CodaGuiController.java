@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import javax.annotation.PreDestroy;
 
@@ -43,6 +44,8 @@ import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MapListeningControlle
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.PathController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ReferenceEventLoadingController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ScreenshotEnabledController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController;
@@ -59,15 +62,19 @@ import gov.llnl.gnem.apps.coda.common.gui.controllers.ProgressGui;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
+import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.input.TransferMode;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -83,10 +90,14 @@ public class CodaGuiController {
 
     private WaveformGui waveformGui;
     private DataController data;
+    private ParametersController param;
     private ShapeController shape;
     private PathController path;
     private SiteController site;
     private MeasuredMwsController measuredMws;
+
+    @FXML
+    private TabPane mainTabPane;
 
     @FXML
     private Tab dataTab;
@@ -106,19 +117,17 @@ public class CodaGuiController {
     @FXML
     private Tab measuredMwsTab;
 
-    private Runnable dataRefresh;
-    private Runnable paramRefresh;
-    private Runnable shapeRefresh;
-    private Runnable pathRefresh;
-    private Runnable siteRefresh;
-    private Runnable measuredMwsRefresh;
     private Runnable activeTabRefresh;
+    private Consumer<File> activeTabScreenshot;
 
     @FXML
     private Button showMapButton;
 
     @FXML
     private Button refreshButton;
+
+    @FXML
+    private Button snapshotButton;
 
     @FXML
     private CheckMenuItem waveformFocus;
@@ -140,6 +149,8 @@ public class CodaGuiController {
     private CalibrationClient calibrationClient;
 
     private DirectoryChooser sacDirFileChooser = new DirectoryChooser();
+    private DirectoryChooser screenshotFolderChooser = new DirectoryChooser();
+
     private FileChooser sacFileChooser = new FileChooser();
     private FileChooser codaParamsFileChooser = new FileChooser();
     private FileChooser codaJsonParamsFileChooser = new FileChooser();
@@ -179,6 +190,7 @@ public class CodaGuiController {
         this.paramExporter = paramExporter;
         this.waveformGui = waveformGui;
         this.data = data;
+        this.param = param;
         this.shape = shape;
         this.path = path;
         this.site = site;
@@ -186,15 +198,11 @@ public class CodaGuiController {
         this.bus = bus;
         bus.register(this);
 
-        dataRefresh = data.getRefreshFunction();
-        paramRefresh = param.getRefreshFunction();
-        shapeRefresh = shape.getRefreshFunction();
-        pathRefresh = path.getRefreshFunction();
-        siteRefresh = site.getRefreshFunction();
-        measuredMwsRefresh = measuredMws.getRefreshFunction();
-        activeTabRefresh = dataRefresh;
+        activeTabRefresh = data.getRefreshFunction();
 
         sacDirFileChooser.setTitle("Coda STACK File Directory");
+        screenshotFolderChooser.setTitle("Screenshot Export Folder");
+
         sacFileChooser.getExtensionFilters().add(new ExtensionFilter("Coda STACK Files (.sac,.env)", "*.sac", "*.env"));
         sacFileChooser.getExtensionFilters().add(allFilesFilter);
 
@@ -301,7 +309,7 @@ public class CodaGuiController {
 
     @FXML
     private void runCalibration() {
-        calibrationClient.runCalibration(Boolean.FALSE).subscribe(value -> log.trace(value), err -> log.trace(err.getMessage(), err));
+        calibrationClient.runCalibration(Boolean.FALSE).doOnError(err -> log.trace(err.getMessage(), err)).subscribe();
     }
 
     @FXML
@@ -311,12 +319,14 @@ public class CodaGuiController {
 
     @FXML
     private void clearData() {
-        calibrationClient.clearData().subscribe(value -> log.trace(value), err -> log.trace(err.getMessage(), err), () -> dataRefresh.run());
+        calibrationClient.clearData().subscribe(val -> {
+        }, err -> log.trace(err.getMessage(), err), () -> data.getRefreshFunction().run());
     }
 
     @FXML
     private void runAutoPickingCalibration() {
-        calibrationClient.runCalibration(Boolean.TRUE).subscribe(value -> log.trace(value), err -> log.trace(err.getMessage(), err));
+        calibrationClient.runCalibration(Boolean.TRUE).subscribe(value -> {
+        }, err -> log.trace(err.getMessage(), err));
     }
 
     @FXML
@@ -329,20 +339,25 @@ public class CodaGuiController {
         activeMapIcon = makeMapLabel();
         showMapIcon = makeMapLabel();
 
-        addMapEnabledTabListeners(dataTab, data, dataRefresh);
+        snapshotButton.setGraphic(makeSnapshotLabel());
+        snapshotButton.setContentDisplay(ContentDisplay.CENTER);
+
+        addEnabledTabListeners(dataTab, data);
+        activeTabScreenshot = (folder) -> SnapshotUtils.writePng(folder, new Pair<>(dataTab.getText(), dataTab.getContent()));
         data.setVisible(true);
 
         paramTab.setOnSelectionChanged(e -> {
             if (paramTab.isSelected()) {
                 mapController.clearIcons();
-                activeTabRefresh = paramRefresh;
+                activeTabRefresh = param.getRefreshFunction();
+                activeTabScreenshot = (folder) -> SnapshotUtils.writePng(folder, new Pair<>(paramTab.getText(), paramTab.getContent()));
             }
         });
 
-        addMapEnabledTabListeners(shapeTab, shape, shapeRefresh);
-        addMapEnabledTabListeners(pathTab, path, pathRefresh);
-        addMapEnabledTabListeners(siteTab, site, siteRefresh);
-        addMapEnabledTabListeners(measuredMwsTab, measuredMws, measuredMwsRefresh);
+        addEnabledTabListeners(shapeTab, shape);
+        addEnabledTabListeners(pathTab, path);
+        addEnabledTabListeners(siteTab, site);
+        addEnabledTabListeners(measuredMwsTab, measuredMws);
 
         rootElement.setOnDragOver(event -> {
             if (event.getGestureSource() != rootElement && event.getDragboard().hasFiles()) {
@@ -370,13 +385,22 @@ public class CodaGuiController {
 
     }
 
-    private void addMapEnabledTabListeners(Tab tab, MapListeningController controller, Runnable runnable) {
+    private void addEnabledTabListeners(Tab tab, MapListeningController controller) {
         tab.setOnSelectionChanged(e -> {
             if (tab.isSelected()) {
                 controller.setVisible(true);
                 controller.refreshView();
                 tab.setGraphic(activeMapIcon);
-                activeTabRefresh = runnable;
+                if (controller instanceof RefreshableController) {
+                    activeTabRefresh = ((RefreshableController) controller).getRefreshFunction();
+                } else {
+                    activeTabRefresh = () -> controller.refreshView();
+                }
+                if (controller instanceof ScreenshotEnabledController) {
+                    activeTabScreenshot = ((ScreenshotEnabledController) controller).getScreenshotFunction();
+                } else {
+                    activeTabScreenshot = (folder) -> SnapshotUtils.writePng(folder, new Pair<>(tab.getText(), tab.getContent()));
+                }
             } else {
                 tab.setGraphic(null);
                 controller.setVisible(false);
@@ -389,6 +413,19 @@ public class CodaGuiController {
         activeTabRefresh.run();
     }
 
+    @FXML
+    private void snapshotTab(ActionEvent e) {
+        File folder = screenshotFolderChooser.showDialog(rootElement.getScene().getWindow());
+        try {
+            if (folder != null && folder.exists() && folder.isDirectory() && folder.canWrite()) {
+                screenshotFolderChooser.setInitialDirectory(folder);
+                Platform.runLater(() -> activeTabScreenshot.accept(folder));
+            }
+        } catch (SecurityException ex) {
+            log.warn("Exception trying to write screenshots to folder {} : {}", folder, ex.getLocalizedMessage(), ex);
+        }
+    }
+
     private Label makeMapLabel() {
         Label mapLabel = new Label("\uE55B");
         mapLabel.getStyleClass().add("material-icons-medium");
@@ -399,6 +436,14 @@ public class CodaGuiController {
 
     private Label makeRefreshLabel() {
         Label label = new Label("\uE5D5");
+        label.getStyleClass().add("material-icons-medium");
+        label.setMaxHeight(16);
+        label.setMinWidth(16);
+        return label;
+    }
+
+    private Label makeSnapshotLabel() {
+        Label label = new Label("\uE3B0");
         label.getStyleClass().add("material-icons-medium");
         label.setMaxHeight(16);
         label.setMinWidth(16);

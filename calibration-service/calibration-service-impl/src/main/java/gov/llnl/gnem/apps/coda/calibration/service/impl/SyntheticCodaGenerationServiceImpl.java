@@ -74,9 +74,6 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
             double vr = syntheticCodaModel.getDistanceFunction(model.getVelocity0(), model.getVelocity1(), model.getVelocity2(), distance);
             double gr = syntheticCodaModel.getDistanceFunction(model.getGamma0(), model.getGamma1(), model.getGamma2(), distance);
 
-            // setting dt = 1.0 - not the SACfile's header.delta
-            double dt = 1.;
-
             // note distance/vr is a singularity point - start at t = dt
             TimeT eventTime = new TimeT(event.getOriginTime());
             TimeT codastart = eventTime;
@@ -93,7 +90,9 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
 
             try {
                 seis.cut(codastart, endTime);
-                seis.interpolate(1 / dt);
+                if (seis.getSamprate() > 1.0) {
+                    seis.interpolate(1.0);
+                }
 
                 int npts = seis.getNsamp();
 
@@ -103,7 +102,7 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
                 for (int ii = 0; ii < Ac.length; ii++) {
                     // t is relative to the phase start time - note t=0 is a
                     // singularity point - start at t = dt
-                    double t = (ii + 1) * dt;
+                    double t = (ii + 1.0) / seis.getSamprate();
                     Ac[ii] = syntheticCodaModel.getSyntheticPointAtTime(gr, br, t);
                 }
 

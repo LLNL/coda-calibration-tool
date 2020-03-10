@@ -17,89 +17,81 @@
 
 <StackPane fx:id="shape" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css, @FitPlot.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController">
 	<children>
-		<TabPane tabClosingPolicy="UNAVAILABLE">
-			<tabs>
-				<Tab text="Shape Fit">
-					<content>
+		<VBox>
+			<children>
+				<HBox prefWidth="200.0">
+					<children>
+						<Pane prefWidth="30.0" />
 						<VBox>
 							<children>
-								<HBox prefWidth="200.0">
+								<Label text="Frequency Band" />
+								<ComboBox fx:id="frequencyBandCombo" prefWidth="150.0" />
+							</children>
+						</VBox>
+						<Pane minWidth="15.0"/>
+						<VBox>
+							<children>
+								<Label />
+	                			<Button minWidth="20.0" fx:id="yAxisShrink" mnemonicParsing="false">
+	                               <tooltip>
+	                                  <Tooltip text="Toggle Y-Axis shrink-to-data" />
+	                               </tooltip>
+	                   			</Button>
+							</children>
+						</VBox>										
+					</children>
+					<VBox.margin>
+						<Insets />
+					</VBox.margin>
+					<padding>
+						<Insets bottom="10.0" top="10.0" />
+					</padding>
+				</HBox>
+				<ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+					<content>
+						<VBox fx:id="plotContainer">
+							<children>
+								<StackPane fx:id="velPlotContainer">
 									<children>
-										<Pane prefWidth="30.0" />
-										<VBox>
-											<children>
-												<Label text="Frequency Band" />
-												<ComboBox fx:id="frequencyBandCombo" prefWidth="150.0" />
-											</children>
-										</VBox>
-										<Pane minWidth="15.0"/>
-										<VBox>
-											<children>
-												<Label />
-                                    			<Button minWidth="20.0" fx:id="yAxisShrink" mnemonicParsing="false">
-			                                       <tooltip>
-			                                          <Tooltip text="Toggle Y-Axis shrink-to-data" />
-			                                       </tooltip>
-                                       			</Button>
-											</children>
-										</VBox>										
+										<LineChart fx:id="velFitPlot" title="Velocity">
+											<xAxis>
+												<NumberAxis side="BOTTOM" />
+											</xAxis>
+											<yAxis>
+												<NumberAxis maxWidth="50.0" minWidth="50.0" prefWidth="50.0" side="LEFT" />
+											</yAxis>
+										</LineChart>
 									</children>
-									<VBox.margin>
-										<Insets />
-									</VBox.margin>
-									<padding>
-										<Insets bottom="10.0" top="10.0" />
-									</padding>
-								</HBox>
-								<ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
-									<content>
-										<VBox fx:id="plotContainer">
-											<children>
-												<StackPane fx:id="velPlotContainer">
-													<children>
-														<LineChart fx:id="velFitPlot" title="Velocity">
-															<xAxis>
-																<NumberAxis side="BOTTOM" />
-															</xAxis>
-															<yAxis>
-																<NumberAxis maxWidth="50.0" minWidth="50.0" prefWidth="50.0" side="LEFT" />
-															</yAxis>
-														</LineChart>
-													</children>
-												</StackPane>
-												<StackPane fx:id="betaPlotContainer">
-													<children>
-														<LineChart fx:id="betaFitPlot" title="Beta">
-															<xAxis>
-																<NumberAxis side="BOTTOM" />
-															</xAxis>
-															<yAxis>
-																<NumberAxis maxWidth="50.0" minWidth="50.0" prefWidth="50.0" side="LEFT" />
-															</yAxis>
-														</LineChart>
-													</children>
-												</StackPane>
-												<StackPane fx:id="gammaPlotContainer">
-													<children>
-														<LineChart fx:id="gammaFitPlot" title="Gamma">
-															<xAxis>
-																<NumberAxis label="Distance (km)         " side="BOTTOM" />
-															</xAxis>
-															<yAxis>
-																<NumberAxis maxWidth="50.0" minWidth="50.0" prefWidth="50.0" side="LEFT" />
-															</yAxis>
-														</LineChart>
-													</children>
-												</StackPane>
-											</children>
-										</VBox>
-									</content>
-								</ScrollPane>
+								</StackPane>
+								<StackPane fx:id="betaPlotContainer">
+									<children>
+										<LineChart fx:id="betaFitPlot" title="Beta">
+											<xAxis>
+												<NumberAxis side="BOTTOM" />
+											</xAxis>
+											<yAxis>
+												<NumberAxis maxWidth="50.0" minWidth="50.0" prefWidth="50.0" side="LEFT" />
+											</yAxis>
+										</LineChart>
+									</children>
+								</StackPane>
+								<StackPane fx:id="gammaPlotContainer">
+									<children>
+										<LineChart fx:id="gammaFitPlot" title="Gamma">
+											<xAxis>
+												<NumberAxis label="Distance (km)         " side="BOTTOM" />
+											</xAxis>
+											<yAxis>
+												<NumberAxis maxWidth="50.0" minWidth="50.0" prefWidth="50.0" side="LEFT" />
+											</yAxis>
+										</LineChart>
+									</children>
+								</StackPane>
 							</children>
 						</VBox>
 					</content>
-				</Tab>
-			</tabs>
-		</TabPane>
+				</ScrollPane>
+			</children>
+		</VBox>
 	</children>
 </StackPane>

@@ -28,9 +28,9 @@ public interface CalibrationService {
 
     public boolean clearData();
 
-    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults);
 
-    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Set<String> eventIds);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults, Set<String> eventIds);
 
-    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, List<Waveform> stacks);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults, List<Waveform> stacks);
 }

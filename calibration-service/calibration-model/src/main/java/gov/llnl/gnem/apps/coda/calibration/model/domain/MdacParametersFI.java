@@ -158,8 +158,9 @@ public class MdacParametersFI {
         return this.sigma;
     }
 
-    public void setSigma(double sigma) {
+    public MdacParametersFI setSigma(double sigma) {
         this.sigma = sigma;
+        return this;
     }
 
     public double getDelSigma() {
@@ -174,8 +175,9 @@ public class MdacParametersFI {
         return this.psi;
     }
 
-    public void setPsi(double psi) {
+    public MdacParametersFI setPsi(double psi) {
         this.psi = psi;
+        return this;
     }
 
     public double getDelPsi() {

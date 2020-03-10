@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
+import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
 import llnl.gnem.core.gui.plotting.Legend;
 import llnl.gnem.core.gui.plotting.PaintMode;
@@ -63,7 +64,7 @@ public class SpectralPlot extends JMultiAxisPlot {
 
     private double defaultXMin = 0.0;
     private double defaultXMax = 0.0;
-    private double defaultYMin = 19.0;
+    private double defaultYMin = 15.0;
     private double defaultYMax = 27.0;
 
     private final Map<Point2D.Double, List<Symbol>> symbolMap = new HashMap<>();
@@ -134,7 +135,7 @@ public class SpectralPlot extends JMultiAxisPlot {
      * @param showLegend
      */
     public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend) {
-        plotXYdata(plots, showLegend, null, null);
+        plotXYdata(plots, showLegend, null);
     }
 
     /**
@@ -144,18 +145,13 @@ public class SpectralPlot extends JMultiAxisPlot {
      *            as { log10(centerFrequency), log10(amplitiude), Symbol }
      *            </p>
      * @param showLegend
-     * @param referenceSpectra
+     * @param spectra
      *            <p>
-     *            A source spectra containing the amp/freq/mw information for a
-     *            reference event used in the calibration
-     *            </p>
-     * @param theoreticalSpectra
-     *            <p>
-     *            A source spectra containing the amp/freq/mw information for a
-     *            theoretical best fit spectra
+     *            Spectra containing the amp/freq/mw information for a
+     *            calibration spectra
      *            </p>
      */
-    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend, Spectra... spectra) {
+    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend, List<Spectra> spectra) {
 
         symbolMap.clear();
         // line based legends for trending
@@ -178,8 +174,11 @@ public class SpectralPlot extends JMultiAxisPlot {
             legend.addLabeledLine(AVG_MW_LEGEND_LABEL, line);
         }
 
-        for (int j = 0; j < spectra.length; j++) {
-            plotSpectraObject(jsubplot, spectra[j], legend);
+        if (spectra != null) {
+            spectra.sort((s1, s2) -> (s1.getType() == SPECTRA_TYPES.UQ1 || s1.getType() == SPECTRA_TYPES.UQ2) ? -1 : 1);
+            for (Spectra spec : spectra) {
+                plotSpectraObject(jsubplot, spec, legend);
+            }
         }
 
         plotXYdata(plots);
@@ -204,22 +203,34 @@ public class SpectralPlot extends JMultiAxisPlot {
                 y[i] = point.getY().floatValue();
             }
 
-            Line line;
+            Line line = null;
             switch (spectra.getType()) {
             case REF:
                 line = new Line(x, y, Color.BLACK, PaintMode.COPY, PenStyle.DASH, 2);
                 break;
-            default:
+            case UQ1:
+                line = new Line(x, y, Color.LIGHT_GRAY, PaintMode.COPY, PenStyle.DASH, 2);
+                break;
+            case UQ2:
+                line = new Line(x, y, Color.LIGHT_GRAY, PaintMode.COPY, PenStyle.DOT, 2);
+                break;
+            case FIT:
                 line = new Line(x, y, Color.RED, PaintMode.COPY, PenStyle.DASH, 2);
                 break;
+            default:
+                break;
             }
-            jsubplot.AddPlotObject(line);
-            DecimalFormat df = new DecimalFormat("#.0#");
-            if (spectra.getApparentStress() > 0.0) {
-                DecimalFormat df2 = new DecimalFormat("#0.0#");
-                legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa", line);
-            } else {
-                legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()), line);
+            if (line != null) {
+                jsubplot.AddPlotObject(line);
+                if (SPECTRA_TYPES.UQ1 != spectra.getType() && SPECTRA_TYPES.UQ2 != spectra.getType()) {
+                    DecimalFormat df = new DecimalFormat("#.0#");
+                    if (spectra.getApparentStress() > 0.0) {
+                        DecimalFormat df2 = new DecimalFormat("#0.0#");
+                        legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa", line);
+                    } else {
+                        legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()), line);
+                    }
+                }
             }
         }
     }
@@ -369,6 +380,18 @@ public class SpectralPlot extends JMultiAxisPlot {
         properties.setMinXAxisValue(xmin);
     }
 
+    public void setAllYlimits(double ymin, double ymax) {
+        jsubplot.setYlimits(ymin, ymax);
+        this.ymin = ymin;
+        this.ymax = ymax;
+    }
+
+    public void setAllYlimits() {
+        jsubplot.setYlimits(defaultYMin, defaultYMax);
+        this.ymin = defaultYMin;
+        this.ymax = defaultYMax;
+    }
+
     public void refreshPlotAxes() {
         double xMin;
         double xMax;
@@ -398,6 +421,7 @@ public class SpectralPlot extends JMultiAxisPlot {
         this.getTitle().setText(title);
         this.getXaxis().setLabelText(xlabel);
         jsubplot.getYaxis().setLabelText(ylabel);
+        jsubplot.getYaxis().setLabelOffset(12d);
     }
 
     public JSubplot getSubplot() {

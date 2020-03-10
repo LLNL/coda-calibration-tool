@@ -12,7 +12,7 @@
 	<children>
 		<BorderPane prefHeight="200.0" prefWidth="200.0">
 			<center>
-				<ScrollPane fitToHeight="true" fitToWidth="true" BorderPane.alignment="CENTER">
+				<ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" BorderPane.alignment="CENTER">
 					<content>
 						<TableView fx:id="tableView">
 							<columns>

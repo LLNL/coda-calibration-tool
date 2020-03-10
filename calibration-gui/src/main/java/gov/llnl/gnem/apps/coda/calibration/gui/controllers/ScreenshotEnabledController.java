@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -12,8 +12,11 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.common.model.util;
+package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
-public enum SPECTRA_TYPES {
-    REF, FIT, UQ1, UQ2, UNK
+import java.io.File;
+import java.util.function.Consumer;
+
+public interface ScreenshotEnabledController {
+    public Consumer<File> getScreenshotFunction();
 }

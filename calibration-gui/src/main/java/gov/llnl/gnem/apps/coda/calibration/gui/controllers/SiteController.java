@@ -17,6 +17,9 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.time.Duration;
@@ -33,15 +36,16 @@ import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
+import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,8 +71,10 @@ import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
+import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import javafx.application.Platform;
@@ -85,6 +91,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
@@ -112,13 +119,16 @@ import llnl.gnem.core.gui.plotting.plotobject.SymbolStyle;
 import reactor.core.scheduler.Schedulers;
 
 @Component
-public class SiteController implements MapListeningController, RefreshableController {
+public class SiteController implements MapListeningController, RefreshableController, ScreenshotEnabledController {
 
     private static final Logger log = LoggerFactory.getLogger(SiteController.class);
 
     private static final String X_AXIS_LABEL = "center freq";
 
     private static final int MAX_LEGEND_COLORS = 8;
+
+    @FXML
+    private Tab resultsTab;
 
     @FXML
     private SwingNode mwPlotSwingNode;
@@ -171,7 +181,34 @@ public class SiteController implements MapListeningController, RefreshableContro
     private TableColumn<MeasuredMwDetails, String> measuredMwCol;
 
     @FXML
+    private TableColumn<MeasuredMwDetails, String> mistfitCol;
+
+    //    @FXML
+    //    private TableColumn<MeasuredMwDetails, String> measuredMwSdCol;
+
+    @FXML
     private TableColumn<MeasuredMwDetails, String> measuredStressCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredCornerFreqCol;
+
+    //    @FXML
+    //    private TableColumn<MeasuredMwDetails, String> measuredCornerFreqSdCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq1LowCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq1HighCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq2LowCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, String> measuredMwUq2HighCol;
+
+    @FXML
+    private TableColumn<MeasuredMwDetails, Integer> iterationsCol;
 
     @FXML
     private TableColumn<MeasuredMwDetails, Integer> dataCountCol;
@@ -229,11 +266,20 @@ public class SiteController implements MapListeningController, RefreshableContro
     private final AtomicReference<Double> minFreq = new AtomicReference<>(1.0);
     private final AtomicReference<Double> maxFreq = new AtomicReference<>(-0.0);
 
+    private final AtomicReference<Double> minY = new AtomicReference<>(1.0);
+    private final AtomicReference<Double> maxY = new AtomicReference<>(-0.0);
+
     @FXML
     private Button xAxisShrink;
     private boolean shouldXAxisShrink = false;
     private Label xAxisShrinkOn;
     private Label xAxisShrinkOff;
+
+    @FXML
+    private Button yAxisShrink;
+    private boolean shouldYAxisShrink = false;
+    private Label yAxisShrinkOn;
+    private Label yAxisShrinkOff;
 
     private boolean isVisible = false;
 
@@ -285,6 +331,28 @@ public class SiteController implements MapListeningController, RefreshableContro
             refreshView();
         });
 
+        yAxisShrinkOn = new Label("><");
+        yAxisShrinkOn.setRotate(90.0);
+        yAxisShrinkOn.setStyle("-fx-font-weight:bold; -fx-font-size: 12px;");
+        yAxisShrinkOn.setPadding(Insets.EMPTY);
+        yAxisShrinkOff = new Label("<>");
+        yAxisShrinkOff.setRotate(90.0);
+        yAxisShrinkOff.setStyle("-fx-font-weight:bold; -fx-font-size: 12px;");
+        yAxisShrinkOff.setPadding(Insets.EMPTY);
+        yAxisShrink.setGraphic(yAxisShrinkOn);
+        yAxisShrink.setPadding(new Insets(yAxisShrink.getPadding().getTop(), 0, yAxisShrink.getPadding().getBottom(), 0));
+        yAxisShrink.prefHeightProperty().bind(evidCombo.heightProperty());
+
+        yAxisShrink.setOnAction(e -> {
+            shouldYAxisShrink = !shouldYAxisShrink;
+            if (shouldYAxisShrink) {
+                yAxisShrink.setGraphic(yAxisShrinkOff);
+            } else {
+                yAxisShrink.setGraphic(yAxisShrinkOn);
+            }
+            refreshView();
+        });
+
         SwingUtilities.invokeLater(() -> {
 
             rawPlot = new SpectralPlot();
@@ -315,19 +383,19 @@ public class SiteController implements MapListeningController, RefreshableContro
             });
             sitePlotSwingNode.setContent(sitePlot);
 
-            rawPlot.setLabels("Raw Plot", X_AXIS_LABEL, "log10(?)");
+            rawPlot.setLabels("Raw Plot", X_AXIS_LABEL, "log10(non-dim)");
             rawPlot.setYaxisVisibility(true);
             rawPlot.setAllXlimits(0.0, 0.0);
             rawPlot.setDefaultYMin(-2.0);
             rawPlot.setDefaultYMax(7.0);
 
-            pathPlot.setLabels("Path Corrected", X_AXIS_LABEL, "log10(?)");
+            pathPlot.setLabels("Path Corrected", X_AXIS_LABEL, "log10(non-dim)");
             pathPlot.setYaxisVisibility(true);
             pathPlot.setAllXlimits(0.0, 0.0);
             pathPlot.setDefaultYMin(-2.0);
             pathPlot.setDefaultYMax(7.0);
 
-            sitePlot.setLabels("Site Corrected", X_AXIS_LABEL, "log10(amplitude)");
+            sitePlot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
             sitePlot.setYaxisVisibility(true);
 
             mwPlot = new JMultiAxisPlot();
@@ -338,7 +406,7 @@ public class SiteController implements MapListeningController, RefreshableContro
             mwPlot.setYaxisVisibility(true);
             mwPlotSwingNode.setContent(mwPlot);
 
-            mwPlotFigure.getYaxis().setLabelOffset(2d * mwPlot.getXaxis().getLabelOffset());
+            mwPlotFigure.getYaxis().setLabelOffset(2.5d * mwPlot.getXaxis().getLabelOffset());
             mwPlotFigure.setAxisLimits(0.0, 10.0, 0.0, 10.0);
             mwPlotFigure.getYaxis().setLabelText("Reference");
 
@@ -350,7 +418,7 @@ public class SiteController implements MapListeningController, RefreshableContro
             stressPlot.setYaxisVisibility(true);
             stressPlotSwingNode.setContent(stressPlot);
 
-            stressPlotFigure.getYaxis().setLabelOffset(2d * stressPlot.getXaxis().getLabelOffset());
+            stressPlotFigure.getYaxis().setLabelOffset(2.5d * stressPlot.getXaxis().getLabelOffset());
             stressPlotFigure.setAxisLimits(0.0, 10.0, 0.0, 10.0);
             stressPlotFigure.getYaxis().setLabelText("Reference");
 
@@ -362,7 +430,7 @@ public class SiteController implements MapListeningController, RefreshableContro
             sdPlot.setYaxisVisibility(true);
             sdPlotSwingNode.setContent(sdPlot);
 
-            sdPlotFigure.getYaxis().setLabelOffset(2d * sdPlot.getXaxis().getLabelOffset());
+            sdPlotFigure.getYaxis().setLabelOffset(2.5d * sdPlot.getXaxis().getLabelOffset());
             sdPlotFigure.setAxisLimits(0.0, 10.0, 0.0, 2.0);
             sdPlotFigure.getYaxis().setLabelText("Standard Deviation");
 
@@ -390,7 +458,18 @@ public class SiteController implements MapListeningController, RefreshableContro
         CellBindingUtils.attachTextCellFactories(mwCol, MeasuredMwDetails::getRefMw, dfmt4);
         CellBindingUtils.attachTextCellFactories(stressCol, MeasuredMwDetails::getRefApparentStressInMpa, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredMwCol, MeasuredMwDetails::getMw, dfmt4);
+        CellBindingUtils.attachTextCellFactories(mistfitCol, MeasuredMwDetails::getMisfit, dfmt4);
+        //        CellBindingUtils.attachTextCellFactories(measuredMwSdCol, MeasuredMwDetails::getMwSd, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredStressCol, MeasuredMwDetails::getApparentStressInMpa, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredCornerFreqCol, MeasuredMwDetails::getCornerFreq, dfmt4);
+        //        CellBindingUtils.attachTextCellFactories(measuredCornerFreqSdCol, MeasuredMwDetails::getCornerFreqSd, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq1LowCol, MeasuredMwDetails::getMw1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq1HighCol, MeasuredMwDetails::getMw1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMwUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
+
+        iterationsCol.setCellValueFactory(
+                x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getIterations).orElseGet(() -> 0)).asObject());
 
         dataCountCol.setCellValueFactory(
                 x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getDataCount).orElseGet(() -> 0)).asObject());
@@ -456,10 +535,11 @@ public class SiteController implements MapListeningController, RefreshableContro
         if (evidCombo != null && evidCombo.getSelectionModel().getSelectedIndex() > 0) {
             filteredMeasurements = filterToEvent(evidCombo.getSelectionModel().getSelectedItem(), spectralMeasurements);
             Spectra referenceSpectra = spectraClient.getReferenceSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
-            Spectra theoreticalSpectra = spectraClient.getFitSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
+            List<Spectra> fittingSpectra = new ArrayList<>(spectraClient.getFitSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2)));
+            fittingSpectra.add(referenceSpectra);
             rawPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getRawAtMeasurementTime), Boolean.TRUE);
             pathPlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathCorrected), Boolean.TRUE);
-            sitePlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.TRUE, referenceSpectra, theoreticalSpectra);
+            sitePlot.plotXYdata(toPlotPoints(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected), Boolean.TRUE, fittingSpectra);
             if (filteredMeasurements != null && filteredMeasurements.size() > 0 && filteredMeasurements.get(0).getWaveform() != null) {
                 Event event = filteredMeasurements.get(0).getWaveform().getEvent();
                 eventTime.setText("Date: " + DateTimeFormatter.ISO_INSTANT.format(event.getOriginTime().toInstant()));
@@ -479,6 +559,23 @@ public class SiteController implements MapListeningController, RefreshableContro
         pathSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathCorrected));
         siteSymbolMap.putAll(mapSpectraToPoint(filteredMeasurements, SpectraMeasurement::getPathAndSiteCorrected));
         mapMeasurements(filteredMeasurements);
+
+        minY.set(100.0);
+        maxY.set(0.0);
+        DoubleSummaryStatistics stats = filteredMeasurements.stream()
+                                                            .filter(Objects::nonNull)
+                                                            .map(spec -> spec.getPathAndSiteCorrected())
+                                                            .filter(v -> v != 0.0)
+                                                            .collect(Collectors.summarizingDouble(Double::doubleValue));
+        maxY.set(stats.getMax() + .1);
+        minY.set(stats.getMin() - .1);
+
+        sitePlot.setAutoCalculateYaxisRange(shouldYAxisShrink);
+        if (shouldYAxisShrink) {
+            sitePlot.setAllYlimits(minY.get(), maxY.get());
+        } else {
+            sitePlot.setAllYlimits();
+        }
     }
 
     private void mapMeasurements(List<SpectraMeasurement> measurements) {
@@ -798,6 +895,27 @@ public class SiteController implements MapListeningController, RefreshableContro
         return () -> reloadData();
     }
 
+    @Override
+    public Consumer<File> getScreenshotFunction() {
+        return (folder) -> {
+            String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
+            try {
+                if (resultsTab.isSelected() && evidCombo.getValue() != null) {
+                    SnapshotUtils.writePng(folder, new Pair<>("Site", resultsTab.getContent()), timestamp);
+                    rawPlot.exportSVG(folder + File.separator + "Site_Raw_" + evidCombo.getValue() + timestamp + ".svg");
+                    pathPlot.exportSVG(folder + File.separator + "Site_Path_" + evidCombo.getValue() + timestamp + ".svg");
+                    sitePlot.exportSVG(folder + File.separator + "Site_Full_" + evidCombo.getValue() + timestamp + ".svg");
+                } else {
+                    mwPlot.exportSVG(folder + File.separator + "Site_Mw" + timestamp + ".svg");
+                    stressPlot.exportSVG(folder + File.separator + "Site_Stress" + timestamp + ".svg");
+                    sdPlot.exportSVG(folder + File.separator + "Site_Station_Event_SD" + timestamp + ".svg");
+                }
+            } catch (UnsupportedEncodingException | FileNotFoundException | SVGGraphics2DIOException e) {
+                log.error("Error attempting to write plots for path controller : {}", e.getLocalizedMessage(), e);
+            }
+        };
+    }
+
     private void selectDataByCriteria(Boolean selected, String key) {
         List<PlotPoint> points = plotPointMap.get(key);
         if (selected) {
@@ -968,7 +1086,7 @@ public class SiteController implements MapListeningController, RefreshableContro
     private void removeRefEvents(List<MeasuredMwDetails> evs) {
         if (evs != null && !evs.isEmpty()) {
             referenceEventClient.removeReferenceEventsByEventId(evs.stream().map(mwd -> mwd.getEventId()).distinct().collect(Collectors.toList()))
-                                .doOnSuccess((v) -> CompletableFuture.runAsync(() -> reloadData()))
+                                .doOnSuccess((v) -> Platform.runLater(() -> reloadData()))
                                 .subscribe();
         }
     }

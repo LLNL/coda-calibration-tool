@@ -88,5 +88,5 @@ public class ParametersController implements RefreshableController {
     @Override
     public Runnable getRefreshFunction() {
         return () -> reloadData();
-    }
+    }    
 }

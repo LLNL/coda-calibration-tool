@@ -14,10 +14,13 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.swing.SwingUtilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -34,18 +37,25 @@ import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.embed.swing.SwingNode;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Font;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
 @Controller
 public class WaveformGui {
+
+    private static final Logger log = LoggerFactory.getLogger(WaveformGui.class);
 
     private Parent root;
     private Scene scene;
@@ -53,6 +63,10 @@ public class WaveformGui {
 
     @FXML
     private SwingNode waveformPlotNode;
+
+    @FXML
+    private Button snapshotButton;
+
     private CodaWaveformPlotManager waveformPlotManager;
     private WaveformClient waveformClient;
     private ShapeMeasurementClient shapeClient;
@@ -61,6 +75,7 @@ public class WaveformGui {
     private GeoMap map;
     private MapPlottingUtilities mapPlotUtilities;
     private Property<Boolean> shouldFocus = new SimpleBooleanProperty(false);
+    private DirectoryChooser screenshotFolderChooser = new DirectoryChooser();
 
     @Autowired
     public WaveformGui(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, PeakVelocityClient peakVelocityClient, GeoMap map,
@@ -120,10 +135,30 @@ public class WaveformGui {
 
     @FXML
     public void initialize() {
+        Label label = new Label("\uE3B0");
+        label.getStyleClass().add("material-icons-medium");
+        label.setMaxHeight(16);
+        label.setMinWidth(16);
+        snapshotButton.setGraphic(label);
+        snapshotButton.setContentDisplay(ContentDisplay.CENTER);
+        screenshotFolderChooser.setTitle("Screenshot Export Folder");
         SwingUtilities.invokeLater(() -> {
             waveformPlotManager = new CodaWaveformPlotManager(waveformClient, shapeClient, paramsClient, peakVelocityClient, map, mapPlotUtilities);
             waveformPlotNode.setContent(waveformPlotManager);
         });
+    }
+
+    @FXML
+    private void screenshotPlots(ActionEvent e) {
+        File folder = screenshotFolderChooser.showDialog(scene.getWindow());
+        try {
+            if (folder != null && folder.exists() && folder.isDirectory() && folder.canWrite()) {
+                screenshotFolderChooser.setInitialDirectory(folder);
+                Platform.runLater(() -> waveformPlotManager.exportScreenshots(folder));
+            }
+        } catch (SecurityException ex) {
+            log.warn("Exception trying to write screenshots to folder {} : {}", folder, ex.getLocalizedMessage(), ex);
+        }
     }
 
     public void hide() {

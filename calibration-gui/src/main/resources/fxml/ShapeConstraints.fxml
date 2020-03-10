@@ -76,6 +76,7 @@
       						<TableColumn fx:id="minIntercept" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="minIntercept" />	
       						<TableColumn fx:id="maxIntercept" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxIntercept" />	
       						<TableColumn fx:id="iterations" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="iterations" />					
+      						<TableColumn fx:id="fittingPointCount" editable="true" onEditCommit="#postUpdate" prefWidth="75.0" text="maxFitPointCount" />
                      </columns>
       					<columnResizePolicy>
       						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

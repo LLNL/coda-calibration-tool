@@ -50,7 +50,7 @@ public interface SpectraMeasurementService {
 
     public long count();
 
-    public Spectra computeSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
+    public Spectra computeReferenceSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
 
-    public Spectra getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
+    public List<Spectra> getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
 }

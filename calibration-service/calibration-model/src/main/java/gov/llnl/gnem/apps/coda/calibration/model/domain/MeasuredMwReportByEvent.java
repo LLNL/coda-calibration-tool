@@ -21,10 +21,10 @@ import java.util.Objects;
 
 public class MeasuredMwReportByEvent {
     private Map<String, MeasuredMwDetails> measuredMwDetails;
-    private Map<String, Spectra> fitSpectra;
+    private Map<String, List<Spectra>> fitSpectra;
     private Map<String, List<SpectraMeasurementMetadata>> spectraMeasurements;
 
-    public MeasuredMwReportByEvent(Map<String, MeasuredMwDetails> measuredMwDetails, Map<String, Spectra> fitSpectra, Map<String, List<SpectraMeasurementMetadata>> spectraMeasurements) {
+    public MeasuredMwReportByEvent(Map<String, MeasuredMwDetails> measuredMwDetails, Map<String, List<Spectra>> fitSpectra, Map<String, List<SpectraMeasurementMetadata>> spectraMeasurements) {
         super();
         this.measuredMwDetails = measuredMwDetails;
         this.fitSpectra = fitSpectra;
@@ -46,11 +46,11 @@ public class MeasuredMwReportByEvent {
         return this;
     }
 
-    public Map<String, Spectra> getFitSpectra() {
+    public Map<String, List<Spectra>> getFitSpectra() {
         return fitSpectra;
     }
 
-    public MeasuredMwReportByEvent setFitSpectra(Map<String, Spectra> fitSpectra) {
+    public MeasuredMwReportByEvent setFitSpectra(Map<String, List<Spectra>> fitSpectra) {
         this.fitSpectra = fitSpectra;
         return this;
     }

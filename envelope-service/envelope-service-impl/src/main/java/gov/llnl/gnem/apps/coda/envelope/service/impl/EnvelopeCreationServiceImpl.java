@@ -116,10 +116,7 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
             //Note these mutate the series
             double maxNeededRate = sampRate;
             if (maxNeededRate > bandConfig.getHighFrequency() * 2.0) {
-                maxNeededRate = (int) (bandConfig.getHighFrequency() * 2.0 + 0.5);
-            }
-            if (maxNeededRate < 1.0) {
-                maxNeededRate = 1.0;
+                maxNeededRate = bandConfig.getHighFrequency() * 2.0;
             }
             if (maxNeededRate < bandConfig.getInterpolation()) {
                 maxNeededRate = bandConfig.getInterpolation();
@@ -144,7 +141,9 @@ public class EnvelopeCreationServiceImpl implements EnvelopeCreationService {
             double trimlength = 2 * smoothing / seis.getSamprate();
             seis.cut(seis.getTime().add(trimlength), seis.getEndtime().add(-1 * trimlength));
 
-            seis.interpolate(maxNeededRate);
+            if (maxNeededRate != sampRate) {
+                seis.interpolate(maxNeededRate);
+            }
 
             seisWave.setSampleRate(seis.getSamprate());
             seisWave.setSegment(WaveformUtils.floatsToDoubles(seis.getData()));

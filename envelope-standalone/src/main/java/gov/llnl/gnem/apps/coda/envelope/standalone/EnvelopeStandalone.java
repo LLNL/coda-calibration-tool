@@ -72,7 +72,7 @@ public class EnvelopeStandalone extends Application {
             }
             launch(EnvelopeStandalone.class, args);
         } catch (Exception e) {
-            log.error("Exception at CodaCalibrationStandalone::main", e);
+            log.error("Exception at EnvelopeStandalone::main", e);
             Platform.exit();
             System.exit(1);
         }

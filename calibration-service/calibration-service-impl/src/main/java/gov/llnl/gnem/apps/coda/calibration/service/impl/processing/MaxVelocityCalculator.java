@@ -47,11 +47,11 @@ public class MaxVelocityCalculator {
     public Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
         return computeMaximumVelocity(
                 waveforms,
-                velConf.getGroupVelocity1InKmsGtDistance(),
-                velConf.getGroupVelocity2InKmsGtDistance(),
-                velConf.getGroupVelocity1InKmsLtDistance(),
-                velConf.getGroupVelocity2InKmsLtDistance(),
-                velConf.getDistanceThresholdInKm());
+                    velConf.getGroupVelocity1InKmsGtDistance(),
+                    velConf.getGroupVelocity2InKmsGtDistance(),
+                    velConf.getGroupVelocity1InKmsLtDistance(),
+                    velConf.getGroupVelocity2InKmsLtDistance(),
+                    velConf.getDistanceThresholdInKm());
     }
 
     public Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, VelocityConfiguration velocityConfiguration) {
@@ -93,11 +93,6 @@ public class MaxVelocityCalculator {
             try {
                 // cut the coda window portion of the seismograms
                 waveform.cut(starttime, endtime);
-
-                double min_length = 25.;
-                if (endtime.subtract(starttime).getEpochTime() < min_length) {
-                    log.debug("Coda window length too short: {}", endtime.subtract(starttime).getEpochTime());
-                }
 
                 // peakS[0] time in seconds for
                 // reference peakS[1] max amplitude

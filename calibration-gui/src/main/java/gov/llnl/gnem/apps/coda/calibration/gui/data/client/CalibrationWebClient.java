@@ -25,6 +25,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasurementJob;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -46,16 +47,18 @@ public class CalibrationWebClient implements CalibrationClient {
 
     @Override
     public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled) {
-        return client.get().uri("/measurement/measure-mws/" + autoPickingEnabled).accept(MediaType.APPLICATION_JSON).exchange().flatMap(resp -> resp.bodyToMono(MeasuredMwReportByEvent.class));
+        return makeMwMeasurements(autoPickingEnabled, null);
     }
 
     @Override
     public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds) {
         return client.post()
-                     .uri("/measurement/measure-mws/" + autoPickingEnabled)
-                     .bodyValue(eventIds)
+                     .uri("/measurement/measure-mws")
+                     .bodyValue(new MeasurementJob().setAutopickingEnabled(autoPickingEnabled).setPersistResults(Boolean.TRUE).setEventIds(eventIds))
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
+                     .doOnError(e -> log.trace(e.getMessage(), e))
+                     .doOnSuccess(cr -> log.trace(cr.toString()))
                      .flatMap(resp -> resp.bodyToMono(MeasuredMwReportByEvent.class));
     }
 

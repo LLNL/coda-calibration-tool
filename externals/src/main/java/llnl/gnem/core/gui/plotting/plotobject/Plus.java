@@ -107,7 +107,7 @@ public class Plus extends Symbol {
         plus.lineTo(x - h15, y + h2);
         plus.lineTo(x - h15, y + h15);
         plus.lineTo(x - h2, y + h15);
-        plus.lineTo(x - h2, y - h15);
+        plus.closePath();
 
         g2d.setColor(getFillColor());
         g2d.fill(plus);

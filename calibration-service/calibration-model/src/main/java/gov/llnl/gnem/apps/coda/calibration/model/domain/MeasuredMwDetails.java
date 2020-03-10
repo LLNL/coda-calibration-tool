@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.model.domain;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -26,11 +27,33 @@ public class MeasuredMwDetails {
 
     private Double mw;
 
+    private Double mwSd;
+
+    private Double mw1Max;
+
+    private Double mw1Min;
+
+    private Double mw2Max;
+
+    private Double mw2Min;
+
     private Double refMw;
 
     private Double apparentStressInMpa;
 
+    private Double apparentStress1Max;
+
+    private Double apparentStress1Min;
+
+    private Double apparentStress2Max;
+
+    private Double apparentStress2Min;
+
     private Double refApparentStressInMpa;
+
+    private Double cornerFreq;
+
+    private Double cornerFreqSd;
 
     private Integer dataCount;
 
@@ -40,12 +63,29 @@ public class MeasuredMwDetails {
 
     private String datetime;
 
+    private Integer iterations;
+
+    private Double misfit;
+
     public MeasuredMwDetails(MeasuredMwParameters meas, ReferenceMwParameters ref, Event event) {
         if (meas != null) {
-            this.mw = meas.getMw();
             this.eventId = meas.getEventId();
+            this.mw = meas.getMw();
+            //            this.mwSd = meas.getMwSd();
+            this.mw1Max = meas.getMw1Max();
+            this.mw1Min = meas.getMw1Min();
+            this.mw2Max = meas.getMw2Max();
+            this.mw2Min = meas.getMw2Min();
             this.apparentStressInMpa = meas.getApparentStressInMpa();
+            this.apparentStress1Max = meas.getApparentStress1Max();
+            this.apparentStress1Min = meas.getApparentStress1Min();
+            this.apparentStress2Max = meas.getApparentStress2Max();
+            this.apparentStress2Min = meas.getApparentStress2Min();
+            this.cornerFreq = meas.getCornerFrequency();
+            //            this.cornerFreqSd = meas.getCornerFrequencySd();
             this.dataCount = meas.getDataCount();
+            this.iterations = meas.getIterations();
+            this.misfit = meas.getMisfit();
         }
         if (event != null && event.getEventId() != null) {
             this.eventId = event.getEventId();
@@ -83,6 +123,15 @@ public class MeasuredMwDetails {
 
     public MeasuredMwDetails setMw(double mw) {
         this.mw = mw;
+        return this;
+    }
+
+    public Double getMwSd() {
+        return mwSd;
+    }
+
+    public MeasuredMwDetails setMwSd(Double mwSd) {
+        this.mwSd = mwSd;
         return this;
     }
 
@@ -149,19 +198,190 @@ public class MeasuredMwDetails {
         return this;
     }
 
+    public Double getMw1Max() {
+        return mw1Max;
+    }
+
+    public MeasuredMwDetails setMw1Max(Double mw1Max) {
+        this.mw1Max = mw1Max;
+        return this;
+    }
+
+    public Double getMw1Min() {
+        return mw1Min;
+    }
+
+    public MeasuredMwDetails setMw1Min(Double mw1Min) {
+        this.mw1Min = mw1Min;
+        return this;
+    }
+
+    public Double getMw2Max() {
+        return mw2Max;
+    }
+
+    public MeasuredMwDetails setMw2Max(Double mw2Max) {
+        this.mw2Max = mw2Max;
+        return this;
+    }
+
+    public Double getMw2Min() {
+        return mw2Min;
+    }
+
+    public MeasuredMwDetails setMw2Min(Double mw2Min) {
+        this.mw2Min = mw2Min;
+        return this;
+    }
+
+    public Double getApparentStress1Max() {
+        return apparentStress1Max;
+    }
+
+    public MeasuredMwDetails setApparentStress1Max(Double apparentStress1Max) {
+        this.apparentStress1Max = apparentStress1Max;
+        return this;
+    }
+
+    public Double getApparentStress1Min() {
+        return apparentStress1Min;
+    }
+
+    public MeasuredMwDetails setApparentStress1Min(Double apparentStress1Min) {
+        this.apparentStress1Min = apparentStress1Min;
+        return this;
+    }
+
+    public Double getApparentStress2Max() {
+        return apparentStress2Max;
+    }
+
+    public MeasuredMwDetails setApparentStress2Max(Double apparentStress2Max) {
+        this.apparentStress2Max = apparentStress2Max;
+        return this;
+    }
+
+    public Double getApparentStress2Min() {
+        return apparentStress2Min;
+    }
+
+    public MeasuredMwDetails setApparentStress2Min(Double apparentStress2Min) {
+        this.apparentStress2Min = apparentStress2Min;
+        return this;
+    }
+
+    public Double getCornerFreq() {
+        return cornerFreq;
+    }
+
+    public MeasuredMwDetails setCornerFreq(Double cornerFreq) {
+        this.cornerFreq = cornerFreq;
+        return this;
+    }
+
+    public Double getCornerFreqSd() {
+        return cornerFreqSd;
+    }
+
+    public MeasuredMwDetails setCornerFreqSd(Double cornerFreqSd) {
+        this.cornerFreqSd = cornerFreqSd;
+        return this;
+    }
+
+    public Integer getIterations() {
+        return iterations;
+    }
+
+    public MeasuredMwDetails setIterations(Integer iterations) {
+        this.iterations = iterations;
+        return this;
+    }
+
+    public Double getMisfit() {
+        return misfit;
+    }
+
+    public MeasuredMwDetails setMisfit(Double misfit) {
+        this.misfit = misfit;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("MeasuredMwDetails [eventId=")
+               .append(eventId)
+               .append(", mw=")
+               .append(mw)
+               .append(", mwSd=")
+               .append(mwSd)
+               .append(", mw1Max=")
+               .append(mw1Max)
+               .append(", mw1Min=")
+               .append(mw1Min)
+               .append(", mw2Max=")
+               .append(mw2Max)
+               .append(", mw2Min=")
+               .append(mw2Min)
+               .append(", refMw=")
+               .append(refMw)
+               .append(", apparentStressInMpa=")
+               .append(apparentStressInMpa)
+               .append(", apparentStress1Max=")
+               .append(apparentStress1Max)
+               .append(", apparentStress1Min=")
+               .append(apparentStress1Min)
+               .append(", apparentStress2Max=")
+               .append(apparentStress2Max)
+               .append(", apparentStress2Min=")
+               .append(apparentStress2Min)
+               .append(", refApparentStressInMpa=")
+               .append(refApparentStressInMpa)
+               .append(", cornerFreq=")
+               .append(cornerFreq)
+               .append(", cornerFreqSd=")
+               .append(cornerFreqSd)
+               .append(", dataCount=")
+               .append(dataCount)
+               .append(", latitude=")
+               .append(latitude)
+               .append(", longitude=")
+               .append(longitude)
+               .append(", datetime=")
+               .append(datetime)
+               .append(", iterations=")
+               .append(iterations)
+               .append(", misfit=")
+               .append(misfit)
+               .append("]");
+        return builder.toString();
+    }
+
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((apparentStressInMpa == null) ? 0 : apparentStressInMpa.hashCode());
-        result = prime * result + ((datetime == null) ? 0 : datetime.hashCode());
-        result = prime * result + ((eventId == null) ? 0 : eventId.hashCode());
-        result = prime * result + ((latitude == null) ? 0 : latitude.hashCode());
-        result = prime * result + ((longitude == null) ? 0 : longitude.hashCode());
-        result = prime * result + ((mw == null) ? 0 : mw.hashCode());
-        result = prime * result + ((refApparentStressInMpa == null) ? 0 : refApparentStressInMpa.hashCode());
-        result = prime * result + ((refMw == null) ? 0 : refMw.hashCode());
-        return result;
+        return Objects.hash(
+                apparentStress1Max,
+                    apparentStress1Min,
+                    apparentStress2Max,
+                    apparentStress2Min,
+                    apparentStressInMpa,
+                    cornerFreq,
+                    cornerFreqSd,
+                    dataCount,
+                    datetime,
+                    eventId,
+                    iterations,
+                    latitude,
+                    longitude,
+                    misfit,
+                    mw,
+                    mw1Max,
+                    mw1Min,
+                    mw2Max,
+                    mw2Min,
+                    mwSd,
+                    refApparentStressInMpa,
+                    refMw);
     }
 
     @Override
@@ -169,91 +389,32 @@ public class MeasuredMwDetails {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof MeasuredMwDetails)) {
             return false;
         }
         MeasuredMwDetails other = (MeasuredMwDetails) obj;
-        if (apparentStressInMpa == null) {
-            if (other.apparentStressInMpa != null) {
-                return false;
-            }
-        } else if (!apparentStressInMpa.equals(other.apparentStressInMpa)) {
-            return false;
-        }
-        if (datetime == null) {
-            if (other.datetime != null) {
-                return false;
-            }
-        } else if (!datetime.equals(other.datetime)) {
-            return false;
-        }
-        if (eventId == null) {
-            if (other.eventId != null) {
-                return false;
-            }
-        } else if (!eventId.equals(other.eventId)) {
-            return false;
-        }
-        if (latitude == null) {
-            if (other.latitude != null) {
-                return false;
-            }
-        } else if (!latitude.equals(other.latitude)) {
-            return false;
-        }
-        if (longitude == null) {
-            if (other.longitude != null) {
-                return false;
-            }
-        } else if (!longitude.equals(other.longitude)) {
-            return false;
-        }
-        if (mw == null) {
-            if (other.mw != null) {
-                return false;
-            }
-        } else if (!mw.equals(other.mw)) {
-            return false;
-        }
-        if (refApparentStressInMpa == null) {
-            if (other.refApparentStressInMpa != null) {
-                return false;
-            }
-        } else if (!refApparentStressInMpa.equals(other.refApparentStressInMpa)) {
-            return false;
-        }
-        if (refMw == null) {
-            if (other.refMw != null) {
-                return false;
-            }
-        } else if (!refMw.equals(other.refMw)) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "MeasuredMwDetails [eventId="
-                + eventId
-                + ", mw="
-                + mw
-                + ", refMw="
-                + refMw
-                + ", apparentStressInMpa="
-                + apparentStressInMpa
-                + ", refApparentStressInMpa="
-                + refApparentStressInMpa
-                + ", latitude="
-                + latitude
-                + ", longitude="
-                + longitude
-                + ", datetime="
-                + datetime
-                + "]";
+        return Objects.equals(apparentStress1Max, other.apparentStress1Max)
+                && Objects.equals(apparentStress1Min, other.apparentStress1Min)
+                && Objects.equals(apparentStress2Max, other.apparentStress2Max)
+                && Objects.equals(apparentStress2Min, other.apparentStress2Min)
+                && Objects.equals(apparentStressInMpa, other.apparentStressInMpa)
+                && Objects.equals(cornerFreq, other.cornerFreq)
+                && Objects.equals(cornerFreqSd, other.cornerFreqSd)
+                && Objects.equals(dataCount, other.dataCount)
+                && Objects.equals(datetime, other.datetime)
+                && Objects.equals(eventId, other.eventId)
+                && Objects.equals(iterations, other.iterations)
+                && Objects.equals(latitude, other.latitude)
+                && Objects.equals(longitude, other.longitude)
+                && Objects.equals(misfit, other.misfit)
+                && Objects.equals(mw, other.mw)
+                && Objects.equals(mw1Max, other.mw1Max)
+                && Objects.equals(mw1Min, other.mw1Min)
+                && Objects.equals(mw2Max, other.mw2Max)
+                && Objects.equals(mw2Min, other.mw2Min)
+                && Objects.equals(mwSd, other.mwSd)
+                && Objects.equals(refApparentStressInMpa, other.refApparentStressInMpa)
+                && Objects.equals(refMw, other.refMw);
     }
 
     @JsonIgnore

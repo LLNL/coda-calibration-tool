@@ -104,6 +104,7 @@ public class Star5 extends Symbol {
             float Yvalue = (float) (y - radius * Math.cos(theta));
             plus.lineTo(Xvalue, Yvalue);
         }
+        plus.closePath();
 
         g2d.setColor(getFillColor());
         g2d.fill(plus);

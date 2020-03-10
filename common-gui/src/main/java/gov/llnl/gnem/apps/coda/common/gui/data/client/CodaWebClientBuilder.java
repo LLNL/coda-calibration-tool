@@ -186,6 +186,8 @@ public class CodaWebClientBuilder {
         if (strategies != null) {
             builder.exchangeStrategies(strategies);
         }
+        //        builder.exchangeStrategies(configurer -> configurer.codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(-1)));
+
         return builder.build();
     }
 }

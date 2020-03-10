@@ -26,6 +26,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gov.llnl.gnem.apps.coda.common.mapping.api.GeoBox;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
@@ -44,6 +48,8 @@ import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 
 public class LeafletMap {
+
+    private static final Logger log = LoggerFactory.getLogger(LeafletMap.class);
 
     private WebView webView;
     private ObservableSet<Icon> icons = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new HashSet<>()));
@@ -323,18 +329,14 @@ public class LeafletMap {
 
         switch (icon.getType()) {
         case TRIANGLE_UP:
-            sb.append("marker = L.marker([");
+            sb.append("marker = L.shapeMarker([");
             sb.append(icon.getLocation().getLatitude());
             sb.append(',');
             sb.append(icon.getLocation().getLongitude());
-            sb.append("], {icon: L.icon({");
-            sb.append("iconUrl: ");
+            sb.append("], {");
+            sb.append("shape: 'triangle-up',");
             sb.append(getTriangleStyle(icon.getStyle()));
-            sb.append("iconSize: [12, 12],");
-            sb.append("iconAnchor: [6, 6],");
-            sb.append("popupAnchor: [-3, -3]");
-            sb.append("})");
-            sb.append(getTriangleStyleZIndex(icon.getStyle()));
+            sb.append("radius: 4");
             sb.append("})");
             break;
         case CIRCLE:
@@ -376,35 +378,18 @@ public class LeafletMap {
                 + "\" === mouseoverIconId) { mouseoverIconId = null; }})";
     }
 
-    private String getTriangleStyleZIndex(IconStyles style) {
-        String jsonStyle;
-        switch (style) {
-        case FOCUSED:
-            jsonStyle = ", zIndexOffset: 800000, interactive: false";
-            break;
-        case BACKGROUND:
-            jsonStyle = ", zIndexOffset: -800000";
-            break;
-        case DEFAULT:
-        default:
-            jsonStyle = "";
-            break;
-        }
-        return jsonStyle;
-    }
-
     private String getTriangleStyle(IconStyles style) {
         String jsonStyle;
         switch (style) {
         case FOCUSED:
-            jsonStyle = "'images/triangle-up-focused.png',";
+            jsonStyle = "color: 'white', fillColor: 'white', opacity: 1, fillOpacity: 1, lineJoin: 'mitre', pane: 'important-event-pane', interactive: false,";
             break;
         case BACKGROUND:
-            jsonStyle = "'images/triangle-up-background.png',";
+            jsonStyle = "color: 'gray', fillColor: 'gray', opacity: 1, fillOpacity: 1, lineJoin: 'mitre',";
             break;
         case DEFAULT:
         default:
-            jsonStyle = "'images/triangle-up.png',";
+            jsonStyle = "color: 'yellow', fillColor: 'yellow', opacity: 1, fillOpacity: 1, lineJoin: 'mitre',";
             break;
         }
         return jsonStyle;
@@ -425,5 +410,44 @@ public class LeafletMap {
             break;
         }
         return jsonStyle;
+    }
+
+    public WebView getWebView() {
+        return webView;
+    }
+
+    public String getSvgLayer() {
+        return (String) webView.getEngine().executeScript("getSvgLayer();");
+    }
+
+    public void fitToBounds(GeoBox bounds) {
+        webView.getEngine().executeScript("fitBounds([[" + bounds.getMinX() + "," + bounds.getMinY() + "], [" + bounds.getMaxX() + "," + bounds.getMaxY() + "]]);");
+    }
+
+    public GeoBox getMapBounds() {
+        GeoBox bounds;
+        try {
+            Double mapXne = (Double) webView.getEngine().executeScript("getMapBoundXne();");
+            Double mapYne = (Double) webView.getEngine().executeScript("getMapBoundYne();");
+            Double mapXsw = (Double) webView.getEngine().executeScript("getMapBoundXsw();");
+            Double mapYsw = (Double) webView.getEngine().executeScript("getMapBoundYsw();");
+            bounds = new GeoBox(mapXne, mapYne, mapXsw, mapYsw);
+        } catch (ClassCastException | NullPointerException e) {
+            bounds = null;
+            log.debug("Problem attempting to get bounds from map : {}", e.getLocalizedMessage(), e);
+        }
+        return bounds;
+    }
+
+    public void setShowOverlay(boolean showOverlay) {
+        if (showOverlay) {
+            webView.getEngine().executeScript("showOverlay();");
+        } else {
+            webView.getEngine().executeScript("hideOverlay();");
+        }
+    }
+
+    public Boolean hasVisibleTileLayers() {
+        return (Boolean) webView.getEngine().executeScript("hasVisibleTiles();");
     }
 }

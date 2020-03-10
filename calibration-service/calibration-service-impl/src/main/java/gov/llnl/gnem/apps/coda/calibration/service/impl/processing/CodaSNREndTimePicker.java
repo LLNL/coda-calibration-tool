@@ -46,8 +46,8 @@ public class CodaSNREndTimePicker implements EndTimePicker {
 
     private Double getSnrEndPick(final float[] waveform, final double sampleRate, int startOffset, final double minLengthSec, final double maxLengthSec, final double minimumSnr, final double noise,
             final int windowSize) {
-        int obsWindow = (int) (windowSize * sampleRate);
-        int spikeSamples = (int) ((windowSize / 4) * sampleRate);
+        int obsWindow = (int) (windowSize / sampleRate);
+        int spikeSamples = (int) ((windowSize / 4) / sampleRate);
         DescriptiveStatistics obs = new DescriptiveStatistics(obsWindow);
         DescriptiveStatistics spike = new DescriptiveStatistics(spikeSamples);
         SimpleRegression spikeReg = new SimpleRegression();

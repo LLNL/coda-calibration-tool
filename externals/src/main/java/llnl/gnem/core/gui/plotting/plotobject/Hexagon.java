@@ -104,6 +104,7 @@ public class Hexagon extends Symbol {
             Yvalue = (float) (y - radius * Math.cos(theta));
             hex.lineTo(Xvalue, Yvalue);
         }
+        hex.closePath();
 
         g2d.setColor(getFillColor());
         g2d.fill(hex);

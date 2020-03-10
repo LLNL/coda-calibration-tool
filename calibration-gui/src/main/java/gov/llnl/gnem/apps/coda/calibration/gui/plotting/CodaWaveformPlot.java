@@ -62,6 +62,10 @@ import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 public class CodaWaveformPlot extends SeriesPlot {
 
+    private static final long serialVersionUID = 1L;
+
+    private static final int DEFAULT_LINE_WIDTH = 3;
+
     private static final Logger log = LoggerFactory.getLogger(CodaWaveformPlot.class);
 
     private NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
@@ -77,6 +81,8 @@ public class CodaWaveformPlot extends SeriesPlot {
     private PeakVelocityClient velocityClient;
 
     private SyntheticCoda synthetic;
+
+    private String plotIdentifier;
 
     private enum PLOT_ORDERING {
         BACKGROUND(0), NOISE_BOX(1), WAVEFORM(2), NOISE_LINE(3), SHAPE_FIT(4), MODEL_FIT(5), PICKS(6);
@@ -99,8 +105,6 @@ public class CodaWaveformPlot extends SeriesPlot {
         this.paramClient = paramClient;
         this.velocityClient = velocityClient;
     }
-
-    private static final long serialVersionUID = 1L;
 
     public void setWaveform(Waveform waveform) {
         setWaveform(waveform, null);
@@ -127,18 +131,8 @@ public class CodaWaveformPlot extends SeriesPlot {
 
             double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
             double baz = EModel.getBAZ(station.getLatitude(), station.getLongitude(), event.getLatitude(), event.getLongitude());
-            String labelText = waveform.getEvent().getEventId()
-                    + "_"
-                    + waveform.getStream().getStation().getStationName()
-                    + "_"
-                    + waveform.getLowFrequency()
-                    + "_"
-                    + waveform.getHighFrequency()
-                    + "; Distance: "
-                    + dfmt4.format(distance)
-                    + "km BAz: "
-                    + dfmt4.format(baz)
-                    + "° ";
+            plotIdentifier = waveform.getEvent().getEventId() + "_" + waveform.getStream().getStation().getStationName() + "_" + waveform.getLowFrequency() + "_" + waveform.getHighFrequency();
+            String labelText = plotIdentifier + "; Distance: " + dfmt4.format(distance) + "km BAz: " + dfmt4.format(baz) + "° ";
 
             PinnedText legend = createLegend(labelText);
             PlotObject legendRef = subplot.AddPlotObject(legend);
@@ -179,7 +173,9 @@ public class CodaWaveformPlot extends SeriesPlot {
                 if (shape != null && shape.getId() != null) {
                     try {
                         TimeSeries interpolatedSeries = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
-                        interpolatedSeries.interpolate(1.0);
+                        if (interpolatedSeries.getSamprate() > 1.0) {
+                            interpolatedSeries.interpolate(1.0);
+                        }
                         float[] interpolatedData = interpolatedSeries.getData();
                         float[] fitSegment = new float[interpolatedData.length];
 
@@ -188,8 +184,10 @@ public class CodaWaveformPlot extends SeriesPlot {
                         double intercept = shape.getMeasuredIntercept();
 
                         int timeShift = (int) (new TimeT(shape.getMeasuredTime()).subtractD(beginTime) - 0.5);
+                        double sampleRate = interpolatedSeries.getSamprate();
                         for (int i = 0; i < interpolatedData.length; i++) {
-                            fitSegment[i] = (float) (intercept - gamma * Math.log10(i + 1) + beta * (i + 1));
+                            double t = (i / sampleRate) + 1.0;
+                            fitSegment[i] = (float) (intercept - gamma * Math.log10(t) + beta * (t));
                         }
 
                         TimeSeries fitSeries = new TimeSeries(fitSegment, interpolatedSeries.getSamprate(), interpolatedSeries.getTime());
@@ -226,6 +224,8 @@ public class CodaWaveformPlot extends SeriesPlot {
 
                 repaint();
             });
+        } else {
+            plotIdentifier = "";
         }
     }
 
@@ -289,7 +289,7 @@ public class CodaWaveformPlot extends SeriesPlot {
                 if (endTime.lt(synthSeriesRemaining.getEndtime())) {
                     synthSeriesRemaining.cutBefore(endTime);
                     int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
-                    subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, 3, PenStyle.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                    subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, PenStyle.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
                 }
                 repaint();
             }
@@ -301,11 +301,11 @@ public class CodaWaveformPlot extends SeriesPlot {
     }
 
     private PlotObject createLine(int timeShift, double valueShift, TimeSeries timeSeries, Color lineColor) {
-        return createLine(timeShift, valueShift, timeSeries, lineColor, 3, PenStyle.SOLID);
+        return createLine(timeShift, valueShift, timeSeries, lineColor, DEFAULT_LINE_WIDTH, PenStyle.SOLID);
     }
 
     private PlotObject createLine(int timeShift, double valueShift, TimeSeries timeSeries, Color lineColor, int width, PenStyle style) {
-        Line line = new Line(timeShift, timeSeries.getDelta(), SeriesMath.add(timeSeries.getData(), valueShift), 1);
+        Line line = new Line(timeShift, timeSeries.getDelta(), SeriesMath.add(timeSeries.getData(), valueShift), DEFAULT_LINE_WIDTH);
         line.setPenStyle(style);
         line.setColor(lineColor);
         line.setWidth(width);
@@ -315,7 +315,7 @@ public class CodaWaveformPlot extends SeriesPlot {
     //Only used for Waveforms
     @Override
     public AbstractLine addLine(TimeSeries seismogram, Color lineColor) {
-        Line line = new Line(0.0, seismogram.getDelta(), seismogram.getData(), 1);
+        Line line = new Line(0.0, seismogram.getDelta(), seismogram.getData(), DEFAULT_LINE_WIDTH);
         line.setColor(lineColor);
         getSubplot(seismogram).AddPlotObject(line, PLOT_ORDERING.WAVEFORM.getZOrder());
         return line;
@@ -327,7 +327,7 @@ public class CodaWaveformPlot extends SeriesPlot {
         Line line = new Line(0, 1.0, data, 1);
         line.setColor(lineColor);
         line.setPenStyle(penStyle);
-        line.setWidth(3);
+        line.setWidth(1);
         return line;
     }
 
@@ -384,5 +384,9 @@ public class CodaWaveformPlot extends SeriesPlot {
             xfloats[i] = (float) x[i];
         }
         return xfloats;
+    }
+
+    public String getPlotIdentifier() {
+        return plotIdentifier;
     }
 }

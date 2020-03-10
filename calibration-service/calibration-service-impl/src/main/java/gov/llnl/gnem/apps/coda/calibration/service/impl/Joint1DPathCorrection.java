@@ -342,14 +342,14 @@ public class Joint1DPathCorrection implements PathCalibrationService {
      */
     public double costFunction(Map<Event, Map<Station, SpectraMeasurement>> evidStaData, Map<Event, Map<Station, Double>> dataMap, Map<Event, Map<Station, Double>> distanceMap,
             Map<Station, Integer> stationIdxMap, FrequencyBand frequencyBand, double[] optimizationParams) {
-        Map<Event, Map<Station, Double>> localDataMap = new HashMap<>();
 
-        double cost = 0.0;
         double freq0 = Math.sqrt(frequencyBand.getLowFrequency() * frequencyBand.getHighFrequency());
 
-        for (Entry<Event, Map<Station, SpectraMeasurement>> evidEntry : evidStaData.entrySet()) {
+        return evidStaData.entrySet().parallelStream().map(evidEntry -> {
+            double cost = 0.0;
             Event evid = evidEntry.getKey();
             Map<Station, SpectraMeasurement> stationMapData = evidEntry.getValue();
+            Map<Station, Double> stationValues = new HashMap<>();
 
             DoubleArrayList dataVec = new DoubleArrayList(stationMapData.size());
             for (Entry<Station, SpectraMeasurement> entry : stationMapData.entrySet()) {
@@ -362,23 +362,19 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 double pdat = site + spectraCalc.log10ESHcorrection(p1, p2, xcross, xtrans, del) - del * Math.PI * freq0 * efact / (q * vphase);
                 double adjustedVal = dataMap.get(evid).get(entry.getKey()) - pdat;
                 dataVec.add(adjustedVal);
-                if (!localDataMap.containsKey(evid)) {
-                    localDataMap.put(evid, new HashMap<Station, Double>());
-                }
-                localDataMap.get(evid).put(entry.getKey(), adjustedVal);
+                stationValues.put(entry.getKey(), adjustedVal);
             }
 
             if (dataVec.size() > 1) {
                 double huberDel = .5d;
                 double median = dataVec.median();
                 for (Entry<Station, SpectraMeasurement> entry1 : stationMapData.entrySet()) {
-                    double diff = Math.abs(localDataMap.get(evid).get(entry1.getKey()) - median);
+                    double diff = Math.abs(stationValues.get(entry1.getKey()) - median);
                     cost = cost + (Math.pow(huberDel, 2.0) + (Math.sqrt(1d + Math.pow(diff / huberDel, 2.0)) - 1d));
                 }
             }
-        }
-        return cost;
-
+            return cost;
+        }).reduce(0.0d, Double::sum);
     }
 
     /**

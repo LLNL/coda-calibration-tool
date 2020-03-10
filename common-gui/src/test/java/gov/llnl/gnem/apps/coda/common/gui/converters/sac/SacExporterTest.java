@@ -66,7 +66,7 @@ public class SacExporterTest {
                                              .setSampleRate(.0)
                                              .setBeginTime(Date.from(Instant.now()))
                                              .setEndTime(Date.from(Instant.now()))
-                                             .setStream(new Stream().setChannelName("STACK").setStation(new Station().setStationName("RNG")))
+                                             .setStream(new Stream().setChannelName(Stream.TYPE_STACK).setStation(new Station().setStationName("RNG")))
                                              .setEvent(new Event().setEventId("12345").setOriginTime(Date.from(Instant.now()))),
                         "RNG_STACK_12345_0.0_0.0_VEL_.ENV", waveformValidAssertions() });
         return params;

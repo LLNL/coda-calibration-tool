@@ -149,8 +149,8 @@ public class SharedBandController {
     @FXML
     public void initialize() {
 
-        CellBindingUtils.attachEditableTextCellFactories(lowFreqCol, SharedFrequencyBandParameters::getLowFrequency, SharedFrequencyBandParameters::setLowFrequency);
-        CellBindingUtils.attachEditableTextCellFactories(highFreqCol, SharedFrequencyBandParameters::getHighFrequency, SharedFrequencyBandParameters::setHighFrequency);
+        CellBindingUtils.attachEditableTextCellFactories(lowFreqCol, SharedFrequencyBandParameters::getLowFrequency, SharedFrequencyBandParameters::setLowFrequency, dfmt4);
+        CellBindingUtils.attachEditableTextCellFactories(highFreqCol, SharedFrequencyBandParameters::getHighFrequency, SharedFrequencyBandParameters::setHighFrequency, dfmt4);
 
         CellBindingUtils.attachTextCellFactories(v0Col, SharedFrequencyBandParameters::getVelocity0, dfmt4);
         CellBindingUtils.attachTextCellFactories(v1Col, SharedFrequencyBandParameters::getVelocity1, dfmt4);

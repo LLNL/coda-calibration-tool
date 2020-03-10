@@ -19,6 +19,9 @@ import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -37,11 +40,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
+import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -56,6 +63,7 @@ import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
+import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -93,7 +101,9 @@ import llnl.gnem.core.gui.plotting.plotobject.TriangleUp;
 import llnl.gnem.core.util.Geometry.EModel;
 
 @Component
-public class PathController implements MapListeningController, RefreshableController {
+public class PathController implements MapListeningController, RefreshableController, ScreenshotEnabledController {
+
+    private static final Logger log = LoggerFactory.getLogger(PathController.class);
 
     private JMultiAxisPlot stationPlot;
     private JMultiAxisPlot sdPlot;
@@ -469,6 +479,37 @@ public class PathController implements MapListeningController, RefreshableContro
     @Override
     public Runnable getRefreshFunction() {
         return () -> reloadData();
+    }
+
+    @Override
+    public Consumer<File> getScreenshotFunction() {
+        return (folder) -> {
+            String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
+            SnapshotUtils.writePng(folder, new Pair<>("Path", path), timestamp);
+            try {
+                if (frequencyBandComboBox.getButtonCell() != null && frequencyBandComboBox.getButtonCell().getText() != null) {
+                    sdPlot.exportSVG(folder + File.separator + "Path_SD_" + frequencyBandComboBox.getButtonCell().getText() + timestamp + ".svg");
+                    if (station1ComboBox.getButtonCell() != null
+                            && station1ComboBox.getButtonCell().getText() != null
+                            && station2ComboBox.getButtonCell() != null
+                            && station2ComboBox.getButtonCell().getText() != null) {
+                        stationPlot.exportSVG(
+                                folder
+                                        + File.separator
+                                        + "Path_"
+                                        + frequencyBandComboBox.getButtonCell().getText()
+                                        + "_"
+                                        + station1ComboBox.getButtonCell().getText()
+                                        + "_"
+                                        + station2ComboBox.getButtonCell().getText()
+                                        + timestamp
+                                        + ".svg");
+                    }
+                }
+            } catch (UnsupportedEncodingException | FileNotFoundException | SVGGraphics2DIOException e) {
+                log.error("Error attempting to write plots for path controller : {}", e.getLocalizedMessage(), e);
+            }
+        };
     }
 
     private void plotPaths() {

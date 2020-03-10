@@ -126,6 +126,8 @@ public class ShapeFitterConstraints implements Serializable {
     private double maxGamma;
     @NumberFormat
     private int iterations;
+    @NumberFormat
+    private int fittingPointCount;
 
     public Long getId() {
         return id;
@@ -514,6 +516,15 @@ public class ShapeFitterConstraints implements Serializable {
         return this;
     }
 
+    public int getFittingPointCount() {
+        return fittingPointCount;
+    }
+
+    public ShapeFitterConstraints setFittingPointCount(int fittingPointCount) {
+        this.fittingPointCount = fittingPointCount;
+        return this;
+    }
+
     public ShapeFitterConstraints merge(ShapeFitterConstraints other) {
         if (other.getId() != null) {
             id = other.getId();
@@ -562,13 +573,118 @@ public class ShapeFitterConstraints implements Serializable {
         iterations = other.getIterations();
         gDistMin = other.getgDistMin();
         gDistMax = other.getgDistMax();
+        fittingPointCount = other.getFittingPointCount();
         return this;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                b0reg,
+                    bDistMax,
+                    bDistMin,
+                    fittingPointCount,
+                    g0reg,
+                    g1reg,
+                    gDistMax,
+                    gDistMin,
+                    id,
+                    iterations,
+                    maxBP1,
+                    maxBP2,
+                    maxBP3,
+                    maxBeta,
+                    maxGP1,
+                    maxGP2,
+                    maxGP3,
+                    maxGamma,
+                    maxIntercept,
+                    maxVP1,
+                    maxVP2,
+                    maxVP3,
+                    minBP1,
+                    minBP2,
+                    minBP3,
+                    minBeta,
+                    minGP1,
+                    minGP2,
+                    minGP3,
+                    minGamma,
+                    minIntercept,
+                    minVP1,
+                    minVP2,
+                    minVP3,
+                    v0reg,
+                    vDistMax,
+                    vDistMin,
+                    version,
+                    ybbMax,
+                    ybbMin,
+                    yggMax,
+                    yggMin,
+                    yvvMax,
+                    yvvMin);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ShapeFitterConstraints)) {
+            return false;
+        }
+        ShapeFitterConstraints other = (ShapeFitterConstraints) obj;
+        return Double.doubleToLongBits(b0reg) == Double.doubleToLongBits(other.b0reg)
+                && Double.doubleToLongBits(bDistMax) == Double.doubleToLongBits(other.bDistMax)
+                && Double.doubleToLongBits(bDistMin) == Double.doubleToLongBits(other.bDistMin)
+                && fittingPointCount == other.fittingPointCount
+                && Double.doubleToLongBits(g0reg) == Double.doubleToLongBits(other.g0reg)
+                && Double.doubleToLongBits(g1reg) == Double.doubleToLongBits(other.g1reg)
+                && Double.doubleToLongBits(gDistMax) == Double.doubleToLongBits(other.gDistMax)
+                && Double.doubleToLongBits(gDistMin) == Double.doubleToLongBits(other.gDistMin)
+                && Objects.equals(id, other.id)
+                && iterations == other.iterations
+                && Double.doubleToLongBits(maxBP1) == Double.doubleToLongBits(other.maxBP1)
+                && Double.doubleToLongBits(maxBP2) == Double.doubleToLongBits(other.maxBP2)
+                && Double.doubleToLongBits(maxBP3) == Double.doubleToLongBits(other.maxBP3)
+                && Double.doubleToLongBits(maxBeta) == Double.doubleToLongBits(other.maxBeta)
+                && Double.doubleToLongBits(maxGP1) == Double.doubleToLongBits(other.maxGP1)
+                && Double.doubleToLongBits(maxGP2) == Double.doubleToLongBits(other.maxGP2)
+                && Double.doubleToLongBits(maxGP3) == Double.doubleToLongBits(other.maxGP3)
+                && Double.doubleToLongBits(maxGamma) == Double.doubleToLongBits(other.maxGamma)
+                && Double.doubleToLongBits(maxIntercept) == Double.doubleToLongBits(other.maxIntercept)
+                && Double.doubleToLongBits(maxVP1) == Double.doubleToLongBits(other.maxVP1)
+                && Double.doubleToLongBits(maxVP2) == Double.doubleToLongBits(other.maxVP2)
+                && Double.doubleToLongBits(maxVP3) == Double.doubleToLongBits(other.maxVP3)
+                && Double.doubleToLongBits(minBP1) == Double.doubleToLongBits(other.minBP1)
+                && Double.doubleToLongBits(minBP2) == Double.doubleToLongBits(other.minBP2)
+                && Double.doubleToLongBits(minBP3) == Double.doubleToLongBits(other.minBP3)
+                && Double.doubleToLongBits(minBeta) == Double.doubleToLongBits(other.minBeta)
+                && Double.doubleToLongBits(minGP1) == Double.doubleToLongBits(other.minGP1)
+                && Double.doubleToLongBits(minGP2) == Double.doubleToLongBits(other.minGP2)
+                && Double.doubleToLongBits(minGP3) == Double.doubleToLongBits(other.minGP3)
+                && Double.doubleToLongBits(minGamma) == Double.doubleToLongBits(other.minGamma)
+                && Double.doubleToLongBits(minIntercept) == Double.doubleToLongBits(other.minIntercept)
+                && Double.doubleToLongBits(minVP1) == Double.doubleToLongBits(other.minVP1)
+                && Double.doubleToLongBits(minVP2) == Double.doubleToLongBits(other.minVP2)
+                && Double.doubleToLongBits(minVP3) == Double.doubleToLongBits(other.minVP3)
+                && Double.doubleToLongBits(v0reg) == Double.doubleToLongBits(other.v0reg)
+                && Double.doubleToLongBits(vDistMax) == Double.doubleToLongBits(other.vDistMax)
+                && Double.doubleToLongBits(vDistMin) == Double.doubleToLongBits(other.vDistMin)
+                && Objects.equals(version, other.version)
+                && Double.doubleToLongBits(ybbMax) == Double.doubleToLongBits(other.ybbMax)
+                && Double.doubleToLongBits(ybbMin) == Double.doubleToLongBits(other.ybbMin)
+                && Double.doubleToLongBits(yggMax) == Double.doubleToLongBits(other.yggMax)
+                && Double.doubleToLongBits(yggMin) == Double.doubleToLongBits(other.yggMin)
+                && Double.doubleToLongBits(yvvMax) == Double.doubleToLongBits(other.yvvMax)
+                && Double.doubleToLongBits(yvvMin) == Double.doubleToLongBits(other.yvvMin);
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("CalibrationShapeFitterConstraints [id=")
+        builder.append("ShapeFitterConstraints [id=")
                .append(id)
                .append(", version=")
                .append(version)
@@ -654,109 +770,10 @@ public class ShapeFitterConstraints implements Serializable {
                .append(maxGamma)
                .append(", iterations=")
                .append(iterations)
+               .append(", fittingPointCount=")
+               .append(fittingPointCount)
                .append("]");
         return builder.toString();
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(
-                b0reg,
-                    bDistMax,
-                    bDistMin,
-                    g0reg,
-                    g1reg,
-                    gDistMax,
-                    gDistMin,
-                    id,
-                    iterations,
-                    maxBP1,
-                    maxBP2,
-                    maxBP3,
-                    maxBeta,
-                    maxGP1,
-                    maxGP2,
-                    maxGP3,
-                    maxGamma,
-                    maxIntercept,
-                    maxVP1,
-                    maxVP2,
-                    maxVP3,
-                    minBP1,
-                    minBP2,
-                    minBP3,
-                    minBeta,
-                    minGP1,
-                    minGP2,
-                    minGP3,
-                    minGamma,
-                    minIntercept,
-                    minVP1,
-                    minVP2,
-                    minVP3,
-                    v0reg,
-                    vDistMax,
-                    vDistMin,
-                    version,
-                    ybbMax,
-                    ybbMin,
-                    yggMax,
-                    yggMin,
-                    yvvMax,
-                    yvvMin);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof ShapeFitterConstraints)) {
-            return false;
-        }
-        ShapeFitterConstraints other = (ShapeFitterConstraints) obj;
-        return Double.doubleToLongBits(b0reg) == Double.doubleToLongBits(other.b0reg)
-                && Double.doubleToLongBits(bDistMax) == Double.doubleToLongBits(other.bDistMax)
-                && Double.doubleToLongBits(bDistMin) == Double.doubleToLongBits(other.bDistMin)
-                && Double.doubleToLongBits(g0reg) == Double.doubleToLongBits(other.g0reg)
-                && Double.doubleToLongBits(g1reg) == Double.doubleToLongBits(other.g1reg)
-                && Double.doubleToLongBits(gDistMax) == Double.doubleToLongBits(other.gDistMax)
-                && Double.doubleToLongBits(gDistMin) == Double.doubleToLongBits(other.gDistMin)
-                && Objects.equals(id, other.id)
-                && iterations == other.iterations
-                && Double.doubleToLongBits(maxBP1) == Double.doubleToLongBits(other.maxBP1)
-                && Double.doubleToLongBits(maxBP2) == Double.doubleToLongBits(other.maxBP2)
-                && Double.doubleToLongBits(maxBP3) == Double.doubleToLongBits(other.maxBP3)
-                && Double.doubleToLongBits(maxBeta) == Double.doubleToLongBits(other.maxBeta)
-                && Double.doubleToLongBits(maxGP1) == Double.doubleToLongBits(other.maxGP1)
-                && Double.doubleToLongBits(maxGP2) == Double.doubleToLongBits(other.maxGP2)
-                && Double.doubleToLongBits(maxGP3) == Double.doubleToLongBits(other.maxGP3)
-                && Double.doubleToLongBits(maxGamma) == Double.doubleToLongBits(other.maxGamma)
-                && Double.doubleToLongBits(maxIntercept) == Double.doubleToLongBits(other.maxIntercept)
-                && Double.doubleToLongBits(maxVP1) == Double.doubleToLongBits(other.maxVP1)
-                && Double.doubleToLongBits(maxVP2) == Double.doubleToLongBits(other.maxVP2)
-                && Double.doubleToLongBits(maxVP3) == Double.doubleToLongBits(other.maxVP3)
-                && Double.doubleToLongBits(minBP1) == Double.doubleToLongBits(other.minBP1)
-                && Double.doubleToLongBits(minBP2) == Double.doubleToLongBits(other.minBP2)
-                && Double.doubleToLongBits(minBP3) == Double.doubleToLongBits(other.minBP3)
-                && Double.doubleToLongBits(minBeta) == Double.doubleToLongBits(other.minBeta)
-                && Double.doubleToLongBits(minGP1) == Double.doubleToLongBits(other.minGP1)
-                && Double.doubleToLongBits(minGP2) == Double.doubleToLongBits(other.minGP2)
-                && Double.doubleToLongBits(minGP3) == Double.doubleToLongBits(other.minGP3)
-                && Double.doubleToLongBits(minGamma) == Double.doubleToLongBits(other.minGamma)
-                && Double.doubleToLongBits(minIntercept) == Double.doubleToLongBits(other.minIntercept)
-                && Double.doubleToLongBits(minVP1) == Double.doubleToLongBits(other.minVP1)
-                && Double.doubleToLongBits(minVP2) == Double.doubleToLongBits(other.minVP2)
-                && Double.doubleToLongBits(minVP3) == Double.doubleToLongBits(other.minVP3)
-                && Double.doubleToLongBits(v0reg) == Double.doubleToLongBits(other.v0reg)
-                && Double.doubleToLongBits(vDistMax) == Double.doubleToLongBits(other.vDistMax)
-                && Double.doubleToLongBits(vDistMin) == Double.doubleToLongBits(other.vDistMin)
-                && Objects.equals(version, other.version)
-                && Double.doubleToLongBits(ybbMax) == Double.doubleToLongBits(other.ybbMax)
-                && Double.doubleToLongBits(ybbMin) == Double.doubleToLongBits(other.ybbMin)
-                && Double.doubleToLongBits(yggMax) == Double.doubleToLongBits(other.yggMax)
-                && Double.doubleToLongBits(yggMin) == Double.doubleToLongBits(other.yggMin)
-                && Double.doubleToLongBits(yvvMax) == Double.doubleToLongBits(other.yvvMax)
-                && Double.doubleToLongBits(yvvMin) == Double.doubleToLongBits(other.yvvMin);
-    }
 }

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
@@ -77,7 +78,7 @@ public class EnvelopeStacker implements WaveformStacker {
                 base.setBeginTime(seis.getTime().getDate());
                 base.setEndTime(seis.getEndtime().getDate());
                 if (base.getStream() != null) {
-                    base.getStream().setChannelName("STACK");
+                    base.getStream().setChannelName(Stream.TYPE_STACK);
                 }
             } catch (Exception e) {
                 log.info(e.getMessage(), e);

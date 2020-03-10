@@ -58,8 +58,12 @@ public class WebfluxConfig {
     @Bean
     public ExchangeStrategies configureJacksonExchangeStrategies() {
         return ExchangeStrategies.builder().codecs(clientCodecConfigurer -> {
-            clientCodecConfigurer.customCodecs().decoder(new Jackson2JsonDecoder(objectMapper));
+            Jackson2JsonDecoder decoder = new Jackson2JsonDecoder(objectMapper);
+            decoder.setMaxInMemorySize(-1);
+            clientCodecConfigurer.customCodecs().decoder(decoder);
             clientCodecConfigurer.customCodecs().encoder(new Jackson2JsonEncoder(objectMapper));
+            //Unlimited
+            clientCodecConfigurer.defaultCodecs().maxInMemorySize(-1);
         }).build();
     }
 }

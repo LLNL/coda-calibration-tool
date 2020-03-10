@@ -87,15 +87,20 @@ public class SiteCalibrationServiceImplTest {
     @Mock
     private VelocityConfiguration velConf;
 
+    @Mock
+    private ServiceConfig svcConf;
+
     @InjectMocks
     private SiteCalibrationServiceImpl siteCalibrationServiceImpl;
 
     @BeforeEach
     protected void setUp() throws Exception {
-        Mockito.when(mdac.calculateMdacSourceSpectra(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.anyDouble(), Mockito.anyDouble())).thenReturn(new double[] { 1.0, 1.0, 1.0 });
+        Mockito.when(mdac.getCalculateMdacSourceSpectraFunction(Mockito.any(), Mockito.any(), Mockito.anyDouble())).thenReturn(f -> new double[] { 1.0, 1.0, 1.0, 1.0 });
+        Mockito.when(mdac.getCalculateMdacAmplitudeForMwFunction(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.any(), Mockito.anyDouble())).thenReturn(f -> Double.valueOf(1.0d));
 
         SpectraCalculator spectraCalc = new SpectraCalculator(converter, syntheticCodaModel, mdac, mdacFiService, mdacPsService, velConf);
         siteCalibrationServiceImpl.setSpectraCalc(spectraCalc);
+        siteCalibrationServiceImpl.setServiceConfig(new ServiceConfig());
     }
 
     @AfterEach

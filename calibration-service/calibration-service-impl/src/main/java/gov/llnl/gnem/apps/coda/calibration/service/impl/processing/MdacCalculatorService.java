@@ -14,6 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.impl.processing;
 
+import java.util.function.Function;
+
 import org.springframework.stereotype.Service;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
@@ -31,16 +33,14 @@ public class MdacCalculatorService {
      *            Phase specific parameters for the MDAC2 model
      * @param fiEntry
      *            Independent parameters for the MDAC2 model
-     * @param frequency
-     *            Frequency to compute the MDAC2 source spectra for
      * @param Mw
      *            Magnitude of expected event
      * @param distance
      *            In kilometers. May be set to < 0, in which case it is not used
      *            in computing the source spectra
-     * @return logAmp, M0/wwc, w*M0/wwc
+     * @return Function that computes logAmp, M0/wwc, w*M0/wwc given a frequency
      */
-    public double[] calculateMdacSourceSpectra(MdacParametersPS psEntry, MdacParametersFI fiEntry, double frequency, double Mw, double distanceInKm) {
+    public Function<Double, double[]> getCalculateMdacSourceSpectraFunction(MdacParametersPS psEntry, MdacParametersFI fiEntry, double Mw) {
         Double M0 = getM0(Mw);
         MdacCalculator mdc = new MdacCalculator(fiEntry.getSigma(),
                                                 fiEntry.getM0ref(),
@@ -51,8 +51,8 @@ public class MdacCalculatorService {
                                                 fiEntry.getRadPatP(),
                                                 fiEntry.getRadPatS(),
                                                 M0);
-        mdc.initializePhaseSpecificVariables(distanceInKm, psEntry, fiEntry, M0);
-        return mdc.calculateMdacSourceSpectra(frequency, M0);
+        mdc.initializePhaseSpecificVariables(psEntry, fiEntry, M0);
+        return frequency -> mdc.calculateMdacSourceSpectra(frequency, M0);
     }
 
     /**
@@ -60,24 +60,20 @@ public class MdacCalculatorService {
      *            Phase specific parameters for the MDAC2 model
      * @param fiEntry
      *            Independent parameters for the MDAC2 model
-     * @param frequency
-     *            Frequency to compute the MDAC2 source spectra for
      * @param Mw
      *            Magnitude of expected event
      * @param phase
      *            The phase to use for the MDAC calculation. Should be one of
      *            the phases in {@link PICK_TYPES}.
-     * @param stress
+     * @param sigma
      *            Apparent stress in MPA to use. May be null to use the MDAC
      *            parameters instead. Otherwise Psi=0 and Sigma=stress
-     * @return logAmp In Dyne-CM
+     * @return Function that computes logAmp In Dyne-CM given a frequency
      */
-    public double calculateMdacAmplitudeForMw(MdacParametersPS psEntry, MdacParametersFI fiEntry, double Mw, double frequency, PICK_TYPES phase, Double stress) {
+    public Function<Double, Double> getCalculateMdacAmplitudeForMwFunction(MdacParametersPS psEntry, MdacParametersFI fiEntry, double Mw, PICK_TYPES phase, Double sigma) {
         // M0 in N-m units
         double M0 = MdacCalculator.DYNE_CM_TO_NEWTON_M * Math.pow(10, 1.5 * (Mw + 10.73));
-
-        double mdacM0 = Double.NEGATIVE_INFINITY;
-        double distance = -1;
+        Function<Double, Double> mdacFunction;
 
         MdacCalculator mdc = new MdacCalculator(fiEntry.getSigma(),
                                                 fiEntry.getM0ref(),
@@ -88,16 +84,15 @@ public class MdacCalculatorService {
                                                 fiEntry.getRadPatP(),
                                                 fiEntry.getRadPatS(),
                                                 M0);
-        mdc.initializePhaseSpecificVariables(distance, psEntry, fiEntry, M0);
+        mdc.initializePhaseSpecificVariables(psEntry, fiEntry, M0);
 
-        //FIXME: Use the calibrations phase for this!
-        if (stress != null) {
-            mdacM0 = mdc.calculateMomentRateSpectra(frequency, M0, stress, 0.0, phase);
+        if (sigma != null) {
+            mdacFunction = frequency -> mdc.calculateMomentRateSpectra(frequency, M0, sigma, 0.0, phase);
         } else {
-            mdacM0 = mdc.calculateMomentRateSpectra(frequency, M0, fiEntry.getSigma(), fiEntry.getPsi(), phase);
+            mdacFunction = frequency -> mdc.calculateMomentRateSpectra(frequency, M0, fiEntry.getSigma(), fiEntry.getPsi(), phase);
         }
 
-        return Math.log10(mdacM0) + 7;
+        return frequency -> Math.log10(mdacFunction.apply(frequency)) + 7;
     }
 
     /**
@@ -105,17 +100,15 @@ public class MdacCalculatorService {
      *            Phase specific parameters for the MDAC2 model
      * @param fiEntry
      *            Independent parameters for the MDAC2 model
-     * @param frequency
-     *            Frequency to compute the MDAC2 source spectra for
      * @param Mw
      *            Magnitude of expected event
      * @param phase
      *            The phase to use for the MDAC calculation. Should be one of
      *            the phases in {@link PICK_TYPES}.
-     * @return logAmp In Dyne-CM
+     * @return Function that computes logAmp In Dyne-CM given a frequency
      */
-    public double calculateMdacAmplitudeForMw(MdacParametersPS psRows, MdacParametersFI mdacFiEntry, double refMw, double centerFreq, PICK_TYPES phase) {
-        return calculateMdacAmplitudeForMw(psRows, mdacFiEntry, refMw, centerFreq, phase, null);
+    public Function<Double, Double> getCalculateMdacAmplitudeForMwFunction(MdacParametersPS psRows, MdacParametersFI mdacFiEntry, double refMw, PICK_TYPES phase) {
+        return getCalculateMdacAmplitudeForMwFunction(psRows, mdacFiEntry, refMw, phase, null);
     }
 
     /**
@@ -131,5 +124,9 @@ public class MdacCalculatorService {
 
     public double getMwInDyne(double testMw) {
         return MdacCalculator.mwInDyne(testMw);
+    }
+
+    public double getCornerFrequency(Function<Double, double[]> mdacFunc) {
+        return mdacFunc.apply(Double.valueOf(1.0))[MdacCalculator.ANGULAR_CORNER_FREQ_IDX] / (Math.PI * 2.0);
     }
 }

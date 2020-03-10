@@ -95,7 +95,7 @@ public class Diamond extends Symbol {
         diamond.lineTo(x + h2, y);
         diamond.lineTo(x, y + h2);
         diamond.lineTo(x - h2, y);
-        diamond.lineTo(x, y - h2);
+        diamond.closePath();
         g2d.setColor(getFillColor());
         g2d.fill(diamond);
         g2d.setColor(_EdgeColor);

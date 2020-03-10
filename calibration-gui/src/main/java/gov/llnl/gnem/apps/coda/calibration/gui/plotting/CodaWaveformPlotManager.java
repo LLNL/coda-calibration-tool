@@ -15,10 +15,14 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,6 +43,7 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
+import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +51,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
+import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
@@ -234,15 +240,23 @@ public class CodaWaveformPlotManager extends JPanel {
             allWaveformIDs.add(waveformIDs.get(i));
         }
         if (waveformIDs.size() > pageSize) {
-            this.add(toolbar, BorderLayout.NORTH);
             totalPages = (int) ((waveformIDs.size() - 1) / pageSize);
         } else {
-            this.remove(toolbar);
             totalPages = 1;
         }
+        adjustShowingToolbar(totalPages);
+
         currentPage = 0;
 
         loadWaveformsForPage(currentPage);
+    }
+
+    private void adjustShowingToolbar(int totalPages) {
+        if (totalPages > 1) {
+            this.add(toolbar, BorderLayout.NORTH);
+        } else {
+            this.remove(toolbar);
+        }
     }
 
     private void loadWaveformsForPage(int pageNumber) {
@@ -308,6 +322,25 @@ public class CodaWaveformPlotManager extends JPanel {
             SwingUtilities.invokeLater(() -> backwardAction.actionPerformed(new ActionEvent(event.getSource(), KeyEvent.KEY_RELEASED, "BackwardAction")));
         } else if (event.getCode() == KeyCode.RIGHT) {
             SwingUtilities.invokeLater(() -> forwardAction.actionPerformed(new ActionEvent(event.getSource(), KeyEvent.KEY_RELEASED, "ForwardAction")));
+        }
+    }
+
+    public void exportScreenshots(File folder) {
+        String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
+        for (CodaWaveformPlot wp : orderedWaveformPlots.values()) {
+            Color originalBackground = wp.getBackground();
+            wp.setBackground(Color.WHITE);
+            try {
+                String plotId = wp.getPlotIdentifier();
+                if (plotId != null && !plotId.isEmpty()) {
+                    wp.exportSVG(folder + File.separator + "Waveform_" + plotId + "_" + timestamp + ".svg");
+                } else {
+                    wp.exportSVG(folder + File.separator + "Waveform_" + SnapshotUtils.getTimestampWithLeadingSeparator() + ".svg");
+                }
+            } catch (UnsupportedEncodingException | FileNotFoundException | SVGGraphics2DIOException e) {
+                log.error("Error attempting to write plots for waveform plot {} : {}", e.getLocalizedMessage(), e);
+            }
+            wp.setBackground(originalBackground);
         }
     }
 }

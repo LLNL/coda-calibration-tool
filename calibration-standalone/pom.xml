@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.7.1</version>
+		<version>1.0.8</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -79,7 +79,7 @@
 								<transformer
 										implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<manifestEntries>
-                   				 		<Main-Class>org.springframework.boot.loader.JarLauncher</Main-Class>		
+                   				 		<Main-Class>org.springframework.boot.loader.PropertiesLauncher</Main-Class>		
 										<Start-Class>gov.llnl.gnem.apps.coda.calibration.standalone.CodaCalibrationStandalone</Start-Class>
 									</manifestEntries>
 								</transformer>
@@ -144,10 +144,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.glassfish.tyrus.bundles</groupId>
-			<artifactId>tyrus-standalone-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -193,8 +194,15 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                             Waveform rawWaveform = result.getResultPayload().get();
                             rawWaveform.setLowFrequency(stackInfo.getLowFrequency());
                             rawWaveform.setHighFrequency(stackInfo.getHighFrequency());
-                            if (rawWaveform != null && rawWaveform.hasData() && rawWaveform.getSegmentLength() > 0 && rawWaveform.getStream() != null && rawWaveform.getStream().getStation() != null) {
-                                waveformsByFreqAndSta.computeIfAbsent(entry.getKey() + " " + rawWaveform.getStream().getStation().hashCode(), k -> new ArrayList<>()).add(rawWaveform);
+                            if (rawWaveform != null
+                                    && rawWaveform.hasData()
+                                    && rawWaveform.getSegmentLength() > 0
+                                    && rawWaveform.getStream() != null
+                                    && rawWaveform.getStream().getStation() != null
+                                    && rawWaveform.getStream().getChannelName() != null) {
+                                if (!gov.llnl.gnem.apps.coda.common.model.domain.Stream.TYPE_STACK.equalsIgnoreCase(rawWaveform.getStream().getChannelName())) {
+                                    waveformsByFreqAndSta.computeIfAbsent(entry.getKey() + " " + rawWaveform.getStream().getStation().hashCode(), k -> new ArrayList<>()).add(rawWaveform);
+                                }
                             } else {
                                 log.warn("No data or bad station specification for waveform {}.", rawWaveform);
                             }
@@ -206,7 +214,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                     }
                 }
 
-                List<Waveform> stackedWaveforms = waveformsByFreqAndSta.entrySet().stream().map(e -> stackEnvelopes(e.getValue())).collect(Collectors.toList());
+                List<Waveform> stackedWaveforms = waveformsByFreqAndSta.entrySet().stream().map(e -> stackEnvelopes(e.getValue())).filter(Objects::nonNull).collect(Collectors.toList());
 
                 // TODO: Export envelopes and stacks to separate dirs
                 for (Waveform stackedWaveform : stackedWaveforms) {
@@ -237,13 +245,13 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                 base = waves.get(0);
                 TimeSeries seis = convertToTimeSeries(base);
 
-                float[] seisData = seis.getData();
                 for (int i = 1; i < waves.size(); i++) {
                     TimeSeries seis2 = convertToTimeSeries(waves.get(i));
                     seis = seis.add(seis2);
                 }
                 seis.MultiplyScalar(1d / waves.size());
 
+                float[] seisData = seis.getData();
                 double[] data = new double[seisData.length];
                 for (int j = 0; j < data.length; ++j) {
                     data[j] = seisData[j];
@@ -257,7 +265,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                 base.setBeginTime(seis.getTime().getDate());
                 base.setEndTime(seis.getEndtime().getDate());
                 if (base.getStream() != null) {
-                    base.getStream().setChannelName("STACK");
+                    base.getStream().setChannelName(gov.llnl.gnem.apps.coda.common.model.domain.Stream.TYPE_STACK);
                 }
             } catch (Exception e) {
                 log.info(e.getMessage(), e);
@@ -290,7 +298,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
         }
 
         if (w == null) {
-            throw new IllegalStateException("Unable to export waveform,waveform was null");
+            throw new IllegalStateException("Unable to export waveform, waveform was null");
         }
 
         String station = Optional.ofNullable(w.getStream()).map(stream -> stream.getStation()).map(sta -> sta.getStationName()).orElse("");

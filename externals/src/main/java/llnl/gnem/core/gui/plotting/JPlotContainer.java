@@ -353,7 +353,7 @@ public abstract class JPlotContainer extends JPanel {
         // Set the properties that will make for the best quality SVG
         // Copied from: JPlotContainer.printCurrentPlot method
         // Only putting method call here and not in other exportSvg calls because all roads lead here in the end
-        // Logic to set these properties is now centralized in JPlotContainer so all apps immediatly see advtange
+        // Logic to set these properties is now centralized in JPlotContainer so all apps immediately see advantage
         setupSvgExportSettings();
 
         SVGGraphics2D svgGenerator = renderSVG(createDocument());

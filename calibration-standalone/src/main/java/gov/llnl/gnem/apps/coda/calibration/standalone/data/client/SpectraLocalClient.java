@@ -14,6 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.standalone.data.client;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,13 +56,15 @@ public class SpectraLocalClient implements SpectraClient {
 
     @Override
     public Mono<Spectra> getReferenceSpectra(String eventId) {
-        return Mono.just(Optional.ofNullable(service.computeSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(() -> new Spectra()))
+        //FIXME: Use the calibrations phase for this!
+        return Mono.just(Optional.ofNullable(service.computeReferenceSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(() -> new Spectra()))
                    .onErrorReturn(new Spectra());
     }
 
     @Override
-    public Mono<Spectra> getFitSpectra(String eventId) {
-        return Mono.just(Optional.ofNullable(service.getFitSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(() -> new Spectra()))
-                   .onErrorReturn(new Spectra());
+    public Mono<List<Spectra>> getFitSpectra(String eventId) {
+        //FIXME: Use the calibrations phase for this!
+        return Mono.just(Optional.ofNullable(service.getFitSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(ArrayList::new))
+                   .onErrorReturn(new ArrayList<>());
     }
 }

@@ -166,7 +166,6 @@ public class EnvelopeParamsController {
                 List<EnvelopeBandParameters> oldBands = new ArrayList<>(bands);
                 bands.clear();
                 bands.addAll(tableGenerator.generateTable(minFreq, maxFreq, overlap, spacing));
-
                 config.setFrequencyBandConfiguration(bands);
 
                 postJob().doOnError(er -> {

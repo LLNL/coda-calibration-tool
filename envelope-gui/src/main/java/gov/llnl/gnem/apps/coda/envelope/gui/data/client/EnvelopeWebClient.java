@@ -65,7 +65,7 @@ public class EnvelopeWebClient implements EnvelopeClient {
                      .uri("/envelopes/create/batch/" + sessionId)
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(new EnvelopeJob().setData(segments).setJobConfig(job))
+                     .bodyValue(new EnvelopeJob().setData(segments).setJobConfig(job))
                      .exchange()
                      .flatMapMany(resp -> {
                          Mono<Result<List<Waveform>>> respMono = resp.bodyToMono(POST_ENV_RETURN_TYPE);
@@ -85,7 +85,7 @@ public class EnvelopeWebClient implements EnvelopeClient {
                      .uri("/waveforms/query/all")
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .syncBody(segment)
+                     .bodyValue(segment)
                      .exchange()
                      .flatMapMany(response -> response.bodyToFlux(Waveform.class))
                      .onErrorReturn(new Waveform());

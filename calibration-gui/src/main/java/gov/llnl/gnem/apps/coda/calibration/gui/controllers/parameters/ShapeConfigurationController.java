@@ -138,6 +138,8 @@ public class ShapeConfigurationController {
     TableColumn<ShapeFitterConstraints, String> maxGamma;
     @FXML
     TableColumn<ShapeFitterConstraints, String> iterations;
+    @FXML
+    TableColumn<ShapeFitterConstraints, String> fittingPointCount;
 
     private ObservableList<ShapeFitterConstraints> data = FXCollections.observableArrayList();
 
@@ -206,6 +208,8 @@ public class ShapeConfigurationController {
         CellBindingUtils.attachEditableTextCellFactories(minGamma, ShapeFitterConstraints::getMinGamma, ShapeFitterConstraints::setMinGamma, dfmt2);
         CellBindingUtils.attachEditableTextCellFactories(maxGamma, ShapeFitterConstraints::getMaxGamma, ShapeFitterConstraints::setMaxGamma, dfmt2);
         CellBindingUtils.attachEditableIntegerCellFactories(iterations, ShapeFitterConstraints::getIterations, ShapeFitterConstraints::setIterations);
+        CellBindingUtils.attachEditableIntegerCellFactories(fittingPointCount, ShapeFitterConstraints::getFittingPointCount, ShapeFitterConstraints::setFittingPointCount);
+
         shapeVelConfTableView.setItems(data);
         shapeBetaConfTableView.setItems(data);
         shapeGammaConfTableView.setItems(data);

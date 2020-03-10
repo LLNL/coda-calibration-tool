@@ -139,7 +139,11 @@ public class SacLoader implements FileToWaveformConverter {
                 channel = new Channel(chan);
             } catch (Exception ex) {
                 return exceptionalResult(
-                        new LightweightIllegalStateException(String.format("Error parsing (%s): SAC header variable KCMPNM (%s) does not meet FDSN requirements!", fileName, chan), ex));
+                        new LightweightIllegalStateException(String.format(
+                                "Error parsing (%s): SAC header variable KCMPNM (%s) does not meet FDSN requirements! [%s]",
+                                    fileName,
+                                    chan,
+                                    ex.getLocalizedMessage()), ex));
             }
 
             Date beginTime = Optional.ofNullable(header.getBeginTime().getMilliseconds()).map(time -> Date.from(Instant.ofEpochMilli(time))).orElse(null);
@@ -352,7 +356,7 @@ public class SacLoader implements FileToWaveformConverter {
         if (waveform.getEvent() != null && waveform.getEvent().getEventId() != null) {
             evid = waveform.getEvent().getEventId();
         }
-        
+
         if (evid == null || evid == "0") {
             evid = String.valueOf(createJDateMinuteResolutionFromEpoch(time));
         }
@@ -371,18 +375,17 @@ public class SacLoader implements FileToWaveformConverter {
                 time = relTime.getEpochTime();
             }
         }
-        
+
         if (header.kevnm != null && header.kevnm.matches("[0-9]*")) {
             evid = header.kevnm.trim();
-        }
-        else if (header.nevid > 0) {
+        } else if (header.nevid > 0) {
             evid = String.valueOf(header.nevid);
         }
-        
+
         if (evid == null || evid == "0") {
             evid = String.valueOf(createJDateMinuteResolutionFromEpoch(time));
         }
-        
+
         return evid;
     }
 

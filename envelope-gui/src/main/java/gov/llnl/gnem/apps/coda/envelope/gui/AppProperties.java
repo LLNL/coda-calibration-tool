@@ -15,7 +15,9 @@
 package gov.llnl.gnem.apps.coda.envelope.gui;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
+@Component
 @ConfigurationProperties("envelope-app")
 public class AppProperties {
 

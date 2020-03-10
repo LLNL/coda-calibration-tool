@@ -41,9 +41,9 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.EnvelopeFit;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -55,7 +55,7 @@ public class CalibrationCurveFitter {
 
     private Logger log = LoggerFactory.getLogger(CalibrationCurveFitter.class);
 
-    public EnvelopeFit fitCodaCMAES(final float[] segment, ShapeFitterConstraints constraints) {
+    public EnvelopeFit fitCodaCMAES(final float[] segment, final double sampleRate, ShapeFitterConstraints constraints) {
         double minInt = constraints.getMinIntercept();
         double maxInt = constraints.getMaxIntercept();
         double minGamma = constraints.getMinGamma();
@@ -67,7 +67,7 @@ public class CalibrationCurveFitter {
 
         SimpleRegression regression = new SimpleRegression();
         for (int j = 0; j < segment.length; j++) {
-            regression.addData(j + 1, segment[j]);
+            regression.addData((j / sampleRate) + 1, segment[j]);
         }
         double startIntercept = regression.getIntercept();
         double startBeta = regression.getSlope();
@@ -78,7 +78,7 @@ public class CalibrationCurveFitter {
             double beta = point[2];
             double sum = 0.0;
             for (int j = 0; j < segment.length; j++) {
-                double t = j + 1.0;
+                double t = (j / sampleRate) + 1.0;
                 double actual = segment[j];
                 double predicted = intercept - (gamma * Math.log10(t)) + (beta * t);
                 sum = lossFunction(sum, predicted, actual);
@@ -91,14 +91,16 @@ public class CalibrationCurveFitter {
         if (Double.isNaN(startIntercept)) {
             startIntercept = ThreadLocalRandom.current().nextDouble(minInt, maxInt);
             startBeta = minBeta;
-        } else if (startBeta > maxBeta || startBeta < minBeta) {
+        } else if (startBeta > maxBeta) {
+            startBeta = maxBeta;
+        } else if (startBeta < minBeta) {
             startBeta = minBeta;
         }
 
         PointValuePair bestResult = optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { startIntercept, minGamma, startBeta }),
-                    new CMAESOptimizer.Sigma(new double[] { 0.5, 0.05, 0.05 }),
+                    new CMAESOptimizer.Sigma(new double[] { (maxInt - minInt) / 2.0, (maxGamma - minGamma) / 2.0, (maxBeta - minBeta) / 2.0 }),
                     convergenceChecker,
                     50,
                     new SimpleBounds(new double[] { -Double.MAX_VALUE, minGamma, minBeta }, new double[] { Double.MAX_VALUE, maxGamma, maxBeta }));
@@ -107,7 +109,7 @@ public class CalibrationCurveFitter {
         fit.setIntercept(curve[0]);
         fit.setGamma(curve[1]);
         fit.setBeta(curve[2]);
-        fit.setError(bestResult.getValue());
+        fit.setError(bestResult.getValue() / segment.length);
 
         return fit;
     }

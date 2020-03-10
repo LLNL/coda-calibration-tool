@@ -62,6 +62,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -77,6 +78,9 @@ public class DataController implements MapListeningController, RefreshableContro
     @FXML
     private MenuItem importWaveforms;
 
+    @FXML
+    private ScrollPane scrollPane;
+    
     @FXML
     private TableView<Waveform> tableView;
 

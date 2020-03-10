@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +39,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
+import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 
 @Service
 @Transactional
@@ -118,7 +120,7 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
     }
 
     @Override
-    public Spectra computeSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
+    public Spectra computeReferenceSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
         Spectra refSpectra = new Spectra();
         ReferenceMwParameters refEvent = referenceEventRepo.findOneByEventId(eventId);
         if (refEvent != null) {
@@ -128,12 +130,16 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
     }
 
     @Override
-    public Spectra getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
-        Spectra fitSpectra = new Spectra();
+    public List<Spectra> getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
+        List<Spectra> spectra = new ArrayList<>();
         MeasuredMwParameters event = measuredEventRepo.findOneByEventId(eventId);
         if (event != null) {
-            fitSpectra = spectraCalc.computeFitSpectra(event, frequencyBands, selectedPhase);
+            spectra.add(spectraCalc.computeFitSpectra(event, frequencyBands, selectedPhase));
+            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw1Max(), event.getApparentStress1Max(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ1));
+            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw1Min(), event.getApparentStress1Min(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ1));
+            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw2Max(), event.getApparentStress2Max(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ2));
+            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw2Min(), event.getApparentStress2Min(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ2));
         }
-        return fitSpectra;
+        return spectra;
     }
 }

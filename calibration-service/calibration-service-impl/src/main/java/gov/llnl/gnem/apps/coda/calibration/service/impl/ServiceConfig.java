@@ -31,6 +31,9 @@ public class ServiceConfig {
 
     private static ExecutorService measurementServicePool;
 
+    @Value("${spectraTruncationEnabled:true}")
+    private boolean spectraTruncationEnabled;
+
     @Value("${measurementPoolSize:10}")
     private int measurementPoolSize;
 
@@ -47,6 +50,15 @@ public class ServiceConfig {
             }
         }
         return measurementServicePool;
+    }
+
+    public boolean isSpectraTruncationEnabled() {
+        return spectraTruncationEnabled;
+    }
+
+    public ServiceConfig setSpectraTruncationEnabled(boolean spectraTruncationEnabled) {
+        this.spectraTruncationEnabled = spectraTruncationEnabled;
+        return this;
     }
 
 }

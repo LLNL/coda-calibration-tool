@@ -112,7 +112,7 @@ public class Cross extends Symbol {
         cross.lineTo(x + h6, y + h2);
         cross.lineTo(x - h6, y + h2);
         cross.lineTo(x, y);
-        cross.lineTo(x - h2, y + h6);
+        cross.closePath();
 
         g2d.setColor(getFillColor());
         g2d.fill(cross);

@@ -95,7 +95,7 @@ public class TriangleDn extends Symbol {
         triangle.moveTo(x - h2, y - h2);
         triangle.lineTo(x + h2, y - h2);
         triangle.lineTo(x, y + h2);
-        triangle.lineTo(x - h2, y - h2);
+        triangle.closePath();
         g2d.setColor(getFillColor());
         g2d.fill(triangle);
         g2d.setColor(_EdgeColor);

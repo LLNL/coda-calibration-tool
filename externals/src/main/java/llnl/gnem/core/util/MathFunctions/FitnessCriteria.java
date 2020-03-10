@@ -16,7 +16,7 @@
 package llnl.gnem.core.util.MathFunctions;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -236,15 +236,15 @@ public class FitnessCriteria {
      * The Coefficient of Variation of the Root-Mean-Square Difference (aka
      * CV(RMSD) or CV(RMSE))
      * 
-     * @param dataHashMap
-     *            a HashMap of data and reference values to be compared note
-     *            that the HashMap key is not used in the RMS fit procedure
+     * @param dataMap
+     *            a Map of data and reference values to be compared note that
+     *            the Map key is not used in the RMS fit procedure
      * @return the single float valued measure of the RMS fit
      */
-    public static Double CVRMSD(HashMap<Object, double[]> dataHashMap) {
+    public static Double CVRMSD(Map<Object, double[]> dataMap) {
         double result = Double.MAX_VALUE;
 
-        Collection values = dataHashMap.values();
+        Collection<double[]> values = dataMap.values();
 
         Object[] object = values.toArray();
 

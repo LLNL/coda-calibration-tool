@@ -36,10 +36,10 @@ import reactor.core.publisher.Mono;
 @Primary
 public class EnvelopeLocalClient implements EnvelopeClient {
 
+    private static final Logger log = LoggerFactory.getLogger(EnvelopeLocalClient.class);
+
     private EnvelopeCreationService service;
     private WaveformService waveformService;
-
-    private static final Logger log = LoggerFactory.getLogger(EnvelopeLocalClient.class);
 
     @Autowired
     public EnvelopeLocalClient(EnvelopeCreationService service, WaveformService waveformService) {

@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.EnvelopeFit;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -107,8 +107,14 @@ public class ShapeCalculator {
             }
             TimeSeries synthSeis = converter.convert(velocityMeasurement.getWaveform());
             try {
-                synthSeis.interpolate(1.0);
                 synthSeis.cut(travelTime, endTime);
+                if (synthSeis.getSamprate() > 1.0) {
+                    synthSeis.interpolate(1.0);
+                }
+                if (constraints != null && constraints.getFittingPointCount() > 0 && synthSeis.getNsamp() > constraints.getFittingPointCount()) {
+                    double samprate = (constraints.getFittingPointCount() / (double) synthSeis.getNsamp()) * synthSeis.getSamprate();
+                    synthSeis.interpolate(samprate);
+                }
 
                 if (frequencyBandParameter.getMinLength() > 0 && synthSeis.getLengthInSeconds() < frequencyBandParameter.getMinLength()) {
                     log.trace(
@@ -126,7 +132,7 @@ public class ShapeCalculator {
                     synthSeis.cutAfter(travelTime.add(frequencyBandParameter.getMaxLength()));
                 }
 
-                EnvelopeFit curve = curveFitter.fitCodaCMAES(synthSeis.getData(), constraints);
+                EnvelopeFit curve = curveFitter.fitCodaCMAES(synthSeis.getData(), synthSeis.getSamprate(), constraints);
                 return new ShapeMeasurement().setDistance(distance)
                                              .setWaveform(velocityMeasurement.getWaveform())
                                              .setV0(frequencyBandParameter.getVelocity0())

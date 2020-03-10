@@ -90,7 +90,9 @@ public class AutopickingServiceImpl implements AutopickingService {
                 }
 
                 TimeSeries segment = converter.convert(vel.getWaveform());
-                segment.interpolate(1.0);
+                if (segment.getSamprate() > 1.0) {
+                    segment.interpolate(1.0);
+                }
 
                 double stopTime = endTimePicker.getEndTime(
                         segment.getData(),

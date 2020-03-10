@@ -40,8 +40,8 @@ import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 public class MdacCalculator {
     public static final double LOG10_OF_E = Math.log10(Math.E);
     public static final double DYNE_CM_TO_NEWTON_M = 1e-7;
-    public static final double MPA_TO_PA = 1.0e6;
-    public static final double PA_TO_MPA = 1e6;
+    public static final double MPA_TO_PA = 1e6;
+    public static final int ANGULAR_CORNER_FREQ_IDX = 3;
 
     // Event specific variables
     double sigmaA; // Apparent stress - derived from Sigma and M0
@@ -62,7 +62,7 @@ public class MdacCalculator {
     private double m0_ref;
 
     public MdacCalculator(double sigma, double M0ref, double Psi, double Zeta, double AlphaS, double BetaS, double RadpatP, double RadpatS, double M0) {
-        sigmaA = getApparentStress(PA_TO_MPA * sigma, M0, M0ref, Psi);
+        sigmaA = getApparentStress(MPA_TO_PA * sigma, M0, M0ref, Psi);
         wcvels = getCornerFrequencies(Zeta, AlphaS, BetaS, RadpatP, RadpatS, sigmaA, M0);
         this.zeta = Zeta;
         this.alphaS = AlphaS;
@@ -94,7 +94,7 @@ public class MdacCalculator {
         double data = M0 / wwc;
         double veld = data * w;
 
-        return new double[] { logAmp, data, veld };
+        return new double[] { logAmp, data, veld, wc };
     }
 
     /**
@@ -106,7 +106,8 @@ public class MdacCalculator {
      * @param frequency
      *            the desired frequency in Hz
      * @param m0
-     *            the seismic Moment in (?) * @param sigma
+     *            the seismic Moment in (?)
+     * @param sigma
      * @param psi
      * @param phase
      *            {@link PICK_TYPES} phase to calculate the spectra for
@@ -200,7 +201,7 @@ public class MdacCalculator {
      * of the source region velocity, AlphaS or BetaS from getCornerFrequencies.
      * wc - the corner frequency wcp or wcs (see getCornerFrequencies).
      */
-    public void initializePhaseSpecificVariables(double distance, MdacParametersPS mdacPs, MdacParametersFI mdacFi, double M0) {
+    public void initializePhaseSpecificVariables(MdacParametersPS mdacPs, MdacParametersFI mdacFi, double M0) {
         String phase = mdacPs.getPhase();
 
         if (PICK_TYPES.PN.getPhase().equals(phase) || PICK_TYPES.PG.getPhase().equals(phase)) {
@@ -227,7 +228,7 @@ public class MdacCalculator {
      * power of the source region velocity (cs5) and the receiver region
      * velocity (cr)
      */
-    double getF(double radiationpattern, double rhos, double rhor, double cs5, double cr) {
+    private double getF(double radiationpattern, double rhos, double rhor, double cs5, double cr) {
         // from Aki and Richards (1980)
         // use this with getS0 --> S0 = F * M0
         return radiationpattern / (4.0 * Math.PI * Math.pow(rhos * rhor * cs5 * cr, 0.5));
@@ -238,7 +239,7 @@ public class MdacCalculator {
      * given the Moment (M0) and the source moment - corner frequency scaling
      * parameter (F) obtained from the getF() routine.
      */
-    double getLogS0(double F, double M0) {
+    private double getLogS0(double F, double M0) {
         double S0 = F * M0;
         return Math.log10(S0);
     }
@@ -248,7 +249,7 @@ public class MdacCalculator {
      * source-receiver distance and the critical distance for the specific phase
      * note units of distance, distcrit are meters.
      */
-    double getLogGeometricalSpreading(double distance, double distcrit, double eta) {
+    private double getLogGeometricalSpreading(double distance, double distcrit, double eta) {
         double Gr;
         if (distance < distcrit) {
             Gr = 1. / distance;
@@ -262,7 +263,7 @@ public class MdacCalculator {
      * Returns the apparent stress given the reference stress (sigma) and
      * Moment(M0) at reference moment (M0ref) and with scaling exponent Psi
      */
-    double getApparentStress(double Sigma, double M0, double M0ref, double Psi) {
+    private double getApparentStress(double Sigma, double M0, double M0ref, double Psi) {
         double ratio = M0 / M0ref;
         return Sigma * Math.pow(ratio, Psi);
     }
@@ -272,7 +273,7 @@ public class MdacCalculator {
      * given the s-r distance, attenuation at 1-Hz (Q0) and phase velocity (U0)
      * this is used to obtain a Q(f) term in the MDAC calculation
      */
-    double getLogQfi(double distance, double Q0, double U0) {
+    private double getLogQfi(double distance, double Q0, double U0) {
         // See equation A6 (Rodgers and Walter, 2002)
         // Q(f) = exp( -pi* f^(1-gamma) * distance / U0 *Q0)
         return (distance * Math.PI * LOG10_OF_E) / (Q0 * U0);
@@ -283,7 +284,7 @@ public class MdacCalculator {
      * returns 4-element array containing the result {{wcp, alphas^5},{wcs,
      * betas^5}}
      */
-    double[][] getCornerFrequencies(double zeta, double alphas, double betas, double radpatp, double radpats, double sigmaA, double M0) {
+    private double[][] getCornerFrequencies(double zeta, double alphas, double betas, double radpatp, double radpats, double sigmaA, double M0) {
         double z3 = Math.pow(zeta, 3);
         double a5 = Math.pow(alphas, 5);
         double b5 = Math.pow(betas, 5);
@@ -304,5 +305,13 @@ public class MdacCalculator {
 
     public static double mwInDyne(double testMw) {
         return (DYNE_CM_TO_NEWTON_M * Math.pow(10, 1.5 * (testMw + 10.73))) / DYNE_CM_TO_NEWTON_M;
+    }
+
+    public double apparentStressFromMwFc(Double mw, Double fc) {
+        double K = calculateK(zeta, alphaS, betaS, radpatP, radpatS);
+        double M0 = mwToM0(mw);
+        double wfc3 = Math.pow(Math.PI * 2.0 * fc, 3.0);
+        double appStress = ((wfc3 * M0) / K) / MPA_TO_PA;
+        return appStress;
     }
 }

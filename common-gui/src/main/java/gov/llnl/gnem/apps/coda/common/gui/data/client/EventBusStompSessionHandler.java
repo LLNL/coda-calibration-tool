@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.common.gui.data.client;
 
 import java.lang.reflect.Type;
+import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,7 @@ public class EventBusStompSessionHandler extends StompSessionHandlerAdapter {
     @Override
     public Type getPayloadType(StompHeaders headers) {
         Type c;
-        if (headers.containsKey(MESSAGE_HEADERS.PAYLOAD_CLASSNAME)) {
+        if (headers.containsKey(MESSAGE_HEADERS.PAYLOAD_CLASSNAME) && headers.getFirst(MESSAGE_HEADERS.PAYLOAD_CLASSNAME).toLowerCase(Locale.ENGLISH).startsWith("gov.llnl.gnem.apps.coda")) {
             try {
                 c = Class.forName(headers.getFirst(MESSAGE_HEADERS.PAYLOAD_CLASSNAME));
             } catch (ReflectiveOperationException e) {

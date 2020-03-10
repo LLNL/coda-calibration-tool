@@ -14,6 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
+import java.util.List;
+
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import reactor.core.publisher.Flux;
@@ -22,10 +24,10 @@ import reactor.core.publisher.Mono;
 public interface SpectraClient {
 
     public Flux<SpectraMeasurement> getMeasuredSpectra();
-    
+
     public Flux<SpectraMeasurement> getMeasuredSpectraMetadata();
 
     public Mono<Spectra> getReferenceSpectra(String eventId);
 
-    public Mono<Spectra> getFitSpectra(String eventId);
+    public Mono<List<Spectra>> getFitSpectra(String eventId);
 }

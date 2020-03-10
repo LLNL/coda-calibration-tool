@@ -27,6 +27,7 @@ import gov.llnl.gnem.apps.coda.common.gui.converters.api.CodaFilenameParser;
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.FileToEnvelopeConverter;
 import gov.llnl.gnem.apps.coda.common.gui.converters.api.StackInfo;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacLoader;
+import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import llnl.gnem.core.io.SAC.SACHeader;
@@ -56,7 +57,7 @@ public class CodaStackedSacFileLoader implements FileToEnvelopeConverter {
                     Waveform waveform = result.getResultPayload().get();
                     Result<StackInfo> res = filenameParser.parse(file.getName().toUpperCase(Locale.ENGLISH));
                     if (res.isSuccess()) {
-                        waveform.getStream().setChannelName("STACK");
+                        waveform.getStream().setChannelName(Stream.TYPE_STACK);
                         waveform.setSegmentType(res.getResultPayload().get().getDataType());
                         waveform.setSegmentUnits(DEFAULT_VEL_UNITS);
                         waveform.setLowFrequency(res.getResultPayload().get().getLowFrequency());

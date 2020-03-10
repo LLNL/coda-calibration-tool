@@ -27,14 +27,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwReportByEvent;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasurementJob;
 import gov.llnl.gnem.apps.coda.calibration.service.api.CalibrationService;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
@@ -52,35 +51,28 @@ public class MeasurementJsonController {
         this.service = service;
     }
 
-    @GetMapping(value = "/measure-mws/{autoPickingEnabled}", name = "measureMws")
-    public ResponseEntity<?> measureMws(@PathVariable(name = "autoPickingEnabled", required = false) Boolean autoPickingEnabled) {
-        return measureMw(autoPickingEnabled, null, null);
+    @PostMapping(value = "/measure-mws", name = "measureMws")
+    public ResponseEntity<?> measureMws(@RequestBody MeasurementJob job) {
+        return measureMw(job.getAutopickingEnabled(), job.getPersistResults(), job.getEventIds(), job.getStacks());
     }
 
-    @PostMapping(value = "/measure-mws/{autoPickingEnabled}", name = "measureMws")
-    public ResponseEntity<?> measureMws(@PathVariable(name = "autoPickingEnabled", required = false) Boolean autoPickingEnabled, @RequestBody List<String> eventIds) {
-        return measureMw(autoPickingEnabled, eventIds, null);
-    }
-
-    @PostMapping(value = "/measure-mws-from-stacks/{autoPickingEnabled}", name = "measureMwsFromStacks")
-    public ResponseEntity<?> measureMwsFromStacks(@PathVariable(name = "autoPickingEnabled", required = false) Boolean autoPickingEnabled, @RequestBody List<Waveform> stacks) {
-        return measureMw(autoPickingEnabled, null, stacks);
-    }
-
-    private ResponseEntity<?> measureMw(Boolean autoPickingEnabled, List<String> evids, List<Waveform> stacks) {
+    private ResponseEntity<?> measureMw(Boolean autoPickingEnabled, Boolean persistResults, List<String> evids, List<Waveform> stacks) {
         if (autoPickingEnabled == null) {
             autoPickingEnabled = Boolean.FALSE;
+        }
+        if (persistResults == null) {
+            persistResults = Boolean.FALSE;
         }
 
         ResponseEntity<?> resp = null;
         try {
             Result<MeasuredMwReportByEvent> measuredMws;
             if (evids != null && !evids.isEmpty()) {
-                measuredMws = service.makeMwMeasurements(autoPickingEnabled, new HashSet<>(evids)).get(500, TimeUnit.SECONDS);
+                measuredMws = service.makeMwMeasurements(autoPickingEnabled, persistResults, new HashSet<>(evids)).get(4, TimeUnit.HOURS);
             } else if (stacks != null && !stacks.isEmpty()) {
-                measuredMws = service.makeMwMeasurements(autoPickingEnabled, stacks).get(500, TimeUnit.SECONDS);
+                measuredMws = service.makeMwMeasurements(autoPickingEnabled, persistResults, stacks).get(4, TimeUnit.HOURS);
             } else {
-                measuredMws = service.makeMwMeasurements(autoPickingEnabled).get(500, TimeUnit.SECONDS);
+                measuredMws = service.makeMwMeasurements(autoPickingEnabled, persistResults).get(4, TimeUnit.HOURS);
             }
             if (measuredMws != null) {
                 if (measuredMws.isSuccess()) {

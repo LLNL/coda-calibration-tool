@@ -4,15 +4,33 @@
 <head>
 <link rel="stylesheet" href="leaflet.css" />
 <script type='text/javascript' src="leaflet.js"></script>
+<script type="text/javascript" src="leaflet-svg-shape-markers.min.js"></script>
 <script type='text/javascript' src="countries.js"></script>
 <meta charset="UTF-8">
 </head>
 
-<body>
-	<div id="map" style="height: 98vh;"></div>
+<body style="margin: 0px;">
+	<div id="map" style="height: 100vh;"></div>
 	<script type="text/javascript">
         var markers = new Map();
         var mouseoverIconId = null;
+
+        //Patch layer visibility function onto the leaflet control for layers
+        L.Control.Layers.include({
+        	  getOverlayLayers: function() {
+        	    var control, layers;
+        	    layers = {};
+        	    control = this;
+
+        	    control._layers.forEach(function(obj) {
+        	      if (obj.overlay) {
+        	        return layers[obj.name] = control._map.hasLayer(obj.layer);
+        	      }
+        	    });
+
+        	    return layers;
+        	  }
+        	});
 
         var map = L.map('map', {
             attributionControl: false
@@ -39,7 +57,7 @@
         layerControl.addOverlay(lineGroup, "Paths");
 
         map.createPane("background-pane");
-        map.getPane("background-pane").style.zIndex = 0;
+        map.getPane("background-pane").style.zIndex = 300;
 
         map.createPane("important-event-pane");
         map.getPane("important-event-pane").style.zIndex = 1000000;
@@ -72,9 +90,89 @@
         	}
         }
         
+        var flyToBounds = function(bounds) {        	
+        	map.flyToBounds(bounds);        	
+        }
+        
+        var getMapBoundXne = function() {        	
+        	return map.getBounds().getNorthEast().lat;   	
+        }        
+        
+        var getMapBoundYne = function() {        	
+        	return map.getBounds().getNorthEast().lng;   	
+        }
+        
+        var getMapBoundXsw = function() {        	
+        	return map.getBounds().getSouthWest().lat;   	
+        }
+        
+        var getMapBoundYsw = function() {        	
+        	return map.getBounds().getSouthWest().lng;   	
+        }
+        
         var getActiveIcon = function() {
         	return mouseoverIconId;
         }
+        
+        var showOverlay = function() {
+        	document.getElementById("map").style.background = null;
+        	document.getElementsByClassName("leaflet-control-container")[0].style.visibility = null;
+        	document.getElementsByClassName("leaflet-background-pane-pane")[0].style.visibility = null;
+        	document.getElementsByClassName("leaflet-overlay-pane")[0].style.visibility = null;
+        	document.getElementsByClassName("leaflet-important-event-pane-pane")[0].style.visibility = null;        	
+        	document.body.style.overflow = 'visible';
+        }
+        
+        var hideOverlay = function() {
+        	document.getElementById("map").style.background = "transparent";
+        	document.getElementsByClassName("leaflet-control-container")[0].style.visibility = "hidden";
+        	document.getElementsByClassName("leaflet-background-pane-pane")[0].style.visibility = "hidden";
+        	document.getElementsByClassName("leaflet-overlay-pane")[0].style.visibility  = "hidden";
+        	document.getElementsByClassName("leaflet-important-event-pane-pane")[0].style.visibility  = "hidden";
+        	document.body.style.overflow = 'hidden';
+        }
+
+        var getSvgLayer = function() {
+			var baseSvg = document.getElementsByClassName("leaflet-overlay-pane")[0].getElementsByTagName('svg')[0].cloneNode();
+
+	        var div = document.getElementsByClassName("leaflet-background-pane-pane")[0].getElementsByTagName('svg');
+	        if (div.length) {
+            	baseSvg.innerHTML += div[0].innerHTML;       
+	        }                
+	        div = document.getElementsByClassName("leaflet-overlay-pane")[0].getElementsByTagName('svg');
+	        if (div.length) {
+            	baseSvg.innerHTML += div[0].innerHTML;       
+	        }    
+            div = document.getElementsByClassName("leaflet-important-event-pane-pane")[0].getElementsByTagName('svg');
+	        if (div.length) {
+            	baseSvg.innerHTML += div[0].innerHTML;       
+	        }            
+        	return baseSvg.outerHTML;
+        }        
+
+        var hasVisibleTiles = function() {
+            var visibleTiles = false;
+
+            for (layerName in layerControl.getOverlayLayers()) {
+            	switch (layerName) {
+	                case "Countries":	                	
+	                    break;
+	                case "Icons":	                    
+	                    break;
+	                case "Paths":	                    
+	                    break;	     
+	                default:
+		                visibleTiles = layerControl.getOverlayLayers()[layerName];
+	                	break;               
+	            }                
+	            if (visibleTiles) {
+		            break;
+		        }
+            }
+            
+            return visibleTiles;
+        }
+        
     </script>
 </body>
 
