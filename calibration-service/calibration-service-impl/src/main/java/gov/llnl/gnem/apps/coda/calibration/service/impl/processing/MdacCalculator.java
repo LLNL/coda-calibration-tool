@@ -167,8 +167,8 @@ public class MdacCalculator {
         double b5 = Math.pow(betaS, 5);
         double b2 = Math.pow(betaS, 2);
 
-        double tmpp = (radpatP * radpatS * z3) / a5;
-        double tmps = (radpatP * radpatS) / b5;
+        double tmpp = (radpatP * radpatP * z3) / a5;
+        double tmps = (radpatS * radpatS) / b5;
 
         return (16. * Math.PI) / (b2 * (tmpp + tmps));
     }
