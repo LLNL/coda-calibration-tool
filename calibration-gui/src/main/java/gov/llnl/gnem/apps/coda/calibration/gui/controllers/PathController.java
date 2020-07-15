@@ -301,7 +301,7 @@ public class PathController implements MapListeningController, RefreshableContro
                     }
                 }
             });
-            sdPlot.getXaxis().setLabelText("Distance (km)");
+            sdPlot.getXaxis().setLabelText("Inter-Station Distance (km)");
             sdPlot.setYaxisVisibility(true);
             sdPlot.setShowPickTooltips(true);
 

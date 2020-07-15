@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
-import io.springlets.data.jpa.repository.DetachableJpaRepository;
+import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
 
 @Transactional
 public interface WaveformPickRepository extends DetachableJpaRepository<WaveformPick, Long> {

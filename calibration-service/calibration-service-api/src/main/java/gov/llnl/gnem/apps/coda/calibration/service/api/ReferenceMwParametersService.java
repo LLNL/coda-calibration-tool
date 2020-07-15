@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -25,4 +25,6 @@ public interface ReferenceMwParametersService extends BaseService<ReferenceMwPar
     public List<ReferenceMwParameters> findAllByEventIds(Collection<String> eventIds);
 
     public void deleteAllByEventIds(Collection<String> eventIds);
+
+    public ReferenceMwParameters findByEventId(String evid);
 }

@@ -22,7 +22,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
-import io.springlets.data.jpa.repository.DetachableJpaRepository;
+import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
 
 @Transactional
 public interface SyntheticRepository extends DetachableJpaRepository<SyntheticCoda, Long> {

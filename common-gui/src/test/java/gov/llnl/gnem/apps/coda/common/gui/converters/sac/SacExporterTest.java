@@ -20,17 +20,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Date;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -40,6 +45,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import llnl.gnem.core.io.SAC.SACHeader;
 
 public class SacExporterTest {
 
@@ -55,21 +61,22 @@ public class SacExporterTest {
         params.add(new Object[] { new Waveform().setStream(new Stream()), "", waveformNotValidAssertions() });
         params.add(new Object[] { new Waveform().setStream(new Stream()).setEvent(new Event()), "", waveformNotValidAssertions() });
         params.add(new Object[] { new Waveform().setStream(new Stream().setStation(new Station())).setEvent(new Event()), "", waveformNotValidAssertions() });
-        params.add(
-                new Object[] { new Waveform().setLowFrequency(.0).setHighFrequency(.0).setSegmentType("vel").setStream(new Stream().setStation(new Station())).setEvent(new Event()), "",
-                        waveformNotValidAssertions() });
+        params.add(new Object[] { new Waveform().setLowFrequency(.0).setHighFrequency(.0).setSegmentType("vel").setStream(new Stream().setStation(new Station())).setEvent(new Event()), "",
+                waveformNotValidAssertions() });
 
-        params.add(
-                new Object[] { new Waveform().setLowFrequency(.0)
-                                             .setHighFrequency(.0)
-                                             .setSegmentType("vel")
-                                             .setSampleRate(.0)
-                                             .setBeginTime(Date.from(Instant.now()))
-                                             .setEndTime(Date.from(Instant.now()))
-                                             .setStream(new Stream().setChannelName(Stream.TYPE_STACK).setStation(new Station().setStationName("RNG")))
-                                             .setEvent(new Event().setEventId("12345").setOriginTime(Date.from(Instant.now()))),
-                        "RNG_STACK_12345_0.0_0.0_VEL_.ENV", waveformValidAssertions() });
+        params.add(new Object[] { createValidWaveform(), "RNG_STACK_12345_0.0_0.0_VEL_.ENV", waveformValidAssertions() });
         return params;
+    }
+
+    public static Waveform createValidWaveform() {
+        return new Waveform().setLowFrequency(.0)
+                             .setHighFrequency(.0)
+                             .setSegmentType("vel")
+                             .setSampleRate(.0)
+                             .setBeginTime(Date.from(Instant.now()))
+                             .setEndTime(Date.from(Instant.now()))
+                             .setStream(new Stream().setChannelName(Stream.TYPE_STACK).setStation(new Station().setStationName("RNG")))
+                             .setEvent(new Event().setEventId("12345").setDepth(100.0).setOriginTime(Date.from(Instant.now())));
     }
 
     @BeforeAll
@@ -105,6 +112,14 @@ public class SacExporterTest {
     public void testGetFileName(Waveform input, String expectedFilename) throws Exception {
         String actual = exporter.getFileName(input);
         Assert.assertEquals(expectedFilename, actual);
+    }
+
+    @Test
+    public void testEventDepthPopulated() throws Exception {
+        //GMPAPPS-1947 Envelope tool was dropping event depth info during import/export.
+        Waveform waveform = createValidWaveform();
+        SACHeader header = exporter.sacHeaderFromWaveform(waveform);
+        Assert.assertTrue("Expect that the waveform should have a populated event depth if the original file had it.", header.evdp != 0 && !SACHeader.isDefault(header.evdp));
     }
 
     private static Consumer<Result<String>> waveformNotValidAssertions() throws Exception {

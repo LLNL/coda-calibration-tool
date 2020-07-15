@@ -39,17 +39,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ValidationMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -63,19 +65,21 @@ public class ParamExporter {
     private ParameterClient paramClient;
     private List<ParamTempFileWriter> paramWriters;
 
-    private ReferenceEventClient eventClient;
+    private EventClient eventClient;
     private List<MeasuredMwTempFileWriter> mwWriters;
     private List<ReferenceMwTempFileWriter> referenceMwWriters;
+    private List<ValidationMwTempFileWriter> validationMwWriters;
 
     @Autowired
-    public ParamExporter(ParameterClient paramClient, ReferenceEventClient eventClient, List<ParamTempFileWriter> paramWriters, List<MeasuredMwTempFileWriter> mwWriters,
-            List<ReferenceMwTempFileWriter> referenceMwWriters) {
+    public ParamExporter(ParameterClient paramClient, EventClient eventClient, List<ParamTempFileWriter> paramWriters, List<MeasuredMwTempFileWriter> mwWriters,
+            List<ReferenceMwTempFileWriter> referenceMwWriters, List<ValidationMwTempFileWriter> validationMwWriters) {
         this.paramClient = paramClient;
         this.paramWriters = paramWriters;
 
         this.eventClient = eventClient;
         this.mwWriters = mwWriters;
         this.referenceMwWriters = referenceMwWriters;
+        this.validationMwWriters = validationMwWriters;
     }
 
     public File createExportArchive() throws IOException {
@@ -130,6 +134,14 @@ public class ParamExporter {
                 referenceMws.addAll(eventClient.getReferenceEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
                 for (ReferenceMwTempFileWriter writer : referenceMwWriters) {
                     writer.writeReferenceMwParams(tmpFolder, referenceMws);
+                }
+            }
+            
+            if (validationMwWriters != null) {
+                List<ValidationMwParameters> validationMws = new ArrayList<>();
+                validationMws.addAll(eventClient.getValidationEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
+                for (ValidationMwTempFileWriter writer : validationMwWriters) {
+                    writer.writeValidationMws(tmpFolder, validationMws);
                 }
             }
         }

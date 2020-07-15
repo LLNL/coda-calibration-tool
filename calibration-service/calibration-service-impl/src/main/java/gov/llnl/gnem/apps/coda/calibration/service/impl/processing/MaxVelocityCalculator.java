@@ -71,6 +71,9 @@ public class MaxVelocityCalculator {
     private Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, double gv1GtDistanceThreshold, double gv2GtDistanceThreshold, double gv1LtDistanceThreshold,
             double gv2LtDistanceThreshold, double thresholdInKm) {
         return waveforms.stream().parallel().map(rawWaveform -> {
+            if (Thread.currentThread().isInterrupted()) {
+                return null;
+            }
             TimeSeries waveform = converter.convert(rawWaveform);
             double distance = EModel.getDistanceWGS84(
                     rawWaveform.getEvent().getLatitude(),
@@ -123,6 +126,6 @@ public class MaxVelocityCalculator {
                 log.info("Unable to compute maximum velocity, this stack will be skipped. {} {}.", ill.getMessage(), rawWaveform);
                 return new PeakVelocityMeasurement();
             }
-        }).filter(measurement -> measurement.getWaveform() != null);
+        }).filter(measurement -> measurement != null && measurement.getWaveform() != null);
     }
 }

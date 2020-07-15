@@ -3,9 +3,11 @@
 
 <head>
 <link rel="stylesheet" href="leaflet.css" />
+<link rel="stylesheet" href="leaflet-measure.css" />
 <script type='text/javascript' src="leaflet.js"></script>
-<script type="text/javascript" src="leaflet-svg-shape-markers.min.js"></script>
+<script type='text/javascript' src="leaflet-svg-shape-markers.min.js"></script>
 <script type='text/javascript' src="countries.js"></script>
+<script type='text/javascript' src="leaflet-measure.js"></script>
 <meta charset="UTF-8">
 </head>
 
@@ -34,7 +36,20 @@
 
         var map = L.map('map', {
             attributionControl: false
-        }).setView([0, 0], 2);
+        }).setView([0, 0], 2);        
+
+		//Path measurement library controls
+		var measureControl = L.control.measure({
+			position: 'topleft', primaryLengthUnit: 'kilometers', 
+			primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'sqmiles',
+			captureZIndex: 2000000,
+			activeColor: '#086972',
+			completedColor: '#342b38'
+		});
+		measureControl.addTo(map);
+
+		//Add the scale bar to the bottom right
+		L.control.scale({position: 'bottomright'}).addTo(map);          
 
         var countriesLayer = L.geoJson(countryData, {
             style: {

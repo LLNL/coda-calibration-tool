@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -25,6 +25,8 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 public interface CalibrationService {
 
     public boolean startCalibration(Boolean autoPickingEnabled);
+    
+    public boolean cancelCalibration(Long id);
 
     public boolean clearData();
 
@@ -33,4 +35,6 @@ public interface CalibrationService {
     public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults, Set<String> eventIds);
 
     public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults, List<Waveform> stacks);
+
+    public List<String> toggleAllByEventIds(List<String> eventIds);
 }

@@ -15,5 +15,5 @@
 package gov.llnl.gnem.apps.coda.common.model.util;
 
 public enum SPECTRA_TYPES {
-    REF, FIT, UQ1, UQ2, UNK
+    REF, FIT, UQ1, UQ2, VAL, UNK
 }

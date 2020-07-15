@@ -111,7 +111,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     @Override
     public Map<FrequencyBand, SharedFrequencyBandParameters> measurePathCorrections(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, VelocityConfiguration velConf) {
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, VelocityConfiguration velConf) throws InterruptedException {
 
         if (velConf != null) {
             Double phase = velConf.getPhaseVelocityInKms();
@@ -128,9 +128,12 @@ public class Joint1DPathCorrection implements PathCalibrationService {
         Map<FrequencyBand, SharedFrequencyBandParameters> pathCorrectedFrequencyBandParameters = new HashMap<>();
 
         Map<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> dataMappedToEventAndStation = removeSingleStationOrFewerEntries(mapToEventAndStation(dataByFreqBand));
-
-        frequencyBandParameters.entrySet().parallelStream().forEach(frequencyBandParams -> {
-
+        
+        ConcurrencyUtils.checkInterrupt();
+        frequencyBandParameters.entrySet().parallelStream().forEach(frequencyBandParams -> {           
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
             SharedFrequencyBandParameters pathCorrectedParams = frequencyBandParams.getValue();
 
             Map<Station, Integer> eventCountByStation = new HashMap<>();
@@ -150,6 +153,9 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 for (Entry<Event, Map<Station, SpectraMeasurement>> eventEntry : freqBandData.entrySet()) {
                     Event event = eventEntry.getKey();
                     for (Entry<Station, SpectraMeasurement> stationEntry : eventEntry.getValue().entrySet()) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            return;
+                        }
                         SpectraMeasurement spectra = stationEntry.getValue();
                         Station station = stationEntry.getKey();
 
@@ -266,6 +272,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 pathCorrectedFrequencyBandParameters.put(frequencyBand, pathCorrectedParams);
             }
         });
+        ConcurrencyUtils.checkInterrupt();
 
         pathCalibrationMeasurementService.deleteAll();
         pathCalibrationMeasurementService.save(measurements);

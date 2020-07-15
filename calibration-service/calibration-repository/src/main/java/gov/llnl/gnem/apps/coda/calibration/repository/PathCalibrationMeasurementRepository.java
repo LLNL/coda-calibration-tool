@@ -17,7 +17,7 @@ package gov.llnl.gnem.apps.coda.calibration.repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PathCalibrationMeasurement;
-import io.springlets.data.jpa.repository.DetachableJpaRepository;
+import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
 
 @Transactional
 public interface PathCalibrationMeasurementRepository extends DetachableJpaRepository<PathCalibrationMeasurement, Long> {

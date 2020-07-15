@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
-import io.springlets.data.jpa.repository.DetachableJpaRepository;
+import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
 
 @Transactional
 public interface SpectraMeasurementRepository extends DetachableJpaRepository<SpectraMeasurement, Long> {

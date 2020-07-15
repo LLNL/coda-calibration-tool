@@ -14,11 +14,19 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.application.web;
 
+import java.util.List;
+
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -47,6 +55,15 @@ public class CalibrationJsonController {
         }
     }
     
+    @PostMapping(value = "/cancel", name = "cancelCalibration")
+    public ResponseEntity<?> cancelCalibration(@Valid @RequestBody Long id, BindingResult result) {
+        if (getService().cancelCalibration(id)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }    
+    
     @GetMapping(value = "/clear-data", name = "clearData")
     public ResponseEntity<?> clearData() {
         if (getService().clearData()) {
@@ -55,7 +72,15 @@ public class CalibrationJsonController {
             return ResponseEntity.badRequest().build();
         }
     }
-
+    
+    //TODO: A little gross API wise to cram this here but will do for now. Revisit in V2
+    @PostMapping(value = "/toggle-validation/batch-by-evids", name = "toggleValidationByEvids")
+    public ResponseEntity<?> deleteBatchByEvids(@Valid @RequestBody List<String> eventIds, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }        
+        return ResponseEntity.ok(service.toggleAllByEventIds(eventIds));
+    }    
 
     public CalibrationService getService() {
         return service;

@@ -32,6 +32,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteCorrections;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import reactor.core.publisher.Flux;
@@ -116,6 +117,16 @@ public class CodaJsonParamLoaderTest {
                     Long.valueOf(2l),
                     results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ReferenceMwParameters).count().block());
     }
+    
+    @ParameterizedTest
+    @MethodSource("filePaths")
+    public final void testValidationMw(String filePath) throws Exception {
+        Flux<Result<Object>> results = convertFile(filePath);
+        Assert.assertEquals(
+                "Expected to have 2 valid validation event definitions",
+                    Long.valueOf(2l),
+                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ValidationMwParameters).count().block());
+    }    
 
     @ParameterizedTest
     @MethodSource("filePaths")

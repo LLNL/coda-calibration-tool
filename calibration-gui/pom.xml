@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.8.1</version>
+		<version>1.0.9</version>
 	</parent>
 
 	<artifactId>calibration-gui</artifactId>
 	<packaging>jar</packaging>
 	<name>calibration-gui</name>
-	<url>http://www.llnl.gov</url>
+	<url>https://www.llnl.gov</url>
 
 	<organization>
 		<name>Lawrence Livermore National Laboratory (LLNL)</name>
-		<url>http://www.llnl.gov</url>
+		<url>https://www.llnl.gov</url>
 	</organization>
 
 	<properties>
@@ -37,7 +37,7 @@
 	<pluginRepositories>
 		<pluginRepository>
 			<id>spring-milestones</id>
-			<url>http://repo.spring.io/milestone</url>
+			<url>https://repo.spring.io/milestone</url>
 		</pluginRepository>
 	</pluginRepositories>
 
@@ -61,10 +61,6 @@
 				<exclusion>
 					<groupId>org.eclipse.persistence</groupId>
 					<artifactId>javax.persistence</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>io.springlets</groupId>
-					<artifactId>springlets-context</artifactId>
 				</exclusion>
 				<exclusion>
 					<groupId>org.aspectj</groupId>

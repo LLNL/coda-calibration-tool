@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToReferenceEventConverter;
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 
 //TODO: This class needs a GUI to display a list of files it's attempting to load and process + pass/fail indicators
@@ -39,14 +39,14 @@ public class ReferenceEventLoadingController {
 
     private static final Logger log = LoggerFactory.getLogger(ReferenceEventLoadingController.class);
 
-    private ReferenceEventClient client;
+    private EventClient client;
 
     private int maxBatching = 1000;
 
     private List<FileToReferenceEventConverter> fileConverters;
 
     @Autowired
-    public ReferenceEventLoadingController(List<FileToReferenceEventConverter> fileConverters, ReferenceEventClient client) throws IOException {
+    public ReferenceEventLoadingController(List<FileToReferenceEventConverter> fileConverters, EventClient client) throws IOException {
         super();
         this.fileConverters = fileConverters;
         this.client = client;

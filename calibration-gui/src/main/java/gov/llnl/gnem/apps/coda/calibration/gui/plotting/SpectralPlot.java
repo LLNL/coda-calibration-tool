@@ -208,6 +208,9 @@ public class SpectralPlot extends JMultiAxisPlot {
             case REF:
                 line = new Line(x, y, Color.BLACK, PaintMode.COPY, PenStyle.DASH, 2);
                 break;
+            case VAL:
+                line = new Line(x, y, Color.BLUE, PaintMode.COPY, PenStyle.DASHDOT, 2);
+                break;                
             case UQ1:
                 line = new Line(x, y, Color.LIGHT_GRAY, PaintMode.COPY, PenStyle.DASH, 2);
                 break;

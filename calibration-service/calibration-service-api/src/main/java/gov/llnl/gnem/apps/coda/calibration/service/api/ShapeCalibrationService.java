@@ -25,5 +25,5 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters
 public interface ShapeCalibrationService {
 
     public Map<FrequencyBand, SharedFrequencyBandParameters> measureShapes(Collection<PeakVelocityMeasurement> velocityMeasurements,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints, boolean autoPickingEnabled);
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints, boolean autoPickingEnabled) throws InterruptedException;
 }

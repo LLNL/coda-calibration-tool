@@ -22,6 +22,8 @@ import reactor.core.publisher.Mono;
 public interface CalibrationClient {
 
     public Mono<String> runCalibration(Boolean autoPickingEnabled);
+    
+    public Mono<Boolean> cancelCalibration(Long id);
 
     public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled);
 

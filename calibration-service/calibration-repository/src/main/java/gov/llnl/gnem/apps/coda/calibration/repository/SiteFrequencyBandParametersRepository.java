@@ -21,7 +21,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
-import io.springlets.data.jpa.repository.DetachableJpaRepository;
+import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
 
 @Transactional
 public interface SiteFrequencyBandParametersRepository extends DetachableJpaRepository<SiteFrequencyBandParameters, Long> {

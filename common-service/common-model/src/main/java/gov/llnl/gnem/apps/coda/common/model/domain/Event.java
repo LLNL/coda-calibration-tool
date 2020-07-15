@@ -56,6 +56,10 @@ public class Event implements Serializable {
     @NumberFormat
     private double longitude;
 
+    @Column(name = "eventDepth")
+    @NumberFormat
+    private double depth;
+
     public String getEventId() {
         return this.eventId;
     }
@@ -95,6 +99,15 @@ public class Event implements Serializable {
         return this;
     }
 
+    public double getDepth() {
+        return this.depth;
+    }
+
+    public Event setDepth(double depth) {
+        this.depth = depth;
+        return this;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -127,7 +140,18 @@ public class Event implements Serializable {
 
     @Override
     public String toString() {
-        return "Event [eventId=" + eventId + ", originTime=" + originTime + ", latitude=" + latitude + ", longitude=" + longitude + "]";
+        StringBuilder builder = new StringBuilder();
+        builder.append("Event [eventId=")
+               .append(eventId)
+               .append(", originTime=")
+               .append(originTime)
+               .append(", latitude=")
+               .append(latitude)
+               .append(", longitude=")
+               .append(longitude)
+               .append(", depth=")
+               .append(depth)
+               .append("]");
+        return builder.toString();
     }
-
 }

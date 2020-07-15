@@ -1,545 +1,546 @@
 {
-	"schemaVersion": 1,
-	"type": "llnl/coda-calibration-tool",
-	"bands": [
-		{
-			"lowFreqHz": 0.02,
-			"highFreqHz": 0.03,
-			"minWindowLengthSec": 100,
-			"maxWindowLengthSec": 1000,
-			"snrThresholdAboveNoiseLog10": 0.5,
-			"measurementTimeSec": 100.0,
-			"velocity0": 1,
-			"velocity1": 2,
-			"velocity2": 3,
-			"beta0": 4,
-			"beta1": 5,
-			"beta2": 6,
-			"gamma0": 7,
-			"gamma1": 8,
-			"gamma2": 9,
-			"p1": 10,
-			"p2": 11,
-			"xc": 12,
-			"xt": 13,
-			"q": 14
-		},
-		{
-			"lowFreqHz": 0.03,
-			"highFreqHz": 0.05,
-			"minWindowLengthSec": 100,
-			"maxWindowLengthSec": 800,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 0.05,
-			"highFreqHz": 0.1,
-			"minWindowLengthSec": 75,
-			"maxWindowLengthSec": 600,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 0.1,
-			"highFreqHz": 0.2,
-			"minWindowLengthSec": 75,
-			"maxWindowLengthSec": 550,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 0.2,
-			"highFreqHz": 0.3,
-			"minWindowLengthSec": 50,
-			"maxWindowLengthSec": 550,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 0.3,
-			"highFreqHz": 0.5,
-			"minWindowLengthSec": 50,
-			"maxWindowLengthSec": 500,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 0.5,
-			"highFreqHz": 0.7,
-			"minWindowLengthSec": 50,
-			"maxWindowLengthSec": 500,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 0.7,
-			"highFreqHz": 1.0,
-			"minWindowLengthSec": 40,
-			"maxWindowLengthSec": 450,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 1.0,
-			"highFreqHz": 1.5,
-			"minWindowLengthSec": 40,
-			"maxWindowLengthSec": 450,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 1.5,
-			"highFreqHz": 2.0,
-			"minWindowLengthSec": 40,
-			"maxWindowLengthSec": 400,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 2.0,
-			"highFreqHz": 3.0,
-			"minWindowLengthSec": 40,
-			"maxWindowLengthSec": 400,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 3.0,
-			"highFreqHz": 4.0,
-			"minWindowLengthSec": 40,
-			"maxWindowLengthSec": 400,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 4.0,
-			"highFreqHz": 6.0,
-			"minWindowLengthSec": 40,
-			"maxWindowLengthSec": 400,
-			"snrThresholdAboveNoiseLog10": 0.5
-		},
-		{
-			"lowFreqHz": 6.0,
-			"highFreqHz": 8.0,
-			"minWindowLengthSec": 40,
-			"maxWindowLengthSec": 350,
-			"snrThresholdAboveNoiseLog10": 0.5
-		}
-	],
-	"mdac-fi": {
-		"alphaR": 5000,
-		"alphas": 6000,
-		"betas": 3500,
-		"betaR": 2900,
-		"sigma": 0.3,
-		"delSigma": 98.0,
-		"psi": 0.25,
-		"delPsi": 99.0,
-		"zeta": 1.0,
-		"m0ref": 10000000000000000,
-		"radPatP": 0.44,
-		"radPatS": 0.6,
-		"rhor": 2500,
-		"rhos": 2700
-	},
-	"mdac-ps": [
-		{
-			"phase": "Pn",
-			"q0": 210,
-			"delQ0": 100,
-			"gamma0": 0.65,
-			"delGamma0": 101,
-			"u0": 7900,
-			"eta": 1.1,
-			"delEta": 102,
-			"distCrit": 0.001,
-			"snr": 2
-		},
-		{
-			"phase": "Pg",
-			"q0": 190,
-			"delQ0": 0,
-			"gamma0": 0.45,
-			"delGamma0": 0,
-			"u0": 6000,
-			"eta": 0.5,
-			"delEta": 0,
-			"distCrit": 100,
-			"snr": 2
-		},
-		{
-			"phase": "Sn",
-			"q0": 590,
-			"delQ0": 0,
-			"gamma0": 0.55,
-			"delGamma0": 0,
-			"u0": 4500,
-			"eta": 1.1,
-			"delEta": 0,
-			"distCrit": 0.001,
-			"snr": 2
-		},
-		{
-			"phase": "Lg",
-			"q0": 200,
-			"delQ0": 0,
-			"gamma0": 0.54,
-			"delGamma0": 0,
-			"u0": 3500,
-			"eta": 0.5,
-			"delEta": 0,
-			"distCrit": 100,
-			"snr": 2
-		}
-	],
-	"reference-events": [
-		{
-			"eventId": "0331199924",
-			"refMw": 3.0
-		},
-		{
-			"eventId": "0401199924",
-			"refMw": 5.0,
-			"apparentStressInMpa": 0.7
-		}
-	],
-    "shape-constraints" : {
-        "maxVP1" : 1600.0,
-        "minVP1" : 150.0,
-        "v0reg" : 1100.0,
-        "maxVP2" : 15000.0,
-        "minVP2" : 11.0,
-        "maxVP3" : 15000.0,
-        "minVP3" : 11.0,
-        "maxBP1" : 11000.0,
-        "minBP1" : -1500.0,
-        "b0reg" : 110000.0,
-        "maxBP2" : 120.0,
-        "minBP2" : 10.1,
-        "maxBP3" : 11500.0,
-        "minBP3" : 11.0E-4,
-        "maxGP1" : 1100.0,
-        "minGP1" : 10.0,
-        "g0reg" : 1100.0,
-        "maxGP2" : 1101.0,
-        "minGP2" : 10.0,
-        "g1reg" : -11.0,
-        "maxGP3" : 1101.0,
-        "minGP3" : 11.0,
-        "yvvMin" : 10.5,
-        "yvvMax" : 16.01,
-        "vDistMax" : 11600.0,
-        "vDistMin" : 10.0,
-        "ybbMin" : -10.12,
-        "ybbMax" : 15.0E-4,
-        "bDistMax" : 11550.0,
-        "bDistMin" : 10.0,
-        "yggMin" : 10.01,
-        "yggMax" : 1100.0,
-        "gDistMin" : 1600.0,
-        "gDistMax" : 10.0,
-        "minIntercept" : 10.001,
-        "maxIntercept" : 120.0,
-        "minBeta" : -14.0,
-        "maxBeta" : -11.0E-4,
-        "minGamma" : 10.001,
-        "maxGamma" : 14.0,
-        "iterations" : 110
-    },        
-	"site-corrections": [
-		{			
-			"BK": {
-				"SAO": [
-					{
-						"siteTerm": 19.160301172988373,
-						"lowFreqHz": 0.2,
-						"highFreqHz": 0.3
-					},
-					{
-						"siteTerm": 19.160301172988373,
-						"lowFreqHz": 0.2,
-						"highFreqHz": 0.3
-					},
-					{
-						"siteTerm": 19.078495953084072,
-						"lowFreqHz": 0.3,
-						"highFreqHz": 0.5
-					},
-					{
-						"siteTerm": 19.00135341977889,
-						"lowFreqHz": 0.5,
-						"highFreqHz": 0.7
-					},
-					{
-						"siteTerm": 19.03492718945587,
-						"lowFreqHz": 0.7,
-						"highFreqHz": 1.0
-					},
-					{
-						"siteTerm": 18.94226636451329,
-						"lowFreqHz": 1.0,
-						"highFreqHz": 1.5
-					},
-					{
-						"siteTerm": 18.92723226138862,
-						"lowFreqHz": 1.5,
-						"highFreqHz": 2.0
-					},
-					{
-						"siteTerm": 19.184367156400697,
-						"lowFreqHz": 2.0,
-						"highFreqHz": 3.0
-					},
-					{
-						"siteTerm": 19.14718589386693,
-						"lowFreqHz": 3.0,
-						"highFreqHz": 4.0
-					},
-					{
-						"siteTerm": 19.211116316565025,
-						"lowFreqHz": 4.0,
-						"highFreqHz": 6.0
-					},
-					{
-						"siteTerm": 19.57881986308872,
-						"lowFreqHz": 6.0,
-						"highFreqHz": 8.0
-					},
-					{
-						"siteTerm": 20.164195454405423,
-						"lowFreqHz": 8.0,
-						"highFreqHz": 10.0
-					},
-					{
-						"siteTerm": 20.325371990356185,
-						"lowFreqHz": 10.0,
-						"highFreqHz": 15.0
-					},
-					{
-						"siteTerm": 21.24328806924078,
-						"lowFreqHz": 15.0,
-						"highFreqHz": 20.0
-					},
-					{
-						"siteTerm": 21.48709133874192,
-						"lowFreqHz": 20.0,
-						"highFreqHz": 25.0
-					}
-				],
-				"CVS": [
-					{
-						"siteTerm": 18.99512062088609,
-						"lowFreqHz": 0.2,
-						"highFreqHz": 0.3
-					},
-					{
-						"siteTerm": 18.712207283591184,
-						"lowFreqHz": 0.3,
-						"highFreqHz": 0.5
-					},
-					{
-						"siteTerm": 18.688751493057524,
-						"lowFreqHz": 0.5,
-						"highFreqHz": 0.7
-					},
-					{
-						"siteTerm": 18.84134477372329,
-						"lowFreqHz": 0.7,
-						"highFreqHz": 1.0
-					},
-					{
-						"siteTerm": 18.891154656359777,
-						"lowFreqHz": 1.0,
-						"highFreqHz": 1.5
-					},
-					{
-						"siteTerm": 18.82400240637313,
-						"lowFreqHz": 1.5,
-						"highFreqHz": 2.0
-					},
-					{
-						"siteTerm": 18.949633953462328,
-						"lowFreqHz": 2.0,
-						"highFreqHz": 3.0
-					},
-					{
-						"siteTerm": 18.961351413110204,
-						"lowFreqHz": 3.0,
-						"highFreqHz": 4.0
-					},
-					{
-						"siteTerm": 19.06547621563001,
-						"lowFreqHz": 4.0,
-						"highFreqHz": 6.0
-					},
-					{
-						"siteTerm": 19.591903909961985,
-						"lowFreqHz": 6.0,
-						"highFreqHz": 8.0
-					},
-					{
-						"siteTerm": 20.181175758798673,
-						"lowFreqHz": 8.0,
-						"highFreqHz": 10.0
-					},
-					{
-						"siteTerm": 20.371678739288434,
-						"lowFreqHz": 10.0,
-						"highFreqHz": 15.0
-					},
-					{
-						"siteTerm": 21.34581922180849,
-						"lowFreqHz": 15.0,
-						"highFreqHz": 20.0
-					},
-					{
-						"siteTerm": 21.607084224674125,
-						"lowFreqHz": 20.0,
-						"highFreqHz": 25.0
-					}
-				],
-				"WENL": [
-					{
-						"siteTerm": 18.736694993008697,
-						"lowFreqHz": 0.2,
-						"highFreqHz": 0.3
-					},
-					{
-						"siteTerm": 18.6085082031463,
-						"lowFreqHz": 0.3,
-						"highFreqHz": 0.5
-					},
-					{
-						"siteTerm": 18.580578107370048,
-						"lowFreqHz": 0.5,
-						"highFreqHz": 0.7
-					},
-					{
-						"siteTerm": 18.661130492426334,
-						"lowFreqHz": 0.7,
-						"highFreqHz": 1.0
-					},
-					{
-						"siteTerm": 18.587026724834214,
-						"lowFreqHz": 1.0,
-						"highFreqHz": 1.5
-					},
-					{
-						"siteTerm": 18.495225296106195,
-						"lowFreqHz": 1.5,
-						"highFreqHz": 2.0
-					},
-					{
-						"siteTerm": 18.802400569430816,
-						"lowFreqHz": 2.0,
-						"highFreqHz": 3.0
-					},
-					{
-						"siteTerm": 19.062474655337304,
-						"lowFreqHz": 3.0,
-						"highFreqHz": 4.0
-					},
-					{
-						"siteTerm": 19.293388411261628,
-						"lowFreqHz": 4.0,
-						"highFreqHz": 6.0
-					},
-					{
-						"siteTerm": 19.927795134546052,
-						"lowFreqHz": 6.0,
-						"highFreqHz": 8.0
-					},
-					{
-						"siteTerm": 20.71777025105482,
-						"lowFreqHz": 8.0,
-						"highFreqHz": 10.0
-					},
-					{
-						"siteTerm": 20.95605674566051,
-						"lowFreqHz": 10.0,
-						"highFreqHz": 15.0
-					},
-					{
-						"siteTerm": 21.977061937887687,
-						"lowFreqHz": 15.0,
-						"highFreqHz": 20.0
-					},
-					{
-						"siteTerm": 22.434419365054662,
-						"lowFreqHz": 20.0,
-						"highFreqHz": 25.0
-					}
-				]
-			},
-			"UNK": {
-				"SAO": [
-					{
-						"siteTerm": 19.160301172988373,
-						"lowFreqHz": 0.2,
-						"highFreqHz": 0.3
-					},
-					{
-						"siteTerm": 19.160301172988373,
-						"lowFreqHz": 0.2,
-						"highFreqHz": 0.3
-					},
-					{
-						"siteTerm": 19.078495953084072,
-						"lowFreqHz": 0.3,
-						"highFreqHz": 0.5
-					},
-					{
-						"siteTerm": 19.00135341977889,
-						"lowFreqHz": 0.5,
-						"highFreqHz": 0.7
-					},
-					{
-						"siteTerm": 19.03492718945587,
-						"lowFreqHz": 0.7,
-						"highFreqHz": 1.0
-					},
-					{
-						"siteTerm": 18.94226636451329,
-						"lowFreqHz": 1.0,
-						"highFreqHz": 1.5
-					},
-					{
-						"siteTerm": 18.92723226138862,
-						"lowFreqHz": 1.5,
-						"highFreqHz": 2.0
-					},
-					{
-						"siteTerm": 19.184367156400697,
-						"lowFreqHz": 2.0,
-						"highFreqHz": 3.0
-					},
-					{
-						"siteTerm": 19.14718589386693,
-						"lowFreqHz": 3.0,
-						"highFreqHz": 4.0
-					},
-					{
-						"siteTerm": 19.211116316565025,
-						"lowFreqHz": 4.0,
-						"highFreqHz": 6.0
-					},
-					{
-						"siteTerm": 19.57881986308872,
-						"lowFreqHz": 6.0,
-						"highFreqHz": 8.0
-					},
-					{
-						"siteTerm": 20.164195454405423,
-						"lowFreqHz": 8.0,
-						"highFreqHz": 10.0
-					},
-					{
-						"siteTerm": 20.325371990356185,
-						"lowFreqHz": 10.0,
-						"highFreqHz": 15.0
-					},
-					{
-						"siteTerm": 21.24328806924078,
-						"lowFreqHz": 15.0,
-						"highFreqHz": 20.0
-					},
-					{
-						"siteTerm": 21.48709133874192,
-						"lowFreqHz": 20.0,
-						"highFreqHz": 25.0
-					}
-				]				
-			}
-		}
-	]
+    "schemaVersion": 1,
+    "type": "llnl/coda-calibration-tool",
+    "bands": [{
+            "lowFreqHz": 0.02,
+            "highFreqHz": 0.03,
+            "minWindowLengthSec": 100,
+            "maxWindowLengthSec": 1000,
+            "snrThresholdAboveNoiseLog10": 0.5,
+            "measurementTimeSec": 100.0,
+            "velocity0": 1,
+            "velocity1": 2,
+            "velocity2": 3,
+            "beta0": 4,
+            "beta1": 5,
+            "beta2": 6,
+            "gamma0": 7,
+            "gamma1": 8,
+            "gamma2": 9,
+            "p1": 10,
+            "p2": 11,
+            "xc": 12,
+            "xt": 13,
+            "q": 14
+        },
+        {
+            "lowFreqHz": 0.03,
+            "highFreqHz": 0.05,
+            "minWindowLengthSec": 100,
+            "maxWindowLengthSec": 800,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 0.05,
+            "highFreqHz": 0.1,
+            "minWindowLengthSec": 75,
+            "maxWindowLengthSec": 600,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 0.1,
+            "highFreqHz": 0.2,
+            "minWindowLengthSec": 75,
+            "maxWindowLengthSec": 550,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 0.2,
+            "highFreqHz": 0.3,
+            "minWindowLengthSec": 50,
+            "maxWindowLengthSec": 550,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 0.3,
+            "highFreqHz": 0.5,
+            "minWindowLengthSec": 50,
+            "maxWindowLengthSec": 500,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 0.5,
+            "highFreqHz": 0.7,
+            "minWindowLengthSec": 50,
+            "maxWindowLengthSec": 500,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 0.7,
+            "highFreqHz": 1.0,
+            "minWindowLengthSec": 40,
+            "maxWindowLengthSec": 450,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 1.0,
+            "highFreqHz": 1.5,
+            "minWindowLengthSec": 40,
+            "maxWindowLengthSec": 450,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 1.5,
+            "highFreqHz": 2.0,
+            "minWindowLengthSec": 40,
+            "maxWindowLengthSec": 400,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 2.0,
+            "highFreqHz": 3.0,
+            "minWindowLengthSec": 40,
+            "maxWindowLengthSec": 400,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 3.0,
+            "highFreqHz": 4.0,
+            "minWindowLengthSec": 40,
+            "maxWindowLengthSec": 400,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 4.0,
+            "highFreqHz": 6.0,
+            "minWindowLengthSec": 40,
+            "maxWindowLengthSec": 400,
+            "snrThresholdAboveNoiseLog10": 0.5
+        },
+        {
+            "lowFreqHz": 6.0,
+            "highFreqHz": 8.0,
+            "minWindowLengthSec": 40,
+            "maxWindowLengthSec": 350,
+            "snrThresholdAboveNoiseLog10": 0.5
+        }
+    ],
+    "mdac-fi": {
+        "alphaR": 5000,
+        "alphas": 6000,
+        "betas": 3500,
+        "betaR": 2900,
+        "sigma": 0.3,
+        "delSigma": 98.0,
+        "psi": 0.25,
+        "delPsi": 99.0,
+        "zeta": 1.0,
+        "m0ref": 10000000000000000,
+        "radPatP": 0.44,
+        "radPatS": 0.6,
+        "rhor": 2500,
+        "rhos": 2700
+    },
+    "mdac-ps": [{
+            "phase": "Pn",
+            "q0": 210,
+            "delQ0": 100,
+            "gamma0": 0.65,
+            "delGamma0": 101,
+            "u0": 7900,
+            "eta": 1.1,
+            "delEta": 102,
+            "distCrit": 0.001,
+            "snr": 2
+        },
+        {
+            "phase": "Pg",
+            "q0": 190,
+            "delQ0": 0,
+            "gamma0": 0.45,
+            "delGamma0": 0,
+            "u0": 6000,
+            "eta": 0.5,
+            "delEta": 0,
+            "distCrit": 100,
+            "snr": 2
+        },
+        {
+            "phase": "Sn",
+            "q0": 590,
+            "delQ0": 0,
+            "gamma0": 0.55,
+            "delGamma0": 0,
+            "u0": 4500,
+            "eta": 1.1,
+            "delEta": 0,
+            "distCrit": 0.001,
+            "snr": 2
+        },
+        {
+            "phase": "Lg",
+            "q0": 200,
+            "delQ0": 0,
+            "gamma0": 0.54,
+            "delGamma0": 0,
+            "u0": 3500,
+            "eta": 0.5,
+            "delEta": 0,
+            "distCrit": 100,
+            "snr": 2
+        }
+    ],
+    "reference-events": [{
+            "eventId": "0331199924",
+            "refMw": 3.0
+        },
+        {
+            "eventId": "0401199924",
+            "refMw": 5.0,
+            "apparentStressInMpa": 0.7
+        }
+    ],
+    "validation-events": [{
+            "eventId": "0331199924",
+            "mw": 3.2
+        },
+        {
+            "eventId": "0401199924",
+            "mw": 5.2,
+            "apparentStressInMpa": 0.7
+        }
+    ],
+    "shape-constraints": {
+        "maxVP1": 1600.0,
+        "minVP1": 150.0,
+        "v0reg": 1100.0,
+        "maxVP2": 15000.0,
+        "minVP2": 11.0,
+        "maxVP3": 15000.0,
+        "minVP3": 11.0,
+        "maxBP1": 11000.0,
+        "minBP1": -1500.0,
+        "b0reg": 110000.0,
+        "maxBP2": 120.0,
+        "minBP2": 10.1,
+        "maxBP3": 11500.0,
+        "minBP3": 11.0E-4,
+        "maxGP1": 1100.0,
+        "minGP1": 10.0,
+        "g0reg": 1100.0,
+        "maxGP2": 1101.0,
+        "minGP2": 10.0,
+        "g1reg": -11.0,
+        "maxGP3": 1101.0,
+        "minGP3": 11.0,
+        "yvvMin": 10.5,
+        "yvvMax": 16.01,
+        "vDistMax": 11600.0,
+        "vDistMin": 10.0,
+        "ybbMin": -10.12,
+        "ybbMax": 15.0E-4,
+        "bDistMax": 11550.0,
+        "bDistMin": 10.0,
+        "yggMin": 10.01,
+        "yggMax": 1100.0,
+        "gDistMin": 1600.0,
+        "gDistMax": 10.0,
+        "minIntercept": 10.001,
+        "maxIntercept": 120.0,
+        "minBeta": -14.0,
+        "maxBeta": -11.0E-4,
+        "minGamma": 10.001,
+        "maxGamma": 14.0,
+        "iterations": 110
+    },
+    "site-corrections": [{
+        "BK": {
+            "SAO": [{
+                    "siteTerm": 19.160301172988373,
+                    "lowFreqHz": 0.2,
+                    "highFreqHz": 0.3
+                },
+                {
+                    "siteTerm": 19.160301172988373,
+                    "lowFreqHz": 0.2,
+                    "highFreqHz": 0.3
+                },
+                {
+                    "siteTerm": 19.078495953084072,
+                    "lowFreqHz": 0.3,
+                    "highFreqHz": 0.5
+                },
+                {
+                    "siteTerm": 19.00135341977889,
+                    "lowFreqHz": 0.5,
+                    "highFreqHz": 0.7
+                },
+                {
+                    "siteTerm": 19.03492718945587,
+                    "lowFreqHz": 0.7,
+                    "highFreqHz": 1.0
+                },
+                {
+                    "siteTerm": 18.94226636451329,
+                    "lowFreqHz": 1.0,
+                    "highFreqHz": 1.5
+                },
+                {
+                    "siteTerm": 18.92723226138862,
+                    "lowFreqHz": 1.5,
+                    "highFreqHz": 2.0
+                },
+                {
+                    "siteTerm": 19.184367156400697,
+                    "lowFreqHz": 2.0,
+                    "highFreqHz": 3.0
+                },
+                {
+                    "siteTerm": 19.14718589386693,
+                    "lowFreqHz": 3.0,
+                    "highFreqHz": 4.0
+                },
+                {
+                    "siteTerm": 19.211116316565025,
+                    "lowFreqHz": 4.0,
+                    "highFreqHz": 6.0
+                },
+                {
+                    "siteTerm": 19.57881986308872,
+                    "lowFreqHz": 6.0,
+                    "highFreqHz": 8.0
+                },
+                {
+                    "siteTerm": 20.164195454405423,
+                    "lowFreqHz": 8.0,
+                    "highFreqHz": 10.0
+                },
+                {
+                    "siteTerm": 20.325371990356185,
+                    "lowFreqHz": 10.0,
+                    "highFreqHz": 15.0
+                },
+                {
+                    "siteTerm": 21.24328806924078,
+                    "lowFreqHz": 15.0,
+                    "highFreqHz": 20.0
+                },
+                {
+                    "siteTerm": 21.48709133874192,
+                    "lowFreqHz": 20.0,
+                    "highFreqHz": 25.0
+                }
+            ],
+            "CVS": [{
+                    "siteTerm": 18.99512062088609,
+                    "lowFreqHz": 0.2,
+                    "highFreqHz": 0.3
+                },
+                {
+                    "siteTerm": 18.712207283591184,
+                    "lowFreqHz": 0.3,
+                    "highFreqHz": 0.5
+                },
+                {
+                    "siteTerm": 18.688751493057524,
+                    "lowFreqHz": 0.5,
+                    "highFreqHz": 0.7
+                },
+                {
+                    "siteTerm": 18.84134477372329,
+                    "lowFreqHz": 0.7,
+                    "highFreqHz": 1.0
+                },
+                {
+                    "siteTerm": 18.891154656359777,
+                    "lowFreqHz": 1.0,
+                    "highFreqHz": 1.5
+                },
+                {
+                    "siteTerm": 18.82400240637313,
+                    "lowFreqHz": 1.5,
+                    "highFreqHz": 2.0
+                },
+                {
+                    "siteTerm": 18.949633953462328,
+                    "lowFreqHz": 2.0,
+                    "highFreqHz": 3.0
+                },
+                {
+                    "siteTerm": 18.961351413110204,
+                    "lowFreqHz": 3.0,
+                    "highFreqHz": 4.0
+                },
+                {
+                    "siteTerm": 19.06547621563001,
+                    "lowFreqHz": 4.0,
+                    "highFreqHz": 6.0
+                },
+                {
+                    "siteTerm": 19.591903909961985,
+                    "lowFreqHz": 6.0,
+                    "highFreqHz": 8.0
+                },
+                {
+                    "siteTerm": 20.181175758798673,
+                    "lowFreqHz": 8.0,
+                    "highFreqHz": 10.0
+                },
+                {
+                    "siteTerm": 20.371678739288434,
+                    "lowFreqHz": 10.0,
+                    "highFreqHz": 15.0
+                },
+                {
+                    "siteTerm": 21.34581922180849,
+                    "lowFreqHz": 15.0,
+                    "highFreqHz": 20.0
+                },
+                {
+                    "siteTerm": 21.607084224674125,
+                    "lowFreqHz": 20.0,
+                    "highFreqHz": 25.0
+                }
+            ],
+            "WENL": [{
+                    "siteTerm": 18.736694993008697,
+                    "lowFreqHz": 0.2,
+                    "highFreqHz": 0.3
+                },
+                {
+                    "siteTerm": 18.6085082031463,
+                    "lowFreqHz": 0.3,
+                    "highFreqHz": 0.5
+                },
+                {
+                    "siteTerm": 18.580578107370048,
+                    "lowFreqHz": 0.5,
+                    "highFreqHz": 0.7
+                },
+                {
+                    "siteTerm": 18.661130492426334,
+                    "lowFreqHz": 0.7,
+                    "highFreqHz": 1.0
+                },
+                {
+                    "siteTerm": 18.587026724834214,
+                    "lowFreqHz": 1.0,
+                    "highFreqHz": 1.5
+                },
+                {
+                    "siteTerm": 18.495225296106195,
+                    "lowFreqHz": 1.5,
+                    "highFreqHz": 2.0
+                },
+                {
+                    "siteTerm": 18.802400569430816,
+                    "lowFreqHz": 2.0,
+                    "highFreqHz": 3.0
+                },
+                {
+                    "siteTerm": 19.062474655337304,
+                    "lowFreqHz": 3.0,
+                    "highFreqHz": 4.0
+                },
+                {
+                    "siteTerm": 19.293388411261628,
+                    "lowFreqHz": 4.0,
+                    "highFreqHz": 6.0
+                },
+                {
+                    "siteTerm": 19.927795134546052,
+                    "lowFreqHz": 6.0,
+                    "highFreqHz": 8.0
+                },
+                {
+                    "siteTerm": 20.71777025105482,
+                    "lowFreqHz": 8.0,
+                    "highFreqHz": 10.0
+                },
+                {
+                    "siteTerm": 20.95605674566051,
+                    "lowFreqHz": 10.0,
+                    "highFreqHz": 15.0
+                },
+                {
+                    "siteTerm": 21.977061937887687,
+                    "lowFreqHz": 15.0,
+                    "highFreqHz": 20.0
+                },
+                {
+                    "siteTerm": 22.434419365054662,
+                    "lowFreqHz": 20.0,
+                    "highFreqHz": 25.0
+                }
+            ]
+        },
+        "UNK": {
+            "SAO": [{
+                    "siteTerm": 19.160301172988373,
+                    "lowFreqHz": 0.2,
+                    "highFreqHz": 0.3
+                },
+                {
+                    "siteTerm": 19.160301172988373,
+                    "lowFreqHz": 0.2,
+                    "highFreqHz": 0.3
+                },
+                {
+                    "siteTerm": 19.078495953084072,
+                    "lowFreqHz": 0.3,
+                    "highFreqHz": 0.5
+                },
+                {
+                    "siteTerm": 19.00135341977889,
+                    "lowFreqHz": 0.5,
+                    "highFreqHz": 0.7
+                },
+                {
+                    "siteTerm": 19.03492718945587,
+                    "lowFreqHz": 0.7,
+                    "highFreqHz": 1.0
+                },
+                {
+                    "siteTerm": 18.94226636451329,
+                    "lowFreqHz": 1.0,
+                    "highFreqHz": 1.5
+                },
+                {
+                    "siteTerm": 18.92723226138862,
+                    "lowFreqHz": 1.5,
+                    "highFreqHz": 2.0
+                },
+                {
+                    "siteTerm": 19.184367156400697,
+                    "lowFreqHz": 2.0,
+                    "highFreqHz": 3.0
+                },
+                {
+                    "siteTerm": 19.14718589386693,
+                    "lowFreqHz": 3.0,
+                    "highFreqHz": 4.0
+                },
+                {
+                    "siteTerm": 19.211116316565025,
+                    "lowFreqHz": 4.0,
+                    "highFreqHz": 6.0
+                },
+                {
+                    "siteTerm": 19.57881986308872,
+                    "lowFreqHz": 6.0,
+                    "highFreqHz": 8.0
+                },
+                {
+                    "siteTerm": 20.164195454405423,
+                    "lowFreqHz": 8.0,
+                    "highFreqHz": 10.0
+                },
+                {
+                    "siteTerm": 20.325371990356185,
+                    "lowFreqHz": 10.0,
+                    "highFreqHz": 15.0
+                },
+                {
+                    "siteTerm": 21.24328806924078,
+                    "lowFreqHz": 15.0,
+                    "highFreqHz": 20.0
+                },
+                {
+                    "siteTerm": 21.48709133874192,
+                    "lowFreqHz": 20.0,
+                    "highFreqHz": 25.0
+                }
+            ]
+        }
+    }]
 }

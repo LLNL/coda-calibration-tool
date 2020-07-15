@@ -126,4 +126,9 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
     public List<ReferenceMwParameters> findAllByEventIds(Collection<String> eventIds) {
         return referenceMwParametersRepository.findAllByEventIds(eventIds);
     }
+
+    @Override
+    public ReferenceMwParameters findByEventId(String evid) {
+        return referenceMwParametersRepository.findOneByEventId(evid);
+    }
 }

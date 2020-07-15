@@ -80,7 +80,6 @@ public class ShapeCalculator {
             double distance = velocityMeasurement.getDistance();
 
             TimeT originTime = new TimeT(velocityMeasurement.getWaveform().getEvent().getOriginTime());
-            TimeT travelTime;
             TimeT endTime;
 
             Double maxTimeRaw = velocityMeasurement.getTime();
@@ -93,11 +92,7 @@ public class ShapeCalculator {
             }
 
             Double timeDifference = maxTimeRaw - travelTimeRaw;
-            if (Math.abs(timeDifference) < 5.0) {
-                travelTime = originTime.add(maxTimeRaw);
-            } else {
-                travelTime = originTime.add(travelTimeRaw);
-            }
+            TimeT travelTime = originTime.add(maxTimeRaw);
 
             endTime = originTime.add(endPick.getPickTimeSecFromOrigin());
 
@@ -117,18 +112,16 @@ public class ShapeCalculator {
                 }
 
                 if (frequencyBandParameter.getMinLength() > 0 && synthSeis.getLengthInSeconds() < frequencyBandParameter.getMinLength()) {
-                    log.trace(
-                            "Encountered a too small window length while processing {} with length {} and minimum window of {}; processing will skip this file",
-                                velocityMeasurement,
-                                synthSeis.getLengthInSeconds(),
-                                frequencyBandParameter.getMinLength());
+                    log.trace("Encountered a too small window length while processing {} with length {} and minimum window of {}; processing will skip this file",
+                              velocityMeasurement,
+                              synthSeis.getLengthInSeconds(),
+                              frequencyBandParameter.getMinLength());
                     return null;
                 } else if (frequencyBandParameter.getMaxLength() > 0 && synthSeis.getLengthInSeconds() > frequencyBandParameter.getMaxLength()) {
-                    log.trace(
-                            "Encountered a too large window length while processing {} with length {} and maxium window of {}; processing will continue on a truncated envelope",
-                                velocityMeasurement,
-                                synthSeis.getLengthInSeconds(),
-                                frequencyBandParameter.getMaxLength());
+                    log.trace("Encountered a too large window length while processing {} with length {} and maxium window of {}; processing will continue on a truncated envelope",
+                              velocityMeasurement,
+                              synthSeis.getLengthInSeconds(),
+                              frequencyBandParameter.getMaxLength());
                     synthSeis.cutAfter(travelTime.add(frequencyBandParameter.getMaxLength()));
                 }
 

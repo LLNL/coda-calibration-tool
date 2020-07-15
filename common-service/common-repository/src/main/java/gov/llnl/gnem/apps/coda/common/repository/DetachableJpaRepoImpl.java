@@ -19,19 +19,9 @@ import java.io.Serializable;
 import javax.persistence.EntityManager;
 
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 
-import io.springlets.data.jpa.repository.support.DetachableJpaRepositoryImpl;
-
-/**
- * <p>
- * This is a quick hack to the existing DetachableJpaRepositoryImpl to correctly
- * implement the findOneDetached with the new findById API changes in Spring
- * JPA. It should be removed ASAP when the API has settled.
- * </p>
- * 
- * @see DetachableJpaRepositoryImpl
- */
-public class DetachableJpaRepoImpl<T, ID extends Serializable> extends DetachableJpaRepositoryImpl<T, ID> {
+public class DetachableJpaRepoImpl<T, ID extends Serializable> extends SimpleJpaRepository<T, ID> implements DetachableJpaRepository<T, ID> {
     private EntityManager entityManager;
 
     public DetachableJpaRepoImpl(JpaEntityInformation<T, ?> entityInformation, EntityManager entityManager) {

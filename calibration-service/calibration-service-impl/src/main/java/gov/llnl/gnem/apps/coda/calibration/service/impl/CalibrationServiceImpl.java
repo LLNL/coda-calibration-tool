@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -60,6 +61,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadataImpl;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.MeasurementStatusEvent;
@@ -79,6 +81,7 @@ import gov.llnl.gnem.apps.coda.calibration.service.api.SiteFrequencyBandParamete
 import gov.llnl.gnem.apps.coda.calibration.service.api.SpectraMeasurementService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticCodaGenerationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticService;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ValidationMwParametersService;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -97,6 +100,7 @@ import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 
 @Service
 @Transactional
+//FIXME: Kind of becoming a god-class, maybe see if we can break this up.
 public class CalibrationServiceImpl implements CalibrationService {
 
     private static final Logger log = LoggerFactory.getLogger(CalibrationServiceImpl.class);
@@ -113,6 +117,7 @@ public class CalibrationServiceImpl implements CalibrationService {
     private MdacParametersFiService mdacFiService;
     private MdacParametersPsService mdacPsService;
     private ReferenceMwParametersService referenceMwService;
+    private ValidationMwParametersService validationMwService;
     private SiteCalibrationService siteCalibrationService;
     private SyntheticService syntheticService;
     private NotificationService notificationService;
@@ -130,12 +135,14 @@ public class CalibrationServiceImpl implements CalibrationService {
     });
     private final ExecutorService measureService;
 
+    private Map<Long, Future<?>> runningJobs = new ConcurrentHashMap<>(2);
+
     @Autowired
     public CalibrationServiceImpl(WaveformService waveformService, PeakVelocityMeasurementService peakVelocityMeasurementsService, SharedFrequencyBandParametersService sharedParametersService,
             ShapeCalibrationService shapeCalibrationService, SpectraMeasurementService spectraMeasurementService, SyntheticCodaGenerationService syntheticGenerationService,
             PathCalibrationService pathCalibrationService, MdacParametersFiService mdacFiService, MdacParametersPsService mdacPsService, ReferenceMwParametersService referenceMwService,
-            SiteCalibrationService siteCalibrationService, SyntheticService syntheticService, NotificationService notificationService, DatabaseCleaningService cleaningService,
-            ConfigurationService configService, SiteFrequencyBandParametersService siteParamsService, SpectraCalculator spectraCalc, AutopickingService picker,
+            ValidationMwParametersService validationMwService, SiteCalibrationService siteCalibrationService, SyntheticService syntheticService, NotificationService notificationService,
+            DatabaseCleaningService cleaningService, ConfigurationService configService, SiteFrequencyBandParametersService siteParamsService, SpectraCalculator spectraCalc, AutopickingService picker,
             @Qualifier("MeasurementExecutorService") ExecutorService measureService) {
         this.waveformService = waveformService;
         this.peakVelocityMeasurementsService = peakVelocityMeasurementsService;
@@ -147,6 +154,7 @@ public class CalibrationServiceImpl implements CalibrationService {
         this.mdacFiService = mdacFiService;
         this.mdacPsService = mdacPsService;
         this.referenceMwService = referenceMwService;
+        this.validationMwService = validationMwService;
         this.siteCalibrationService = siteCalibrationService;
         this.syntheticService = syntheticService;
         this.notificationService = notificationService;
@@ -182,13 +190,12 @@ public class CalibrationServiceImpl implements CalibrationService {
             if (stacks != null && !stacks.isEmpty()) {
                 measuredMws = makeMwMeasurements(id, autoPickingEnabled, persistResults, stacks);
             } else {
-                notificationService.post(
-                        new MeasurementStatusEvent(id,
-                                                   MeasurementStatusEvent.Status.ERROR,
-                                                   new Result<Exception>(false,
-                                                                         new LightweightIllegalStateException("No matching waveforms found for event ids: " + eventIds != null
-                                                                                 ? eventIds.toString()
-                                                                                 : "{null}"))));
+                notificationService.post(new MeasurementStatusEvent(id,
+                                                                    MeasurementStatusEvent.Status.ERROR,
+                                                                    new Result<Exception>(false,
+                                                                                          new LightweightIllegalStateException("No matching waveforms found for event ids: " + eventIds != null
+                                                                                                  ? eventIds.toString()
+                                                                                                  : "{null}"))));
             }
 
             return measuredMws;
@@ -271,13 +278,12 @@ public class CalibrationServiceImpl implements CalibrationService {
 
             List<SpectraMeasurement> spectra = spectraCalc.measureAmplitudes(synthetics, frequencyBandParameterMap, velocityConfig, stationFrequencyBandMap);
 
-            List<MeasuredMwParameters> measuredMwsParams = siteCalibrationService.fitMws(
-                    spectraByFrequencyBand(spectra),
-                        mdacFiService.findFirst(),
-                        collectByFrequencyBand(mdacPsService.findAll()),
-                        collectByEvid(referenceMwService.findAll()),
-                        stationFrequencyBandMap,
-                        PICK_TYPES.LG);
+            List<MeasuredMwParameters> measuredMwsParams = siteCalibrationService.fitMws(spectraByFrequencyBand(spectra),
+                                                                                         mdacFiService.findFirst(),
+                                                                                         collectByFrequencyBand(mdacPsService.findAll()),
+                                                                                         collectByEvid(referenceMwService.findAll()),
+                                                                                         stationFrequencyBandMap,
+                                                                                         PICK_TYPES.LG);
 
             Map<Event, MeasuredMwParameters> measuredMwsMap = Optional.ofNullable(measuredMwsParams).orElseGet(ArrayList::new).stream().map(mwp -> {
                 Event event = getEventForId(mwp.getEventId(), eventsInStacks);
@@ -290,9 +296,8 @@ public class CalibrationServiceImpl implements CalibrationService {
 
             Map<String, List<Spectra>> fitSpectra = measuredMwsMap.entrySet()
                                                                   .parallelStream()
-                                                                  .map(
-                                                                          mw -> new AbstractMap.SimpleEntry<>(mw.getKey().getEventId(),
-                                                                                                              computeFitSpectra(mw.getValue(), frequencyBandParameterMap.keySet(), PICK_TYPES.LG)))
+                                                                  .map(mw -> new AbstractMap.SimpleEntry<>(mw.getKey().getEventId(),
+                                                                                                           computeFitSpectra(mw.getValue(), frequencyBandParameterMap.keySet(), PICK_TYPES.LG)))
                                                                   .collect(Collectors.toConcurrentMap(kv -> kv.getKey(), kv -> kv.getValue()));
 
             if (persistResults) {
@@ -304,13 +309,14 @@ public class CalibrationServiceImpl implements CalibrationService {
 
             details.setFitSpectra(fitSpectra);
 
-            details.setMeasuredMwDetails(
-                    measuredMwsMap.entrySet().parallelStream().collect(Collectors.toConcurrentMap(kv -> kv.getKey().getEventId(), kv -> new MeasuredMwDetails(kv.getValue(), null, kv.getKey()))));
+            details.setMeasuredMwDetails(measuredMwsMap.entrySet()
+                                                       .parallelStream()
+                                                       .collect(Collectors.toConcurrentMap(kv -> kv.getKey().getEventId(), kv -> new MeasuredMwDetails(kv.getValue(), null, null, kv.getKey()))));
 
-            details.setSpectraMeasurements(
-                    spectra.parallelStream()
-                           .map(s -> new AbstractMap.SimpleEntry<String, SpectraMeasurementMetadata>(s.getWaveform().getEvent().getEventId(), new SpectraMeasurementMetadataImpl(s)))
-                           .collect(Collectors.groupingByConcurrent(kv -> kv.getKey(), Collectors.mapping(kv -> kv.getValue(), Collectors.toList()))));
+            details.setSpectraMeasurements(spectra.parallelStream()
+                                                  .map(s -> new AbstractMap.SimpleEntry<String, SpectraMeasurementMetadata>(s.getWaveform().getEvent().getEventId(),
+                                                                                                                            new SpectraMeasurementMetadataImpl(s)))
+                                                  .collect(Collectors.groupingByConcurrent(kv -> kv.getKey(), Collectors.mapping(kv -> kv.getValue(), Collectors.toList()))));
         } else {
             log.info("Unable to measure Mws, no waveforms were provided.");
         }
@@ -344,7 +350,7 @@ public class CalibrationServiceImpl implements CalibrationService {
         // FIXME: These *All methods should be *AllByProjectID instead!
         final Long id = atomicLong.getAndIncrement();
         try {
-            calService.submit(() -> {
+            runningJobs.put(id, calService.submit(() -> {
                 try {
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.STARTING));
                     log.info("Starting calibration at {}", LocalDateTime.now());
@@ -380,6 +386,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // Now save the new ones we just calculated
                     peakVelocityMeasurementsService.save(snrFilteredVelocity);
 
+                    ConcurrencyUtils.checkInterrupt();
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.SHAPE_STARTING));
 
                     // 2) Compute the shape parameters describing each stack
@@ -398,11 +405,11 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // values back
                     stacks = filterToEndPicked(stacks);
 
-                    List<SpectraMeasurement> spectra = spectraMeasurementService.measureSpectra(
-                            syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap),
-                                frequencyBandParameterMap,
-                                velocityConfig);
+                    List<SpectraMeasurement> spectra = spectraMeasurementService.measureSpectra(syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap),
+                                                                                                frequencyBandParameterMap,
+                                                                                                velocityConfig);
 
+                    ConcurrencyUtils.checkInterrupt();
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.PATH_STARTING));
 
                     // 4) For each event in the data set find all stations that
@@ -411,11 +418,13 @@ public class CalibrationServiceImpl implements CalibrationService {
                     frequencyBandParameterMap = pathCalibrationService.measurePathCorrections(spectraByFrequencyBand(spectra), frequencyBandParameterMap, velocityConfig);
 
                     frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
+                    ConcurrencyUtils.checkInterrupt();
 
                     // 5) Measure the amplitudes again but this time we can
                     // compute ESH path corrected values
                     spectra = spectraMeasurementService.measureSpectra(syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap), frequencyBandParameterMap, velocityConfig);
 
+                    ConcurrencyUtils.checkInterrupt();
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.SITE_STARTING));
 
                     // 6) Now using those path correction values plus a list of
@@ -424,36 +433,49 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // from the expected source spectra for that MW value. This value is
                     // recorded as the site specific offset for measured values at each
                     // frequency band
-                    Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap = siteCalibrationService.measureSiteCorrections(
-                            spectraByFrequencyBand(spectra),
-                                mdacFiService.findFirst(),
-                                collectByFrequencyBand(mdacPsService.findAll()),
-                                collectByEvid(referenceMwService.findAll()),
-                                frequencyBandParameterMap,
-                                PICK_TYPES.LG);
+                    Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap = siteCalibrationService.measureSiteCorrections(spectraByFrequencyBand(spectra),
+                                                                                                                                                                mdacFiService.findFirst(),
+                                                                                                                                                                collectByFrequencyBand(mdacPsService.findAll()),
+                                                                                                                                                                collectByEvid(referenceMwService.findAll()),
+                                                                                                                                                                frequencyBandParameterMap,
+                                                                                                                                                                PICK_TYPES.LG);
 
+                    ConcurrencyUtils.checkInterrupt();
                     // 7) Measure the amplitudes one last time to fill out the
                     // Path+Site corrected amplitude values
-                    spectra = spectraMeasurementService.measureSpectra(
-                            syntheticService.save(syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap)),
-                                frequencyBandParameterMap,
-                                velocityConfig,
-                                frequencyBandSiteParameterMap);
+                    spectra = spectraMeasurementService.measureSpectra(syntheticService.save(syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap)),
+                                                                       frequencyBandParameterMap,
+                                                                       velocityConfig,
+                                                                       frequencyBandSiteParameterMap);
 
                     log.info("Calibration complete at {}", LocalDateTime.now());
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.COMPLETE));
+                } catch (InterruptedException interrupted) {
+                    notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.COMPLETE, new Result<>(true, interrupted)));
                 } catch (Exception ex) {
                     log.error(ex.getMessage(), ex);
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.ERROR, new Result<>(false, ex)));
                     throw ex;
+                } finally {
+                    runningJobs.remove(id);
                 }
-                return new CompletableFuture<>();
-            });
+            }));
         } catch (RejectedExecutionException e) {
             notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.ERROR, new Result<Exception>(false, e)));
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean cancelCalibration(Long id) {
+        boolean cancelled = false;
+        Future<?> task = runningJobs.get(id);
+        if (task != null) {
+            task.cancel(true);
+            cancelled = true;
+        }
+        return cancelled;
     }
 
     private List<Waveform> filterToEndPicked(List<Waveform> stacks) {
@@ -518,5 +540,44 @@ public class CalibrationServiceImpl implements CalibrationService {
         }
 
         return false;
+    }
+
+    @Override
+    public List<String> toggleAllByEventIds(List<String> eventIds) {
+        List<String> infoMesssages = new ArrayList<>(0);
+        for (String evid : eventIds) {
+            ReferenceMwParameters ref = referenceMwService.findByEventId(evid);
+            ValidationMwParameters val = validationMwService.findByEventId(evid);
+
+            //Has ref but no validation (move Ref to Val)
+            if (ref != null && ref.getRefMw() != 0.0 && (val == null || val.getMw() == 0.0)) {
+                if (val == null) {
+                    val = new ValidationMwParameters();
+                }
+                val.setEventId(ref.getEventId());
+                val.setMw(ref.getRefMw());
+                val.setApparentStressInMpa(ref.getRefApparentStressInMpa());
+                referenceMwService.delete(ref);
+                validationMwService.save(val);
+                infoMesssages.add("Evid " + evid + " converted from reference event to validation.");
+            }
+            //Has val but no reference (move Val to Ref)
+            else if (val != null && val.getMw() != 0.0 && (ref == null || ref.getRefMw() == 0.0)) {
+                if (ref == null) {
+                    ref = new ReferenceMwParameters();
+                }
+                ref.setEventId(val.getEventId());
+                ref.setRefMw(val.getMw());
+                ref.setRefApparentStressInMpa(val.getApparentStressInMpa());
+                validationMwService.delete(val);
+                referenceMwService.save(ref);
+                infoMesssages.add("Evid " + evid + " converted from validation event to reference.");
+            }
+            //Has both/neither (info message?)
+            else {
+                infoMesssages.add("Ignoring request to convert evid " + evid + ", either the event has both or both are blank. Ref " + ref + "; Val " + val);
+            }
+        }
+        return infoMesssages;
     }
 }

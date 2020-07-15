@@ -456,6 +456,7 @@ public class CodaGuiController {
         if (!monitors.containsKey(event.getId()) && event.getStatus() == Status.STARTING) {
             CalibrationProgressListener eventMonitor = new CalibrationProgressListener(bus, event);
             ProgressMonitor monitor = new ProgressMonitor("Calibration Progress " + event.getId(), eventMonitor);
+            monitor.addCancelCallback(() -> calibrationClient.cancelCalibration(event.getId()).subscribe());
             monitors.put(event.getId(), monitor);
             loadingGui.addProgressMonitor(monitor);
             loadingGui.show();
@@ -465,6 +466,7 @@ public class CodaGuiController {
             final ProgressMonitor monitor = monitors.remove(event.getId());
             if (monitor != null) {
                 monitor.setProgressStage("Finished");
+                monitor.clearCancelCallbacks();
                 service.schedule(() -> loadingGui.removeProgressMonitor(monitor), 15, TimeUnit.MINUTES);
             }
         } else {

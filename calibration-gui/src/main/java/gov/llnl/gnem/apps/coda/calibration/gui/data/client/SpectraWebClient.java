@@ -70,6 +70,18 @@ public class SpectraWebClient implements SpectraClient {
                      .flatMap(response -> response.bodyToMono(Spectra.class))
                      .onErrorReturn(new Spectra());
     }
+    
+    @Override
+    public Mono<Spectra> getValidationSpectra(String eventId) {
+        return client.post()
+                     .uri("/spectra-measurements/validation-spectra")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(eventId)
+                     .exchange()
+                     .flatMap(response -> response.bodyToMono(Spectra.class))
+                     .onErrorReturn(new Spectra());
+    }    
 
     @Override
     public Mono<List<Spectra>> getFitSpectra(String eventId) {

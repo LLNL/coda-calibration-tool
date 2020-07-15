@@ -24,8 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.repository.MeasuredMwsRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.ReferenceMwParametersRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.ValidationMwParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 
@@ -35,12 +37,15 @@ public class MeasuredMwsServiceImpl implements MeasuredMwsService {
 
     private MeasuredMwsRepository measuredMwsRepository;
     private ReferenceMwParametersRepository referenceMwsRepository;
+    private ValidationMwParametersRepository validationMwsRepository;
     private WaveformService eventRepository;
 
     @Autowired
-    public MeasuredMwsServiceImpl(MeasuredMwsRepository measuredMwsRepository, ReferenceMwParametersRepository referenceMwsRepository, WaveformService eventRepository) {
+    public MeasuredMwsServiceImpl(MeasuredMwsRepository measuredMwsRepository, ReferenceMwParametersRepository referenceMwsRepository,
+            ValidationMwParametersRepository validationMwParametersRepository, WaveformService eventRepository) {
         this.measuredMwsRepository = measuredMwsRepository;
         this.referenceMwsRepository = referenceMwsRepository;
+        this.validationMwsRepository = validationMwParametersRepository;
         this.eventRepository = eventRepository;
     }
 
@@ -102,15 +107,32 @@ public class MeasuredMwsServiceImpl implements MeasuredMwsService {
     public List<MeasuredMwDetails> findAllDetails() {
         List<MeasuredMwParameters> measured = measuredMwsRepository.findAll();
         List<ReferenceMwParameters> reference = referenceMwsRepository.findAll();
+        List<ValidationMwParameters> validation = validationMwsRepository.findAll();
         List<MeasuredMwDetails> details = measured.stream().map(meas -> {
-            ReferenceMwParameters rmw = reference.stream().filter(ref -> ref.getEventId().equals(meas.getEventId())).findAny().orElseGet(() -> null);
-            return new MeasuredMwDetails(meas, rmw, eventRepository.findEventById(meas.getEventId()));
+            ReferenceMwParameters refMw = reference.stream().filter(ref -> ref.getEventId().equals(meas.getEventId())).findAny().orElseGet(() -> null);
+            ValidationMwParameters valMw = validation.stream().filter(val -> val.getEventId().equals(meas.getEventId())).findAny().orElseGet(() -> null);
+            return new MeasuredMwDetails(meas, refMw, valMw, eventRepository.findEventById(meas.getEventId()));
         }).collect(Collectors.toList());
 
+        //Ref v Meas
         details.addAll(reference.stream()
                                 .filter(ref -> measured.stream().noneMatch(meas -> ref.getEventId().equals(meas.getEventId())))
-                                .map(ref -> new MeasuredMwDetails(null, ref, eventRepository.findEventById(ref.getEventId())))
+                                .map(ref -> new MeasuredMwDetails(null, ref, null, eventRepository.findEventById(ref.getEventId())))
+                                .map(ref -> {
+                                    validation.stream().filter(val -> ref.getEventId().equals(val.getEventId())).findFirst().ifPresent(v -> {
+                                        ref.setValMw(v.getMw());
+                                        ref.setValApparentStressInMpa(v.getApparentStressInMpa());
+                                    });
+                                    return ref;
+                                })
                                 .collect(Collectors.toList()));
+
+        //Val ^ (Ref v Meas)
+        details.addAll(validation.stream()
+                                 .filter(val -> measured.stream().noneMatch(meas -> val.getEventId().equals(meas.getEventId())))
+                                 .filter(val -> reference.stream().noneMatch(ref -> val.getEventId().equals(ref.getEventId())))
+                                 .map(val -> new MeasuredMwDetails(null, null, val, eventRepository.findEventById(val.getEventId())))
+                                 .collect(Collectors.toList()));
 
         return details;
     }

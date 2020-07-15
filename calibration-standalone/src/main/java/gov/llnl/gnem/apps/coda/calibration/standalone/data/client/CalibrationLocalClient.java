@@ -47,6 +47,11 @@ public class CalibrationLocalClient implements CalibrationClient {
     public Mono<String> runCalibration(Boolean autoPickingEnabled) {
         return Mono.just(Boolean.toString(service.startCalibration(autoPickingEnabled)));
     }
+    
+    @Override
+    public Mono<Boolean> cancelCalibration(Long id) {
+        return Mono.just(service.cancelCalibration(id));
+    }
 
     @Override
     public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled) {

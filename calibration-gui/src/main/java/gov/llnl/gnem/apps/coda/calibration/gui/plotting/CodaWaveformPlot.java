@@ -277,21 +277,25 @@ public class CodaWaveformPlot extends SeriesPlot {
             if (startTime.lt(endTime)) {
                 interpolatedSeries.cut(startTime, endTime);
                 synthSeriesBeforeEndMarker.cut(startTime, endTime);
+                if (synthSeriesBeforeEndMarker.getLength() > 1) {
+                    TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
+                    int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
+                    double median = diffSeis.getMedian();
 
-                TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
-                int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
-                double median = diffSeis.getMedian();
+                    subplot.DeletePlotObject(legendRef);
+                    subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
+                    subplot.AddPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
 
-                subplot.DeletePlotObject(legendRef);
-                subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
-                subplot.AddPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
-
-                if (endTime.lt(synthSeriesRemaining.getEndtime())) {
-                    synthSeriesRemaining.cutBefore(endTime);
-                    int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
-                    subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, PenStyle.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                    if (endTime.lt(synthSeriesRemaining.getEndtime())) {
+                        synthSeriesRemaining.cutBefore(endTime);
+                        int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
+                        if (synthSeriesRemaining.getLength() > 1) {
+                            subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, PenStyle.DASH),
+                                                  PLOT_ORDERING.MODEL_FIT.getZOrder());
+                        }
+                    }
+                    repaint();
                 }
-                repaint();
             }
         }
     }
@@ -363,12 +367,11 @@ public class CodaWaveformPlot extends SeriesPlot {
                     pick.setPickTimeSecFromOrigin((float) (vpl.getXval() - new TimeT(pick.getWaveform().getEvent().getOriginTime()).subtractD(new TimeT(pick.getWaveform().getBeginTime()))));
                     if (pick.getPickName() != null && PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickName().trim())) {
                         pick.getWaveform()
-                            .setAssociatedPicks(
-                                    pick.getWaveform()
-                                        .getAssociatedPicks()
-                                        .stream()
-                                        .filter(p -> p.getPickName() != null && !PICK_TYPES.AP.getPhase().equalsIgnoreCase(p.getPickName().trim()))
-                                        .collect(Collectors.toList()));
+                            .setAssociatedPicks(pick.getWaveform()
+                                                    .getAssociatedPicks()
+                                                    .stream()
+                                                    .filter(p -> p.getPickName() != null && !PICK_TYPES.AP.getPhase().equalsIgnoreCase(p.getPickName().trim()))
+                                                    .collect(Collectors.toList()));
                     }
                     waveformClient.postWaveform(pick.getWaveform()).subscribe(this::setWaveform);
                 }

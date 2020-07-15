@@ -15,9 +15,6 @@
 package gov.llnl.gnem.apps.coda.calibration.model.domain.mixins;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 
 @JsonIgnoreProperties(value = { "id", "version" })
 public class ReferenceMwParametersFileMixin {

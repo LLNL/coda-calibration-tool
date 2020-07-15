@@ -28,10 +28,12 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParamet
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.repository.MeasuredMwsRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.ReferenceMwParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.SpectraMeasurementRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.ValidationMwParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SpectraMeasurementService;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -50,16 +52,19 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
     private SpectraMeasurementRepository spectraRepo;
 
     private ReferenceMwParametersRepository referenceEventRepo;
+    
+    private ValidationMwParametersRepository validationEventRepo;
 
     private MeasuredMwsRepository measuredEventRepo;
 
     @Autowired
     public SpectraMeasurementServiceImpl(SpectraMeasurementRepository spectraRepo, SpectraCalculator spectraCalc, MeasuredMwsRepository measuredEventRepo,
-            ReferenceMwParametersRepository referenceEventRepo) {
+            ReferenceMwParametersRepository referenceEventRepo, ValidationMwParametersRepository validationEventRepo) {
         this.spectraRepo = spectraRepo;
         this.spectraCalc = spectraCalc;
         this.measuredEventRepo = measuredEventRepo;
         this.referenceEventRepo = referenceEventRepo;
+        this.validationEventRepo = validationEventRepo;
     }
 
     @Override
@@ -128,6 +133,16 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
         }
         return refSpectra;
     }
+    
+    @Override
+    public Spectra computeValidationSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
+        Spectra valSpectra = new Spectra();
+        ValidationMwParameters valEvent = validationEventRepo.findOneByEventId(eventId);
+        if (valEvent != null) {
+            valSpectra = spectraCalc.computeSpecificSpectra(valEvent.getMw(), valEvent.getApparentStressInMpa(), frequencyBands, selectedPhase, SPECTRA_TYPES.VAL);
+        }
+        return valSpectra;
+    }    
 
     @Override
     public List<Spectra> getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {

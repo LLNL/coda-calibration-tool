@@ -15,20 +15,31 @@
 package gov.llnl.gnem.apps.coda.common.gui.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
 import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 public class ProgressMonitor extends VBox implements Observer {
+    private Button cancelButton = new Button();
 
     @FXML
     private ProgressBar progressBar;
@@ -38,6 +49,7 @@ public class ProgressMonitor extends VBox implements Observer {
 
     private String displayableName;
     private String progressStage;
+    private final ObservableList<Runnable> cancelFunctions = FXCollections.observableArrayList();
 
     public ProgressMonitor(String displayableName, ProgressListener progressListener) {
         this.displayableName = displayableName;
@@ -58,6 +70,19 @@ public class ProgressMonitor extends VBox implements Observer {
                     progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
                 }
                 label.setText("");
+
+                cancelButton.setAlignment(Pos.CENTER);
+                cancelButton.setPadding(new Insets(0, 0, 0, 0));
+                cancelButton.setPrefSize(25.0, 25.0);
+                cancelButton.setText("X");
+                cancelButton.setTextAlignment(TextAlignment.CENTER);
+                cancelButton.setOnAction((ActionEvent event) -> {
+                    List<Runnable> funcs = new ArrayList<>(cancelFunctions.size());
+                    funcs.addAll(cancelFunctions);
+                    funcs.forEach(Runnable::run);
+                });
+                cancelButton.visibleProperty().bind(Bindings.size(cancelFunctions).greaterThan(0));
+
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -99,5 +124,17 @@ public class ProgressMonitor extends VBox implements Observer {
 
     public ProgressBar getProgressBar() {
         return progressBar;
+    }
+
+    public void addCancelCallback(Runnable cancelFunction) {
+        cancelFunctions.add(cancelFunction);
+    }
+
+    public void clearCancelCallbacks() {
+        cancelFunctions.clear();
+    }
+
+    public Button getCancelButton() {
+        return cancelButton;
     }
 }

@@ -34,19 +34,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ValidationMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.MdacFiFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.MdacPsFileMixin;
@@ -54,12 +55,13 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ReferenceMwParame
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ShapeFitterConstraintsFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SiteFrequencyBandParametersFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ValidationMwParametersFileMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 
 @Component
-public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter {
+public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter, ValidationMwTempFileWriter {
 
     private static final Logger log = LoggerFactory.getLogger(JsonTempFileWriter.class);
 
@@ -79,6 +81,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         mapper.addMixIn(ShapeFitterConstraints.class, ShapeFitterConstraintsFileMixin.class);
         mapper.addMixIn(MdacParametersFI.class, MdacFiFileMixin.class);
         mapper.addMixIn(MdacParametersPS.class, MdacPsFileMixin.class);
+        mapper.addMixIn(ValidationMwParameters.class, ValidationMwParametersFileMixin.class);
     }
 
     @Override
@@ -98,6 +101,21 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
             JsonNode document = createOrGetDocument(folder, CALIBRATION_JSON_NAME);
             List<ReferenceMwParameters> refMws = mws.stream().filter(mw -> mw.getRefMw() != 0.0).collect(Collectors.toList());
             writeReferenceEvents(createOrGetFile(folder, CALIBRATION_JSON_NAME), document, refMws);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void writeValidationMws(Path folder, List<ValidationMwParameters> validationMws) {
+        writeValidationMws(folder, CALIBRATION_JSON_NAME, validationMws);
+    }
+
+    @Override
+    public void writeValidationMws(Path folder, String filename, List<ValidationMwParameters> validationMws) {
+        try {
+            JsonNode document = createOrGetDocument(folder, filename);
+            writeValidationEvents(createOrGetFile(folder, filename), document, validationMws);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -125,12 +143,12 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         if (siteParameters != null && !siteParameters.isEmpty()) {
             Map<String, Map<String, List<SiteFrequencyBandParameters>>> siteBands = siteParameters.entrySet()
                                                                                                   .stream()
-                                                                                                  .collect(
-                                                                                                          Collectors.groupingBy(
-                                                                                                                  e -> e.getKey().getNetworkName(),
-                                                                                                                      Collectors.toMap(
-                                                                                                                              e -> e.getKey().getStationName(),
-                                                                                                                                  e -> e.getValue().values().stream().collect(Collectors.toList()))));
+                                                                                                  .collect(Collectors.groupingBy(e -> e.getKey().getNetworkName(),
+                                                                                                                                 Collectors.toMap(e -> e.getKey().getStationName(),
+                                                                                                                                                  e -> e.getValue()
+                                                                                                                                                        .values()
+                                                                                                                                                        .stream()
+                                                                                                                                                        .collect(Collectors.toList()))));
 
             writeArrayNodeToFile(file, document, siteBands.entrySet(), CalibrationJsonConstants.SITE_CORRECTION_FIELD);
         }
@@ -152,6 +170,10 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         writeArrayNodeToFile(file, document, referenceMwsDetails, CalibrationJsonConstants.REFERENCE_EVENTS_FIELD);
     }
 
+    private void writeValidationEvents(File file, JsonNode document, List<ValidationMwParameters> validationMws) throws IOException {
+        writeArrayNodeToFile(file, document, validationMws, CalibrationJsonConstants.VALIDATION_EVENTS_FIELD);
+    }
+    
     private void writeMeasuredEvents(File file, JsonNode document, List<MeasuredMwDetails> measuredMwsDetails) throws IOException {
         writeArrayNodeToFile(file, document, measuredMwsDetails, CalibrationJsonConstants.MEASURED_EVENTS_FIELD);
     }
@@ -208,7 +230,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         } else {
             rootNode = mapper.createObjectNode();
         }
-        
+
         if (rootNode == null || rootNode.getNodeType().equals(JsonNodeType.MISSING)) {
             rootNode = mapper.createObjectNode();
         }
@@ -217,7 +239,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
 
     private File createOrGetFile(Path folder, String filename) throws IOException {
         Files.deleteIfExists(folder.resolve(filename));
-        File file = Files.createFile(folder.resolve(filename)).toFile();        
+        File file = Files.createFile(folder.resolve(filename)).toFile();
         return file;
     }
 }

@@ -38,33 +38,6 @@ public class SACFileReader extends FileDataSource {
         path = file.getAbsolutePath();
     }
 
-    //constructor
-    public SACFileReader(ObjectInput stream) {
-        try {
-            header = new SACHeader(stream);
-
-            totalNumSamples = header.npts;
-            nextSample = 0;
-            numSamplesRemaining = totalNumSamples;
-            station = (header.kstnm).trim();
-            channel = (header.kcmpnm).trim();
-            samplingRate = 1.0 / (header.delta);
-            timeT = new TimeT(header.nzyear, header.nzjday, header.nzhour, header.nzmin, header.nzsec, header.nzmsec);
-            foff = 4 * WORDS_IN_HEADER;
-            timeT = timeT.add(header.b);
-            startTime = timeT.getEpochTime();
-
-            if (header.checkByteSwap()) {
-                format = CSS_F4;
-            } else {
-                format = CSS_T4;
-            }
-
-        } catch (IOException e) {
-            throw new IllegalStateException(e.getMessage());
-        }
-    }
-
     public SACFileReader(InputStream stream) {
         try {
             header = new SACHeader(stream);

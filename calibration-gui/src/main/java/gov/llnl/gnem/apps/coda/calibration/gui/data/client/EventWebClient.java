@@ -23,21 +23,22 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
-public class ReferenceEventWebClient implements ReferenceEventClient {
+public class EventWebClient implements EventClient {
 
     private WebClient client;
 
     @Autowired
-    public ReferenceEventWebClient(WebClient client) {
+    public EventWebClient(WebClient client) {
         this.client = client;
     }
 
@@ -96,6 +97,50 @@ public class ReferenceEventWebClient implements ReferenceEventClient {
                      .bodyValue(evids)
                      .exchange()
                      .flatMap(resp -> Mono.empty());
+    }
+
+    @Override
+    public Flux<ValidationMwParameters> getValidationEvents() {
+        return client.get()
+                     .uri("/validation-events")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .flatMapMany(response -> response.bodyToFlux(ValidationMwParameters.class))
+                     .onErrorReturn(new ValidationMwParameters());
+    }
+
+    @Override
+    public Mono<String> postValidationEvents(List<ValidationMwParameters> events) throws JsonProcessingException {
+        return client.post()
+                     .uri("/validation-events/batch")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(events)
+                     .exchange()
+                     .flatMap(resp -> resp.bodyToMono(String.class));
+    }
+
+    @Override
+    public Mono<Void> removeValidationEventsByEventId(List<String> evids) {
+        return client.post()
+                     .uri("/validation-events/delete/batch-by-evids")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(evids)
+                     .exchange()
+                     .flatMap(resp -> Mono.empty());
+    }
+
+    @Override
+    public Flux<String> toggleValidationEventsByEventId(List<String> evids) {
+        return client.post()
+                     .uri("/calibration/toggle-validation/batch-by-evids")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(evids)
+                     .exchange()
+                     .flux()
+                     .flatMap(resp -> resp.bodyToFlux(String.class));
     }
 
 }

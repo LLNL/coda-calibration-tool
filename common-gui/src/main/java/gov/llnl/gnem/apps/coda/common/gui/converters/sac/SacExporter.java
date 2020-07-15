@@ -48,62 +48,16 @@ public class SacExporter {
         String filename = getFileName(w);
         if (filename != null && !filename.trim().isEmpty()) {
             try (DataOutputStream os = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(exportDirectory.toPath().resolve(filename))))) {
-                try (SACHeader header = new SACHeader()) {
-                    header.setTime(new TimeT(w.getEvent().getOriginTime()));
-                    header.setBeginTime(new TimeT(w.getBeginTime()));
-                    header.setOriginTime(new TimeT(w.getEvent().getOriginTime()));
-
-                    header.nevid = Integer.parseInt(w.getEvent().getEventId());
-                    if (w.getAssociatedPicks() != null) {
-                        for (int i = 0; i < w.getAssociatedPicks().size() && i <= 10; i++) {
-                            try {
-                                WaveformPick pick = w.getAssociatedPicks().get(i);
-                                if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.F.getPhase())) {
-                                    header.f = pick.getPickTimeSecFromOrigin();
-                                } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.A.getPhase())) {
-                                    header.a = pick.getPickTimeSecFromOrigin();
-                                } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.B.getPhase())) {
-                                    header.b = pick.getPickTimeSecFromOrigin();
-                                } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.O.getPhase())) {
-                                    header.o = pick.getPickTimeSecFromOrigin();
-                                } else {
-                                    header.setTimePick(i, pick.getPickTimeSecFromOrigin(), pick.getPickName());
-                                }
-                            } catch (RuntimeException e) {
-                                log.error(e.getMessage(), e);
-                            }
-                        }
-                    }
-
-                    header.delta = (float) (1.0 / w.getSampleRate());
-                    header.kstnm = w.getStream().getStation().getStationName();
-                    header.kcmpnm = w.getStream().getChannelName();
-                    header.stla = (float) w.getStream().getStation().getLatitude();
-                    header.stlo = (float) w.getStream().getStation().getLongitude();
-                    header.knetwk = w.getStream().getStation().getNetworkName();
-                    header.kevnm = w.getEvent().getEventId();
-                    header.evla = (float) w.getEvent().getLatitude();
-                    header.evlo = (float) w.getEvent().getLongitude();
-                    String depType = w.getSegmentType();
-                    if (depType != null && !depType.trim().isEmpty()) {
-                        if (depType.toLowerCase(Locale.ENGLISH).startsWith("dis")) {
-                            header.idep = 6;
-                        } else if (depType.toLowerCase(Locale.ENGLISH).startsWith("vel")) {
-                            header.idep = 7;
-                        } else if (depType.toLowerCase(Locale.ENGLISH).startsWith("acc")) {
-                            header.idep = 8;
-                        }
-                    }
-                    float[] sequence = new Sequence(w.getSegment()).getArray();
-                    header.npts = sequence.length;
-                    header.write(os);
-                    for (int i = 0; i < sequence.length; i++) {
-                        os.writeFloat(sequence[i]);
-                    }
-                    os.flush();
-
-                    return new Result<>(true, filename);
+                SACHeader header = sacHeaderFromWaveform(w);
+                float[] sequence = new Sequence(w.getSegment()).getArray();
+                header.npts = sequence.length;
+                header.write(os);
+                for (int i = 0; i < sequence.length; i++) {
+                    os.writeFloat(sequence[i]);
                 }
+                os.flush();
+
+                return new Result<>(true, filename);
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
                 return new Result<>(false, e.toString()).setErrors(Collections.singletonList(e));
@@ -113,6 +67,58 @@ public class SacExporter {
         String message = "Waveform is missing required information or is malformed; waveform: " + w;
         log.error(message);
         return new Result<>(false, message);
+    }
+
+    public SACHeader sacHeaderFromWaveform(Waveform w) throws IOException {
+        try (SACHeader header = new SACHeader()) {
+            header.setTime(new TimeT(w.getEvent().getOriginTime()));
+            header.setBeginTime(new TimeT(w.getBeginTime()));
+            header.setOriginTime(new TimeT(w.getEvent().getOriginTime()));
+
+            header.nevid = Integer.parseInt(w.getEvent().getEventId());
+            if (w.getAssociatedPicks() != null) {
+                for (int i = 0; i < w.getAssociatedPicks().size() && i <= 10; i++) {
+                    try {
+                        WaveformPick pick = w.getAssociatedPicks().get(i);
+                        if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.F.getPhase())) {
+                            header.f = pick.getPickTimeSecFromOrigin();
+                        } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.A.getPhase())) {
+                            header.a = pick.getPickTimeSecFromOrigin();
+                        } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.B.getPhase())) {
+                            header.b = pick.getPickTimeSecFromOrigin();
+                        } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.O.getPhase())) {
+                            header.o = pick.getPickTimeSecFromOrigin();
+                        } else {
+                            header.setTimePick(i, pick.getPickTimeSecFromOrigin(), pick.getPickName());
+                        }
+                    } catch (RuntimeException e) {
+                        log.error(e.getMessage(), e);
+                    }
+                }
+            }
+
+            header.delta = (float) (1.0 / w.getSampleRate());
+            header.kstnm = w.getStream().getStation().getStationName();
+            header.kcmpnm = w.getStream().getChannelName();
+            header.stla = (float) w.getStream().getStation().getLatitude();
+            header.stlo = (float) w.getStream().getStation().getLongitude();
+            header.knetwk = w.getStream().getStation().getNetworkName();
+            header.kevnm = w.getEvent().getEventId();
+            header.evla = (float) w.getEvent().getLatitude();
+            header.evlo = (float) w.getEvent().getLongitude();
+            header.evdp = (float) w.getEvent().getDepth();
+            String depType = w.getSegmentType();
+            if (depType != null && !depType.trim().isEmpty()) {
+                if (depType.toLowerCase(Locale.ENGLISH).startsWith("dis")) {
+                    header.idep = 6;
+                } else if (depType.toLowerCase(Locale.ENGLISH).startsWith("vel")) {
+                    header.idep = 7;
+                } else if (depType.toLowerCase(Locale.ENGLISH).startsWith("acc")) {
+                    header.idep = 8;
+                }
+            }
+            return header;
+        }
     }
 
     private boolean waveformFullySpecified(Waveform w) {

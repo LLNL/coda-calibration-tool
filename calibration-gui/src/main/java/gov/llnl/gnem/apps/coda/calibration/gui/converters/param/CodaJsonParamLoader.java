@@ -25,6 +25,7 @@ import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.Calibratio
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SITE_CORRECTION_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_VALUE;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VALIDATION_EVENTS_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VELOCITY_CONFIGURATION;
 
 import java.io.File;
@@ -55,6 +56,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteCorrections;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SiteFrequencyBandParametersFileMixin;
@@ -93,21 +95,23 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
 
     public List<Result<Object>> convertJsonParamFile(File file) {
         if (file == null) {
-            return Collections.singletonList(
-                    exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable. %s", "NULL", "File reference is null"))));
+            return Collections.singletonList(exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable. %s",
+                                                                                                                  "NULL",
+                                                                                                                  "File reference is null"))));
         }
 
         List<Result<Object>> results = new ArrayList<>();
 
         try {
             JsonNode node = mapper.readTree(file);
-
+            //TODO: Collapse these into generic method with self-validation type at some point.
             if (node.has(SCHEMA_FIELD) && node.get(SCHEMA_FIELD).asText().equalsIgnoreCase(SCHEMA_VALUE) && node.has(TYPE_FIELD) && node.get(TYPE_FIELD).asText().equalsIgnoreCase(TYPE_VALUE)) {
                 results.addAll(convertJsonFields(node, BAND_FIELD, x -> sharedFrequenyBandFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, SITE_CORRECTION_FIELD, x -> siteFrequenyBandsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, MDAC_PS_FIELD, x -> mdacPsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, MDAC_FI_FIELD, x -> mdacFiFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, REFERENCE_EVENTS_FIELD, x -> refEventsFromJsonNode(x)));
+                results.addAll(convertJsonFields(node, VALIDATION_EVENTS_FIELD, x -> valEventsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, VELOCITY_CONFIGURATION, x -> velocityConfigurationFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, SHAPE_CONSTRAINTS, x -> shapeConstraintsFromJsonNode(x)));
             } else if (node.has(ENVELOPE_JOB_NODE)) {
@@ -163,6 +167,17 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
             //TODO: Validate all fields
             ReferenceMwParameters ref = reader.readValue(node);
             return new Result<>(true, ref);
+        } catch (IOException e) {
+            return exceptionalResult(e);
+        }
+    }
+
+    protected Result<Object> valEventsFromJsonNode(JsonNode node) {
+        ObjectReader reader = mapper.readerFor(ValidationMwParameters.class);
+        try {
+            //TODO: Validate all fields
+            ValidationMwParameters val = reader.readValue(node);
+            return new Result<>(true, val);
         } catch (IOException e) {
             return exceptionalResult(e);
         }

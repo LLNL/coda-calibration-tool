@@ -61,7 +61,7 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
 
     @Override
     public Map<FrequencyBand, SharedFrequencyBandParameters> measureShapes(Collection<PeakVelocityMeasurement> velocityMeasurements,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints, boolean autoPickingEnabled) {
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints, boolean autoPickingEnabled) throws InterruptedException {
         if (frequencyBandParameters.isEmpty()) {
             // TODO: Propagate warning to the status API
             log.warn("No frequency band parameters available, unable to compute shape parameters without them!");
@@ -69,6 +69,7 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
         }
         final CalibrationCurveFitter fitter = new CalibrationCurveFitter();
 
+        ConcurrencyUtils.checkInterrupt();
         Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandCurveFits = fitter.fitAllVelocity(
                 velocityMeasurements.stream()
                                     .filter(vel -> vel.getWaveform() != null)
@@ -76,20 +77,25 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                     frequencyBandParameters,
                     constraints);
 
+        ConcurrencyUtils.checkInterrupt();
         // 1) If auto-picking is enabled attempt to pick any envelopes that
         // don't already have F-picks in this set
         if (autoPickingEnabled) {
             velocityMeasurements = picker.autoPickVelocityMeasuredWaveforms(velocityMeasurements, frequencyBandParameters);
             velocityMeasurements = velocityMeasurements.parallelStream().map(v -> v.setWaveform(waveService.save(v.getWaveform()))).collect(Collectors.toList());
         }
+        ConcurrencyUtils.checkInterrupt();
 
         // 2) Filter to only measurements with an end pick
         Collection<Entry<PeakVelocityMeasurement, WaveformPick>> filteredVelocityMeasurements = filterMeasurementsToEndPickedOnly(velocityMeasurements);
 
+        ConcurrencyUtils.checkInterrupt();
         // 3) For every Waveform remaining, measure picks based on start
         // (computed from velocity) and end (from 'End'/'F' picks)
         List<ShapeMeasurement> betaAndGammaMeasurements = shapeCalc.fitShapelineToMeasuredEnvelopes(filteredVelocityMeasurements, frequencyBandCurveFits, constraints);
 
+        ConcurrencyUtils.checkInterrupt();
+        
         // Shape measurements are intermediary results so rather than trying to
         // merge them we want to just drop them wholesale if they exist and
         // replace them with the new data set.
@@ -103,8 +109,9 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                                                                                                                      Collectors.groupingBy(
                                                                                                                              meas -> new FrequencyBand(meas.getWaveform().getLowFrequency(),
                                                                                                                                                        meas.getWaveform().getHighFrequency())));
-
+        ConcurrencyUtils.checkInterrupt();
         frequencyBandCurveFits = fitter.fitAllBeta(frequencyBandShapeMeasurementMap, frequencyBandCurveFits, constraints);
+        ConcurrencyUtils.checkInterrupt();
         frequencyBandCurveFits = fitter.fitAllGamma(frequencyBandShapeMeasurementMap, frequencyBandCurveFits, constraints);
         return frequencyBandCurveFits;
     }

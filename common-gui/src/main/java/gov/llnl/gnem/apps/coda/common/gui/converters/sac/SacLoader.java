@@ -178,7 +178,15 @@ public class SacLoader implements FileToWaveformConverter {
                 return exceptionalResult(headerResult.getErrors());
             }
             double stationLongitude = header.stlo;
-
+                        
+            double eventDepth;
+            if (SACHeader.isDefault(header.evdp)) {
+                eventDepth = 0;
+            }
+            else {
+                eventDepth = header.evdp;
+            }           
+            
             String dataType = StringUtils.trimToEmpty((String) header.getVariableMap().get("depvariabletype")).toLowerCase(Locale.ENGLISH);
             if (dataType.startsWith("acc")) {
                 dataType = ACCELERATION;
@@ -239,6 +247,7 @@ public class SacLoader implements FileToWaveformConverter {
                                                       new Event().setEventId(evid)
                                                                  .setLatitude(eventLatitude)
                                                                  .setLongitude(eventLongitude)
+                                                                 .setDepth(eventDepth)
                                                                  .setOriginTime(Date.from(Instant.ofEpochMilli(originTime.getMilliseconds()))))
                                               .setSegment(segment)
                                               .setSegmentType(dataType)

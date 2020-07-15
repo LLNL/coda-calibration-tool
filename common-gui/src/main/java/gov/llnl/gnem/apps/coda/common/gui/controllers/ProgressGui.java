@@ -27,6 +27,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -44,6 +45,9 @@ public class ProgressGui {
 
     @FXML
     private TableView<ProgressMonitor> progressTable;
+
+    @FXML
+    private TableColumn<ProgressMonitor, Node> cancelColumn;
 
     @FXML
     private TableColumn<ProgressMonitor, Node> progressColumn;
@@ -92,6 +96,9 @@ public class ProgressGui {
                         };
                     }
                 });
+
+                cancelColumn.setCellValueFactory(value -> Bindings.createObjectBinding(() -> value.getValue().getCancelButton()));
+
                 progressTable.setItems(monitors);
                 progressTable.getSelectionModel().selectedItemProperty().addListener((obs, prevSelection, newSelection) -> {
                     if (newSelection != null) {

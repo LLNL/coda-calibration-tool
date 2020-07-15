@@ -91,7 +91,7 @@ public class CodaWaveformPlotManager extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (currentPage < totalPages) {
+            if ((currentPage + 1) < totalPages) {
                 currentPage++;
                 loadWaveformsForPage(currentPage);
             }
@@ -240,7 +240,12 @@ public class CodaWaveformPlotManager extends JPanel {
             allWaveformIDs.add(waveformIDs.get(i));
         }
         if (waveformIDs.size() > pageSize) {
-            totalPages = (int) ((waveformIDs.size() - 1) / pageSize);
+            double page = waveformIDs.size() / (double) pageSize;
+            if (page % 1.0 > 0.001) {
+                totalPages = (int) (page + 1.0);
+            } else {
+                totalPages = (int) (page);
+            }
         } else {
             totalPages = 1;
         }
@@ -270,7 +275,7 @@ public class CodaWaveformPlotManager extends JPanel {
                 results.add(createPlot(waveformClient.getWaveformFromId(allWaveformIDs.get(0)).publishOn(Schedulers.elastic()).block(Duration.ofSeconds(10))));
             }
         } else {
-            pagingLabel.setText(pageNumber + 1 + "/" + (totalPages + 1));
+            pagingLabel.setText(pageNumber + 1 + "/" + totalPages);
             List<Long> pageIds = new ArrayList<>(pageSize.intValue());
             long skipVal = pageNumber * pageSize;
             if (skipVal != 0 && allWaveformIDs.size() > pageSize && allWaveformIDs.size() - skipVal < pageSize) {

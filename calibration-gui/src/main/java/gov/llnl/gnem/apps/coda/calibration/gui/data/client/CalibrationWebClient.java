@@ -46,6 +46,19 @@ public class CalibrationWebClient implements CalibrationClient {
     }
 
     @Override
+    public Mono<Boolean> cancelCalibration(Long id) {
+        return client.post()
+                     .uri("/calibration/cancel/")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(id)
+                     .exchange()
+                     .doOnError(e -> log.error(e.getMessage(), e))
+                     .doOnSuccess(cr -> log.error(cr.toString()))
+                     .flatMap(resp -> resp.bodyToMono(String.class).map(Boolean::valueOf));
+    }
+
+    @Override
     public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled) {
         return makeMwMeasurements(autoPickingEnabled, null);
     }

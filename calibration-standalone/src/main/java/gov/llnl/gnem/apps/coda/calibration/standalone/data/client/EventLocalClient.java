@@ -23,12 +23,15 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ReferenceEventClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.service.api.CalibrationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ReferenceMwParametersService;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ValidationMwParametersService;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 import reactor.core.publisher.Flux;
@@ -36,16 +39,21 @@ import reactor.core.publisher.Mono;
 
 @Component
 @Primary
-public class ReferenceEventLocalClient implements ReferenceEventClient {
+public class EventLocalClient implements EventClient {
 
     private ReferenceMwParametersService refEventService;
+    private ValidationMwParametersService valEventService;
     private MeasuredMwsService measureService;
     private WaveformService waveformService;
+    private CalibrationService calService;
 
     @Autowired
-    public ReferenceEventLocalClient(ReferenceMwParametersService refEventService, MeasuredMwsService measureService, WaveformService waveformService) {
+    public EventLocalClient(ReferenceMwParametersService refEventService, ValidationMwParametersService valEventService, MeasuredMwsService measureService, CalibrationService calService,
+            WaveformService waveformService) {
         this.refEventService = refEventService;
+        this.valEventService = valEventService;
         this.measureService = measureService;
+        this.calService = calService;
         this.waveformService = waveformService;
     }
 
@@ -57,6 +65,33 @@ public class ReferenceEventLocalClient implements ReferenceEventClient {
     @Override
     public Mono<String> postReferenceEvents(List<ReferenceMwParameters> refEvents) throws JsonProcessingException {
         return Mono.just(refEventService.save(refEvents).toString());
+    }
+
+    @Override
+    public Mono<Void> removeReferenceEventsByEventId(List<String> evids) {
+        refEventService.deleteAllByEventIds(evids);
+        return Mono.empty();
+    }
+
+    @Override
+    public Flux<ValidationMwParameters> getValidationEvents() {
+        return Flux.fromIterable(valEventService.findAll()).filter(Objects::nonNull).onErrorReturn(new ValidationMwParameters());
+    }
+
+    @Override
+    public Mono<String> postValidationEvents(List<ValidationMwParameters> valEvents) throws JsonProcessingException {
+        return Mono.just(valEventService.save(valEvents).toString());
+    }
+
+    @Override
+    public Mono<Void> removeValidationEventsByEventId(List<String> evids) {
+        valEventService.deleteAllByEventIds(evids);
+        return Mono.empty();
+    }
+
+    @Override
+    public Flux<String> toggleValidationEventsByEventId(List<String> evids) {
+        return Flux.fromIterable(calService.toggleAllByEventIds(evids));
     }
 
     @Override
@@ -77,11 +112,4 @@ public class ReferenceEventLocalClient implements ReferenceEventClient {
     public Flux<MeasuredMwDetails> getMeasuredEventDetails() {
         return Flux.fromIterable(measureService.findAllDetails()).filter(Objects::nonNull).onErrorReturn(new MeasuredMwDetails());
     }
-
-    @Override
-    public Mono<Void> removeReferenceEventsByEventId(List<String> evids) {
-        refEventService.deleteAllByEventIds(evids);
-        return Mono.empty();
-    }
-
 }

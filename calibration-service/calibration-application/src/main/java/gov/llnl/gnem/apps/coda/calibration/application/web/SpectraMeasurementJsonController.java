@@ -62,6 +62,14 @@ public class SpectraMeasurementJsonController {
         Spectra theoreticalSpectra = service.computeReferenceSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG);
         return ResponseEntity.ok(theoreticalSpectra);
     }
+    
+    @PostMapping(value = "/validation-spectra", name = "computeValidationSpectraForEventId")
+    public ResponseEntity<?> computeValidationSpectraForEventId(@RequestBody String eventId, BindingResult result) {
+        //FIXME: Accept a phase to use!
+        Spectra theoreticalSpectra = service.computeValidationSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG);
+        return ResponseEntity.ok(theoreticalSpectra);
+    }
+    
 
     @PostMapping(value = "/fit-spectra", name = "getFitSpectraForEventId")
     public ResponseEntity<?> getFitSpectraForEventId(@RequestBody String eventId, BindingResult result) {

@@ -101,6 +101,9 @@ public class DataController implements MapListeningController, RefreshableContro
 
     @FXML
     private TableColumn<Waveform, String> highFreqCol;
+    
+    @FXML
+    private TableColumn<Waveform, String> depthCol;
 
     private ObservableList<Waveform> listData = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
 
@@ -213,6 +216,15 @@ public class DataController implements MapListeningController, RefreshableContro
 
         CellBindingUtils.attachTextCellFactories(lowFreqCol, Waveform::getLowFrequency, dfmt2);
         CellBindingUtils.attachTextCellFactories(highFreqCol, Waveform::getHighFrequency, dfmt2);
+        
+        depthCol.setCellValueFactory(
+                                     x -> Bindings.createStringBinding(
+                                           () -> 
+                                           dfmt2.format(
+                                            Optional.ofNullable(x).map(CellDataFeatures::getValue)
+                                           .map(Waveform::getEvent)
+                                           .map(ev->Double.toString(ev.getDepth())).orElseGet(String::new))));
+        depthCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
         usedCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(waveform -> {
             CheckBox box = new CheckBox();

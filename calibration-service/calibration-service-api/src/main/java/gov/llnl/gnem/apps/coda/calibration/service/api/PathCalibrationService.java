@@ -25,5 +25,5 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters
 public interface PathCalibrationService {
 
     Map<FrequencyBand, SharedFrequencyBandParameters> measurePathCorrections(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, VelocityConfiguration velConf);
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, VelocityConfiguration velConf) throws InterruptedException;
 }

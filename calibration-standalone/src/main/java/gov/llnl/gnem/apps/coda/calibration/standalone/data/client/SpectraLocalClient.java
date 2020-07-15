@@ -60,6 +60,13 @@ public class SpectraLocalClient implements SpectraClient {
         return Mono.just(Optional.ofNullable(service.computeReferenceSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(() -> new Spectra()))
                    .onErrorReturn(new Spectra());
     }
+    
+    @Override
+    public Mono<Spectra> getValidationSpectra(String eventId) {
+        //FIXME: Use the calibrations phase for this!
+        return Mono.just(Optional.ofNullable(service.computeValidationSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG)).orElseGet(() -> new Spectra()))
+                   .onErrorReturn(new Spectra());
+    }
 
     @Override
     public Mono<List<Spectra>> getFitSpectra(String eventId) {

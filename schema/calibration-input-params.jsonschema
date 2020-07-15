@@ -589,6 +589,50 @@
                 }
             }
         },
+        "validation-events": {
+            "$id": "#/properties/validation-events",
+            "type": "array",
+            "title": "Array of known validation events; not used in calibration but displayed in the GUI for verification.",
+            "items": {
+                "$id": "#/properties/validation-events/entry",
+                "type": "object",
+                "title": "A specific validation event entry.",
+                "required": [
+                    "eventId",
+                    "mw"
+                ],
+                "properties": {
+                    "eventId": {
+                        "$id": "#/properties/validation-events/entry/properties/eventId",
+                        "type": "string",
+                        "title": "Specific event id, needs to match an event id in the calibration to display on plots.",
+                        "default": false,
+                        "examples": [
+                            "0101190012"
+                        ]
+                    },
+                    "mw": {
+                        "$id": "#/properties/validation-events/entry/properties/mw",
+                        "type": "number",
+                        "title": "The Mw value for the validation event.",
+                        "default": 0,
+                        "examples": [
+                            5.0
+                        ]
+                    },
+                    "apparentStressInMpa": {
+                        "$id": "#/properties/validation-events/entry/properties/apparentStressInMpa",
+                        "type": "number",
+                        "title": "An optional measure of the apparent stress term for this specific validation event.",
+                        "default": false,
+                        "examples": [
+                            0.0,
+                            0.5
+                        ]
+                    }
+                }
+            }
+        },        
         "velocity-configuration": {
             "$id": "#/properties/velocity-configuration",
             "type": "object",
