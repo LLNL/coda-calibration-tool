@@ -206,7 +206,7 @@ public class SharedBandController {
                   .filter(Objects::nonNull)
                   .filter(value -> null != value.getId())
                   .doOnComplete(() -> Optional.ofNullable(codaSharedTableView).ifPresent(TableView::sort))
-                  .subscribe(value -> sharedFbData.add(value), err -> log.trace(err.getMessage(), err));
+                  .subscribe(value -> sharedFbData.add(value), err -> log.error(err.getMessage(), err));
             Optional.ofNullable(codaSharedTableView).ifPresent(v -> v.refresh());
         });
     }

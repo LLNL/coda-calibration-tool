@@ -44,7 +44,7 @@ import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 @Service
 public class WaveformServiceImpl implements WaveformService {
 
-    private WaveformRepository waveformRepository;
+    private WaveformRepository waveformRepository;    
     private NotificationService notificationService;
     private ExampleMatcher ignoreStandardFieldsMatcher = ExampleMatcher.matching().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
 

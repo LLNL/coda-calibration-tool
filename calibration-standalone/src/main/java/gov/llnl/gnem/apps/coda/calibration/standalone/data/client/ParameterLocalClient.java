@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -17,8 +17,6 @@ package gov.llnl.gnem.apps.coda.calibration.standalone.data.client;
 import java.util.List;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
@@ -44,8 +42,6 @@ import reactor.core.publisher.Mono;
 @Component
 @Primary
 public class ParameterLocalClient implements ParameterClient {
-
-    private static final Logger log = LoggerFactory.getLogger(ParameterLocalClient.class);
 
     private SharedFrequencyBandParametersService sharedParamsService;
     private SiteFrequencyBandParametersService siteParamsService;
@@ -145,5 +141,15 @@ public class ParameterLocalClient implements ParameterClient {
     public Mono<String> updateShapeFitterConstraints(ShapeFitterConstraints conf) {
         return Mono.just(Optional.ofNullable(configService.update(conf)).map(v -> v.toString()).orElseGet(() -> ""));
     }
+    
+    @Override
+    public Mono<String> updateMapPolygon(String rawGeoJSON) {
+        return Mono.just(configService.updatePolygon(rawGeoJSON)).onErrorReturn("");
+    }
+
+    @Override
+    public Mono<String> getMapPolygon() {
+        return Mono.just(configService.getPolygonGeoJSON()).onErrorReturn("");
+    }    
 
 }

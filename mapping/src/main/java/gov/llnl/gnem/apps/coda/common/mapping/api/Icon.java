@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -18,10 +18,10 @@ import java.util.function.BiConsumer;
 
 public interface Icon {
 
-    public static final String FOCUS_TAG = "!!";
+    public static final String FOCUS_TAG = "!!";   
 
     public enum IconTypes {
-        DEFAULT, CIRCLE, TRIANGLE_UP
+        DEFAULT, CIRCLE, TRIANGLE_UP, POLYGON_OUT, POLYGON_IN
     }
 
     public enum IconStyles {

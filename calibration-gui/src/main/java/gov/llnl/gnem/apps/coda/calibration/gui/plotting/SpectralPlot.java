@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -37,6 +37,7 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.JMultiAxisPlot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.PlotProperties;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.TickScaleFunc;
+import llnl.gnem.core.gui.plotting.jmultiaxisplot.VPickLine;
 import llnl.gnem.core.gui.plotting.plotobject.Line;
 import llnl.gnem.core.gui.plotting.plotobject.Symbol;
 import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
@@ -68,6 +69,9 @@ public class SpectralPlot extends JMultiAxisPlot {
     private double defaultYMax = 27.0;
 
     private final Map<Point2D.Double, List<Symbol>> symbolMap = new HashMap<>();
+    private final NumberFormat dfmt = new DecimalFormat("#0.0#");
+    
+    private transient boolean plotCorners = false;
 
     public SpectralPlot() {
         super();
@@ -151,8 +155,7 @@ public class SpectralPlot extends JMultiAxisPlot {
      *            calibration spectra
      *            </p>
      */
-    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend, List<Spectra> spectra) {
-
+    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend, List<Spectra> spectra) {        
         symbolMap.clear();
         // line based legends for trending
         Legend legend = new Legend(getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.RIGHT, VertPinEdge.TOP, 5, 5);
@@ -177,6 +180,9 @@ public class SpectralPlot extends JMultiAxisPlot {
         if (spectra != null) {
             spectra.sort((s1, s2) -> (s1.getType() == SPECTRA_TYPES.UQ1 || s1.getType() == SPECTRA_TYPES.UQ2) ? -1 : 1);
             for (Spectra spec : spectra) {
+                if (plotCorners && spec.getCornerFrequency() != null) {
+                    plotCornerFrequency(spec.getCornerFrequency());
+                }
                 plotSpectraObject(jsubplot, spec, legend);
             }
         }
@@ -190,6 +196,10 @@ public class SpectralPlot extends JMultiAxisPlot {
         }
 
         repaint();
+    }
+
+    private void plotCornerFrequency(double cornerFreq) {
+        jsubplot.AddPlotObject(new VPickLine(Math.log10(cornerFreq), 0.5, "~Fc (" + dfmt.format(cornerFreq) + ")").setDraggable(false));
     }
 
     private void plotSpectraObject(JSubplot jsubplot, Spectra spectra, Legend legend) {
@@ -210,7 +220,7 @@ public class SpectralPlot extends JMultiAxisPlot {
                 break;
             case VAL:
                 line = new Line(x, y, Color.BLUE, PaintMode.COPY, PenStyle.DASHDOT, 2);
-                break;                
+                break;
             case UQ1:
                 line = new Line(x, y, Color.LIGHT_GRAY, PaintMode.COPY, PenStyle.DASH, 2);
                 break;
@@ -330,18 +340,17 @@ public class SpectralPlot extends JMultiAxisPlot {
                 } else {
                     label = "";
                 }
-                Symbol symbol = SymbolFactory.createSymbol(
-                        v.getStyle(),
-                            v.getX(),
-                            v.getY(),
-                            properties.getSymbolSize(),
-                            v.getColor(),
-                            properties.getSymbolEdgeColor(),
-                            v.getColor(),
-                            label,
-                            true,
-                            false,
-                            10.0);
+                Symbol symbol = SymbolFactory.createSymbol(v.getStyle(),
+                                                           v.getX(),
+                                                           v.getY(),
+                                                           properties.getSymbolSize(),
+                                                           v.getColor(),
+                                                           properties.getSymbolEdgeColor(),
+                                                           v.getColor(),
+                                                           label,
+                                                           true,
+                                                           false,
+                                                           10.0);
                 symbolMap.computeIfAbsent(new Point2D.Double(v.getX(), v.getY()), key -> new ArrayList<>()).add(symbol);
                 return symbol;
             }).forEach(jsubplot::AddPlotObject);
@@ -370,7 +379,7 @@ public class SpectralPlot extends JMultiAxisPlot {
     }
 
     @Override
-    public void setAllXlimits(double xmin, double xmax) {
+    public void setAllXlimits(double xmin, double xmax) {   
         super.setAllXlimits(xmin, xmax);
         properties.setMaxXAxisValue(xmax);
         properties.setMinXAxisValue(xmin);
@@ -383,13 +392,13 @@ public class SpectralPlot extends JMultiAxisPlot {
         properties.setMinXAxisValue(xmin);
     }
 
-    public void setAllYlimits(double ymin, double ymax) {
+    public void setAllYlimits(double ymin, double ymax) {        
         jsubplot.setYlimits(ymin, ymax);
         this.ymin = ymin;
         this.ymax = ymax;
     }
 
-    public void setAllYlimits() {
+    public void setAllYlimits() {        
         jsubplot.setYlimits(defaultYMin, defaultYMax);
         this.ymin = defaultYMin;
         this.ymax = defaultYMax;
@@ -416,7 +425,7 @@ public class SpectralPlot extends JMultiAxisPlot {
             xMin = properties.getMinXAxisValue();
             xMax = properties.getMaxXAxisValue();
         }
-        jsubplot.setAxisLimits(xMin, xMax, yMin, yMax);
+        jsubplot.setAxisLimits(xMin, xMax, yMin, yMax);       
     }
 
     /** Set the Title, X and Y axis labels simultaneously */
@@ -502,5 +511,9 @@ public class SpectralPlot extends JMultiAxisPlot {
             });
         }
         repaint();
+    }
+    
+    public void showCornerFrequency(boolean showCornerFreq) {
+        this.plotCorners = showCornerFreq;
     }
 }

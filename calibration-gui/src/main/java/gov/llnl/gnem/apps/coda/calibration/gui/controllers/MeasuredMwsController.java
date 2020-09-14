@@ -133,6 +133,7 @@ public class MeasuredMwsController extends AbstractMeasurementController {
             plot.addPlotObjectObserver(getPlotpointObserver(() -> spectra.getSymbolMap()));
             plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
             plot.setYaxisVisibility(true);
+            spectra.setShowCornerFrequencies(true);
             spectra.setYAxisResizable(true);
             spectraPlotSwingNode.setContent(plot);
 
@@ -172,7 +173,7 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         List<MeasuredMwDetails> refEvs = referenceEventClient.getMeasuredEventDetails()
                                                              .filter(ev -> ev.getEventId() != null)
                                                              .collect(Collectors.toList())
-                                                             .subscribeOn(Schedulers.elastic())
+                                                             .subscribeOn(Schedulers.boundedElastic())
                                                              .block(Duration.ofSeconds(10l));
         Collection<MeasuredMwDetails> measMws = mfs.getMeasuredMwDetails().values();
 

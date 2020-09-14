@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -25,6 +25,7 @@ public class Spectra {
     private List<java.awt.geom.Point2D.Double> xyVals;
     private double apparentStress = -1;
     private double mw = -1;
+    private Double cornerFrequency = null;
     private SPECTRA_TYPES type;
 
     /**
@@ -34,7 +35,7 @@ public class Spectra {
      * @param mw
      * @param stress
      */
-    public Spectra(SPECTRA_TYPES type, List<java.awt.geom.Point2D.Double> xyVals, Double mw, Double stress) {
+    public Spectra(SPECTRA_TYPES type, List<java.awt.geom.Point2D.Double> xyVals, Double mw, Double stress, Double cornerFrequency) {
         this.type = type;
         this.xyVals = xyVals;
         if (mw != null) {
@@ -42,6 +43,9 @@ public class Spectra {
         }
         if (stress != null) {
             this.apparentStress = stress;
+        }
+        if (cornerFrequency != null) {
+            this.cornerFrequency = cornerFrequency;
         }
     }
 
@@ -66,9 +70,13 @@ public class Spectra {
         return type;
     }
 
+    public Double getCornerFrequency() {
+        return cornerFrequency;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(apparentStress, mw, type, xyVals);
+        return Objects.hash(apparentStress, cornerFrequency, mw, type, xyVals);
     }
 
     @Override
@@ -80,16 +88,25 @@ public class Spectra {
             return false;
         }
         Spectra other = (Spectra) obj;
-        return Double.doubleToLongBits(apparentStress) == Double.doubleToLongBits(other.apparentStress)
-                && Double.doubleToLongBits(mw) == Double.doubleToLongBits(other.mw)
-                && type == other.type
-                && Objects.equals(xyVals, other.xyVals);
+        return Double.doubleToLongBits(apparentStress) == Double.doubleToLongBits(other.apparentStress) && Objects.equals(cornerFrequency, other.cornerFrequency)
+                && Double.doubleToLongBits(mw) == Double.doubleToLongBits(other.mw) && type == other.type && Objects.equals(xyVals, other.xyVals);
     }
 
     @Override
     public String toString() {
+        final int maxLen = 10;
         StringBuilder builder = new StringBuilder();
-        builder.append("Spectra [xyVals=").append(xyVals).append(", apparentStress=").append(apparentStress).append(", mw=").append(mw).append(", type=").append(type).append("]");
+        builder.append("Spectra [xyVals=")
+               .append(xyVals != null ? xyVals.subList(0, Math.min(xyVals.size(), maxLen)) : null)
+               .append(", apparentStress=")
+               .append(apparentStress)
+               .append(", mw=")
+               .append(mw)
+               .append(", cornerFrequency=")
+               .append(cornerFrequency)
+               .append(", type=")
+               .append(type)
+               .append("]");
         return builder.toString();
     }
 }

@@ -200,6 +200,24 @@
             "apparentStressInMpa": 0.7
         }
     ],
+    "polygons": {
+        "features": [{
+            "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.0, 3.0],
+                        [3.0, 3.0],
+                        [3.0, 0.0],
+                        [0.0, 0.0],
+                        [0.0, 3.0]
+                    ]
+                ]
+            }
+        }]
+    },    
     "shape-constraints": {
         "maxVP1": 1600.0,
         "minVP1": 150.0,

@@ -20,11 +20,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.GeoJsonPolygon;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.GvDataChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.ShapeConstraintsChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.repository.CalibrationShapeFitterConstraintsRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.PolygonRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.VelocityConfigurationRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
@@ -36,18 +38,20 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private EntityManager em;
     private VelocityConfigurationRepository velConfRepository;
     private CalibrationShapeFitterConstraintsRepository shapeConstraintsRepository;
+    private PolygonRepository polygonRepository;
     private VelocityConfiguration defaultVelConf;
     private ShapeFitterConstraints defaultShapeFitterConstraint;
     private NotificationService notificationService;
 
     @Autowired
     public ConfigurationServiceImpl(EntityManager em, VelocityConfigurationRepository velConfRepository, CalibrationShapeFitterConstraintsRepository shapeConstraintsRepository,
-            VelocityConfiguration defaultVelConf, ShapeFitterConstraints defaultShapeFitterConstraint, NotificationService notificationService) {
+            VelocityConfiguration defaultVelConf, ShapeFitterConstraints defaultShapeFitterConstraint, PolygonRepository polygonRepository, NotificationService notificationService) {
         this.em = em;
         this.velConfRepository = velConfRepository;
         this.shapeConstraintsRepository = shapeConstraintsRepository;
         this.defaultVelConf = defaultVelConf;
         this.defaultShapeFitterConstraint = defaultShapeFitterConstraint;
+        this.polygonRepository = polygonRepository;
         this.notificationService = notificationService;
     }
 
@@ -103,5 +107,17 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         ShapeFitterConstraints res = shapeConstraintsRepository.findFirstByOrderById();
         em.detach(res);
         return res;
+    }
+
+    @Override
+    public String updatePolygon(String rawGeoJSON) {
+        //TODO: Support multiples/additive updates
+        polygonRepository.deleteAll();
+        return polygonRepository.save(new GeoJsonPolygon().setRawGeoJson(rawGeoJSON)).getRawGeoJson();
+    };
+
+    @Override
+    public String getPolygonGeoJSON() {
+        return polygonRepository.findAll().stream().findAny().orElseGet(GeoJsonPolygon::new).getRawGeoJson();
     }
 }

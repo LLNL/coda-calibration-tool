@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -21,12 +21,13 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.stream.Stream;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.GeoJsonPolygon;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
@@ -58,10 +59,7 @@ public class CodaJsonParamLoaderTest {
     @MethodSource("filePaths")
     public final void testValidBands(String filePath) throws Exception {
         Flux<Result<Object>> results = convertFile(filePath);
-        Assert.assertEquals(
-                "Expected to have 14 valid band definitions",
-                    Long.valueOf(14l),
-                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof SharedFrequencyBandParameters).count().block());
+        Assertions.assertEquals(Long.valueOf(14l), results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof SharedFrequencyBandParameters).count().block());
     }
 
     @ParameterizedTest
@@ -72,72 +70,81 @@ public class CodaJsonParamLoaderTest {
                                                                    .blockFirst()
                                                                    .getResultPayload()
                                                                    .orElseGet(null);
-        Assert.assertNotNull("Expected to have 1 site correction object", siteCorrections);
-        Assert.assertEquals("Expected to have 1 networks", 1, siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getNetworkName()).distinct().count());
-        Assert.assertEquals("Expected to have 3 stations", 3, siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getStationName()).distinct().count());
-        Assert.assertEquals(
-                "Expected to have 14 bands for the first station",
-                    14,
-                    siteCorrections.getSiteCorrections()
-                                   .stream()
-                                   .filter(
-                                           sfb -> sfb.getStation()
-                                                     .getStationName()
-                                                     .equalsIgnoreCase(siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getStationName()).findFirst().orElseGet(null)))
-                                   .count());
-        Assert.assertEquals("Expected to have 42 site correction bands", 42, siteCorrections.getSiteCorrections().size());
+        Assertions.assertNotNull(siteCorrections, "Expected to have 1 site correction object");
+        Assertions.assertEquals(1, siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getNetworkName()).distinct().count(), "Expected to have 1 networks");
+        Assertions.assertEquals(3, siteCorrections.getSiteCorrections().stream().map(sc -> sc.getStation().getStationName()).distinct().count(), "Expected to have 3 stations");
+        Assertions.assertEquals(14,
+                                siteCorrections.getSiteCorrections()
+                                               .stream()
+                                               .filter(sfb -> sfb.getStation()
+                                                                 .getStationName()
+                                                                 .equalsIgnoreCase(siteCorrections.getSiteCorrections()
+                                                                                                  .stream()
+                                                                                                  .map(sc -> sc.getStation().getStationName())
+                                                                                                  .findFirst()
+                                                                                                  .orElseGet(null)))
+                                               .count(),
+                                "Expected to have 14 bands for the first station");
+        Assertions.assertEquals(42, siteCorrections.getSiteCorrections().size(), "Expected to have 42 site correction bands");
     }
 
     @ParameterizedTest
     @MethodSource("filePaths")
     public final void testValidPs(String filePath) throws Exception {
         Flux<Result<Object>> results = convertFile(filePath);
-        Assert.assertEquals(
-                "Expected to have 1 valid MDAC FI definition",
-                    Long.valueOf(1l),
-                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof MdacParametersFI).count().block());
+        Assertions.assertEquals(Long.valueOf(1l),
+                                results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof MdacParametersFI).count().block(),
+                                "Expected to have 1 valid MDAC FI definition");
     }
 
     @ParameterizedTest
     @MethodSource("filePaths")
     public final void testFi(String filePath) throws Exception {
         Flux<Result<Object>> results = convertFile(filePath);
-        Assert.assertEquals(
-                "Expected to have 4 valid MDAC PS definitions",
-                    Long.valueOf(4l),
-                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof MdacParametersPS).count().block());
+        Assertions.assertEquals(Long.valueOf(4l),
+                                results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof MdacParametersPS).count().block(),
+                                "Expected to have 4 valid MDAC PS definitions");
     }
 
     @ParameterizedTest
     @MethodSource("filePaths")
     public final void testRefMw(String filePath) throws Exception {
         Flux<Result<Object>> results = convertFile(filePath);
-        Assert.assertEquals(
-                "Expected to have 2 valid reference event definitions",
-                    Long.valueOf(2l),
-                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ReferenceMwParameters).count().block());
+        Assertions.assertEquals(Long.valueOf(2l),
+                                results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ReferenceMwParameters).count().block(),
+                                "Expected to have 2 valid reference event definitions");
     }
-    
+
     @ParameterizedTest
     @MethodSource("filePaths")
     public final void testValidationMw(String filePath) throws Exception {
         Flux<Result<Object>> results = convertFile(filePath);
-        Assert.assertEquals(
-                "Expected to have 2 valid validation event definitions",
-                    Long.valueOf(2l),
-                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ValidationMwParameters).count().block());
-    }    
+        Assertions.assertEquals(Long.valueOf(2l),
+                                results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ValidationMwParameters).count().block(),
+                                "Expected to have 14 valid band definitions");
+    }
+
+    @ParameterizedTest
+    @MethodSource("filePaths")
+    public final void testMultiplePolygons(String filePath) throws Exception {
+        Flux<Result<Object>> results = convertFile(filePath);
+        RawGeoJSON result = (RawGeoJSON) results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof RawGeoJSON).blockFirst().getResultPayload().get();
+
+        Assertions.assertEquals("{\"features\":[{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[0.0,3.0],[3.0,3.0],[3.0,0.0],[0.0,0.0],[0.0,3.0]]]}}]}",
+                                result.getRawGeoJSON(),
+                                "Expected RawGeoJSON collection to match contents of calibration JSON");
+    }
 
     @ParameterizedTest
     @MethodSource("filePaths")
     public final void testShapeConstraint(String filePath) throws Exception {
         Flux<Result<Object>> results = convertFile(filePath);
-        Assert.assertEquals(
-                "Expected to have 1 valid shape constraint definition",
-                    Long.valueOf(1l),
-                    results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ShapeFitterConstraints).count().block());
-        assertThat(((ShapeFitterConstraints) results.filter(r -> r.getResultPayload().orElse(null) instanceof ShapeFitterConstraints).blockFirst().getResultPayload().get()).getMaxBeta()).isCloseTo(
-                -11.0E-4,
-                    within(0.001)).describedAs("Expected values containing 'E-' scientific notation serialize correctly");
+        Assertions.assertEquals(Long.valueOf(1l),
+                                results.filter(r -> r.isSuccess() && r.getResultPayload().orElse(null) instanceof ShapeFitterConstraints).count().block(),
+                                "Expected to have 1 valid shape constraint definition");
+        assertThat(((ShapeFitterConstraints) results.filter(r -> r.getResultPayload().orElse(null) instanceof ShapeFitterConstraints)
+                                                    .blockFirst()
+                                                    .getResultPayload()
+                                                    .get()).getMaxBeta()).isCloseTo(-11.0E-4, within(0.001)).describedAs("Expected values containing 'E-' scientific notation serialize correctly");
     }
 }

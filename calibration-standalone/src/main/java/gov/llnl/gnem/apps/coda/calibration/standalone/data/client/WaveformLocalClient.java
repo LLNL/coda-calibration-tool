@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import gov.llnl.gnem.apps.coda.calibration.service.api.GeometryService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticService;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
@@ -36,13 +37,15 @@ import reactor.core.publisher.Mono;
 @Primary
 public class WaveformLocalClient implements WaveformClient {
 
-    private WaveformService service;
+    private WaveformService service;    
     private SyntheticService synthService;
+    private GeometryService geometryService;
 
     @Autowired
-    public WaveformLocalClient(WaveformService service, SyntheticService synthService) {
+    public WaveformLocalClient(WaveformService service, SyntheticService synthService, GeometryService geometryService) {
         this.service = service;
         this.synthService = synthService;
+        this.geometryService = geometryService;
     }
 
     @Override
@@ -110,4 +113,13 @@ public class WaveformLocalClient implements WaveformClient {
         return Flux.just(service.setActiveFlagByStationName(id, active).toString());
     }
 
+    @Override
+    public Flux<String> setWaveformsActiveOutsidePolygon(boolean active) {
+        return Flux.just(geometryService.setActiveFlagOutsidePolygon(active).toString());
+    } 
+    
+    @Override
+    public Flux<String> setWaveformsActiveInsidePolygon(boolean active) {
+        return Flux.just(geometryService.setActiveFlagInsidePolygon(active).toString());
+    }    
 }

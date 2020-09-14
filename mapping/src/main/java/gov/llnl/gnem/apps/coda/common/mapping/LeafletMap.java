@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -33,6 +33,7 @@ import gov.llnl.gnem.apps.coda.common.mapping.api.GeoBox;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
+import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Line;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -49,6 +50,9 @@ import netscape.javascript.JSObject;
 
 public class LeafletMap {
 
+    private static final LeafletIcon POLYGON_OUT_ICON = new LeafletIcon(null, null, IconTypes.POLYGON_OUT);
+    private static final LeafletIcon POLYGON_IN_ICON = new LeafletIcon(null, null, IconTypes.POLYGON_IN);
+
     private static final Logger log = LoggerFactory.getLogger(LeafletMap.class);
 
     private WebView webView;
@@ -59,11 +63,16 @@ public class LeafletMap {
     private AtomicBoolean mapReady = new AtomicBoolean(false);
     private Map<String, BiConsumer<Boolean, String>> callbackMap = new HashMap<>();
     private IconCallbackHandler iconCallbackHandler;
+    private PolygonChangeCallbackHandler polygonChangeCallbackHandler;
     private List<Consumer<MapCallbackEvent>> eventCallbacks = new ArrayList<>();
     private ContextMenu contextMenu;
     private MenuItem reload = new MenuItem("Reload");
     private MenuItem include = new MenuItem("Include");
     private MenuItem exclude = new MenuItem("Exclude");
+    private MenuItem excludeOutPolygon = new MenuItem("Exclude outside");
+    private MenuItem includeOutPolygon = new MenuItem("Include outside");
+    private MenuItem excludeInPolygon = new MenuItem("Exclude inside");
+    private MenuItem includeInPolygon = new MenuItem("Include inside");
 
     public class IconCallbackHandler {
         private BiConsumer<Boolean, String> iconCallbackHandler;
@@ -77,12 +86,30 @@ public class LeafletMap {
         }
     }
 
+    public class PolygonChangeCallbackHandler {
+        private Consumer<String> polygonChangeCallbackHandler;
+
+        public PolygonChangeCallbackHandler(Consumer<String> polygonChangeCallbackHandler) {
+            this.polygonChangeCallbackHandler = polygonChangeCallbackHandler;
+        }
+
+        public void accept(String value) {
+            polygonChangeCallbackHandler.accept(value);
+        }
+    }
+
     public LeafletMap() {
         iconCallbackHandler = new IconCallbackHandler((selected, id) -> {
             BiConsumer<Boolean, String> callback = callbackMap.get(id);
             if (callback != null) {
                 callback.accept(selected, id);
             }
+        });
+
+        polygonChangeCallbackHandler = new PolygonChangeCallbackHandler(geoJSON -> {
+            List<Consumer<MapCallbackEvent>> callbacks = new ArrayList<>(eventCallbacks);
+            MapCallbackEvent event = new MapCallbackEvent(null, MAP_CALLBACK_EVENT_TYPE.POLYGON_CHANGE, true, geoJSON);
+            callbacks.forEach(cb -> cb.accept(event));
         });
 
         Platform.runLater(() -> {
@@ -97,6 +124,7 @@ public class LeafletMap {
                     WebEngine engine = webView.getEngine();
                     contextMenu.getItems().clear();
                     Object activeIconId = engine.executeScript("getActiveIcon();");
+                    Object activePolygonId = engine.executeScript("getActivePolygon();");
                     if (activeIconId instanceof String) {
                         icons.stream().filter(icon -> icon.getId().equalsIgnoreCase((String) activeIconId)).findFirst().ifPresent(icon -> {
                             include.setOnAction(e -> invokeActivationCallbacks(icon, true));
@@ -104,6 +132,13 @@ public class LeafletMap {
                             contextMenu.getItems().addAll(include, exclude);
                             contextMenu.show(webView, event.getScreenX(), event.getScreenY());
                         });
+                    } else if (activePolygonId instanceof Boolean && ((boolean) activePolygonId == true)) {
+                        excludeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, false));
+                        includeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, true));
+                        excludeInPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_IN_ICON, false));
+                        includeInPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_IN_ICON, true));
+                        contextMenu.getItems().addAll(excludeOutPolygon, includeOutPolygon, excludeInPolygon, includeInPolygon);
+                        contextMenu.show(webView, event.getScreenX(), event.getScreenY());
                     } else {
                         contextMenu.getItems().addAll(reload);
                         contextMenu.show(webView, event.getScreenX(), event.getScreenY());
@@ -119,6 +154,7 @@ public class LeafletMap {
                     layers.forEach(this::addLayerToMap);
                     JSObject wind = (JSObject) webView.getEngine().executeScript("window");
                     wind.setMember("iconCallbackHandler", iconCallbackHandler);
+                    wind.setMember("polygonChangeCallbackHandler", polygonChangeCallbackHandler);
                     return;
                 }
             });
@@ -363,18 +399,8 @@ public class LeafletMap {
     }
 
     private String addCallbacks(String id, String name) {
-        return ".on('click', function() { iconCallbackHandler.accept(true, \""
-                + id
-                + "\"); }).bindPopup('"
-                + name
-                + "').on('popupclose', function() { iconCallbackHandler.accept(false, \""
-                + id
-                + "\"); }).on('mouseover', function() { if (\""
-                + id
-                + "\" !== mouseoverIconId) { mouseoverIconId = \""
-                + id
-                + "\"; }}).on('mouseout', function() { if (\""
-                + id
+        return ".on('click', function() { iconCallbackHandler.accept(true, \"" + id + "\"); }).bindPopup('" + name + "').on('popupclose', function() { iconCallbackHandler.accept(false, \"" + id
+                + "\"); }).on('mouseover', function() { if (\"" + id + "\" !== mouseoverIconId) { mouseoverIconId = \"" + id + "\"; }}).on('mouseout', function() { if (\"" + id
                 + "\" === mouseoverIconId) { mouseoverIconId = null; }})";
     }
 
@@ -449,5 +475,13 @@ public class LeafletMap {
 
     public Boolean hasVisibleTileLayers() {
         return (Boolean) webView.getEngine().executeScript("hasVisibleTiles();");
+    }
+
+    public String getPolygonGeoJSON() {
+        return (String) webView.getEngine().executeScript("getPolygonGeoJSON();");
+    }
+
+    public void setPolygonGeoJSON(String geoJSON) {
+        webView.getEngine().executeScript("setPolygonGeoJSON('" + geoJSON + "');");
     }
 }

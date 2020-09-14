@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,7 +34,7 @@ public class NumberFormatFactoryTest {
         String expectedTwoDigit = args.getString(1);
         NumberFormat formatter = NumberFormatFactory.twoDecimalOneLeadingZero();
         String actual = formatter.format(input);
-        Assert.assertEquals(expectedTwoDigit, actual);
+        Assertions.assertEquals(expectedTwoDigit, actual);
     }
 
     @ParameterizedTest
@@ -43,7 +43,7 @@ public class NumberFormatFactoryTest {
         String expectedFourDigit = args.getString(2);
         NumberFormat formatter = NumberFormatFactory.fourDecimalOneLeadingZero();
         String actual = formatter.format(input);
-        Assert.assertEquals(expectedFourDigit, actual);
+        Assertions.assertEquals(expectedFourDigit, actual);
     }
     
     @SuppressWarnings("unused")

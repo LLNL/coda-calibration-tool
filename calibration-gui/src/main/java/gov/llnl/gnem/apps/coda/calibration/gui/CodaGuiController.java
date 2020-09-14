@@ -50,9 +50,12 @@ import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.ParamExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.CalibrationStageShownEvent;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.MapIconActivationCallback;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.MapPolygonChangeHandler;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.UpdateMapPolygonEvent;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.WaveformGui;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.CalibrationProgressListener;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.FileDialogs;
@@ -139,6 +142,8 @@ public class CodaGuiController {
     private GeoMap mapController;
 
     private WaveformClient waveformClient;
+    
+    private ParameterClient configClient;
 
     private EnvelopeLoadingController envelopeLoadingController;
 
@@ -179,7 +184,7 @@ public class CodaGuiController {
     @Autowired
     public CodaGuiController(GeoMap mapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
             ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, WaveformGui waveformGui, DataController data,
-            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, EventBus bus) {
+            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient, EventBus bus) {
         super();
         this.mapController = mapController;
         this.waveformClient = waveformClient;
@@ -195,6 +200,7 @@ public class CodaGuiController {
         this.path = path;
         this.site = site;
         this.measuredMws = measuredMws;
+        this.configClient = configClient;
         this.bus = bus;
         bus.register(this);
 
@@ -335,6 +341,7 @@ public class CodaGuiController {
         waveformFocus.selectedProperty().bindBidirectional(waveformGui.focusProperty());
 
         mapController.registerEventCallback(new MapIconActivationCallback(waveformClient));
+        mapController.registerEventCallback(new MapPolygonChangeHandler(configClient));
 
         activeMapIcon = makeMapLabel();
         showMapIcon = makeMapLabel();
@@ -450,6 +457,13 @@ public class CodaGuiController {
         return label;
     }
 
+    @Subscribe
+    private void listener(UpdateMapPolygonEvent event) {
+        if (mapController != null && event != null && event.getGeoJSON() != null && !event.getGeoJSON().isEmpty()) {
+            mapController.setPolygonGeoJSON(event.getGeoJSON());
+        }
+    }
+    
     //TODO: Move this to a controller
     @Subscribe
     private void listener(CalibrationStatusEvent event) {

@@ -27,6 +27,7 @@ import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.Calibratio
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_VALUE;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VALIDATION_EVENTS_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VELOCITY_CONFIGURATION;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.POLYGON_FIELD;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,6 +115,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
                 results.addAll(convertJsonFields(node, VALIDATION_EVENTS_FIELD, x -> valEventsFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, VELOCITY_CONFIGURATION, x -> velocityConfigurationFromJsonNode(x)));
                 results.addAll(convertJsonFields(node, SHAPE_CONSTRAINTS, x -> shapeConstraintsFromJsonNode(x)));
+                results.addAll(convertJsonFields(node, POLYGON_FIELD, x -> polygonFromJsonNode(x)));
             } else if (node.has(ENVELOPE_JOB_NODE)) {
                 results.addAll(convertJsonFields(node, ENVELOPE_JOB_NODE, x -> envelopeJobBandsToSharedBands(x)));
             }
@@ -122,6 +124,10 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         }
 
         return results;
+    }
+
+    private Result<Object> polygonFromJsonNode(JsonNode polygon) {
+        return new Result<>(true, new RawGeoJSON(polygon.toString()));
     }
 
     protected List<Result<Object>> convertJsonFields(JsonNode node, String field, Function<JsonNode, Result<Object>> func) {

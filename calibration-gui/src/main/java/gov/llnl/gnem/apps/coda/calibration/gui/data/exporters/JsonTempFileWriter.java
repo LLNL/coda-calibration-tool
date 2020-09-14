@@ -86,10 +86,10 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
 
     @Override
     public void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
-            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig, ShapeFitterConstraints shapeConstraints) {
+            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig, ShapeFitterConstraints shapeConstraints, String polygonGeoJSON) {
         try {
             JsonNode document = createOrGetDocument(folder, CALIBRATION_JSON_NAME);
-            writeParams(createOrGetFile(folder, CALIBRATION_JSON_NAME), document, sharedParametersByFreqBand, siteParameters, fi, ps, velocityConfig, shapeConstraints);
+            writeParams(createOrGetFile(folder, CALIBRATION_JSON_NAME), document, sharedParametersByFreqBand, siteParameters, fi, ps, velocityConfig, shapeConstraints, polygonGeoJSON);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -138,7 +138,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
 
     private void writeParams(File file, JsonNode document, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand,
             Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters, List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig,
-            ShapeFitterConstraints shapeConstraints) throws IOException {
+            ShapeFitterConstraints shapeConstraints, String polygonGeoJSON) throws IOException {
         writeArrayNodeToFile(file, document, sharedParametersByFreqBand.values(), CalibrationJsonConstants.BAND_FIELD);
         if (siteParameters != null && !siteParameters.isEmpty()) {
             Map<String, Map<String, List<SiteFrequencyBandParameters>>> siteBands = siteParameters.entrySet()
@@ -163,6 +163,9 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         }
         if (shapeConstraints != null) {
             writeFieldNodeToFile(file, document, CalibrationJsonConstants.SHAPE_CONSTRAINTS, mapper.valueToTree(shapeConstraints));
+        }       
+        if (polygonGeoJSON != null && !polygonGeoJSON.isEmpty()) {
+            writeFieldNodeToFile(file, document, CalibrationJsonConstants.POLYGON_FIELD, mapper.readTree(polygonGeoJSON));
         }
     }
 

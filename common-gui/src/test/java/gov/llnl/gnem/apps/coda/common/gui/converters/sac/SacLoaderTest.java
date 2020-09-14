@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,10 +60,10 @@ public class SacLoaderTest {
     @ParameterizedTest
     @MethodSource("singleFile")
     public void testConvertFile(File inputFile) throws Exception {
-        Result<Waveform> res = loader.convertFile(inputFile).doOnError(error -> Assert.fail(error.getMessage())).block(Duration.ofSeconds(10l));
-        Assert.assertTrue("Expect that waveform results should all complete successfully", res.isSuccess());
-        Assert.assertTrue("Expect that waveform results should have no error or warning messages", res.getErrors().isEmpty());
-        Assert.assertTrue("Expect that waveform results should have a Waveform payload", res.getResultPayload().isPresent());
+        Result<Waveform> res = loader.convertFile(inputFile).doOnError(error -> Assertions.fail(error.getMessage())).block(Duration.ofSeconds(10l));
+        Assertions.assertTrue(res.isSuccess(), "Expect that waveform results should all complete successfully");
+        Assertions.assertTrue(res.getErrors().isEmpty(), "Expect that waveform results should have no error or warning messages");
+        Assertions.assertTrue(res.getResultPayload().isPresent(), "Expect that waveform results should have a Waveform payload");
     }
 
     public static Collection<Arguments> singleFile() throws IOException {
@@ -84,11 +84,11 @@ public class SacLoaderTest {
                 return null;
             }
         }).filter(o -> o != null).collect(Collectors.toList());
-        List<Result<Waveform>> results = loader.convertFiles(multipleFiles.get(0)).doOnError(error -> Assert.fail(error.getMessage())).collectList().block(Duration.ofSeconds(10l));
+        List<Result<Waveform>> results = loader.convertFiles(multipleFiles.get(0)).doOnError(error -> Assertions.fail(error.getMessage())).collectList().block(Duration.ofSeconds(10l));
         for (Result<Waveform> res : results) {
-            Assert.assertTrue("Expect that waveform results should all complete successfully", res.isSuccess());
-            Assert.assertTrue("Expect that waveform results should have no error or warning messages", res.getErrors().isEmpty());
-            Assert.assertTrue("Expect that waveform results should have a Waveform payload", res.getResultPayload().isPresent());
+            Assertions.assertTrue(res.isSuccess(), "Expect that waveform results should all complete successfully");
+            Assertions.assertTrue(res.getErrors().isEmpty(), "Expect that waveform results should have no error or warning messages");
+            Assertions.assertTrue(res.getResultPayload().isPresent(), "Expect that waveform results should have a Waveform payload");
         }
     }
 
@@ -103,9 +103,9 @@ public class SacLoaderTest {
                 return null;
             }
         }).filter(o -> o != null).collect(Collectors.toList());
-        List<Result<Waveform>> results = loader.convertFiles(multipleFiles.get(0)).doOnError(error -> Assert.fail(error.getMessage())).collectList().block(Duration.ofSeconds(10l));
+        List<Result<Waveform>> results = loader.convertFiles(multipleFiles.get(0)).doOnError(error -> Assertions.fail(error.getMessage())).collectList().block(Duration.ofSeconds(10l));
         for (Result<Waveform> res : results) {
-            Assert.assertTrue("Expect that the waveform should have a populated event depth if the original file had it.", res.getResultPayload().get().getEvent().getDepth() != 0);
+            Assertions.assertTrue(res.getResultPayload().get().getEvent().getDepth() != 0, "Expect that the waveform should have a populated event depth if the original file had it.");
         }
     }
 }

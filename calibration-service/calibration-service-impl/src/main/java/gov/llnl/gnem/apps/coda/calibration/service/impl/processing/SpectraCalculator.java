@@ -443,7 +443,7 @@ public class SpectraCalculator {
 
     public Spectra computeSpecificSpectra(Double mw, Double apparentStress, Collection<FrequencyBand> bands, PICK_TYPES selectedPhase, SPECTRA_TYPES type) {
 
-        MdacParametersFI mdacFiEntry = mdacFiService.findFirst();
+        MdacParametersFI mdacFiEntry = new MdacParametersFI(mdacFiService.findFirst());
         MdacParametersPS psRows = mdacPsService.findMatchingPhase(selectedPhase.getPhase());
 
         List<Point2D.Double> xyPoints = new ArrayList<>();
@@ -454,7 +454,11 @@ public class SpectraCalculator {
         }
 
         Function<Double, Double> mdacFunction = mdacService.getCalculateMdacAmplitudeForMwFunction(psRows, mdacFiEntry, mw, selectedPhase);
+        double cornerFrequency = -1;
 
+        if (type != null && type.equals(SPECTRA_TYPES.FIT)) {
+            cornerFrequency = mdacService.getCornerFrequency(psRows, mdacFiEntry.setPsi(0.0).setSigma(apparentStress), mw);
+        }
         for (FrequencyBand band : bands) {
             double centerFreq = band.getLowFrequency() + (band.getHighFrequency() - band.getLowFrequency()) / 2.;
             double logFreq = Math.log10(centerFreq);
@@ -467,7 +471,7 @@ public class SpectraCalculator {
             }
         }
         Collections.sort(xyPoints, (p1, p2) -> Double.compare(p1.getX(), p2.getX()));
-        return new Spectra(type, xyPoints, mw, apparentStress);
+        return new Spectra(type, xyPoints, mw, apparentStress, cornerFrequency);
     }
 
     /**
@@ -572,7 +576,7 @@ public class SpectraCalculator {
                 }
 
                 double fit = WCVRMSD(weightMap, dataMap);
-                double corner = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, mdacFi.setPsi(0.0).setSigma(testSigma), testMw));
+                double corner = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(testSigma), testMw));
                 stats.addValue(new double[] { testMw, testSigma, fit, corner });
                 optimizerMeasurements.add(new ImmutableTriple<>(fit, testMw, testSigma));
                 return fit;
@@ -606,7 +610,7 @@ public class SpectraCalculator {
             for (double mw = minMW; mw < maxMW; mw = mw + ((maxMW - minMW) / 100.)) {
                 for (double stress = minApparentStress; stress < maxApparentStress; stress = stress + ((maxApparentStress - minApparentStress) / 100.)) {
                     double res = mdacFunction.value(new double[] { mw, stress });
-                    double corner = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, mdacFi.setPsi(0.0).setSigma(stress), mw));
+                    double corner = mdacService.getCornerFrequency(mdacPs, mdacFi.setPsi(0.0).setSigma(stress), mw);
                     stats.addValue(new double[] { mw, stress, res, corner });
                     optimizerMeasurements.add(new ImmutableTriple<>(res, mw, stress));
                     if (res < best) {
@@ -692,7 +696,7 @@ public class SpectraCalculator {
             result[APP_2_MIN] = result[APP_STRESS];
             result[APP_2_MAX] = result[APP_STRESS];
         }
-        result[CORNER_FREQ] = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, mdacFi.setPsi(0.0).setSigma(result[APP_STRESS]), result[MW_FIT]));
+        result[CORNER_FREQ] = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(result[APP_STRESS]), result[MW_FIT]));
         result[ITR_COUNT] = iterations;
         return result;
     }

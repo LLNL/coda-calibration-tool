@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -29,5 +29,5 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 
 public interface ParamTempFileWriter {
     void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
-            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints);
+            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints, String polygonGeoJSON);
 }

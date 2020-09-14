@@ -112,11 +112,12 @@ public class ParamExporter {
 
             List<MdacParametersFI> fi = paramClient.getFiParameters().toStream().filter(Objects::nonNull).collect(Collectors.toList());
             List<MdacParametersPS> ps = paramClient.getPsParameters().toStream().filter(Objects::nonNull).collect(Collectors.toList());
-            VelocityConfiguration velocity = paramClient.getVelocityConfiguration().subscribeOn(Schedulers.elastic()).block(Duration.ofSeconds(5l));
-            ShapeFitterConstraints shapeConstraints = paramClient.getShapeFitterConstraints().subscribeOn(Schedulers.elastic()).block(Duration.ofSeconds(5l));
+            VelocityConfiguration velocity = paramClient.getVelocityConfiguration().subscribeOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(5l));
+            ShapeFitterConstraints shapeConstraints = paramClient.getShapeFitterConstraints().subscribeOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(5l));
+            String polygonGeoJSON = paramClient.getMapPolygon().subscribeOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(5l));
 
             for (ParamTempFileWriter writer : paramWriters) {
-                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters, fi, ps, velocity, shapeConstraints);
+                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters, fi, ps, velocity, shapeConstraints, polygonGeoJSON);
             }
         }
 

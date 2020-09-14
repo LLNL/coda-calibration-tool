@@ -94,7 +94,7 @@ public class SwftStyleParamFileWriter implements ParamTempFileWriter {
 
     @Override
     public void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
-            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints) {
+            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints, String polygons) {
         File sharedParamFile = new File(folder.toFile(), "Shared.param");
         sharedParamFile.deleteOnExit();
         try {

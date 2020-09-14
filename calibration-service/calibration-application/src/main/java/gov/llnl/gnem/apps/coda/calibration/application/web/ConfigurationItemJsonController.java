@@ -69,4 +69,17 @@ public class ConfigurationItemJsonController {
         configService.update(entry);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping(value = "/polygon", name = "getPolygon")
+    public ResponseEntity<String> getPolygon() {
+        return ResponseEntity.ok().body(configService.getPolygonGeoJSON());
+    }
+
+    @PostMapping(value = "/polygon/update", name = "updatePolygon")
+    public ResponseEntity<?> updatePolygon(@Valid @RequestBody String rawGeoJSON, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }        
+        return ResponseEntity.ok().body(configService.updatePolygon(rawGeoJSON));
+    }
 }

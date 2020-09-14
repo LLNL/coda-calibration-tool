@@ -25,4 +25,8 @@ public interface ConfigurationService {
     public ShapeFitterConstraints update(ShapeFitterConstraints entry);
 
     public ShapeFitterConstraints getCalibrationShapeFitterConstraints();
+
+    public String updatePolygon(String rawGeoJSON);
+
+    public String getPolygonGeoJSON();
 }

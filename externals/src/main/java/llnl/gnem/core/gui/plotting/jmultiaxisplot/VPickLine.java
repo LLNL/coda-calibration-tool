@@ -229,9 +229,10 @@ public class VPickLine extends PlotObject {
      * @param v
      *            The new draggable value
      */
-    public void setDraggable(boolean v) {
+    public VPickLine setDraggable(boolean v) {
         canDragX = v;
         window.setCanDragX(canDragX);
+        return this;
     }
 
     /**

@@ -180,6 +180,18 @@ public class LeafletMapController implements GeoMap {
     }
 
     @Override
+    public String getPolygonGeoJSON() {
+        return mapImpl.getPolygonGeoJSON();
+    }
+
+    @Override
+    public void setPolygonGeoJSON(String geoJSON) {
+        Platform.runLater(() -> {
+            mapImpl.setPolygonGeoJSON(geoJSON);
+        });
+    }
+
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;

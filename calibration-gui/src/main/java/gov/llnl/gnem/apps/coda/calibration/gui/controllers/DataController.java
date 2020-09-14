@@ -80,7 +80,7 @@ public class DataController implements MapListeningController, RefreshableContro
 
     @FXML
     private ScrollPane scrollPane;
-    
+
     @FXML
     private TableView<Waveform> tableView;
 
@@ -101,7 +101,7 @@ public class DataController implements MapListeningController, RefreshableContro
 
     @FXML
     private TableColumn<Waveform, String> highFreqCol;
-    
+
     @FXML
     private TableColumn<Waveform, String> depthCol;
 
@@ -210,20 +210,21 @@ public class DataController implements MapListeningController, RefreshableContro
     @FXML
     public void initialize() {
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        eventCol.setCellValueFactory(
-                x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getEvent).map(Event::getEventId).orElseGet(String::new)));
+        eventCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
+                                                                                     .map(CellDataFeatures::getValue)
+                                                                                     .map(Waveform::getEvent)
+                                                                                     .map(Event::getEventId)
+                                                                                     .orElseGet(String::new)));
         eventCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
         CellBindingUtils.attachTextCellFactories(lowFreqCol, Waveform::getLowFrequency, dfmt2);
         CellBindingUtils.attachTextCellFactories(highFreqCol, Waveform::getHighFrequency, dfmt2);
-        
-        depthCol.setCellValueFactory(
-                                     x -> Bindings.createStringBinding(
-                                           () -> 
-                                           dfmt2.format(
-                                            Optional.ofNullable(x).map(CellDataFeatures::getValue)
-                                           .map(Waveform::getEvent)
-                                           .map(ev->Double.toString(ev.getDepth())).orElseGet(String::new))));
+
+        depthCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
+                                                                                     .map(CellDataFeatures::getValue)
+                                                                                     .map(Waveform::getEvent)
+                                                                                     .map(ev -> dfmt2.format(ev.getDepth()))
+                                                                                     .orElseGet(String::new)));
         depthCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
         usedCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(waveform -> {
@@ -243,9 +244,12 @@ public class DataController implements MapListeningController, RefreshableContro
         }).orElseGet(CheckBox::new)));
         usedCol.comparatorProperty().set((c1, c2) -> Boolean.compare(c1.isSelected(), c2.isSelected()));
 
-        stationCol.setCellValueFactory(
-                x -> Bindings.createStringBinding(
-                        () -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getStream).map(Stream::getStation).map(Station::getStationName).orElseGet(String::new)));
+        stationCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
+                                                                                       .map(CellDataFeatures::getValue)
+                                                                                       .map(Waveform::getStream)
+                                                                                       .map(Stream::getStation)
+                                                                                       .map(Station::getStationName)
+                                                                                       .orElseGet(String::new)));
 
         tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
         //Workaround for https://bugs.openjdk.java.net/browse/JDK-8095943, for now we just clear the selection to avoid dumping a stack trace in the logs and mucking up event bubbling

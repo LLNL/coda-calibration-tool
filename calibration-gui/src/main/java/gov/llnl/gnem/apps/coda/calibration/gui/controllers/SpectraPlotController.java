@@ -18,15 +18,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 
 public class SpectraPlotController {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
-    private SpectralPlot spectraPlot = new SpectralPlot();;
+    private SpectralPlot spectraPlot = new SpectralPlot();
     private Map<Point2D.Double, SpectraMeasurement> spectraSymbolMap = new ConcurrentHashMap<>();
     private boolean isYaxisResizble = false;
     private Function<SpectraMeasurement, Double> dataFunction;
@@ -60,5 +56,9 @@ public class SpectraPlotController {
 
     public Function<SpectraMeasurement, Double> getDataFunc() {
         return dataFunction;
+    }
+
+    public void setShowCornerFrequencies(boolean showCornerFrequencies) {
+        this.spectraPlot.showCornerFrequency(showCornerFrequencies);
     }
 }

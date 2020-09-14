@@ -38,6 +38,12 @@ public class MapIconActivationCallback implements Consumer<MapCallbackEvent> {
             case TRIANGLE_UP:
                 client.setWaveformsActiveByStationName(icon.getFriendlyName(), evtVal.getFlag()).subscribe();
                 break;
+            case POLYGON_OUT:
+                client.setWaveformsActiveOutsidePolygon(evtVal.getFlag()).subscribe();
+                break;
+            case POLYGON_IN:
+                client.setWaveformsActiveInsidePolygon(evtVal.getFlag()).subscribe();
+                break;
             case DEFAULT:
             default:
                 break;

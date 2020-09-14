@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -16,8 +16,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -38,8 +36,6 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class ParameterWebClient implements ParameterClient {
-
-    private static final Logger log = LoggerFactory.getLogger(ParameterWebClient.class);
 
     private WebClient client;
 
@@ -196,4 +192,19 @@ public class ParameterWebClient implements ParameterClient {
     public Mono<String> updateShapeFitterConstraints(ShapeFitterConstraints conf) {
         return client.post().uri("/config/shape/update").accept(MediaType.APPLICATION_JSON).bodyValue(conf).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
     }
+
+    @Override
+    public Mono<String> updateMapPolygon(String rawGeoJSON) {
+        return client.post().uri("/config/polygon/update").accept(MediaType.APPLICATION_JSON).bodyValue(rawGeoJSON).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
+    }
+
+    @Override
+    public Mono<String> getMapPolygon() {
+        return client.get()
+                .uri("/config/polygon/")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .flatMap(response -> response.bodyToMono(String.class))
+                .onErrorReturn("");
+    }    
 }

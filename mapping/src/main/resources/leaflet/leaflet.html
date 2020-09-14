@@ -4,10 +4,12 @@
 <head>
 <link rel="stylesheet" href="leaflet.css" />
 <link rel="stylesheet" href="leaflet-measure.css" />
+<link rel="stylesheet" href="leaflet-geoman.css" />
 <script type='text/javascript' src="leaflet.js"></script>
 <script type='text/javascript' src="leaflet-svg-shape-markers.min.js"></script>
 <script type='text/javascript' src="countries.js"></script>
 <script type='text/javascript' src="leaflet-measure.js"></script>
+<script type='text/javascript' src="leaflet-geoman.min.js"></script>
 <meta charset="UTF-8">
 </head>
 
@@ -16,6 +18,7 @@
 	<script type="text/javascript">
         var markers = new Map();
         var mouseoverIconId = null;
+        var mouseoverPolygon = false;
 
         //Patch layer visibility function onto the leaflet control for layers
         L.Control.Layers.include({
@@ -38,6 +41,28 @@
             attributionControl: false
         }).setView([0, 0], 2);        
 
+        //Make Geoman opt-in
+        L.PM.initialize({ optIn: true });
+        
+        //Disable snapping globally to avoid interacting with other GeoJSON layers
+        map.pm.setGlobalOptions({ snappable: false });
+        
+        //Geoman is not very smart so we have to forcefully re-enable editing/deleting 
+        //for shapes Geoman created via toolbar, because global ignore is truly global, 
+        // or they are not interactable
+        map.pm.setPathOptions({ pmIgnore: false, pane: 'drawing-pane' })                  
+        
+        map.pm.addControls({
+        	  position: 'topleft',
+        	  drawMarker: false,
+        	  drawCircleMarker: false,
+        	  drawCircle: false,
+        	  drawPolyline: false,
+        	  pinningOption: false,
+        	  snappingOption: false,
+        	  cutPolygon: false,
+        	});
+        
 		//Path measurement library controls
 		var measureControl = L.control.measure({
 			position: 'topleft', primaryLengthUnit: 'kilometers', 
@@ -49,9 +74,23 @@
 		measureControl.addTo(map);
 
 		//Add the scale bar to the bottom right
-		L.control.scale({position: 'bottomright'}).addTo(map);          
+		L.control.scale({position: 'bottomright'}).addTo(map);   
+		       
+        map.createPane("country-pane");
+        map.getPane("country-pane").style.zIndex = 300;
+        map.getPane("country-pane").style.pointerEvents = 'none';
+
+        map.createPane("drawing-pane");
+        map.getPane("drawing-pane").style.zIndex = 310;
+        
+        map.createPane("background-pane");
+        map.getPane("background-pane").style.zIndex = 320;
+
+        map.createPane("important-event-pane");
+        map.getPane("important-event-pane").style.zIndex = 1000000;        
 
         var countriesLayer = L.geoJson(countryData, {
+            pane: 'country-pane',
             style: {
                 color: "darkgreen"
             }
@@ -59,23 +98,89 @@
 
         var iconGroup = L.featureGroup().addTo(map);
         var lineGroup = L.layerGroup();
-
+        
+        var drawnShapeGroup = L.geoJSON();
+        
+        drawnShapeGroup.on('mouseover', function() {  
+        	mouseoverPolygon = true;
+        	console.log(mouseoverPolygon)
+    	});
+        
+        drawnShapeGroup.on('mouseout', function() { 
+        	mouseoverPolygon = false;
+        	console.log(mouseoverPolygon)
+       	});
+                
+        //GeoJSON import/export
+        var getPolygonGeoJSON = function() {
+        	return JSON.stringify(drawnShapeGroup.toGeoJSON());
+        }
+        
+        var setPolygonGeoJSON = function(geoJSON) {
+            var layers = L.PM.Utils.findLayers(this.map);
+            layers.forEach(layer => {              
+                map.removeLayer(layer);              
+            });        	
+        	var geo = JSON.parse(geoJSON);
+        	if (typeof geo !== 'undefined' && typeof geo.features !== 'undefined' && geo.features.length > 0) {
+        		drawnShapeGroup.clearLayers();        	
+        		var layers = L.geoJson(geo, { pmIgnore: false, pane: 'drawing-pane' }).addTo(map);
+        		
+                layers.on('pm:update', ({ layer }) => {
+                	polygonChangeCallbackHandler.accept(getPolygonGeoJSON());
+                	mouseoverPolygon = false;
+        		});
+                
+                layers.on('pm:dragend', ({ layer }) => {
+                	polygonChangeCallbackHandler.accept(getPolygonGeoJSON());
+                	mouseoverPolygon = false;
+        		}); 
+                
+                layers.getLayers().forEach(layer => {              
+            		drawnShapeGroup.addLayer(layer);       
+                });        	
+                
+                mouseoverPolygon = false;
+                polygonChangeCallbackHandler.accept(getPolygonGeoJSON());
+        	}
+        }                        
+        
+        //Hook pm:create/remove/edit/move to grab the final shape layer and keep track or it for GeoJSON export purposes
+        map.on('pm:create', ({ shape, layer }) => {            
+            layer.on('pm:update', ({ layer }) => {
+            	polygonChangeCallbackHandler.accept(getPolygonGeoJSON());
+            	mouseoverPolygon = false;
+    		});
+            
+            layer.on('pm:dragend', ({ layer }) => {
+            	polygonChangeCallbackHandler.accept(getPolygonGeoJSON());
+            	mouseoverPolygon = false;
+    		}); 
+            
+            mouseoverPolygon = false;
+        	drawnShapeGroup.addLayer(layer);
+        	polygonChangeCallbackHandler.accept(getPolygonGeoJSON());
+		});
+        
+        map.on('pm:remove', ({ layer }) => {
+        	mouseoverPolygon = false;
+        	drawnShapeGroup.removeLayer(layer);
+        	polygonChangeCallbackHandler.accept(getPolygonGeoJSON());
+		}); 
+        
         var basicOverlayMaps = {
             "Countries": countriesLayer,
             "Icons": iconGroup
-        };
+        };       
 
         var layerControl = L.control.layers(null, basicOverlayMaps, {
             sortLayers: true
         }).addTo(map);
 
-        layerControl.addOverlay(lineGroup, "Paths");
+        layerControl.addOverlay(lineGroup, "Paths");               
 
-        map.createPane("background-pane");
-        map.getPane("background-pane").style.zIndex = 300;
-
-        map.createPane("important-event-pane");
-        map.getPane("important-event-pane").style.zIndex = 1000000;
+        //TODO: KML import (low priority)
+        //TODO: Consider combining polygons to minimize GeoJSON?
 
         var clearIcons = function() {
             iconGroup.clearLayers();
@@ -126,12 +231,19 @@
         }
         
         var getActiveIcon = function() {
-        	return mouseoverIconId;
+        	var id = mouseoverIconId;
+        	mouseoverIconId = null;
+        	return id;
+        }
+        
+        var getActivePolygon = function() {
+        	return mouseoverPolygon;
         }
         
         var showOverlay = function() {
         	document.getElementById("map").style.background = null;
         	document.getElementsByClassName("leaflet-control-container")[0].style.visibility = null;
+        	document.getElementsByClassName("leaflet-drawing-pane-pane")[0].style.visibility = null;
         	document.getElementsByClassName("leaflet-background-pane-pane")[0].style.visibility = null;
         	document.getElementsByClassName("leaflet-overlay-pane")[0].style.visibility = null;
         	document.getElementsByClassName("leaflet-important-event-pane-pane")[0].style.visibility = null;        	
@@ -141,6 +253,7 @@
         var hideOverlay = function() {
         	document.getElementById("map").style.background = "transparent";
         	document.getElementsByClassName("leaflet-control-container")[0].style.visibility = "hidden";
+        	document.getElementsByClassName("leaflet-drawing-pane-pane")[0].style.visibility = "hidden";
         	document.getElementsByClassName("leaflet-background-pane-pane")[0].style.visibility = "hidden";
         	document.getElementsByClassName("leaflet-overlay-pane")[0].style.visibility  = "hidden";
         	document.getElementsByClassName("leaflet-important-event-pane-pane")[0].style.visibility  = "hidden";
@@ -150,10 +263,14 @@
         var getSvgLayer = function() {
 			var baseSvg = document.getElementsByClassName("leaflet-overlay-pane")[0].getElementsByTagName('svg')[0].cloneNode();
 
-	        var div = document.getElementsByClassName("leaflet-background-pane-pane")[0].getElementsByTagName('svg');
+	        var div = document.getElementsByClassName("leaflet-drawing-pane-pane")[0].getElementsByTagName('svg');
 	        if (div.length) {
             	baseSvg.innerHTML += div[0].innerHTML;       
-	        }                
+	        }          	        
+	        div = document.getElementsByClassName("leaflet-background-pane-pane")[0].getElementsByTagName('svg');
+	        if (div.length) {
+            	baseSvg.innerHTML += div[0].innerHTML;       
+	        }  
 	        div = document.getElementsByClassName("leaflet-overlay-pane")[0].getElementsByTagName('svg');
 	        if (div.length) {
             	baseSvg.innerHTML += div[0].innerHTML;       

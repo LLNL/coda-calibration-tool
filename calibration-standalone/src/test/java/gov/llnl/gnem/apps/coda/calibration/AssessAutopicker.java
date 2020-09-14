@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,13 +61,12 @@ public class AssessAutopicker {
         }
 
         List<Waveform> waveforms = loader.convertFiles(files)
-                                         .doOnError(error -> Assert.fail(error.getMessage()))
+                                         .doOnError(error -> Assertions.fail(error.getMessage()))
                                          .filter(Objects::nonNull)
                                          .filter(r -> r.getResultPayload() != null && r.getResultPayload().isPresent())
                                          .map(r -> r.getResultPayload().get())
-                                         .filter(
-                                                 w -> w.getAssociatedPicks() != null
-                                                         && w.getAssociatedPicks().stream().filter(pick -> PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickType())).findAny().isPresent())
+                                         .filter(w -> w.getAssociatedPicks() != null
+                                                 && w.getAssociatedPicks().stream().filter(pick -> PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickType())).findAny().isPresent())
                                          .collectList()
                                          .block(Duration.ofSeconds(10l));
 
@@ -79,15 +78,14 @@ public class AssessAutopicker {
             Double maxTime = halfSeries.getMaxTime()[0];
 
             double startTime = series.getTime().getEpochTime() + maxTime;
-            double stopTime = picker.getEndTime(
-                    series.getData(),
-                        series.getSamprate(),
-                        startTime,
-                        series.getIndexForTime(startTime),
-                        0,
-                        1200,
-                        0.0,
-                        WaveformUtils.getNoiseFloor(WaveformUtils.floatsToDoubles(series.getData())));
+            double stopTime = picker.getEndTime(series.getData(),
+                                                series.getSamprate(),
+                                                startTime,
+                                                series.getIndexForTime(startTime),
+                                                0,
+                                                1200,
+                                                0.0,
+                                                WaveformUtils.getNoiseFloor(WaveformUtils.floatsToDoubles(series.getData())));
             if (new TimeT(stopTime).gt(new TimeT(startTime))) {
                 stopTime = stopTime + series.getTime().subtractD(new TimeT(w.getEvent().getOriginTime()));
             }

@@ -20,19 +20,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Date;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,7 +107,7 @@ public class SacExporterTest {
     @MethodSource("testParamSet")
     public void testGetFileName(Waveform input, String expectedFilename) throws Exception {
         String actual = exporter.getFileName(input);
-        Assert.assertEquals(expectedFilename, actual);
+        Assertions.assertEquals(expectedFilename, actual);
     }
 
     @Test
@@ -119,31 +115,31 @@ public class SacExporterTest {
         //GMPAPPS-1947 Envelope tool was dropping event depth info during import/export.
         Waveform waveform = createValidWaveform();
         SACHeader header = exporter.sacHeaderFromWaveform(waveform);
-        Assert.assertTrue("Expect that the waveform should have a populated event depth if the original file had it.", header.evdp != 0 && !SACHeader.isDefault(header.evdp));
+        Assertions.assertTrue(header.evdp != 0 && !SACHeader.isDefault(header.evdp), "Expect that the waveform should have a populated event depth if the original file had it.");
     }
 
     private static Consumer<Result<String>> waveformNotValidAssertions() throws Exception {
         return res -> {
-            Assert.assertFalse("Result on an invalid waveform should be false", res.isSuccess());
+            Assertions.assertFalse(res.isSuccess(), "Result on an invalid waveform should be false");
             try {
                 java.util.stream.Stream<Path> stream = Files.list(testDir.toPath());
-                Assert.assertFalse("Files should never be created for an invalid waveform", stream.findFirst().isPresent());
+                Assertions.assertFalse(stream.findFirst().isPresent(), "Files should never be created for an invalid waveform");
                 stream.close();
             } catch (IOException e) {
-                Assert.fail("Unable to list the contents of the test directory: " + testDir.getAbsolutePath() + " : " + e.toString());
+                Assertions.fail("Unable to list the contents of the test directory: " + testDir.getAbsolutePath() + " : " + e.toString());
             }
         };
     }
 
     private static Consumer<Result<String>> waveformValidAssertions() {
         return res -> {
-            Assert.assertTrue("Result on an valid waveform should be true: " + res.getResultPayload().get(), res.isSuccess());
+            Assertions.assertTrue(res.isSuccess(), "Result on an valid waveform should be true: " + res.getResultPayload().get());
             Path filePath = testDir.toPath().resolve(res.getResultPayload().get());
-            Assert.assertTrue("File should be created for valid waveforms", Files.exists(filePath));
+            Assertions.assertTrue(Files.exists(filePath), "File should be created for valid waveforms");
             try {
                 Files.delete(filePath);
             } catch (IOException e) {
-                Assert.fail("Temporary files should never exist after a test is complete but an error occured during deletion: " + e.toString());
+                Assertions.fail("Temporary files should never exist after a test is complete but an error occured during deletion: " + e.toString());
             }
         };
     }

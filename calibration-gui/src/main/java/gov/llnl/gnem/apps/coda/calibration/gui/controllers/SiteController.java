@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -51,8 +49,6 @@ import reactor.core.scheduler.Schedulers;
 
 @Component
 public class SiteController extends AbstractMeasurementController {
-
-    private static final Logger log = LoggerFactory.getLogger(SiteController.class);
 
     private static final String X_AXIS_LABEL = "center freq";
 
@@ -108,6 +104,7 @@ public class SiteController extends AbstractMeasurementController {
             plot.addPlotObjectObserver(getPlotpointObserver(() -> site.getSymbolMap()));
             plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
             plot.setYaxisVisibility(true);
+            site.setShowCornerFrequencies(true);
             site.setYAxisResizable(true);
             sitePlotSwingNode.setContent(plot);
 
@@ -155,7 +152,7 @@ public class SiteController extends AbstractMeasurementController {
         return referenceEventClient.getMeasuredEventDetails()
         .filter(ev -> ev.getEventId() != null)
         .collect(Collectors.toList())
-        .subscribeOn(Schedulers.elastic())
+        .subscribeOn(Schedulers.boundedElastic())
         .block(Duration.ofSeconds(10l));
     }
 }

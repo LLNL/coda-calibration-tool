@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -28,7 +28,6 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
-import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
 
 @Transactional
 public interface WaveformRepository extends DetachableJpaRepository<Waveform, Long> {
@@ -43,6 +42,9 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
 
     @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w order by w.id desc")
     public Set<Waveform> getWaveformMetadata();
+    
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.active = :active order by w.id desc")
+    public List<Waveform> getWaveformMetadataByActive(@Param("active") boolean active);
 
     @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.id in :ids order by w.id desc")
     public List<Waveform> findAllMetadataByIds(@Param("ids") List<Long> ids);
@@ -64,6 +66,26 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     @Query("update Waveform w SET w.active = :active where w.stream.station.stationName = :stationName")
     public int setActiveByStationName(@Param("stationName") String stationName, @Param("active") boolean active);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Waveform w SET w.active = :active")    
+    public void setAllActive(boolean active);    
+    
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Waveform w SET w.active = :active where w.id in (:ids)")
+    public int setActiveIn(@Param("active") boolean active, @Param("ids") List<Long> waveformIds);   
+    
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Waveform w SET w.active = :active where w.id not in (:ids)")
+    public int setActiveNotIn(@Param("active") boolean active, @Param("ids") List<Long> waveformIds);
+    
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w "
+            + "where w.active = :active and"
+            + "(w.stream.station.latitude between :minX and :maxX "
+            + "and w.stream.station.longitude between :minY and :maxY) "
+            + "or (w.event.latitude between :minX and :maxX "
+            + "and w.event.longitude between :minY and :maxY)")
+    public List<Waveform> getMetadataInsideBounds(@Param("active") boolean active, @Param("minX") Double minX, @Param("minY") Double minY, @Param("maxX") Double maxX, @Param("maxY") Double maxY);       
+    
     @Query("select w.id from Waveform w where w.event.eventId = :eventId")
     public List<Long> findAllIdsByEventId(@Param("eventId") String eventId);
 
@@ -76,4 +98,9 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     @Query("select w from Waveform w where w.active = true and w.event.eventId = :eventId and w.stream.channelName = 'STACK' and w.stream.station.stationName in :stationNames")
     public List<Waveform> findAllActiveStacksByEventIdAndStationNames(@Param("eventId") String eventId, @Param("stationNames") List<String> stationNames);
 
+    @Query("select w.id from Waveform w where w.active = false")
+    public List<Long> findAllInactiveIds();
+    
+    @Query("select w.id from Waveform w where w.id not in (:ids)")
+    public List<Long> findIdsNotIn(@Param("ids") List<Long> ids);
 }

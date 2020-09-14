@@ -19,12 +19,22 @@ public class MapCallbackEvent {
     private final MAP_CALLBACK_EVENT_TYPE type;
     private final boolean flag;
     private final Icon icon;
+    private final String body;
 
     public MapCallbackEvent(Icon icon, MAP_CALLBACK_EVENT_TYPE type, boolean flag) {
         super();
         this.icon = icon;
         this.type = type;
         this.flag = flag;
+        this.body = null;
+    }
+    
+    public MapCallbackEvent(Icon icon, MAP_CALLBACK_EVENT_TYPE type, boolean flag, String body) {
+        super();
+        this.icon = icon;
+        this.type = type;
+        this.flag = flag;
+        this.body = body;
     }
 
     public Icon getIcon() {
@@ -37,5 +47,9 @@ public class MapCallbackEvent {
 
     public MAP_CALLBACK_EVENT_TYPE getType() {
         return type;
+    }
+
+    public String getBody() {
+        return body;
     }
 }

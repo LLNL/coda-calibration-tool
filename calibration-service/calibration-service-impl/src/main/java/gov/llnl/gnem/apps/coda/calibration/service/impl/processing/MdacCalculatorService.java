@@ -129,4 +129,8 @@ public class MdacCalculatorService {
     public double getCornerFrequency(Function<Double, double[]> mdacFunc) {
         return mdacFunc.apply(Double.valueOf(1.0))[MdacCalculator.ANGULAR_CORNER_FREQ_IDX] / (Math.PI * 2.0);
     }
+
+    public double getCornerFrequency(MdacParametersPS mdacPs, MdacParametersFI stress, double mw) {
+        return getCornerFrequency(getCalculateMdacSourceSpectraFunction(mdacPs, stress, mw));
+    }
 }

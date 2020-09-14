@@ -51,4 +51,8 @@ public interface WaveformClient {
     public Flux<String> setWaveformsActiveByEventId(String id, boolean active);
 
     public Flux<String> setWaveformsActiveByStationName(String id, boolean active);
+
+    public Flux<String> setWaveformsActiveOutsidePolygon(boolean active);
+    
+    public Flux<String> setWaveformsActiveInsidePolygon(boolean active);
 }

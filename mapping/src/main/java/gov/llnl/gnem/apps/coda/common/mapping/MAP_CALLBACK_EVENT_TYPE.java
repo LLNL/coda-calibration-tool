@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * 
@@ -15,7 +15,7 @@ package gov.llnl.gnem.apps.coda.common.mapping;
 
 public enum MAP_CALLBACK_EVENT_TYPE {
 
-    SELECTION("selection"), ACTIVATION("activation");
+    SELECTION("selection"), ACTIVATION("activation"), POLYGON_CHANGE("polygon_update");
     private String type;
 
     private MAP_CALLBACK_EVENT_TYPE(String type) {

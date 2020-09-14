@@ -268,11 +268,11 @@ public class CodaWaveformPlotManager extends JPanel {
         clear();
         List<Pair<Waveform, CodaWaveformPlot>> results = new ArrayList<>();
         if (allWaveformIDs.size() == 1) {
-            SyntheticCoda synth = waveformClient.getSyntheticFromWaveformId(allWaveformIDs.get(0)).publishOn(Schedulers.elastic()).block(Duration.ofSeconds(10));
+            SyntheticCoda synth = waveformClient.getSyntheticFromWaveformId(allWaveformIDs.get(0)).publishOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(10));
             if (synth != null && synth.getId() != null) {
                 results.add(createPlot(synth));
             } else {
-                results.add(createPlot(waveformClient.getWaveformFromId(allWaveformIDs.get(0)).publishOn(Schedulers.elastic()).block(Duration.ofSeconds(10))));
+                results.add(createPlot(waveformClient.getWaveformFromId(allWaveformIDs.get(0)).publishOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(10))));
             }
         } else {
             pagingLabel.setText(pageNumber + 1 + "/" + totalPages);
@@ -285,7 +285,7 @@ public class CodaWaveformPlotManager extends JPanel {
             List<SyntheticCoda> synthetics = waveformClient.getSyntheticsFromWaveformIds(pageIds)
                                                            .filter(synth -> synth != null && synth.getId() != null)
                                                            .collectList()
-                                                           .publishOn(Schedulers.elastic())
+                                                           .publishOn(Schedulers.boundedElastic())
                                                            .block(Duration.ofSeconds(10));
             if (synthetics != null && !synthetics.isEmpty()) {
                 pageIds.removeAll(synthetics.stream().map(synth -> synth.getSourceWaveform().getId()).collect(Collectors.toList()));
@@ -295,7 +295,7 @@ public class CodaWaveformPlotManager extends JPanel {
             List<Waveform> waveforms = waveformClient.getWaveformsFromIds(pageIds)
                                                      .filter(waveform -> waveform != null && waveform.getId() != null)
                                                      .collectList()
-                                                     .publishOn(Schedulers.elastic())
+                                                     .publishOn(Schedulers.boundedElastic())
                                                      .block(Duration.ofSeconds(10));
             if (waveforms != null && !waveforms.isEmpty()) {
                 results.addAll(createWaveformPlots(waveforms));

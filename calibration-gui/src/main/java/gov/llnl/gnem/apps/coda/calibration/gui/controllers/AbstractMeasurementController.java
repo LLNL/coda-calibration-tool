@@ -14,8 +14,10 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
@@ -52,8 +54,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
@@ -397,11 +399,19 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                                       .asObject());
 
         iconCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(pp -> {
-            ImageView imView = new ImageView(SwingFXUtils.toFXImage(SymbolFactory.createSymbol(pp.getStyle(), 0, 0, 2, pp.getColor(), pp.getColor(), pp.getColor(), "", true, false, 10.0)
-                                                                                 .getBufferedImage(256),
-                                                                    null));
-            imView.setFitHeight(12);
-            imView.setFitWidth(12);
+            BufferedImage iconLayer = SymbolFactory.createSymbol(pp.getStyle(), 0, 0, 2.0, pp.getColor(), Color.BLACK, pp.getColor(), "", true, false, 10.0).getBufferedImage(216);
+            BufferedImage backgroundLayer = SymbolFactory.createSymbol(pp.getStyle(), 0, 0, 2.0, Color.BLACK, Color.BLACK, Color.BLACK, "", true, false, 10.0).getBufferedImage(256);
+
+            BufferedImage combined = new BufferedImage(backgroundLayer.getWidth(), backgroundLayer.getHeight(), BufferedImage.TYPE_INT_ARGB);
+
+            Graphics g = combined.getGraphics();
+            g.drawImage(backgroundLayer, 0, 0, null);
+            g.drawImage(iconLayer, 20, 20, null);
+            g.dispose();
+
+            ImageView imView = new ImageView(SwingFXUtils.toFXImage(combined, null));            
+            imView.setFitHeight(16);
+            imView.setFitWidth(16);
             return imView;
         }).orElseGet(() -> new ImageView())));
 
@@ -466,7 +476,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
         spectraControllers.forEach(spc -> {
             if (fittingSpectra != null) {
-                spc.getSpectralPlot().plotXYdata(toPlotPoints(filteredMeasurements, spc.getDataFunc()), SHOW_LEGEND, fittingSpectra);
+                spc.getSpectralPlot().plotXYdata(toPlotPoints(filteredMeasurements, spc.getDataFunc()), SHOW_LEGEND, fittingSpectra);                
             } else {
                 spc.getSpectralPlot().plotXYdata(toPlotPoints(filteredMeasurements, spc.getDataFunc()), HIDE_LEGEND);
             }

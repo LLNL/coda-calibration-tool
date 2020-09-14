@@ -175,4 +175,24 @@ public class WaveformWebClient implements WaveformClient {
                      .exchange()
                      .flatMapMany(resp -> Flux.just(resp.toString()));
     }
+
+    @Override
+    public Flux<String> setWaveformsActiveOutsidePolygon(boolean active) {
+        return client.post()
+                .uri("/geometry/set-active/waveforms-outside-polygon/" + active)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .flatMapMany(resp -> Flux.just(resp.toString()));
+    }
+    
+    @Override
+    public Flux<String> setWaveformsActiveInsidePolygon(boolean active) {
+        return client.post()
+                .uri("/geometry/set-active/waveforms-inside-polygon/" + active)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .flatMapMany(resp -> Flux.just(resp.toString()));
+    }
 }

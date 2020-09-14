@@ -32,9 +32,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterConverter;
+import gov.llnl.gnem.apps.coda.calibration.gui.converters.param.RawGeoJSON;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
+import gov.llnl.gnem.apps.coda.calibration.gui.events.UpdateMapPolygonEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
@@ -182,6 +184,9 @@ public class CodaParamLoadingController {
                                                                              } else {
                                                                                  log.error("Returned a null request from the parameter client while posting ShapeFitterConstraints {}", entry);
                                                                              }
+                                                                         } else if (res.get() instanceof RawGeoJSON) {
+                                                                             RawGeoJSON entry = (RawGeoJSON) res.get();
+                                                                             bus.post(new UpdateMapPolygonEvent(entry.getRawGeoJSON()));
                                                                          }
                                                                      }
                                                                  }
