@@ -46,8 +46,8 @@ public class CodaSNREndTimePicker implements EndTimePicker {
 
     private Double getSnrEndPick(final float[] waveform, final double sampleRate, int startOffset, final double minLengthSec, final double maxLengthSec, final double minimumSnr, final double noise,
             final int windowSize) {
-        int obsWindow = (int) (windowSize / sampleRate);
-        int spikeSamples = (int) ((windowSize / 4) / sampleRate);
+        int obsWindow = (int) (windowSize * sampleRate);
+        int spikeSamples = (int) ((windowSize / 4.0) * sampleRate);
         DescriptiveStatistics obs = new DescriptiveStatistics(obsWindow);
         DescriptiveStatistics spike = new DescriptiveStatistics(spikeSamples);
         SimpleRegression spikeReg = new SimpleRegression();
@@ -92,12 +92,15 @@ public class CodaSNREndTimePicker implements EndTimePicker {
                         }
 
                         double spikeSlope = spikeReg.getSlope();
-                        if (!Double.isNaN(spikeSlope)) {
-                            if (spikeSlope > 0.1) {
-                                snrTimePick = (i - spike.getN() - 1) / sampleRate;
-                                break;
-                            }
+                        if (!Double.isNaN(spikeSlope) && spikeSlope > 0.1) {
+                            snrTimePick = (i - spike.getN() - 1) / sampleRate;
+                            break;
                         }
+                    }
+
+                    if (waveform[i] < noiseThreshold) {
+                        snrTimePick = i / sampleRate;
+                        break;
                     }
                 }
             }

@@ -113,6 +113,10 @@ public class MaxVelocityCalculator {
 
                 // the envelope noise is in log10 units.
                 double snrPeak = peakS[1] - noise;
+                
+                //Attach the measurement to the waveform for later
+                rawWaveform.setMaxVelTime(origintime.add(peakS[0]).getDate());
+                
                 return new PeakVelocityMeasurement().setWaveform(rawWaveform)
                                                     .setNoiseStartSecondsFromOrigin(0d)
                                                     .setNoiseEndSecondsFromOrigin(20d)

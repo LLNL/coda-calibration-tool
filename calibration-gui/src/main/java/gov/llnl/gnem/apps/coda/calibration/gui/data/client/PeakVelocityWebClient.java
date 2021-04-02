@@ -43,8 +43,8 @@ public class PeakVelocityWebClient implements PeakVelocityClient {
         return client.get()
                      .uri("/peak-velocity-measurements/all")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(PeakVelocityMeasurement.class))
+                     .retrieve()
+                     .bodyToFlux(PeakVelocityMeasurement.class)
                      .onErrorReturn(new PeakVelocityMeasurement());
     }
 
@@ -53,8 +53,8 @@ public class PeakVelocityWebClient implements PeakVelocityClient {
         return client.get()
                      .uri("/peak-velocity-measurements/metadata/all")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(PeakVelocityMeasurement.class))
+                     .retrieve()
+                     .bodyToFlux(PeakVelocityMeasurement.class)
                      .onErrorReturn(new PeakVelocityMeasurement());
     }
 
@@ -63,8 +63,8 @@ public class PeakVelocityWebClient implements PeakVelocityClient {
         return client.get()
                      .uri("/peak-velocity-measurements/metadata/by-id/" + id)
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(PeakVelocityMeasurement.class))
+                     .retrieve()
+                     .bodyToMono(PeakVelocityMeasurement.class)
                      .onErrorReturn(new PeakVelocityMeasurement());
     }
 }

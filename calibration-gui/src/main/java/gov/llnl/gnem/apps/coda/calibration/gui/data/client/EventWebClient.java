@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -47,8 +47,8 @@ public class EventWebClient implements EventClient {
         return client.get()
                      .uri("/reference-events")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(ReferenceMwParameters.class))
+                     .retrieve()
+                     .bodyToFlux(ReferenceMwParameters.class)
                      .onErrorReturn(new ReferenceMwParameters());
     }
 
@@ -59,8 +59,8 @@ public class EventWebClient implements EventClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(refEvents)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
@@ -68,14 +68,14 @@ public class EventWebClient implements EventClient {
         return client.get()
                      .uri("/measured-mws")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(MeasuredMwParameters.class))
+                     .retrieve()
+                     .bodyToFlux(MeasuredMwParameters.class)
                      .onErrorReturn(new MeasuredMwParameters());
     }
 
     @Override
     public Mono<Event> getEvent(String eventId) {
-        return client.get().uri("/events/" + eventId).accept(MediaType.APPLICATION_JSON).exchange().flatMap(response -> response.bodyToMono(Event.class)).onErrorReturn(new Event());
+        return client.get().uri("/events/" + eventId).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(Event.class).onErrorReturn(new Event());
     }
 
     @Override
@@ -83,8 +83,8 @@ public class EventWebClient implements EventClient {
         return client.get()
                      .uri("/measured-mws/details")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(MeasuredMwDetails.class))
+                     .retrieve()
+                     .bodyToFlux(MeasuredMwDetails.class)
                      .onErrorReturn(new MeasuredMwDetails());
     }
 
@@ -95,8 +95,8 @@ public class EventWebClient implements EventClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(evids)
-                     .exchange()
-                     .flatMap(resp -> Mono.empty());
+                     .retrieve()
+                     .toBodilessEntity().flatMap(resp -> Mono.empty());
     }
 
     @Override
@@ -104,8 +104,8 @@ public class EventWebClient implements EventClient {
         return client.get()
                      .uri("/validation-events")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(ValidationMwParameters.class))
+                     .retrieve()
+                     .bodyToFlux(ValidationMwParameters.class)
                      .onErrorReturn(new ValidationMwParameters());
     }
 
@@ -116,8 +116,8 @@ public class EventWebClient implements EventClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(events)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
@@ -127,8 +127,8 @@ public class EventWebClient implements EventClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(evids)
-                     .exchange()
-                     .flatMap(resp -> Mono.empty());
+                     .retrieve()
+                     .toBodilessEntity().flatMap(resp -> Mono.empty());
     }
 
     @Override
@@ -138,9 +138,8 @@ public class EventWebClient implements EventClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(evids)
-                     .exchange()
-                     .flux()
-                     .flatMap(resp -> resp.bodyToFlux(String.class));
+                     .retrieve()
+                     .bodyToFlux(String.class);
     }
 
 }

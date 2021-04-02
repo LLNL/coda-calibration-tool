@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -146,8 +146,11 @@ public class InjectedCalibrationShapeFitterConstraints {
     @Value("${shape-constraints.iterations:10}")
     private int iterations;
 
-    @Value("${shape-constraints.fitting-point-count:10000}")
+    @Value("${shape-constraints.fittingPointCount:10000}")
     private int fittingPointCount;
+    
+    @Value("${shape-constraints.lengthWeight:0.2}")
+    private double lengthWeight;
 
     @Bean
     public ShapeFitterConstraints toCalibrationShapeFitterConstraints() {
@@ -192,6 +195,7 @@ public class InjectedCalibrationShapeFitterConstraints {
                                            .setMinGamma(minGamma)
                                            .setMaxGamma(maxGamma)
                                            .setIterations(iterations)
-                                           .setFittingPointCount(fittingPointCount);
+                                           .setFittingPointCount(fittingPointCount)
+                                           .setLengthWeight(lengthWeight);
     }
 }

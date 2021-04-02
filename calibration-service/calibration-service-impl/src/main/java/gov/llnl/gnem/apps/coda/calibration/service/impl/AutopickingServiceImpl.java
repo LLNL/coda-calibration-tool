@@ -15,7 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -48,7 +48,7 @@ public class AutopickingServiceImpl implements AutopickingService {
     }
 
     @Override
-    public Collection<PeakVelocityMeasurement> autoPickVelocityMeasuredWaveforms(final Collection<PeakVelocityMeasurement> velocityMeasurements,
+    public List<PeakVelocityMeasurement> autoPickVelocityMeasuredWaveforms(final List<PeakVelocityMeasurement> velocityMeasurements,
             final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters) {
         return velocityMeasurements.parallelStream().filter(vel -> vel.getWaveform() != null).map(vel -> {
             SharedFrequencyBandParameters params = frequencyBandParameters.get(new FrequencyBand(vel.getWaveform().getLowFrequency(), vel.getWaveform().getHighFrequency()));
@@ -71,23 +71,9 @@ public class AutopickingServiceImpl implements AutopickingService {
                 double minlength = params.getMinLength();
                 double maxlength = params.getMaxLength();
 
-                double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + vel.getDistance());
-                if (vr == 0.0) {
-                    vr = 1.0;
-                }
                 TimeT originTime = new TimeT(vel.getWaveform().getEvent().getOriginTime());
-                TimeT startTime;
-                TimeT trimTime = originTime.add(vel.getDistance() / vr);
+                TimeT startTime = originTime.add(vel.getTimeSecFromOrigin());
                 TimeT beginTime = new TimeT(vel.getWaveform().getBeginTime());
-                TimeSeries trimmedWaveform = converter.convert(vel.getWaveform());
-                try {
-                    trimmedWaveform.cutBefore(trimTime);
-                    trimmedWaveform.cutAfter(trimTime.add(30.0));
-
-                    startTime = new TimeT(trimTime.getEpochTime() + trimmedWaveform.getMaxTime()[0]);
-                } catch (IllegalArgumentException e) {
-                    startTime = trimTime;
-                }
 
                 TimeSeries segment = converter.convert(vel.getWaveform());
                 if (segment.getSamprate() > 1.0) {

@@ -596,7 +596,7 @@ public class JPlotMouseListener extends MouseInputAdapter implements KeyListener
         int x = me.getX();
         int y = me.getY();
 
-        if (!plot.getPlotRegion().getRect().contains(x, y)) {
+        if (plot.getPlotRegion().getRect() == null || !plot.getPlotRegion().getRect().contains(x, y)) {
             return;
         }
         if (dragging && plot.getCurrentSubplot(x, y) != currentDragSubplot) {

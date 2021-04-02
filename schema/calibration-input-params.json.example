@@ -97,6 +97,8 @@
         "maxBeta": -1.0E-4,
         "minGamma": 0.001,
         "maxGamma": 4.0,
-        "iterations": 10
+        "iterations": 10,
+        "fittingPointCount": 10000,
+        "lengthWeight": 0.001
     }
 }

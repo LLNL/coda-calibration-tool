@@ -56,7 +56,7 @@ public class CalibrationLocalClient implements CalibrationClient {
     @Override
     public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled) {
         try {
-            return Mono.just(service.makeMwMeasurements(autoPickingEnabled, Boolean.TRUE).get(1l, TimeUnit.DAYS).getResultPayload().get());
+            return Mono.just(service.makeMwMeasurements(autoPickingEnabled, Boolean.TRUE).get(1l, TimeUnit.DAYS).getResultPayload().orElseGet(MeasuredMwReportByEvent::new));
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.error(e.getMessage(), e);
             return Mono.empty();
@@ -66,7 +66,7 @@ public class CalibrationLocalClient implements CalibrationClient {
     @Override
     public Mono<MeasuredMwReportByEvent> makeMwMeasurements(Boolean autoPickingEnabled, List<String> eventIds) {
         try {
-            return Mono.just(service.makeMwMeasurements(autoPickingEnabled, Boolean.TRUE, new HashSet<>(eventIds)).get(1l, TimeUnit.DAYS).getResultPayload().get());
+            return Mono.just(service.makeMwMeasurements(autoPickingEnabled, Boolean.TRUE, new HashSet<>(eventIds)).get(1l, TimeUnit.DAYS).getResultPayload().orElseGet(MeasuredMwReportByEvent::new));
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.error(e.getMessage(), e);
             return Mono.empty();

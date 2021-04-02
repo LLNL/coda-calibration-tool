@@ -65,7 +65,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public VelocityConfiguration update(VelocityConfiguration entry) {
         VelocityConfiguration mergedEntry;
         if (entry.getId() != null) {
-            mergedEntry = velConfRepository.findById(entry.getId()).get();
+            mergedEntry = velConfRepository.findById(entry.getId()).orElse(null);
         } else {
             mergedEntry = velConfRepository.findFirstByOrderById();
         }
@@ -89,7 +89,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public ShapeFitterConstraints update(ShapeFitterConstraints entry) {
         ShapeFitterConstraints mergedEntry;
         if (entry.getId() != null) {
-            mergedEntry = shapeConstraintsRepository.findById(entry.getId()).get();
+            mergedEntry = shapeConstraintsRepository.findById(entry.getId()).orElse(null);
         } else {
             mergedEntry = shapeConstraintsRepository.findFirstByOrderById();
         }

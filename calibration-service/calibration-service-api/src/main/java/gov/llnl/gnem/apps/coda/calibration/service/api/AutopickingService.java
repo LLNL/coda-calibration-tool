@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -14,7 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
@@ -22,6 +22,6 @@ import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 
 public interface AutopickingService {
-    public Collection<PeakVelocityMeasurement> autoPickVelocityMeasuredWaveforms(final Collection<PeakVelocityMeasurement> velocityMeasurements,
+    public List<PeakVelocityMeasurement> autoPickVelocityMeasuredWaveforms(final List<PeakVelocityMeasurement> velocityMeasurements,
             final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters);
 }

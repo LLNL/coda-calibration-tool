@@ -107,8 +107,8 @@ public class PeakVelocityMeasurement implements Serializable {
         return timeSecFromOrigin;
     }
 
-    public PeakVelocityMeasurement setTime(double timeMsFromOrigin) {
-        this.timeSecFromOrigin = timeMsFromOrigin;
+    public PeakVelocityMeasurement setTime(double timeSecFromOrigin) {
+        this.timeSecFromOrigin = timeSecFromOrigin;
         return this;
     }
 

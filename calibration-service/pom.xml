@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.10</version>
+		<version>1.0.11</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -16,7 +16,6 @@
 	<modules>
 		<module>calibration-model</module>
 		<module>calibration-repository</module>
-		<module>calibration-integration</module>
 		<module>calibration-service-api</module>
 		<module>calibration-service-impl</module>
 		<module>calibration-application</module>

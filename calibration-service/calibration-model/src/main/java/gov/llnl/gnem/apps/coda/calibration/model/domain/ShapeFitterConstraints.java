@@ -128,6 +128,8 @@ public class ShapeFitterConstraints implements Serializable {
     private int iterations;
     @NumberFormat
     private int fittingPointCount;
+    @NumberFormat
+    private double lengthWeight;
 
     public Long getId() {
         return id;
@@ -525,6 +527,15 @@ public class ShapeFitterConstraints implements Serializable {
         return this;
     }
 
+    public double getLengthWeight() {
+        return lengthWeight;
+    }
+
+    public ShapeFitterConstraints setLengthWeight(double lengthWeight) {
+        this.lengthWeight = lengthWeight;
+        return this;
+    }
+
     public ShapeFitterConstraints merge(ShapeFitterConstraints other) {
         if (other.getId() != null) {
             id = other.getId();
@@ -573,7 +584,12 @@ public class ShapeFitterConstraints implements Serializable {
         iterations = other.getIterations();
         gDistMin = other.getgDistMin();
         gDistMax = other.getgDistMax();
-        fittingPointCount = other.getFittingPointCount();
+        if (other.getFittingPointCount() != 0.0) {
+            fittingPointCount = other.getFittingPointCount();
+        }
+        if (other.getLengthWeight() != 0.0) {
+            lengthWeight = other.getLengthWeight();
+        }
         return this;
     }
 
@@ -623,7 +639,8 @@ public class ShapeFitterConstraints implements Serializable {
                     yggMax,
                     yggMin,
                     yvvMax,
-                    yvvMin);
+                    yvvMin,
+                    lengthWeight);
     }
 
     @Override
@@ -678,102 +695,102 @@ public class ShapeFitterConstraints implements Serializable {
                 && Double.doubleToLongBits(yggMax) == Double.doubleToLongBits(other.yggMax)
                 && Double.doubleToLongBits(yggMin) == Double.doubleToLongBits(other.yggMin)
                 && Double.doubleToLongBits(yvvMax) == Double.doubleToLongBits(other.yvvMax)
-                && Double.doubleToLongBits(yvvMin) == Double.doubleToLongBits(other.yvvMin);
+                && Double.doubleToLongBits(yvvMin) == Double.doubleToLongBits(other.yvvMin)
+                && Double.doubleToLongBits(lengthWeight) == Double.doubleToLongBits(other.lengthWeight);
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("ShapeFitterConstraints [id=")
-               .append(id)
-               .append(", version=")
-               .append(version)
-               .append(", maxVP1=")
-               .append(maxVP1)
-               .append(", minVP1=")
-               .append(minVP1)
-               .append(", v0reg=")
-               .append(v0reg)
-               .append(", maxVP2=")
-               .append(maxVP2)
-               .append(", minVP2=")
-               .append(minVP2)
-               .append(", maxVP3=")
-               .append(maxVP3)
-               .append(", minVP3=")
-               .append(minVP3)
-               .append(", maxBP1=")
-               .append(maxBP1)
-               .append(", minBP1=")
-               .append(minBP1)
-               .append(", b0reg=")
-               .append(b0reg)
-               .append(", maxBP2=")
-               .append(maxBP2)
-               .append(", minBP2=")
-               .append(minBP2)
-               .append(", maxBP3=")
-               .append(maxBP3)
-               .append(", minBP3=")
-               .append(minBP3)
-               .append(", maxGP1=")
-               .append(maxGP1)
-               .append(", minGP1=")
-               .append(minGP1)
-               .append(", g0reg=")
-               .append(g0reg)
-               .append(", maxGP2=")
-               .append(maxGP2)
-               .append(", minGP2=")
-               .append(minGP2)
-               .append(", g1reg=")
-               .append(g1reg)
-               .append(", maxGP3=")
-               .append(maxGP3)
-               .append(", minGP3=")
-               .append(minGP3)
-               .append(", yvvMin=")
-               .append(yvvMin)
-               .append(", yvvMax=")
-               .append(yvvMax)
-               .append(", vDistMax=")
-               .append(vDistMax)
-               .append(", vDistMin=")
-               .append(vDistMin)
-               .append(", ybbMin=")
-               .append(ybbMin)
-               .append(", ybbMax=")
-               .append(ybbMax)
-               .append(", bDistMax=")
-               .append(bDistMax)
-               .append(", bDistMin=")
-               .append(bDistMin)
-               .append(", yggMin=")
-               .append(yggMin)
-               .append(", yggMax=")
-               .append(yggMax)
-               .append(", gDistMin=")
-               .append(gDistMin)
-               .append(", gDistMax=")
-               .append(gDistMax)
-               .append(", minIntercept=")
-               .append(minIntercept)
-               .append(", maxIntercept=")
-               .append(maxIntercept)
-               .append(", minBeta=")
-               .append(minBeta)
-               .append(", maxBeta=")
-               .append(maxBeta)
-               .append(", minGamma=")
-               .append(minGamma)
-               .append(", maxGamma=")
-               .append(maxGamma)
-               .append(", iterations=")
-               .append(iterations)
-               .append(", fittingPointCount=")
-               .append(fittingPointCount)
-               .append("]");
-        return builder.toString();
+        return "ShapeFitterConstraints [id="
+                + id
+                + ", version="
+                + version
+                + ", maxVP1="
+                + maxVP1
+                + ", minVP1="
+                + minVP1
+                + ", v0reg="
+                + v0reg
+                + ", maxVP2="
+                + maxVP2
+                + ", minVP2="
+                + minVP2
+                + ", maxVP3="
+                + maxVP3
+                + ", minVP3="
+                + minVP3
+                + ", maxBP1="
+                + maxBP1
+                + ", minBP1="
+                + minBP1
+                + ", b0reg="
+                + b0reg
+                + ", maxBP2="
+                + maxBP2
+                + ", minBP2="
+                + minBP2
+                + ", maxBP3="
+                + maxBP3
+                + ", minBP3="
+                + minBP3
+                + ", maxGP1="
+                + maxGP1
+                + ", minGP1="
+                + minGP1
+                + ", g0reg="
+                + g0reg
+                + ", maxGP2="
+                + maxGP2
+                + ", minGP2="
+                + minGP2
+                + ", g1reg="
+                + g1reg
+                + ", maxGP3="
+                + maxGP3
+                + ", minGP3="
+                + minGP3
+                + ", yvvMin="
+                + yvvMin
+                + ", yvvMax="
+                + yvvMax
+                + ", vDistMax="
+                + vDistMax
+                + ", vDistMin="
+                + vDistMin
+                + ", ybbMin="
+                + ybbMin
+                + ", ybbMax="
+                + ybbMax
+                + ", bDistMax="
+                + bDistMax
+                + ", bDistMin="
+                + bDistMin
+                + ", yggMin="
+                + yggMin
+                + ", yggMax="
+                + yggMax
+                + ", gDistMin="
+                + gDistMin
+                + ", gDistMax="
+                + gDistMax
+                + ", minIntercept="
+                + minIntercept
+                + ", maxIntercept="
+                + maxIntercept
+                + ", minBeta="
+                + minBeta
+                + ", maxBeta="
+                + maxBeta
+                + ", minGamma="
+                + minGamma
+                + ", maxGamma="
+                + maxGamma
+                + ", iterations="
+                + iterations
+                + ", fittingPointCount="
+                + fittingPointCount
+                + ", lengthWeight="
+                + lengthWeight
+                + "]";
     }
-
 }

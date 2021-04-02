@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration;
 
+import java.util.Locale;
 import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
@@ -31,12 +32,14 @@ import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepoImpl;
 @EnableAutoConfiguration
 @ComponentScan("gov.llnl.gnem.apps.coda.common.application")
 @ComponentScan("gov.llnl.gnem.apps.coda.common.service")
+@ComponentScan("gov.llnl.gnem.apps.coda.envelope")
 @ComponentScan("gov.llnl.gnem.apps.coda.calibration")
-@EntityScan(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.common" })
-@EnableJpaRepositories(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.common" }, repositoryBaseClass = DetachableJpaRepoImpl.class)
+@EntityScan(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.envelope.model.domain", "gov.llnl.gnem.apps.coda.common" })
+@EnableJpaRepositories(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.envelope", "gov.llnl.gnem.apps.coda.common" }, repositoryBaseClass = DetachableJpaRepoImpl.class)
 public class CalibrationApplication {
     @PostConstruct
     void started() {
+        Locale.setDefault(Locale.ENGLISH);
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 

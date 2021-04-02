@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
@@ -36,7 +37,8 @@ public class ConfigureJacksonMixins {
     @Bean
     public MappingJackson2HttpMessageConverter configureJackson() {
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = converter.getObjectMapper();
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersJsonMixin.class);
         mapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersJsonMixin.class);
         converter.setObjectMapper(mapper);

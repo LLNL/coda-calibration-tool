@@ -40,7 +40,7 @@ public abstract class BaseRandomAlgorithm implements RandomAlgorithm {
         long max = Integer.MAX_VALUE;
         long inRange = max - min;
         long value = this.nextInt();
-        double numerator = (value - min) * outRange;
+        double numerator = (value - min) * (double) outRange;
         long result = lower + Math.round(numerator / inRange);
         return (int) result;
     }

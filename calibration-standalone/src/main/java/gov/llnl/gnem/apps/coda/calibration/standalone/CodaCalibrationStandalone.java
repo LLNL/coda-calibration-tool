@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.standalone;
 
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -48,18 +49,18 @@ import javafx.stage.Stage;
 public class CodaCalibrationStandalone extends Application {
 
     private static final Logger log = LoggerFactory.getLogger(CodaCalibrationStandalone.class);
-    private static volatile ConfigurableApplicationContext springContext;
+    private ConfigurableApplicationContext springContext;
     private static String[] initialArgs;
     private EventBus bus;
 
     @PostConstruct
     void started() {
+        Locale.setDefault(Locale.ENGLISH);
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
     public static synchronized void main(String[] args) {
         try {
-
             initialArgs = args;
             String preloaderName = System.getProperty("javafx.preloader");
             if (preloaderName == null) {
@@ -88,13 +89,14 @@ public class CodaCalibrationStandalone extends Application {
     }
 
     private ConfigurableApplicationContext setContext(ConfigurableApplicationContext context) {
-        if (springContext != null) {
+        synchronized (initialArgs) {
+            if (springContext != null) {
+                return springContext;
+            }
+            springContext = context;
+            bus = springContext.getBean(EventBus.class);
             return springContext;
         }
-
-        springContext = context;
-        bus = springContext.getBean(EventBus.class);
-        return springContext;
     }
 
     @Override

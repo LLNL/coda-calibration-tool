@@ -39,8 +39,8 @@ public class ShapeMeasurementWebClient implements ShapeMeasurementClient {
         return client.get()
                      .uri("/shape-measurements/all/")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(ShapeMeasurement.class))
+                     .retrieve()
+                     .bodyToFlux(ShapeMeasurement.class)
                      .onErrorReturn(new ShapeMeasurement());
     }
 
@@ -49,8 +49,8 @@ public class ShapeMeasurementWebClient implements ShapeMeasurementClient {
         return client.get()
                      .uri("/shape-measurements/byWaveformId/" + id)
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(ShapeMeasurement.class))
+                     .retrieve()
+                     .bodyToMono(ShapeMeasurement.class)
                      .onErrorReturn(new ShapeMeasurement());
     }
 
@@ -59,8 +59,8 @@ public class ShapeMeasurementWebClient implements ShapeMeasurementClient {
         return client.get()
                      .uri("/shape-measurements/metadata/all/")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(ShapeMeasurement.class))
+                     .retrieve()
+                     .bodyToFlux(ShapeMeasurement.class)
                      .onErrorReturn(new ShapeMeasurement());
     }
 
@@ -69,8 +69,8 @@ public class ShapeMeasurementWebClient implements ShapeMeasurementClient {
         return client.get()
                      .uri("/shape-measurements/metadata/byWaveformId/" + id)
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(ShapeMeasurement.class))
+                     .retrieve()
+                     .bodyToMono(ShapeMeasurement.class)
                      .onErrorReturn(new ShapeMeasurement());
     }
 }

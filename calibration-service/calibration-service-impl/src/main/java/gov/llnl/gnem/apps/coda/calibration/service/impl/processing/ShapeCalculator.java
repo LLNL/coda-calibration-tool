@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -34,6 +34,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
+import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
@@ -51,22 +52,24 @@ public class ShapeCalculator {
     }
 
     public List<ShapeMeasurement> fitShapelineToMeasuredEnvelopes(Collection<Entry<PeakVelocityMeasurement, WaveformPick>> filteredVelocityMeasurements,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints) {
-
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints, boolean autoPickingEnabled) {
         List<ShapeMeasurement> measuredShapes = new ArrayList<>();
         if (filteredVelocityMeasurements == null || filteredVelocityMeasurements.isEmpty()) {
             // TODO: Feedback about this to the user
             return measuredShapes;
         }
 
-        CalibrationCurveFitter curveFitter = new CalibrationCurveFitter();
-
         // Loop through each entry and try to fit a line using the max
         // amplitude prediction for that frequency band from the velocity model
 
         measuredShapes = filteredVelocityMeasurements.parallelStream().map(filteredVelocityMeasurement -> {
+            
+            CalibrationCurveFitter curveFitter = new CalibrationCurveFitter();
             PeakVelocityMeasurement velocityMeasurement = filteredVelocityMeasurement.getKey();
             WaveformPick endPick = filteredVelocityMeasurement.getValue();
+            
+            boolean isAutoPicked = velocityMeasurement.getWaveform().getAssociatedPicks().stream().anyMatch(wp -> wp.getPickName().equalsIgnoreCase(PICK_TYPES.AP.name()));                                                       
+            boolean shouldAutoPick = autoPickingEnabled && isAutoPicked;
 
             FrequencyBand freqBand = new FrequencyBand(velocityMeasurement.getWaveform().getLowFrequency(), velocityMeasurement.getWaveform().getHighFrequency());
             SharedFrequencyBandParameters frequencyBandParameter = frequencyBandParameters.get(freqBand);
@@ -100,32 +103,45 @@ public class ShapeCalculator {
                 log.trace("Encountered F pick with time before expected Coda start while processing {}; processing will skip this file", velocityMeasurement);
                 return null;
             }
-            TimeSeries synthSeis = converter.convert(velocityMeasurement.getWaveform());
+
+            //TOOD: Make synthetic creation/fit part of the optimization pass
+            TimeSeries seis = converter.convert(velocityMeasurement.getWaveform());
             try {
-                synthSeis.cut(travelTime, endTime);
-                if (synthSeis.getSamprate() > 1.0) {
-                    synthSeis.interpolate(1.0);
+                seis.cut(travelTime, endTime);
+                if (seis.getSamprate() > 1.0) {
+                    seis.interpolate(1.0);
                 }
-                if (constraints != null && constraints.getFittingPointCount() > 0 && synthSeis.getNsamp() > constraints.getFittingPointCount()) {
-                    double samprate = (constraints.getFittingPointCount() / (double) synthSeis.getNsamp()) * synthSeis.getSamprate();
-                    synthSeis.interpolate(samprate);
-                }
+                if (constraints != null && constraints.getFittingPointCount() > 0 && seis.getNsamp() > constraints.getFittingPointCount()) {
+                    double samprate = (constraints.getFittingPointCount() / (double) seis.getNsamp()) * seis.getSamprate();
+                    seis.interpolate(samprate);
+                }                
 
-                if (frequencyBandParameter.getMinLength() > 0 && synthSeis.getLengthInSeconds() < frequencyBandParameter.getMinLength()) {
-                    log.trace("Encountered a too small window length while processing {} with length {} and minimum window of {}; processing will skip this file",
-                              velocityMeasurement,
-                              synthSeis.getLengthInSeconds(),
-                              frequencyBandParameter.getMinLength());
+                if (frequencyBandParameter.getMinLength() > 0 && seis.getLengthInSeconds() < frequencyBandParameter.getMinLength()) {
+                    log.trace(
+                            "Encountered a too small window length while processing {} with length {} and minimum window of {}; processing will skip this file",
+                                velocityMeasurement,
+                                seis.getLengthInSeconds(),
+                                frequencyBandParameter.getMinLength());
                     return null;
-                } else if (frequencyBandParameter.getMaxLength() > 0 && synthSeis.getLengthInSeconds() > frequencyBandParameter.getMaxLength()) {
-                    log.trace("Encountered a too large window length while processing {} with length {} and maxium window of {}; processing will continue on a truncated envelope",
-                              velocityMeasurement,
-                              synthSeis.getLengthInSeconds(),
-                              frequencyBandParameter.getMaxLength());
-                    synthSeis.cutAfter(travelTime.add(frequencyBandParameter.getMaxLength()));
+                } else if (frequencyBandParameter.getMaxLength() > 0 && seis.getLengthInSeconds() > frequencyBandParameter.getMaxLength()) {
+                    log.trace(
+                            "Encountered a too large window length while processing {} with length {} and maximum window of {}; processing will continue on a truncated envelope",
+                                velocityMeasurement,
+                                seis.getLengthInSeconds(),
+                                frequencyBandParameter.getMaxLength());
+                    seis.cutAfter(travelTime.add(frequencyBandParameter.getMaxLength()));
                 }
 
-                EnvelopeFit curve = curveFitter.fitCodaCMAES(synthSeis.getData(), synthSeis.getSamprate(), constraints);
+                EnvelopeFit curve = curveFitter.fitCodaCMAES(seis.getData(), seis.getSamprate(), constraints, frequencyBandParameter.getMinLength(), shouldAutoPick);
+
+                if (shouldAutoPick) {
+                    //Ensure pick is persisted back to waveform
+                    double end = curve.getEndTime();
+                    if (end >= 0d) {
+                        endPick.setPickTimeSecFromOrigin((float) (end + seis.getTime().subtractD(originTime)));
+                    }
+                }
+
                 return new ShapeMeasurement().setDistance(distance)
                                              .setWaveform(velocityMeasurement.getWaveform())
                                              .setV0(frequencyBandParameter.getVelocity0())

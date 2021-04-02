@@ -236,7 +236,7 @@ public class DataController implements MapListeningController, RefreshableContro
                 box.setStyle("");
             }
             box.selectedProperty().addListener((obs, o, n) -> {
-                if (n != null && o != n) {
+                if (n != null && !o.equals(n)) {
                     client.setWaveformsActiveByIds(Collections.singletonList(waveform.getId()), n).subscribe();
                 }
             });

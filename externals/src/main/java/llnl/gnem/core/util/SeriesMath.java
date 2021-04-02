@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Vector;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
@@ -45,6 +44,8 @@ import llnl.gnem.core.util.seriesMathHelpers.SampleStatistics;
  */
 public class SeriesMath {
 
+    private static final String LENGTH_MISMATCH = "Length of input x and y arrays is not the same.";
+    private static final String EMPTY_ARRAY = "Empty Array!";
     private static final double EPS = 0.00001;
     private static final int R = 0;
     private static final int I = 1;
@@ -58,7 +59,7 @@ public class SeriesMath {
      *            - the second data series
      * @return result[ii] = data1[ii] + data2[ii]
      */
-    public static double[] add(double data1[], double data2[]) {
+    public static double[] add(double[] data1, double[] data2) {
         if (data1.length != data2.length) {
             return null;
         }
@@ -80,7 +81,7 @@ public class SeriesMath {
      * @param value
      * @return
      */
-    public static double[] add(double data[], double value) {
+    public static double[] add(double[] data, double value) {
         double[] result = new double[data.length];
 
         for (int ii = 0; ii < data.length; ii++) {
@@ -90,7 +91,7 @@ public class SeriesMath {
         return result;
     }
 
-    public static float[] add(float data[], float value) {
+    public static float[] add(float[] data, float value) {
         float[] result = new float[data.length];
         for (int ii = 0; ii < data.length; ii++) {
             result[ii] = data[ii] + value;
@@ -98,7 +99,7 @@ public class SeriesMath {
         return result;
     }
 
-    public static float[] add(float data[], double value) {
+    public static float[] add(float[] data, double value) {
         return add(data, (float) value);
     }
 
@@ -128,7 +129,7 @@ public class SeriesMath {
      * @param data
      *            Array containing the series values
      */
-    public static void addScalar(double data[], double value) {
+    public static void addScalar(double[] data, double value) {
         int NPTS = data.length;
         if (NPTS < 1) {
             return;
@@ -278,7 +279,7 @@ public class SeriesMath {
             }
             result[j] = sum / W;
         }
-        System.arraycopy(data, N - halfWidth, result, N - halfWidth, N - (N - halfWidth));// TODO is this working correctly?
+        System.arraycopy(data, N - halfWidth, result, N - halfWidth, N - (N - halfWidth));
         return result;
     }
 
@@ -466,7 +467,7 @@ public class SeriesMath {
      *            - the second data series
      * @return result[ii] = data1[ii] - data2[ii]
      */
-    public static double[] subtract(double data1[], double data2[]) {
+    public static double[] subtract(double[] data1, double[] data2) {
         if (data1.length != data2.length) {
             return null;
         }
@@ -490,7 +491,7 @@ public class SeriesMath {
      *            - the second data series
      * @return result[ii] = data1[ii] - data2[ii]
      */
-    public static float[] subtract(float data1[], float data2[]) {
+    public static float[] subtract(float[] data1, float[] data2) {
         if (data1.length != data2.length) {
             return null;
         }
@@ -612,7 +613,7 @@ public class SeriesMath {
      * @param x
      *            - the data series
      */
-    public static double[] autocorrelate(double x[]) {
+    public static double[] autocorrelate(double[] x) {
         return crosscorrelate(x, x);
     }
 
@@ -627,7 +628,7 @@ public class SeriesMath {
      *            "energy" of the trace
      * @return autocorrelation.
      */
-    public static double autocorrelate(double x[], int shift) {
+    public static double autocorrelate(double[] x, int shift) {
         return crosscorrelate(x, x, shift);
     }
 
@@ -672,7 +673,7 @@ public class SeriesMath {
      *
      *         Note the energy of a trace is the autocorrelation at zero shift
      */
-    public static double crosscorrelate(float x[], float y[], int shift) {
+    public static double crosscorrelate(float[] x, float[] y, int shift) {
         double result = 0;
 
         for (int ii = 0; ii < x.length; ii++) {
@@ -696,7 +697,7 @@ public class SeriesMath {
      *            the second data series
      * @return the cross-correlation series
      */
-    public static double[] crosscorrelate(double x[], double y[]) {
+    public static double[] crosscorrelate(double[] x, double[] y) {
         int shift = Math.max(x.length, y.length) - 1;
         double[] result = new double[2 * shift + 1];
 
@@ -720,7 +721,7 @@ public class SeriesMath {
      * @return the cross correlation at a specific point Note the energy of a
      *         trace is the autocorrelation at zero shift
      */
-    public static double crosscorrelate(double x[], double y[], int shift) {
+    public static double crosscorrelate(double[] x, double[] y, int shift) {
         double result = 0;
 
         for (int ii = 0; ii < x.length; ii++) {
@@ -834,10 +835,7 @@ public class SeriesMath {
      * @return
      */
     public static Double dotProduct(double[] data1, double[] data2) {
-        double[] elementbyelement = elementMultiplication(data1, data2);
-
-        Double result = getSum(elementbyelement);// check that this returns null when the lengths are not identical
-        return result;
+        return getSum(elementMultiplication(data1, data2));
     }
 
     /**
@@ -850,10 +848,7 @@ public class SeriesMath {
      * @return
      */
     public static Double dotProduct(float[] data1, float[] data2) {
-        float[] elementbyelement = elementMultiplication(data1, data2);
-
-        Double result = getSum(elementbyelement);
-        return result;
+        return getSum(elementMultiplication(data1, data2));
     }
 
     /**
@@ -1029,7 +1024,7 @@ public class SeriesMath {
     public static int[] find(long[] array, String condition, long value) {
         int[] indexes;
         Integer temp;
-        Vector<Integer> indexV = new Vector<>();
+        List<Integer> indexV = new ArrayList<>();
 
         if (condition.equals("==")) {
             for (int i = 0; i < array.length; i++) {
@@ -1310,8 +1305,8 @@ public class SeriesMath {
      *            - the specific double value you are looking for
      * @return - a Vector of all the indices which match that value
      */
-    public static ArrayList<Integer> findIndicesOf(double data[], double value) {
-        ArrayList<Integer> result = new ArrayList<>();
+    public static List<Integer> findIndicesOf(double[] data, double value) {
+        List<Integer> result = new ArrayList<>();
 
         for (int i = 0; i < data.length; i++) {
             if (data[i] == value) {
@@ -1361,9 +1356,9 @@ public class SeriesMath {
      * @param data
      * @return the largest absolute value in the series
      */
-    public static float getExtremum(float data[]) {
+    public static float getExtremum(float[] data) {
         float smax = 0.0f;
-        float sabs = 0.0f;
+        float sabs;
         for (int i = 0; i < data.length; i++) {
             sabs = Math.abs(data[i]);
             if (sabs > smax) {
@@ -1391,7 +1386,7 @@ public class SeriesMath {
         RollingStats window1 = null;
         RollingStats window2 = null;
         for (int i = windowLength; i < data.length - windowLength; i++) {
-            if (i == windowLength) {
+            if (window1 == null) {
                 window1 = new RollingStats(Arrays.copyOfRange(data, 0, windowLength - 1));
                 window2 = new RollingStats(Arrays.copyOfRange(data, i + 1, i + windowLength));
             } else {
@@ -1444,7 +1439,7 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The max value of the series
      */
-    public static float getMax(float data[]) {
+    public static float getMax(float[] data) {
         return getMax(data, 0, data.length - 1);
     }
 
@@ -1455,7 +1450,7 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The max value of the series
      */
-    public static double getMax(double data[]) {
+    public static double getMax(double[] data) {
         int Nsamps = data.length;
         if (Nsamps < 1) {
             return 0.0F;
@@ -1481,10 +1476,10 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The (index, max value) of the series
      */
-    public static PairT<Integer, Float> getMaxIndex(float data[]) {
+    public static PairT<Integer, Float> getMaxIndex(float[] data) {
         int Nsamps = data.length;
         if (Nsamps < 1) {
-            throw new IllegalStateException("Empty Array!");
+            throw new IllegalStateException(EMPTY_ARRAY);
         }
         float max = -Float.MAX_VALUE;
         int imax = 0;
@@ -1505,10 +1500,10 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The (index, max value) of the series
      */
-    public static PairT<Integer, Double> getMaxIndex(double data[]) {
+    public static PairT<Integer, Double> getMaxIndex(double[] data) {
         int Nsamps = data.length;
         if (Nsamps < 1) {
-            throw new IllegalStateException("Empty Array!");
+            throw new IllegalStateException(EMPTY_ARRAY);
         }
         double max = -Double.MAX_VALUE;
         int imax = 0;
@@ -1537,7 +1532,7 @@ public class SeriesMath {
     }
 
     public static double getMean(Collection<? extends Number> c) {
-        if (c.size() < 1) {
+        if (c.isEmpty()) {
             return 0;
         } else {
             return getSum(c) / c.size();
@@ -1551,8 +1546,7 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The mean value of the series
      */
-    public static double getMean(double data[]) //TODO RENAME - NOT DOT PRODUCT
-    {
+    public static double getMean(double[] data) {
         if (data.length < 1) {
             return (0.0);
         }
@@ -1657,10 +1651,10 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The (index, min value) of the series
      */
-    public static PairT<Integer, Double> getMinIndex(double data[]) {
+    public static PairT<Integer, Double> getMinIndex(double[] data) {
         int Nsamps = data.length;
         if (Nsamps < 1) {
-            throw new IllegalStateException("Empty Array!");
+            throw new IllegalStateException(EMPTY_ARRAY);
         }
         double min = Double.MAX_VALUE;
         int imin = 0;
@@ -1681,10 +1675,10 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The (index, max value) of the series
      */
-    public static PairT<Integer, Float> getMinIndex(float data[]) {
+    public static PairT<Integer, Float> getMinIndex(float[] data) {
         int Nsamps = data.length;
         if (Nsamps < 1) {
-            throw new IllegalStateException("Empty Array!");
+            throw new IllegalStateException(EMPTY_ARRAY);
         }
         float min = Float.MAX_VALUE;
         int imin = 0;
@@ -1706,7 +1700,7 @@ public class SeriesMath {
      * @param data
      * @return
      */
-    public static double getNorm(double data[]) {
+    public static double getNorm(double[] data) {
         double sumsquares = 0.;
         for (int ii = 0; ii < data.length; ii++) {
             sumsquares = sumsquares + data[ii] * data[ii];
@@ -1829,10 +1823,10 @@ public class SeriesMath {
         int preWinStartIndex = (int) Math.round((preWinStartTime - dataStartTime) * sampleRate);
         int postWinEndIndex = (int) Math.round((postWinEndTime - dataStartTime) * sampleRate);
 
-        return getSnr(data, sampleRate, pickIndex, preWinStartIndex, postWinEndIndex);
+        return getSnr(data, pickIndex, preWinStartIndex, postWinEndIndex);
     }
 
-    public static double getSnr(float[] data, double sampleRate, int pickIndex, int preWinStartIndex, int postWinEndIndex) {
+    public static double getSnr(float[] data, int pickIndex, int preWinStartIndex, int postWinEndIndex) {
         int preWinSamples = pickIndex - preWinStartIndex + 1;
 
         if (preWinSamples < 2) {
@@ -1869,7 +1863,7 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The standard deviation value
      */
-    public static double getStDev(double data[]) {
+    public static double getStDev(double[] data) {
         return Math.sqrt(getVariance(data));
     }
 
@@ -1964,7 +1958,7 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The sum of the values
      */
-    public static double getSum(double data[]) {
+    public static double getSum(double[] data) {
         double result = 0.0;
         for (double aData : data) {
             result += aData;
@@ -1989,7 +1983,7 @@ public class SeriesMath {
      * @param data
      *            is an Array containing the series values
      */
-    public static double[] getUnitVector(double data[]) {
+    public static double[] getUnitVector(double[] data) {
         double norm = getNorm(data);
 
         if (norm == 0.) // The original data are a zero vector. Return the original zero vector as the unit vector
@@ -2049,7 +2043,7 @@ public class SeriesMath {
      *            Array containing the series values
      * @return The variance value
      */
-    public static double getVariance(double data[]) {
+    public static double getVariance(double[] data) {
         int Nsamps = data.length;
         if (Nsamps < 2) {
             return (0.0);
@@ -2181,7 +2175,7 @@ public class SeriesMath {
     public static float interpolate(float[] x, float[] y, float xinterp) {
         int N = x.length;
         if (y.length != N) {
-            throw new IllegalArgumentException("Length of input x and y arrays is not the same.");
+            throw new IllegalArgumentException(LENGTH_MISMATCH);
         }
         if (xinterp < x[0] || xinterp > x[N - 1]) {
             throw new IllegalArgumentException("xinterp value is out of the range of x.");
@@ -2214,7 +2208,7 @@ public class SeriesMath {
         if (xinterp < xStart || xinterp > (y.length - 1) * dx) {
             throw new IllegalArgumentException("The xinterp value is out of range.");
         }
-        double x[] = new double[1];
+        double[] x = new double[1];
         x[0] = xStart;
         return wigint(x, y, dx, EPS, xinterp);
     }
@@ -2237,9 +2231,9 @@ public class SeriesMath {
     public static double[] interpolate(double[] x, double[] y, double[] xinterp) {
         int N = x.length;
         if (y.length != N) {
-            throw new IllegalArgumentException("Length of input x and y arrays is not the same.");
+            throw new IllegalArgumentException(LENGTH_MISMATCH);
         }
-        double result[] = new double[xinterp.length];
+        double[] result = new double[xinterp.length];
         for (int j = 0; j < xinterp.length; ++j) {
             result[j] = wigint(x, y, 0.0, EPS, xinterp[j]);
         }
@@ -2264,17 +2258,18 @@ public class SeriesMath {
     public static float[] interpolate(float[] x, float[] y, float[] xinterp) {
         int N = x.length;
         if (y.length != N) {
-            throw new IllegalArgumentException("Length of input x and y arrays is not the same.");
+            throw new IllegalArgumentException(LENGTH_MISMATCH);
         }
-        double X[] = new double[N];
-        double Y[] = new double[N];
+        double[] X = new double[N];
+        double[] Y = new double[N];
         for (int j = 0; j < x.length; ++j) {
             X[j] = x[j];
         }
         for (int j = 0; j < y.length; ++j) {
             Y[j] = y[j];
         }
-        float result[] = new float[xinterp.length];
+
+        float[] result = new float[xinterp.length];
         for (int j = 0; j < xinterp.length; ++j) {
             result[j] = (float) wigint(X, Y, 0.0, EPS, xinterp[j]);
         }
@@ -2297,11 +2292,11 @@ public class SeriesMath {
      * @return The interpolated y-value.
      */
     public static double[] interpolate(double xStart, double dx, double[] y, double[] xinterp) {
-        double x[] = new double[y.length];
+        double[] x = new double[y.length];
         for (int j = 0; j < y.length; ++j) {
             x[j] = xStart + j * dx;
         }
-        double result[] = new double[xinterp.length];
+        double[] result = new double[xinterp.length];
         for (int j = 0; j < xinterp.length; ++j) {
             result[j] = wigint(x, y, 0.0, EPS, xinterp[j]);
         }
@@ -2324,14 +2319,14 @@ public class SeriesMath {
      * @return The interpolated y-value.
      */
     public static float[] interpolate(float xStart, float dx, float[] y, float[] xinterp) {
-        double x[] = new double[1];
+        double[] x = new double[1];
         x[0] = xStart;
-        double Y[] = new double[y.length];
+        double[] Y = new double[y.length];
         for (int j = 0; j < y.length; ++j) {
             Y[j] = y[j];
         }
 
-        float result[] = new float[xinterp.length];
+        float[] result = new float[xinterp.length];
         for (int j = 0; j < xinterp.length; ++j) {
             result[j] = (float) wigint(x, Y, dx, EPS, xinterp[j]);
         }
@@ -2346,14 +2341,14 @@ public class SeriesMath {
             xinterp[j] = (xStart + j * newDx);
         }
 
-        double x[] = new double[1];
+        double[] x = new double[1];
         x[0] = xStart;
-        double Y[] = new double[y.length];
+        double[] Y = new double[y.length];
         for (int j = 0; j < y.length; ++j) {
             Y[j] = y[j];
         }
 
-        float result[] = new float[xinterp.length];
+        float[] result = new float[xinterp.length];
         for (int j = 0; j < xinterp.length; ++j) {
             result[j] = (float) wigint(x, Y, oldDx, EPS, xinterp[j]);
         }
@@ -2573,7 +2568,7 @@ public class SeriesMath {
     public static boolean hasFlatSegments(float[] data, int segmentlength) {
         float[] dx = new float[segmentlength];
 
-        // todo currently hardwiring the number of elements that must be flat - replace with windowlength
+        //TODO: currently hardwiring the number of elements that must be flat - replace with windowlength
         for (int jj = 0; jj < (data.length - 9); jj++) {
             for (int subset = 1; subset < 10; subset++)// currently - 10 points in a row are flagged
             {
@@ -3123,13 +3118,14 @@ public class SeriesMath {
         double xAverage = getMean(vec1);
         double yAverage = getMean(vec2);
 
-        double sumDifferencesX = 0, sumDifferencesY = 0;
+        double sumDifferencesX = 0;
+        double sumDifferencesY = 0;
         for (int indexVec = 0; indexVec < n; indexVec++) {
             sumDifferencesX += vec1[indexVec] - xAverage;
             sumDifferencesY += vec2[indexVec] - yAverage;
         }
 
-        return (1 / (n - 1)) * sumDifferencesX * sumDifferencesY;
+        return (1.0 / (n - 1.0)) * sumDifferencesX * sumDifferencesY;
 
     }
 

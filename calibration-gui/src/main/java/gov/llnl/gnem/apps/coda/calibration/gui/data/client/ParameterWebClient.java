@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -51,8 +51,8 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(parameters)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
@@ -62,8 +62,8 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(parameters)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
@@ -71,8 +71,8 @@ public class ParameterWebClient implements ParameterClient {
         return client.get()
                      .uri("/params/shared-fb-parameters/")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(SharedFrequencyBandParameters.class))
+                     .retrieve()
+                     .bodyToFlux(SharedFrequencyBandParameters.class)
                      .onErrorReturn(new SharedFrequencyBandParameters());
 
     }
@@ -84,8 +84,8 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(parameters)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
@@ -93,8 +93,8 @@ public class ParameterWebClient implements ParameterClient {
         return client.get()
                      .uri("/params/site-fb-parameters/")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(SiteFrequencyBandParameters.class))
+                     .retrieve()
+                     .bodyToFlux(SiteFrequencyBandParameters.class)
                      .onErrorReturn(new SiteFrequencyBandParameters());
     }
 
@@ -105,8 +105,8 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(parameters)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
@@ -116,13 +116,13 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(parameters)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
     public Flux<MdacParametersPS> getPsParameters() {
-        return client.get().uri("/params/ps/").accept(MediaType.APPLICATION_JSON).exchange().flatMapMany(response -> response.bodyToFlux(MdacParametersPS.class)).onErrorReturn(new MdacParametersPS());
+        return client.get().uri("/params/ps/").accept(MediaType.APPLICATION_JSON).retrieve().bodyToFlux(MdacParametersPS.class).onErrorReturn(new MdacParametersPS());
     }
 
     @Override
@@ -132,8 +132,8 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(parameters)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
@@ -143,13 +143,13 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(parameters)
-                     .exchange()
-                     .flatMap(resp -> resp.bodyToMono(String.class));
+                     .retrieve()
+                     .bodyToMono(String.class);
     }
 
     @Override
     public Flux<MdacParametersFI> getFiParameters() {
-        return client.get().uri("/params/fi/").accept(MediaType.APPLICATION_JSON).exchange().flatMapMany(response -> response.bodyToFlux(MdacParametersFI.class)).onErrorReturn(new MdacParametersFI());
+        return client.get().uri("/params/fi/").accept(MediaType.APPLICATION_JSON).retrieve().bodyToFlux(MdacParametersFI.class).onErrorReturn(new MdacParametersFI());
     }
 
     @Override
@@ -159,8 +159,8 @@ public class ParameterWebClient implements ParameterClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(frequencyBand)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(SharedFrequencyBandParameters.class));
+                     .retrieve()
+                     .bodyToMono(SharedFrequencyBandParameters.class);
     }
 
     @Override
@@ -168,14 +168,14 @@ public class ParameterWebClient implements ParameterClient {
         return client.get()
                      .uri("/config/velocity/")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(VelocityConfiguration.class))
+                     .retrieve()
+                     .bodyToMono(VelocityConfiguration.class)
                      .onErrorReturn(new VelocityConfiguration());
     }
 
     @Override
     public Mono<String> updateVelocityConfiguration(VelocityConfiguration velConf) {
-        return client.post().uri("/config/velocity/update").accept(MediaType.APPLICATION_JSON).bodyValue(velConf).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
+        return client.post().uri("/config/velocity/update").accept(MediaType.APPLICATION_JSON).bodyValue(velConf).retrieve().bodyToMono(String.class).onErrorReturn("");
     }
 
     @Override
@@ -183,19 +183,19 @@ public class ParameterWebClient implements ParameterClient {
         return client.get()
                      .uri("/config/shape/")
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(ShapeFitterConstraints.class))
+                     .retrieve()
+                     .bodyToMono(ShapeFitterConstraints.class)
                      .onErrorReturn(new ShapeFitterConstraints());
     }
 
     @Override
     public Mono<String> updateShapeFitterConstraints(ShapeFitterConstraints conf) {
-        return client.post().uri("/config/shape/update").accept(MediaType.APPLICATION_JSON).bodyValue(conf).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
+        return client.post().uri("/config/shape/update").accept(MediaType.APPLICATION_JSON).bodyValue(conf).retrieve().bodyToMono(String.class).onErrorReturn("");
     }
 
     @Override
     public Mono<String> updateMapPolygon(String rawGeoJSON) {
-        return client.post().uri("/config/polygon/update").accept(MediaType.APPLICATION_JSON).bodyValue(rawGeoJSON).exchange().flatMap(response -> response.bodyToMono(String.class)).onErrorReturn("");
+        return client.post().uri("/config/polygon/update").accept(MediaType.APPLICATION_JSON).bodyValue(rawGeoJSON).retrieve().bodyToMono(String.class).onErrorReturn("");
     }
 
     @Override
@@ -203,8 +203,8 @@ public class ParameterWebClient implements ParameterClient {
         return client.get()
                 .uri("/config/polygon/")
                 .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .flatMap(response -> response.bodyToMono(String.class))
+                .retrieve()
+                .bodyToMono(String.class)
                 .onErrorReturn("");
     }    
 }

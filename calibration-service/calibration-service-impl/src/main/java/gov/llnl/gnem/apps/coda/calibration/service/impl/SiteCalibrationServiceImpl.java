@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -55,7 +55,6 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
 
     private static final double DYNE_LOG10_ADJUSTMENT = 7d;
 
-    private static final double ARBITRARY_LOW_STRESS_SIGMA = 0.01;
     private MdacCalculatorService mdac;
     private SiteFrequencyBandParametersService siteParamsService;
     private MeasuredMwsService measuredMwsService;
@@ -84,7 +83,6 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
             Event evid = evidFreqMap.getKey();
             for (Entry<FrequencyBand, Map<Station, SpectraMeasurement>> freqStaMap : evidFreqMap.getValue().entrySet()) {
                 FrequencyBand freqBand = freqStaMap.getKey();
-                weightFunctionMapByEvent.put(evid, this::lowerFreqHigherWeights);
                 for (Entry<Station, SpectraMeasurement> staMwEntry : freqStaMap.getValue().entrySet()) {
                     double amp = staMwEntry.getValue().getPathAndSiteCorrected();
                     if (amp != 0.0) {
@@ -98,6 +96,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                     }
                 }
             }
+            weightFunctionMapByEvent.putIfAbsent(evid, createDataWeightMapFunction(averageMapByEvent.get(evid)));
         }
         return spectraCalc.measureMws(averageMapByEvent, weightFunctionMapByEvent, selectedPhase, psRows, mdacFI);
     }
@@ -106,9 +105,6 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
     public Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> measureSiteCorrections(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand, MdacParametersFI mdacFI,
             Map<PICK_TYPES, MdacParametersPS> mdacPS, Map<String, List<ReferenceMwParameters>> refMws, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters,
             PICK_TYPES selectedPhase) {
-        // TODO: Validate all the input exists and is sufficient to compute a
-        // useful site correction.
-
         MdacParametersPS psRows = mdacPS.get(selectedPhase);
 
         //Input
@@ -129,8 +125,8 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         boolean hasGtSpectra = refMws.values().stream().flatMap(refs -> refs.stream()).filter(ref -> ref.getRefApparentStressInMpa() != null).anyMatch(ref -> ref.getRefApparentStressInMpa() > 0.0);
         //0-1A) If yes then omit everything above the corner frequency for MDAC model only events
         //0-1B) Add it to the GT spectra event map
-        //0-1C) Weight the Mw fit for that event 1.0 at all bands
-        //0-2A) If no then weight the corner frequency highly, the low middle, and the high low
+        //0-1C) Weight the Mw fit for that event 1.0 at all bands for that event
+        //0-2A) If no then weight based on the standard error of the bands + 1
 
         //1) Generate spectra for reference events and get the site correction for each station that saw it.
         for (Entry<Event, Map<FrequencyBand, Map<Station, SpectraMeasurement>>> evidFreqMap : evidFreqBandStaMeasurementsMap.entrySet()) {
@@ -148,7 +144,6 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                         weightFunctionMapByEvent.put(evid, this::evenWeights);
                         evidHasSpectra = true;
                     } else if (serviceConfig.isSpectraTruncationEnabled() && hasGtSpectra) {
-                        mdacFiEntry.setSigma(ARBITRARY_LOW_STRESS_SIGMA);
                         weightFunctionMapByEvent.put(evid, this::evenWeights);
                     }
 
@@ -166,7 +161,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                         if (serviceConfig.isSpectraTruncationEnabled() && cornerFreq > 0.0 && highFreq > cornerFreq) {
                             continue;
                         }
-                        double centerFreq = (highFreq + lowFreq) / 2;
+                        double centerFreq = (highFreq + lowFreq) / 2.0;
 
                         double[] refSpectra = mdacFunc.apply(centerFreq);
 
@@ -189,7 +184,6 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                     }
                 }
             }
-            weightFunctionMapByEvent.putIfAbsent(evid, this::lowerFreqHigherWeights);
         }
 
         //2) For every station with a site correction measured apply it to every other event and get average site term for every frequency band
@@ -256,9 +250,9 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                     }
                 }
             }
+            weightFunctionMapByEvent.putIfAbsent(evid, createDataWeightMapFunction(averageMapByEvent.get(evid)));
         }
 
-        //TODO: Weight bands by number of points and std-dev instead
         // 5) Convert average map into a set of Site correction objects
         for (Entry<Station, Map<FrequencyBand, SummaryStatistics>> freqBandCorrectionMap : staFreqBandSiteCorrectionMapAverage.entrySet()) {
             Station station = freqBandCorrectionMap.getKey();
@@ -298,19 +292,35 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
     private SortedMap<Double, Double> evenWeights(Map<Double, Double> frequencies) {
         SortedMap<Double, Double> weightMap = new TreeMap<>();
         for (Double frequency : frequencies.keySet()) {
-            weightMap.put(frequency, 1d);
+            weightMap.put(frequency, Double.valueOf(1d));
         }
         return weightMap;
     }
 
-    private SortedMap<Double, Double> lowerFreqHigherWeights(Map<Double, Double> frequencies) {
-        SortedMap<Double, Double> weightMap = new TreeMap<>(frequencies);
-        int count = 0;
-        for (Entry<Double, Double> entry : weightMap.entrySet()) {
-            entry.setValue(count == 0 || count == 2 ? 0.5 : count == 1 ? 1.0 : count == 3 ? 0.25 : 0.1);
-            count++;
-        }
-        return weightMap;
+    private Function<Map<Double, Double>, SortedMap<Double, Double>> createDataWeightMapFunction(Map<FrequencyBand, SummaryStatistics> data) {
+        return (Map<Double, Double> frequencies) -> {
+            SortedMap<Double, Double> weightMap = new TreeMap<>();
+            Map<Double, SummaryStatistics> rawData = new HashMap<>();
+            if (data != null) {
+                data.entrySet().forEach(entry -> rawData.put((entry.getKey().getHighFrequency() + entry.getKey().getLowFrequency()) / 2.0, entry.getValue()));
+            }
+            for (Double frequency : frequencies.keySet()) {
+                SummaryStatistics stats = rawData.getOrDefault(frequency, new SummaryStatistics());
+                
+                Double weight;
+                if (stats.getN() > 1 && Double.isFinite(stats.getStandardDeviation())) {
+                    weight = 1d + 1.0/(stats.getStandardDeviation()/Math.sqrt(stats.getN()));
+                }
+                else {
+                    weight = Double.valueOf(1d);
+                }
+                if (!Double.isFinite(weight)) {
+                    weight = Double.valueOf(1d);
+                }
+                weightMap.put(frequency, weight);
+            }
+            return weightMap;
+        };
     }
 
     public static Map<Event, Map<FrequencyBand, Map<Station, SpectraMeasurement>>> mapToEventAndStation(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand) {

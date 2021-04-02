@@ -41,22 +41,12 @@ public class SpectraWebClient implements SpectraClient {
 
     @Override
     public Flux<SpectraMeasurement> getMeasuredSpectra() {
-        return client.get()
-                     .uri("/spectra-measurements/all")
-                     .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(SpectraMeasurement.class))
-                     .onErrorReturn(new SpectraMeasurement());
+        return client.get().uri("/spectra-measurements/all").accept(MediaType.APPLICATION_JSON).retrieve().bodyToFlux(SpectraMeasurement.class).onErrorReturn(new SpectraMeasurement());
     }
 
     @Override
     public Flux<SpectraMeasurement> getMeasuredSpectraMetadata() {
-        return client.get()
-                     .uri("/spectra-measurements/metadata/all")
-                     .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
-                     .flatMapMany(response -> response.bodyToFlux(SpectraMeasurement.class))
-                     .onErrorReturn(new SpectraMeasurement());
+        return client.get().uri("/spectra-measurements/metadata/all").accept(MediaType.APPLICATION_JSON).retrieve().bodyToFlux(SpectraMeasurement.class).onErrorReturn(new SpectraMeasurement());
     }
 
     @Override
@@ -66,11 +56,11 @@ public class SpectraWebClient implements SpectraClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(eventId)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(Spectra.class))
+                     .retrieve()
+                     .bodyToMono(Spectra.class)
                      .onErrorReturn(new Spectra());
     }
-    
+
     @Override
     public Mono<Spectra> getValidationSpectra(String eventId) {
         return client.post()
@@ -78,10 +68,10 @@ public class SpectraWebClient implements SpectraClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(eventId)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(Spectra.class))
+                     .retrieve()
+                     .bodyToMono(Spectra.class)
                      .onErrorReturn(new Spectra());
-    }    
+    }
 
     @Override
     public Mono<List<Spectra>> getFitSpectra(String eventId) {
@@ -90,9 +80,9 @@ public class SpectraWebClient implements SpectraClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(eventId)
-                     .exchange()
-                     .flatMap(response -> response.bodyToMono(new ParameterizedTypeReference<List<Spectra>>() {
-                     }))
+                     .retrieve()
+                     .bodyToMono(new ParameterizedTypeReference<List<Spectra>>() {
+                     })
                      .onErrorReturn(new ArrayList<Spectra>());
     }
 }

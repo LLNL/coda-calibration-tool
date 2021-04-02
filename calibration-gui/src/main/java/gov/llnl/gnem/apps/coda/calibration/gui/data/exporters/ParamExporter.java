@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.exporters;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -137,7 +138,7 @@ public class ParamExporter {
                     writer.writeReferenceMwParams(tmpFolder, referenceMws);
                 }
             }
-            
+
             if (validationMwWriters != null) {
                 List<ValidationMwParameters> validationMws = new ArrayList<>();
                 validationMws.addAll(eventClient.getValidationEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
@@ -155,11 +156,12 @@ public class ParamExporter {
             try (ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("zip", Files.newOutputStream(zipDir.toPath()))) {
                 for (File file : files) {
                     os.putArchiveEntry(new ZipArchiveEntry(file, file.getName()));
-                    IOUtils.copy(Files.newInputStream(file.toPath()), os);
+                    try (InputStream fis = Files.newInputStream(file.toPath())) {
+                        IOUtils.copy(fis, os);
+                    }
                     os.closeArchiveEntry();
                 }
                 os.flush();
-                os.close();
             } catch (ArchiveException e) {
                 throw new IOException(e);
             }

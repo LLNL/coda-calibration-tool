@@ -168,29 +168,31 @@ public class MeasuredMwsController extends AbstractMeasurementController {
                                .doOnError(err -> log.trace(err.getMessage(), err))
                                .doFinally((s) -> Platform.runLater(() -> progressGui.hide()))
                                .block(Duration.of(1000l, ChronoUnit.SECONDS));
-        fitSpectra.putAll(mfs.getFitSpectra());
+        if (mfs != null) {
+            fitSpectra.putAll(mfs.getFitSpectra());
 
-        List<MeasuredMwDetails> refEvs = referenceEventClient.getMeasuredEventDetails()
-                                                             .filter(ev -> ev.getEventId() != null)
-                                                             .collect(Collectors.toList())
-                                                             .subscribeOn(Schedulers.boundedElastic())
-                                                             .block(Duration.ofSeconds(10l));
-        Collection<MeasuredMwDetails> measMws = mfs.getMeasuredMwDetails().values();
+            List<MeasuredMwDetails> refEvs = referenceEventClient.getMeasuredEventDetails()
+                                                                 .filter(ev -> ev.getEventId() != null)
+                                                                 .collect(Collectors.toList())
+                                                                 .subscribeOn(Schedulers.boundedElastic())
+                                                                 .block(Duration.ofSeconds(10l));
+            Collection<MeasuredMwDetails> measMws = mfs.getMeasuredMwDetails().values();
 
-        //Not terribly efficient but this list should never be huge so eh...
-        for (MeasuredMwDetails ref : refEvs) {
-            for (MeasuredMwDetails meas : measMws) {
-                if (meas.getEventId().equals(ref.getEventId())) {
-                    meas.setRefMw(ref.getRefMw());
-                    meas.setRefApparentStressInMpa(ref.getRefApparentStressInMpa());
-                    meas.setValMw(ref.getValMw());
-                    meas.setValApparentStressInMpa(ref.getValApparentStressInMpa());
-                    break;
+            //Not terribly efficient but this list should never be huge so eh...
+            for (MeasuredMwDetails ref : refEvs) {
+                for (MeasuredMwDetails meas : measMws) {
+                    if (meas.getEventId().equals(ref.getEventId())) {
+                        meas.setRefMw(ref.getRefMw());
+                        meas.setRefApparentStressInMpa(ref.getRefApparentStressInMpa());
+                        meas.setValMw(ref.getValMw());
+                        meas.setValApparentStressInMpa(ref.getValApparentStressInMpa());
+                        break;
+                    }
                 }
             }
-        }
 
-        mwDetails.addAll(measMws);
+            mwDetails.addAll(measMws);
+        }
     }
 
     @Override

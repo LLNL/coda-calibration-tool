@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * 
@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -37,6 +38,7 @@ import java.util.Objects;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -75,6 +77,7 @@ import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import javafx.application.Platform;
@@ -100,16 +103,19 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.StackPane;
 import llnl.gnem.core.gui.plotting.HorizPinEdge;
+import llnl.gnem.core.gui.plotting.Limits;
 import llnl.gnem.core.gui.plotting.PaintMode;
 import llnl.gnem.core.gui.plotting.PenStyle;
 import llnl.gnem.core.gui.plotting.PlotObjectClicked;
 import llnl.gnem.core.gui.plotting.SymbolLegend;
 import llnl.gnem.core.gui.plotting.SymbolLegend.SymbolTextPair;
 import llnl.gnem.core.gui.plotting.VertPinEdge;
+import llnl.gnem.core.gui.plotting.ZoomLimits;
 import llnl.gnem.core.gui.plotting.color.ColorMap;
 import llnl.gnem.core.gui.plotting.color.ViridisColorMap;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JMultiAxisPlot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
+import llnl.gnem.core.gui.plotting.jmultiaxisplot.SubplotZoomData;
 import llnl.gnem.core.gui.plotting.plotobject.Circle;
 import llnl.gnem.core.gui.plotting.plotobject.Line;
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
@@ -270,7 +276,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         }
     };
 
-    //TODO: Break this up into components so this isn't so incredibly huge.
+    // TODO: Break this up into components so this isn't so incredibly huge.
     public AbstractMeasurementController(SpectraClient spectraClient, ParameterClient paramClient, EventClient referenceEventClient, WaveformClient waveformClient, SymbolStyleMapFactory styleFactory,
             GeoMap map, MapPlottingUtilities iconFactory, EventBus bus) {
         this.spectraClient = spectraClient;
@@ -368,8 +374,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         });
 
         evidCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null && !newValue.equals(oldValue)) {
-                refreshView();
+            if (newValue != null && !newValue.equals(oldValue) && isVisible) {
+                refreshViewAndZoomOut();
             }
         });
 
@@ -392,11 +398,11 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         CellBindingUtils.attachTextCellFactories(measuredMwUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredMwUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
 
-        iterationsCol.setCellValueFactory(x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getIterations).orElseGet(() -> 0))
-                                                       .asObject());
+        iterationsCol.setCellValueFactory(
+                x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getIterations).orElseGet(() -> 0)).asObject());
 
-        dataCountCol.setCellValueFactory(x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getDataCount).orElseGet(() -> 0))
-                                                      .asObject());
+        dataCountCol.setCellValueFactory(
+                x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getDataCount).orElseGet(() -> 0)).asObject());
 
         iconCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(pp -> {
             BufferedImage iconLayer = SymbolFactory.createSymbol(pp.getStyle(), 0, 0, 2.0, pp.getColor(), Color.BLACK, pp.getColor(), "", true, false, 10.0).getBufferedImage(216);
@@ -409,7 +415,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             g.drawImage(iconLayer, 20, 20, null);
             g.dispose();
 
-            ImageView imView = new ImageView(SwingFXUtils.toFXImage(combined, null));            
+            ImageView imView = new ImageView(SwingFXUtils.toFXImage(combined, null));
             imView.setFitHeight(16);
             imView.setFitWidth(16);
             return imView;
@@ -460,12 +466,14 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             fittingSpectra.add(referenceSpectra);
             Spectra validationSpectra = spectraClient.getValidationSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
             fittingSpectra.add(validationSpectra);
-            if (filteredMeasurements != null && filteredMeasurements.size() > 0 && filteredMeasurements.get(0).getWaveform() != null) {
+            if (filteredMeasurements != null && !filteredMeasurements.isEmpty() && filteredMeasurements.get(0).getWaveform() != null) {
                 Event event = filteredMeasurements.get(0).getWaveform().getEvent();
                 eventTime.setText("Date: " + DateTimeFormatter.ISO_INSTANT.format(event.getOriginTime().toInstant()));
                 eventLoc.setText("Lat: " + dfmt4.format(event.getLatitude()) + " Lon: " + dfmt4.format(event.getLongitude()));
                 eventTime.setVisible(true);
                 eventLoc.setVisible(true);
+            } else {
+                filteredMeasurements = Collections.emptyList();
             }
         } else {
             eventTime.setVisible(false);
@@ -474,23 +482,25 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             fittingSpectra = null;
         }
 
+        final List<SpectraMeasurement> selectedEventMeasurements = filteredMeasurements;
+
         spectraControllers.forEach(spc -> {
             if (fittingSpectra != null) {
-                spc.getSpectralPlot().plotXYdata(toPlotPoints(filteredMeasurements, spc.getDataFunc()), SHOW_LEGEND, fittingSpectra);                
+                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), SHOW_LEGEND, fittingSpectra);
             } else {
-                spc.getSpectralPlot().plotXYdata(toPlotPoints(filteredMeasurements, spc.getDataFunc()), HIDE_LEGEND);
+                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), HIDE_LEGEND);
             }
-            spc.getSymbolMap().putAll(mapSpectraToPoint(filteredMeasurements, spc.getDataFunc()));
+            spc.getSymbolMap().putAll(mapSpectraToPoint(selectedEventMeasurements, spc.getDataFunc()));
         });
-        mapMeasurements(filteredMeasurements);
+        mapMeasurements(selectedEventMeasurements);
 
         minY.set(100.0);
         maxY.set(0.0);
-        DoubleSummaryStatistics stats = filteredMeasurements.stream()
-                                                            .filter(Objects::nonNull)
-                                                            .map(spec -> spec.getPathAndSiteCorrected())
-                                                            .filter(v -> v != 0.0)
-                                                            .collect(Collectors.summarizingDouble(Double::doubleValue));
+        DoubleSummaryStatistics stats = selectedEventMeasurements.stream()
+                                                                 .filter(Objects::nonNull)
+                                                                 .map(spec -> spec.getPathAndSiteCorrected())
+                                                                 .filter(v -> v != 0.0)
+                                                                 .collect(Collectors.summarizingDouble(Double::doubleValue));
         maxY.set(stats.getMax() + .1);
         minY.set(stats.getMin() - .1);
 
@@ -499,9 +509,11 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
     private void mapMeasurements(List<SpectraMeasurement> measurements) {
         if (measurements != null) {
-            mapImpl.addIcons(iconFactory.genIconsFromWaveforms(eventSelectionCallback,
-                                                               stationSelectionCallback,
-                                                               measurements.stream().map(m -> m.getWaveform()).filter(Objects::nonNull).collect(Collectors.toList())));
+            mapImpl.addIcons(
+                    iconFactory.genIconsFromWaveforms(
+                            eventSelectionCallback,
+                                stationSelectionCallback,
+                                measurements.stream().map(m -> m.getWaveform()).filter(Objects::nonNull).collect(Collectors.toList())));
         }
     }
 
@@ -516,24 +528,29 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     private Map<Point2D.Double, SpectraMeasurement> mapSpectraToPoint(List<SpectraMeasurement> spectralMeasurements, Function<SpectraMeasurement, Double> func) {
         return spectralMeasurements.stream()
                                    .filter(spectra -> !func.apply(spectra).equals(0.0))
-                                   .collect(Collectors.toMap(spectra -> new Point2D.Double(Math.log10(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency())),
-                                                                                           func.apply(spectra)),
-                                                             Function.identity(),
-                                                             (a, b) -> b,
-                                                             HashMap::new));
+                                   .collect(
+                                           Collectors.toMap(
+                                                   spectra -> new Point2D.Double(Math.log10(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency())),
+                                                                                 func.apply(spectra)),
+                                                       Function.identity(),
+                                                       (a, b) -> b,
+                                                       HashMap::new));
     }
 
     private List<PlotPoint> toPlotPoints(List<SpectraMeasurement> spectralMeasurements, Function<SpectraMeasurement, Double> func) {
         List<PlotPoint> list = spectralMeasurements.stream()
                                                    .filter(spectra -> !func.apply(spectra).equals(0.0))
-                                                   .filter(spectra -> spectra != null && spectra.getWaveform() != null && spectra.getWaveform().getStream() != null
-                                                           && spectra.getWaveform().getStream().getStation() != null)
+                                                   .filter(
+                                                           spectra -> spectra != null
+                                                                   && spectra.getWaveform() != null
+                                                                   && spectra.getWaveform().getStream() != null
+                                                                   && spectra.getWaveform().getStream().getStation() != null)
                                                    .map(spectra -> {
                                                        String key = spectra.getWaveform().getStream().getStation().getStationName();
                                                        PlotPoint pp = getPlotPoint(key, spectra.getWaveform().isActive());
                                                        PlotPoint point = new LabeledPlotPoint(key,
-                                                                                              new PlotPoint(Math.log10(centerFreq(spectra.getWaveform().getLowFrequency(),
-                                                                                                                                  spectra.getWaveform().getHighFrequency())),
+                                                                                              new PlotPoint(Math.log10(
+                                                                                                      centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency())),
                                                                                                             func.apply(spectra),
                                                                                                             pp.getStyle(),
                                                                                                             pp.getColor()));
@@ -556,8 +573,13 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     }
 
     private boolean hasEventAndStation(SpectraMeasurement spectra) {
-        return spectra != null && spectra.getWaveform() != null && spectra.getWaveform().getEvent() != null && spectra.getWaveform().getEvent().getEventId() != null
-                && spectra.getWaveform().getStream() != null && spectra.getWaveform().getStream().getStation() != null && spectra.getWaveform().getStream().getStation().getStationName() != null;
+        return spectra != null
+                && spectra.getWaveform() != null
+                && spectra.getWaveform().getEvent() != null
+                && spectra.getWaveform().getEvent().getEventId() != null
+                && spectra.getWaveform().getStream() != null
+                && spectra.getWaveform().getStream().getStation() != null
+                && spectra.getWaveform().getStream().getStation().getStationName() != null;
     }
 
     private double centerFreq(Double lowFrequency, Double highFrequency) {
@@ -570,215 +592,217 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             maxFreq.set(-0.0);
             minFreq.set(1.0);
 
-            DoubleSummaryStatistics stats = paramClient.getSharedFrequencyBandParameters()
-                                                       .filter(Objects::nonNull)
-                                                       .collectList()
-                                                       .block(Duration.of(10l, ChronoUnit.SECONDS))
-                                                       .stream()
+            List<SharedFrequencyBandParameters> results = paramClient.getSharedFrequencyBandParameters().filter(Objects::nonNull).collectList().block(Duration.of(10l, ChronoUnit.SECONDS));
+
+            if (results != null) {
+                DoubleSummaryStatistics stats = results.stream()
                                                        .map(sfb -> Math.log10(centerFreq(sfb.getLowFrequency(), sfb.getHighFrequency())))
                                                        .collect(Collectors.summarizingDouble(Double::doubleValue));
-            maxFreq.set(stats.getMax());
-            minFreq.set(stats.getMin());
+                maxFreq.set(stats.getMax());
+                minFreq.set(stats.getMin());
 
-            preloadData();
-            spectralMeasurements.clear();
-            spectralMeasurements.addAll(getSpectraData());
+                preloadData();
+                spectralMeasurements.clear();
+                spectralMeasurements.addAll(getSpectraData());
 
-            runGuiUpdate(() -> {
-                mwParameters.clear();
-                mwPlotFigure.Clear();
-                stressPlotFigure.Clear();
-                sdPlotFigure.Clear();
-                mwPlotFigure.AddPlotObject(mwZeroLine);
-                stressPlotFigure.AddPlotObject(stressZeroLine);
-                List<MeasuredMwDetails> evs = getEvents();
+                runGuiUpdate(() -> {
+                    mwParameters.clear();
+                    mwPlotFigure.Clear();
+                    stressPlotFigure.Clear();
+                    sdPlotFigure.Clear();
+                    mwPlotFigure.AddPlotObject(mwZeroLine);
+                    stressPlotFigure.AddPlotObject(stressZeroLine);
+                    List<MeasuredMwDetails> evs = getEvents();
 
-                double minMw = 10.0;
-                double maxMw = 0.0;
-                double minStress = 1.0;
-                double maxStress = 0.0;
-                for (MeasuredMwDetails ev : evs) {
-                    mwParameters.add(ev);
+                    double minMw = 10.0;
+                    double maxMw = 0.0;
+                    double minStress = 1.0;
+                    double maxStress = 0.0;
+                    for (MeasuredMwDetails ev : evs) {
+                        mwParameters.add(ev);
 
-                    if (ev.getMw() != null && ev.getMw() != 0.0) {
-                        Double mw = ev.getMw();
-                        if (mw < minMw) {
-                            minMw = mw;
-                        }
-                        if (mw > maxMw) {
-                            maxMw = mw;
-                        }
-
-                        Double valMw = ev.getValMw();
-                        if (valMw != null && valMw != 0.0) {
-                            if (valMw < minMw) {
-                                minMw = valMw;
+                        if (ev.getMw() != null && ev.getMw() != 0.0) {
+                            Double mw = ev.getMw();
+                            if (mw < minMw) {
+                                minMw = mw;
                             }
-                            if (valMw > maxMw) {
-                                maxMw = valMw;
+                            if (mw > maxMw) {
+                                maxMw = mw;
                             }
 
-                            Square valSym = new Square(mw, valMw, 2.2, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), true, false, 6.0);
-                            mwPlotFigure.AddPlotObject(valSym);
-                        }
-
-                        if (ev.getRefMw() != null && ev.getRefMw() != 0.0) {
-                            Double ref = ev.getRefMw();
-                            if (ref < minMw) {
-                                minMw = ref;
-                            }
-                            if (ref > maxMw) {
-                                maxMw = ref;
-                            }
-
-                            Circle mwSym = new Circle(mw, ref, 2.0, Color.RED, Color.RED, Color.RED, ev.getEventId(), true, false, 6.0);
-                            mwPlotFigure.AddPlotObject(mwSym);
-                        }
-
-                        Double stress = ev.getApparentStressInMpa();
-                        Double refStress = ev.getRefApparentStressInMpa();
-
-                        if (stress != null) {
-                            if (stress < minStress) {
-                                minStress = stress;
-                            }
-                            if (stress > maxStress) {
-                                maxStress = stress;
-                            }
-
-                            if (refStress == null) {
-                                refStress = 0.0;
-                            }
-
-                            Double valStress = ev.getValApparentStressInMpa();
-                            if (valStress != null && valStress != 0.0) {
-                                if (valStress < minStress) {
-                                    minStress = valStress;
+                            Double valMw = ev.getValMw();
+                            if (valMw != null && valMw != 0.0) {
+                                if (valMw < minMw) {
+                                    minMw = valMw;
                                 }
-                                if (valStress > maxStress) {
-                                    maxStress = valStress;
+                                if (valMw > maxMw) {
+                                    maxMw = valMw;
                                 }
 
-                                Square valSym = new Square(stress, valStress, 2.2, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), true, false, 6.0);
-                                stressPlotFigure.AddPlotObject(valSym);
+                                Square valSym = new Square(mw, valMw, 2.2, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), true, false, 6.0);
+                                mwPlotFigure.AddPlotObject(valSym);
                             }
 
-                            if (refStress != null && refStress != 0.0) {
-                                if (refStress < minStress) {
-                                    minStress = refStress;
+                            if (ev.getRefMw() != null && ev.getRefMw() != 0.0) {
+                                Double ref = ev.getRefMw();
+                                if (ref < minMw) {
+                                    minMw = ref;
                                 }
-                                if (refStress > maxStress) {
-                                    maxStress = refStress;
+                                if (ref > maxMw) {
+                                    maxMw = ref;
                                 }
 
-                                Circle stressSym = new Circle(stress, refStress, 2.0, Color.RED, Color.RED, Color.RED, ev.getEventId(), true, false, 6.0);
-                                stressPlotFigure.AddPlotObject(stressSym);
+                                Circle mwSym = new Circle(mw, ref, 2.0, Color.RED, Color.RED, Color.RED, ev.getEventId(), true, false, 6.0);
+                                mwPlotFigure.AddPlotObject(mwSym);
+                            }
+
+                            Double stress = ev.getApparentStressInMpa();
+                            Double refStress = ev.getRefApparentStressInMpa();
+
+                            if (stress != null) {
+                                if (stress < minStress) {
+                                    minStress = stress;
+                                }
+                                if (stress > maxStress) {
+                                    maxStress = stress;
+                                }
+
+                                if (refStress == null) {
+                                    refStress = 0.0;
+                                }
+
+                                Double valStress = ev.getValApparentStressInMpa();
+                                if (valStress != null && valStress != 0.0) {
+                                    if (valStress < minStress) {
+                                        minStress = valStress;
+                                    }
+                                    if (valStress > maxStress) {
+                                        maxStress = valStress;
+                                    }
+
+                                    Square valSym = new Square(stress, valStress, 2.2, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), true, false, 6.0);
+                                    stressPlotFigure.AddPlotObject(valSym);
+                                }
+
+                                if (refStress != null && refStress != 0.0) {
+                                    if (refStress < minStress) {
+                                        minStress = refStress;
+                                    }
+                                    if (refStress > maxStress) {
+                                        maxStress = refStress;
+                                    }
+
+                                    Circle stressSym = new Circle(stress, refStress, 2.0, Color.RED, Color.RED, Color.RED, ev.getEventId(), true, false, 6.0);
+                                    stressPlotFigure.AddPlotObject(stressSym);
+                                }
                             }
                         }
                     }
-                }
 
-                maxMw = maxMw + .1;
-                minMw = minMw > maxMw ? minMw = maxMw - .1 : minMw - .1;
+                    maxMw = maxMw + .1;
+                    minMw = minMw > maxMw ? minMw = maxMw - .1 : minMw - .1;
 
-                mwPlotFigure.setAxisLimits(minMw, maxMw, minMw, maxMw);
+                    mwPlotFigure.setAxisLimits(minMw, maxMw, minMw, maxMw);
 
-                maxStress = maxStress + .1;
-                minStress = minStress > maxStress ? minStress = maxStress - .1 : minStress - .1;
+                    maxStress = maxStress + .1;
+                    minStress = minStress > maxStress ? minStress = maxStress - .1 : minStress - .1;
 
-                stressPlotFigure.setAxisLimits(minStress, maxStress, minStress, maxStress);
-            });
-
-            symbolStyleMap = symbolStyleMapFactory.build(spectralMeasurements, new Function<SpectraMeasurement, String>() {
-                @Override
-                public String apply(SpectraMeasurement t) {
-                    return t.getWaveform().getStream().getStation().getStationName();
-                }
-            });
-
-            runGuiUpdate(() -> {
-                stationSymbols.clear();
-                stationSymbols.addAll(symbolStyleMap.entrySet().stream().map(e -> new LabeledPlotPoint(e.getKey(), e.getValue())).collect(Collectors.toList()));
-
-                Platform.runLater(() -> {
-                    evids.clear();
-                    evids.add("All");
-                    evids.addAll(spectralMeasurements.stream()
-                                                     .map(spec -> spec.getWaveform().getEvent().getEventId())
-                                                     .distinct()
-                                                     .sorted(new MaybeNumericStringComparator())
-                                                     .collect(Collectors.toList()));
-                    eventTable.sort();
+                    stressPlotFigure.setAxisLimits(minStress, maxStress, minStress, maxStress);
                 });
 
-                Map<String, Map<Double, SummaryStatistics>> evidStats = new HashMap<>();
+                symbolStyleMap = symbolStyleMapFactory.build(spectralMeasurements, new Function<SpectraMeasurement, String>() {
+                    @Override
+                    public String apply(SpectraMeasurement t) {
+                        return t.getWaveform().getStream().getStation().getStationName();
+                    }
+                });
 
-                double minSite = 1E2;
-                double maxSite = -1E2;
-                double minFreq = 1E2;
-                double maxFreq = -1E2;
-                int minStations = 2;
-                int maxStations = 3;
+                runGuiUpdate(() -> {
+                    stationSymbols.clear();
+                    stationSymbols.addAll(symbolStyleMap.entrySet().stream().map(e -> new LabeledPlotPoint(e.getKey(), e.getValue())).collect(Collectors.toList()));
 
-                for (SpectraMeasurement meas : spectralMeasurements) {
-                    String evid = meas.getWaveform().getEvent().getEventId();
-                    Double freq = centerFreq(meas.getWaveform());
-                    evidStats.computeIfAbsent(evid, key -> new HashMap<>()).computeIfAbsent(freq, (key) -> new SummaryStatistics()).addValue(meas.getPathAndSiteCorrected());
-                }
+                    Platform.runLater(() -> {
+                        evids.clear();
+                        evids.add("All");
+                        evids.addAll(
+                                spectralMeasurements.stream()
+                                                    .map(spec -> spec.getWaveform().getEvent().getEventId())
+                                                    .distinct()
+                                                    .sorted(new MaybeNumericStringComparator())
+                                                    .collect(Collectors.toList()));
+                        eventTable.sort();
+                    });
 
-                for (Map<Double, SummaryStatistics> freqStats : evidStats.values()) {
-                    for (Entry<Double, SummaryStatistics> entry : freqStats.entrySet()) {
-                        double site = entry.getValue().getStandardDeviation();
-                        if (entry.getValue() != null && entry.getValue().getN() > 1) {
-                            if (maxStations < entry.getValue().getN()) {
-                                maxStations = (int) entry.getValue().getN();
-                            }
-                            if (site < minSite) {
-                                minSite = site;
-                            }
-                            if (site > maxSite) {
-                                maxSite = site;
-                            }
-                            if (entry.getKey() < minFreq) {
-                                minFreq = entry.getKey();
-                            }
-                            if (entry.getKey() > maxFreq) {
-                                maxFreq = entry.getKey();
+                    Map<String, Map<Double, SummaryStatistics>> evidStats = new HashMap<>();
+
+                    double minSite = 1E2;
+                    double maxSite = -1E2;
+                    double minFreq = 1E2;
+                    double maxFreq = -1E2;
+                    int minStations = 2;
+                    int maxStations = 3;
+
+                    for (SpectraMeasurement meas : spectralMeasurements) {
+                        String evid = meas.getWaveform().getEvent().getEventId();
+                        Double freq = centerFreq(meas.getWaveform());
+                        evidStats.computeIfAbsent(evid, key -> new HashMap<>()).computeIfAbsent(freq, (key) -> new SummaryStatistics()).addValue(meas.getPathAndSiteCorrected());
+                    }
+
+                    for (Map<Double, SummaryStatistics> freqStats : evidStats.values()) {
+                        for (Entry<Double, SummaryStatistics> entry : freqStats.entrySet()) {
+                            double site = entry.getValue().getStandardDeviation();
+                            if (entry.getValue() != null && entry.getValue().getN() > 1) {
+                                if (maxStations < entry.getValue().getN()) {
+                                    maxStations = (int) entry.getValue().getN();
+                                }
+                                if (site < minSite) {
+                                    minSite = site;
+                                }
+                                if (site > maxSite) {
+                                    maxSite = site;
+                                }
+                                if (entry.getKey() < minFreq) {
+                                    minFreq = entry.getKey();
+                                }
+                                if (entry.getKey() > maxFreq) {
+                                    maxFreq = entry.getKey();
+                                }
                             }
                         }
                     }
-                }
 
-                colorMap.setRange(minStations, maxStations);
+                    colorMap.setRange(minStations, maxStations);
 
-                for (Map<Double, SummaryStatistics> freqStats : evidStats.values()) {
-                    for (Entry<Double, SummaryStatistics> entry : freqStats.entrySet()) {
-                        double site = entry.getValue().getStandardDeviation();
-                        if (entry.getValue() != null && entry.getValue().getN() > 1) {
-                            Color color = colorMap.getColor(entry.getValue().getN());
-                            Circle sdSym = new Circle(entry.getKey(), site, 2.0, color, color, color, "", true, false, 6.0);
-                            sdPlotFigure.AddPlotObject(sdSym);
+                    for (Map<Double, SummaryStatistics> freqStats : evidStats.values()) {
+                        for (Entry<Double, SummaryStatistics> entry : freqStats.entrySet()) {
+                            double site = entry.getValue().getStandardDeviation();
+                            if (entry.getValue() != null && entry.getValue().getN() > 1) {
+                                Color color = colorMap.getColor(entry.getValue().getN());
+                                Circle sdSym = new Circle(entry.getKey(), site, 2.0, color, color, color, "", true, false, 6.0);
+                                sdPlotFigure.AddPlotObject(sdSym);
+                            }
                         }
                     }
-                }
 
-                maxSite = maxSite + .1;
-                minSite = minSite > maxSite ? minSite = maxSite - .1 : minSite - .1;
+                    maxSite = maxSite + .1;
+                    minSite = minSite > maxSite ? minSite = maxSite - .1 : minSite - .1;
 
-                maxFreq = maxFreq + 5.0;
-                minFreq = minFreq > maxFreq ? minFreq = maxFreq - .1 : minFreq - 1.0;
+                    maxFreq = maxFreq + 5.0;
+                    minFreq = minFreq > maxFreq ? minFreq = maxFreq - .1 : minFreq - 1.0;
 
-                sdPlotFigure.setAxisLimits(minFreq, maxFreq, minSite, maxSite);
-                sdPlotFigure.AddPlotObject(createColorLegend(minStations, maxStations));
-            });
+                    sdPlotFigure.setAxisLimits(minFreq, maxFreq, minSite, maxSite);
+                    sdPlotFigure.AddPlotObject(createColorLegend(minStations, maxStations));
+                });
+            }
 
             runGuiUpdate(() -> {
                 mwPlot.repaint();
                 stressPlot.repaint();
                 sdPlot.repaint();
             });
+
         } catch (InvocationTargetException ex) {
-            //nop
+            // nop
         } catch (InterruptedException ex) {
             log.warn("Swing interrupt during re-plotting of controller", ex);
             Thread.currentThread().interrupt();
@@ -786,7 +810,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     }
 
     protected void preloadData() {
-        // Placeholder to allow children to overload any pre-fetching needed before data calls
+        // Placeholder to allow children to overload any pre-fetching needed before data
+        // calls
     }
 
     private PlotObject createColorLegend(int minVal, int maxVal) {
@@ -816,14 +841,77 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         return ((waveform.getHighFrequency() - waveform.getLowFrequency()) / 2.0) + waveform.getLowFrequency();
     }
 
+    public List<ZoomLimits> getZoomLimits() {
+
+        List<ZoomLimits> zLimits = new ArrayList<>();
+
+        // If no data is loaded, don't do anything
+        if (spectralMeasurements.isEmpty()) {
+            return zLimits;
+        }
+
+        spectraControllers.forEach(spc -> {
+
+            Limits xlimit = spc.getSpectralPlot().getSubplot().getLastXLimits();
+            Limits ylimit = spc.getSpectralPlot().getSubplot().getLastYLimits();
+
+            Stack<ZoomLimits> limits = spc.getSpectralPlot().getSubplotManager().getZoomLimits(spc.getSpectralPlot().getSubplot());
+
+            // If no zoom limits, doesn't matter, leave limits as null
+            if (limits.isEmpty()) {
+                zLimits.add(null);
+            } else {
+                // Save last zoom level
+                ZoomLimits newLimit = new ZoomLimits(xlimit, ylimit);
+                zLimits.add(newLimit);
+            }
+        });
+
+        return zLimits;
+    }
+
+    public void setZoomLimits(List<ZoomLimits> limits) {
+
+        // Nothing to restore if zoomLimits is empty
+        if (!limits.isEmpty()) {
+            for (int i = 0; i < spectraControllers.size(); i++) {
+
+                SpectraPlotController spc = spectraControllers.get(i);
+
+                Iterator<SubplotZoomData> iter = spc.getSpectralPlot().getSubplotManager().iterator();
+
+                while (iter.hasNext()) {
+                    SubplotZoomData zoomData = iter.next();
+
+                    // Only restore zoom limit if there is one
+                    if (limits.get(i) != null) {
+                        zoomData.zoomIn(isVisible, limits.get(i));
+                    }
+                }
+            }
+        }
+    }
+
+    public void refreshViewAndZoomOut() {
+        mapImpl.clearIcons();
+        plotSpectra();
+
+        Platform.runLater(() -> {
+            spectraControllers.forEach(spc -> spc.getSpectralPlot().repaint());
+        });
+    }
+
     @Override
     public void refreshView() {
         if (isVisible) {
-            mapImpl.clearIcons();
-            plotSpectra();
-            Platform.runLater(() -> {
-                spectraControllers.forEach(spc -> spc.getSpectralPlot().repaint());
-            });
+
+            // Save current zoom limits
+            List<ZoomLimits> limits = getZoomLimits();
+
+            refreshViewAndZoomOut();
+
+            // Restore zoom limits
+            setZoomLimits(limits);
         }
     }
 
@@ -945,12 +1033,15 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         synchronized (spectralMeasurements) {
             Map<Long, SpectraMeasurement> activeMeasurements = spectralMeasurements.stream().collect(Collectors.toMap(x -> x.getWaveform().getId(), Function.identity()));
             if (wce.isAddOrUpdate()) {
-                waveformClient.getWaveformMetadataFromIds(nonNull).collect(Collectors.toList()).block(Duration.ofSeconds(10l)).forEach(md -> {
-                    SpectraMeasurement measurement = activeMeasurements.get(md.getId());
-                    if (measurement != null) {
-                        measurement.getWaveform().setActive(md.isActive());
-                    }
-                });
+                List<Waveform> results = waveformClient.getWaveformMetadataFromIds(nonNull).collect(Collectors.toList()).block(Duration.ofSeconds(10l));
+                if (results != null) {
+                    results.forEach(md -> {
+                        SpectraMeasurement measurement = activeMeasurements.get(md.getId());
+                        if (measurement != null) {
+                            measurement.getWaveform().setActive(md.isActive());
+                        }
+                    });
+                }
             } else if (wce.isDelete()) {
                 nonNull.forEach(id -> {
                     SpectraMeasurement measurement = activeMeasurements.remove(id);
@@ -972,9 +1063,9 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 if (spectra != null && spectra.getWaveform() != null) {
                     if (SwingUtilities.isLeftMouseButton(poc.getMouseEvent())) {
                         selectPoints(plotPointMap.get(((Symbol) po).getText()));
-                        if (spectra != null) {
-                            showWaveformPopup(spectra.getWaveform());
-                        }
+
+                        showWaveformPopup(spectra.getWaveform());
+
                         Platform.runLater(() -> menu.hide());
                     } else if (SwingUtilities.isRightMouseButton(poc.getMouseEvent())) {
                         showContextMenu(Collections.singletonList(spectra.getWaveform()), Collections.singletonList((Symbol) po), poc.getMouseEvent(), (objs, active) -> {
@@ -1043,7 +1134,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     private void toggleValidationEvent() {
         List<MeasuredMwDetails> evs = new ArrayList<>(eventTable.getSelectionModel().getSelectedIndices().size());
         eventTable.getSelectionModel().getSelectedIndices().forEach(i -> evs.add(mwParameters.get(i)));
-        if (evs != null && !evs.isEmpty()) {
+        if (!evs.isEmpty()) {
             referenceEventClient.toggleValidationEventsByEventId(evs.stream().map(mwd -> mwd.getEventId()).distinct().collect(Collectors.toList()))
                                 .doOnComplete(() -> Platform.runLater(() -> reloadData()))
                                 .subscribe();

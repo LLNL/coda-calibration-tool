@@ -24,17 +24,17 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 
 public interface CalibrationService {
 
-    public boolean startCalibration(Boolean autoPickingEnabled);
+    public boolean startCalibration(boolean autoPickingEnabled);
     
     public boolean cancelCalibration(Long id);
 
     public boolean clearData();
 
-    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(boolean autoPickingEnabled, boolean persistResults);
 
-    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults, Set<String> eventIds);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(boolean autoPickingEnabled, boolean persistResults, Set<String> eventIds);
 
-    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(Boolean autoPickingEnabled, Boolean persistResults, List<Waveform> stacks);
+    public Future<Result<MeasuredMwReportByEvent>> makeMwMeasurements(boolean autoPickingEnabled, boolean persistResults, List<Waveform> stacks);
 
     public List<String> toggleAllByEventIds(List<String> eventIds);
 }

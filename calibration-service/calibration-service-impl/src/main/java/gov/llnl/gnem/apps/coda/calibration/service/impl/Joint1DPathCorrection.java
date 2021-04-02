@@ -75,9 +75,9 @@ public class Joint1DPathCorrection implements PathCalibrationService {
 
     private static final double XTRANS_MAX = 0.04;
     private static final double XTRANS_MIN = -10.0;
-    private static final double XCROSS_MAX = 3.0;
+    private static final double XCROSS_MAX = 5.0;
     private static final double XCROSS_MIN = 0.0;
-    private static final double Q_MAX = 3.0;
+    private static final double Q_MAX = 5.0;
     private static final double Q_MIN = 0.0;
     private static final double P1_MIN = -10.0;
     private static final double P1_MAX = -0.001;
@@ -128,9 +128,9 @@ public class Joint1DPathCorrection implements PathCalibrationService {
         Map<FrequencyBand, SharedFrequencyBandParameters> pathCorrectedFrequencyBandParameters = new HashMap<>();
 
         Map<FrequencyBand, Map<Event, Map<Station, SpectraMeasurement>>> dataMappedToEventAndStation = removeSingleStationOrFewerEntries(mapToEventAndStation(dataByFreqBand));
-        
+
         ConcurrencyUtils.checkInterrupt();
-        frequencyBandParameters.entrySet().parallelStream().forEach(frequencyBandParams -> {           
+        frequencyBandParameters.entrySet().parallelStream().forEach(frequencyBandParams -> {
             if (Thread.currentThread().isInterrupted()) {
                 return;
             }

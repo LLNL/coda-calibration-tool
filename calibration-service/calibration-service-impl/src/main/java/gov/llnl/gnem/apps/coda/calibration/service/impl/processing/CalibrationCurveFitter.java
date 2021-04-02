@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -47,6 +47,11 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
+import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
+import llnl.gnem.core.util.SeriesMath;
+import llnl.gnem.core.util.TimeT;
+import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 /**
  * Calculate the coda decay parameters (Mayeda, 2003)
@@ -55,13 +60,110 @@ public class CalibrationCurveFitter {
 
     private Logger log = LoggerFactory.getLogger(CalibrationCurveFitter.class);
 
-    public EnvelopeFit fitCodaCMAES(final float[] segment, final double sampleRate, ShapeFitterConstraints constraints) {
+    public EnvelopeFit fitCurveLengthByDivergenceFromSynthetic(final ShapeMeasurement measurement, final SyntheticCoda synthetic, final double endPickTime, final ShapeFitterConstraints constraints,
+            final double minLengthTime) {
+
+        EnvelopeFit fit = new EnvelopeFit();
+
+        final double originTimeOffset = new TimeT(synthetic.getBeginTime()).subtractD(new TimeT(synthetic.getSourceWaveform().getEvent().getOriginTime()));
+        double maxTime = endPickTime - originTimeOffset;
+        final double sampleRate = synthetic.getSampleRate();
+
+        TimeSeries envSeis = new TimeSeries(WaveformUtils.doublesToFloats(synthetic.getSourceWaveform().getSegment()),
+                                            synthetic.getSourceWaveform().getSampleRate(),
+                                            new TimeT(synthetic.getSourceWaveform().getBeginTime()));
+        envSeis.interpolate(sampleRate);
+
+        TimeSeries synthSeis = new TimeSeries(WaveformUtils.doublesToFloats(synthetic.getSegment()), synthetic.getSampleRate(), new TimeT(synthetic.getBeginTime()));
+
+        TimeT startTime = new TimeT(synthetic.getBeginTime());
+        TimeT endTime = new TimeT(synthetic.getBeginTime()).add(maxTime);
+
+        boolean cutSucceeded = false;
+        try {
+            // Note this mutates envSeis and synthSeis!
+            cutSucceeded = WaveformUtils.cutSeismograms(envSeis, synthSeis, startTime, endTime);
+        } catch (IllegalArgumentException e) {
+            log.warn("Error attempting to cut seismograms during amplitude measurement; {}", e.getMessage());
+        }
+
+        if (cutSucceeded) {
+            float[] envData = envSeis.getData();
+            float[] synthData = synthSeis.getData();
+
+            TimeSeries diff = new TimeSeries(SeriesMath.subtract(envData, synthData), synthSeis.getSamprate(), synthSeis.getTime());
+            final double median = diff.getMedian();
+            double[] scaledSynthetic = WaveformUtils.floatsToDoubles(SeriesMath.add(synthData, median));
+
+            if (scaledSynthetic.length < maxTime) {
+                maxTime = scaledSynthetic.length;
+            }
+            double minTime = minLengthTime + 2.0;
+            if (minTime < maxTime / 4.0) {
+                minTime = maxTime / 4.0;
+            }
+            if (maxTime < minTime) {
+                minTime = maxTime;
+            }
+
+            int minLength = (int) (minTime * sampleRate);
+            int maxLength = (int) (maxTime * sampleRate);
+
+            double val;
+            double minVal = Double.MAX_VALUE;
+            int minIdx = -1;
+            for (int j = minLength; j < maxLength; j++) {
+                //t = 0 is singular so we cheat and shift it right one.
+                double t = ((j) / sampleRate) + 1.0;
+                double model = scaledSynthetic[j];
+                double individual = measurement.getMeasuredIntercept() - measurement.getMeasuredGamma() * Math.log10(t) + (measurement.getMeasuredBeta() * t);
+                val = Math.abs(model - individual);
+                if (val <= minVal || val <= .1) {
+                    minIdx = j;
+                    minVal = val;
+                }
+            }
+
+            if (minIdx > 0) {
+                fit.setEndTime((minIdx / sampleRate) + originTimeOffset);
+                fit.setError(minVal);
+            }
+        }
+
+        return fit;
+    }
+
+    public EnvelopeFit fitCodaCMAES(final float[] segment, final double sampleRate, ShapeFitterConstraints constraints, double startTime) {
+        return fitCodaCMAES(segment, sampleRate, constraints, startTime, false);
+    }
+
+    public EnvelopeFit fitCodaCMAES(final float[] segment, final double sampleRate, ShapeFitterConstraints constraints, double startTime, boolean autoPickingEnabled) {
         double minInt = constraints.getMinIntercept();
         double maxInt = constraints.getMaxIntercept();
         double minGamma = constraints.getMinGamma();
         double maxGamma = constraints.getMaxGamma();
         double minBeta = constraints.getMinBeta();
         double maxBeta = constraints.getMaxBeta();
+        double lengthWeight = constraints.getLengthWeight();
+
+        double maxTime;
+        double minTime = startTime;
+        if (minTime < 2d) {
+            minTime = 2d;
+        }
+
+        if (autoPickingEnabled) {
+            maxTime = segment.length / sampleRate;
+        } else {
+            maxTime = minTime;
+        }
+
+        if (maxTime < minTime) {
+            minTime = segment.length / sampleRate;
+            maxTime = minTime;
+        }
+
+        boolean shouldAutoPick = autoPickingEnabled && maxTime > minTime;
 
         EnvelopeFit fit = new EnvelopeFit();
 
@@ -77,13 +179,21 @@ public class CalibrationCurveFitter {
             double gamma = point[1];
             double beta = point[2];
             double sum = 0.0;
-            for (int j = 0; j < segment.length; j++) {
+            int length;
+            if (shouldAutoPick) {
+                length = (int) (point[3] / sampleRate);
+            } else {
+                length = segment.length;
+            }
+
+            for (int j = 0; j < length; j++) {
                 double t = (j / sampleRate) + 1.0;
                 double actual = segment[j];
                 double predicted = intercept - (gamma * Math.log10(t)) + (beta * t);
                 sum = lossFunction(sum, predicted, actual);
             }
-            return sum;
+            sum = sum / length;
+            return sum - ((sum * lengthWeight) * ((double) length / segment.length));
         };
 
         ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.0005, -1.0, 100000);
@@ -99,17 +209,22 @@ public class CalibrationCurveFitter {
 
         PointValuePair bestResult = optimizeCMAES(
                 prediction,
-                    new InitialGuess(new double[] { startIntercept, minGamma, startBeta }),
-                    new CMAESOptimizer.Sigma(new double[] { (maxInt - minInt) / 2.0, (maxGamma - minGamma) / 2.0, (maxBeta - minBeta) / 2.0 }),
+                    new InitialGuess(new double[] { startIntercept, minGamma, startBeta, maxTime }),
+                    new CMAESOptimizer.Sigma(new double[] { (maxInt - minInt) / 2.0, (maxGamma - minGamma) / 2.0, (maxBeta - minBeta) / 2.0, (maxTime - minTime) / 2.0 }),
                     convergenceChecker,
                     50,
-                    new SimpleBounds(new double[] { -Double.MAX_VALUE, minGamma, minBeta }, new double[] { Double.MAX_VALUE, maxGamma, maxBeta }));
+                    new SimpleBounds(new double[] { -Double.MAX_VALUE, minGamma, minBeta, minTime }, new double[] { Double.MAX_VALUE, maxGamma, maxBeta, maxTime }));
 
         double[] curve = bestResult.getKey();
         fit.setIntercept(curve[0]);
         fit.setGamma(curve[1]);
         fit.setBeta(curve[2]);
-        fit.setError(bestResult.getValue() / segment.length);
+        if (shouldAutoPick) {
+            fit.setEndTime(curve[3]);
+            fit.setError(bestResult.getValue() / curve[3]);
+        } else {
+            fit.setError(bestResult.getValue() / segment.length);
+        }
 
         return fit;
     }

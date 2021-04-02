@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,23 +66,11 @@ public class SharedFrequencyBandParametersServiceImpl implements SharedFrequency
     }
 
     @Override
-    public List<SharedFrequencyBandParameters> save(Iterable<SharedFrequencyBandParameters> entities) {
-        notificationService.post(new BandParametersDataChangeEvent());
-        return getSharedFrequencyBandParametersRepository().saveAll(entities);
-    }
-
-    @Override
     public void delete(Iterable<Long> ids) {
         List<SharedFrequencyBandParameters> toDelete = getSharedFrequencyBandParametersRepository().findAllById(ids);
         syntheticsRepository.deleteInBatchBySharedFrequencyBandParametersIds(toDelete.stream().map(sfb -> sfb.getId()).collect(Collectors.toList()));
-        getSharedFrequencyBandParametersRepository().deleteInBatch(toDelete);
+        getSharedFrequencyBandParametersRepository().deleteAllInBatch(toDelete);
         notificationService.post(new BandParametersDataChangeEvent());
-    }
-
-    @Override
-    public SharedFrequencyBandParameters save(SharedFrequencyBandParameters entity) {
-        notificationService.post(new BandParametersDataChangeEvent());
-        return getSharedFrequencyBandParametersRepository().save(entity);
     }
 
     @Override
@@ -124,9 +113,28 @@ public class SharedFrequencyBandParametersServiceImpl implements SharedFrequency
 
     @Override
     public SharedFrequencyBandParameters update(SharedFrequencyBandParameters entry) {
+        SharedFrequencyBandParameters mergedEntry = findAndMergeIfExists(entry);
+        notificationService.post(new BandParametersDataChangeEvent());
+        return sharedFrequencyBandParametersRepository.saveAndFlush(mergedEntry);
+    }
+
+    @Override
+    public List<SharedFrequencyBandParameters> save(Iterable<SharedFrequencyBandParameters> entities) {
+        List<SharedFrequencyBandParameters> merged = new ArrayList<>();
+        entities.forEach(entity -> merged.add(findAndMergeIfExists(entity)));
+        notificationService.post(new BandParametersDataChangeEvent());
+        return sharedFrequencyBandParametersRepository.saveAll(merged);
+    }
+
+    @Override
+    public SharedFrequencyBandParameters save(SharedFrequencyBandParameters entity) {
+        return update(entity);
+    }
+
+    private SharedFrequencyBandParameters findAndMergeIfExists(SharedFrequencyBandParameters entry) {
         SharedFrequencyBandParameters mergedEntry;
         if (entry.getId() != null) {
-            mergedEntry = sharedFrequencyBandParametersRepository.findById(entry.getId()).get();
+            mergedEntry = sharedFrequencyBandParametersRepository.findById(entry.getId()).orElse(null);
         } else {
             mergedEntry = sharedFrequencyBandParametersRepository.findByLowFrequencyAndHighFrequency(entry.getLowFrequency(), entry.getHighFrequency());
         }
@@ -136,8 +144,7 @@ public class SharedFrequencyBandParametersServiceImpl implements SharedFrequency
         } else {
             mergedEntry = entry;
         }
-        notificationService.post(new BandParametersDataChangeEvent());
-        return sharedFrequencyBandParametersRepository.saveAndFlush(mergedEntry);
+        return mergedEntry;
     }
 
     @Override

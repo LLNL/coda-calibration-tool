@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -101,8 +101,8 @@ public class SpectraCalculator {
     private double maxMW = 10.0;
     @Value("${spectra-calc.min-apparent-stress-mpa:0.01}")
     private double minApparentStress = 0.01;
-    @Value("${spectra-calc.max-apparent-stress-mpa:10.00}")
-    private double maxApparentStress = 10.00;
+    @Value("${spectra-calc.max-apparent-stress-mpa:100.00}")
+    private double maxApparentStress = 100.00;
     @Value("${report-stress-bounds-in-uq:false}")
     private boolean reportStressBoundsInUQ = false;
 
@@ -189,20 +189,17 @@ public class SpectraCalculator {
             if (vr == 0.0) {
                 vr = 1.0;
             }
-            TimeT originTime = new TimeT(event.getOriginTime());
-            final TimeT startTime;
-            TimeT tempTime;
-            TimeT trimTime = originTime.add(distance / vr);
-            TimeSeries trimmedWaveform = new TimeSeries(envSeis);
-            try {
-                trimmedWaveform.cutBefore(trimTime);
-                trimmedWaveform.cutAfter(trimTime.add(30.0));
 
-                tempTime = new TimeT(trimTime.getEpochTime() + trimmedWaveform.getMaxTime()[0]);
-            } catch (IllegalArgumentException e) {
-                tempTime = trimTime;
+            TimeT originTime = new TimeT(event.getOriginTime());
+
+            TimeT codaStart;
+            if (synth.getSourceWaveform().getMaxVelTime() != null) {
+                codaStart = new TimeT(synth.getSourceWaveform().getMaxVelTime());
+            } else {
+                codaStart = originTime;
+                codaStart = codaStart.add(distance / vr);
             }
-            startTime = tempTime;
+            final TimeT startTime = codaStart;
 
             double siteCorrection = 0.0;
 
@@ -255,19 +252,25 @@ public class SpectraCalculator {
                 return null;
             }
 
-            // Note this mutates envSeis and synthSeis!
-            boolean cutSucceeded = cutSeismograms(envSeis, synthSeis, startTime, endTime);
+            
+            boolean cutSucceeded = false;
+            try {
+                // Note this mutates envSeis and synthSeis!
+                cutSucceeded = WaveformUtils.cutSeismograms(envSeis, synthSeis, startTime, endTime);
+            } catch (IllegalArgumentException e) {
+                log.warn("Error attempting to cut seismograms during amplitude measurement; {}", e.getMessage());
+            }
 
             if (cutSucceeded) {
                 float[] envdata = envSeis.getData();
                 float[] synthdata = synthSeis.getData();
 
                 // envelope minus synthetic
-                double rawAmp = new TimeSeries(SeriesMath.subtract(envdata, synthdata), synthSeis.getSamprate(), synthSeis.getTime()).getMedian();
+                final double rawAmp = new TimeSeries(SeriesMath.subtract(envdata, synthdata), synthSeis.getSamprate(), synthSeis.getTime()).getMedian();
 
                 // NOTE - this is what Rengin refers to as the RAW Amplitude;
                 // calculated below
-                double rawAtMeasurementTime = 0.;
+                final double rawAtMeasurementTime;
 
                 float[] synthscaled = SeriesMath.add(synthdata, rawAmp);
                 Double fit = FitnessCriteria.CVRMSD(envdata, synthscaled);
@@ -275,7 +278,6 @@ public class SpectraCalculator {
                 // path corrected using Scott's Extended Street and Herrman
                 // method and site correction
                 double pathCorrectedAmp = rawAmp + eshCorrection;
-                double correctedAmp = pathCorrectedAmp + siteCorrection;
 
                 // user defined coda measurement time
                 double measurementtime = params.getMeasurementTime();
@@ -286,7 +288,8 @@ public class SpectraCalculator {
                     rawAtMeasurementTime = rawAmp;
                 }
                 pathCorrectedAmp = rawAtMeasurementTime + eshCorrection;
-                correctedAmp = pathCorrectedAmp + siteCorrection;
+
+                double correctedAmp = pathCorrectedAmp + siteCorrection;
 
                 if (endTime.subtract(startTime).getEpochTime() < minlength) {
                     log.debug("Coda window length too short for envelope: {}", synth.getSourceWaveform());
@@ -310,59 +313,6 @@ public class SpectraCalculator {
 
         return null;
 
-    }
-
-    private boolean cutSeismograms(TimeSeries a, TimeSeries b, TimeT startTime, TimeT endTime) {
-        boolean completedCut = false;
-        try {
-            a.cut(startTime, endTime);
-            b.cut(startTime, endTime);
-
-            // These might be off by some small number of samples due to
-            // precision errors during cut and SeriesMath will throw an ArrayBounds if
-            // they don't match exactly so we need to double check!
-            if (a.getNsamp() != b.getNsamp()) {
-
-                TimeT start = a.getTime();
-                TimeT end = a.getEndtime();
-                TimeT startA = a.getTime();
-                TimeT startB = b.getTime();
-                TimeT endA = a.getEndtime();
-                TimeT endB = b.getEndtime();
-
-                // choose the latest start time and the earliest end time for
-                // the cut window
-                if (startA.lt(startB)) {
-                    start = startB;
-                }
-                if (endA.gt(endB)) {
-                    end = endB;
-                }
-                if (start.ge(end)) {
-                    // don't continue if the seismograms don't overlap
-                    return completedCut;
-                }
-
-                int begin_index_a = a.getIndexForTime(start.getEpochTime());
-                int end_index_a = a.getIndexForTime(end.getEpochTime());
-
-                int begin_index_b = b.getIndexForTime(start.getEpochTime());
-                int end_index_b = b.getIndexForTime(end.getEpochTime());
-
-                int nptsa = (end_index_a - begin_index_a) + 1;
-                int nptsb = (end_index_b - begin_index_b) + 1;
-
-                int npts = Math.min(nptsa, nptsb);
-                // now cut the traces again
-                a.cut(begin_index_a, (begin_index_a + npts - 1));
-                b.cut(begin_index_b, (begin_index_b + npts - 1));
-            }
-            completedCut = true;
-        } catch (IllegalArgumentException e) {
-            log.warn("Error attempting to cut seismograms during amplitude measurement; {}", e.getMessage());
-        }
-
-        return completedCut;
     }
 
     /**
@@ -696,7 +646,8 @@ public class SpectraCalculator {
             result[APP_2_MIN] = result[APP_STRESS];
             result[APP_2_MAX] = result[APP_STRESS];
         }
-        result[CORNER_FREQ] = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(result[APP_STRESS]), result[MW_FIT]));
+        result[CORNER_FREQ] = mdacService.getCornerFrequency(
+                mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(result[APP_STRESS]), result[MW_FIT]));
         result[ITR_COUNT] = iterations;
         return result;
     }

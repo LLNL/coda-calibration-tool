@@ -17,6 +17,7 @@ package gov.llnl.gnem.apps.coda.calibration.service.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -96,8 +97,9 @@ public class SyntheticServiceImpl implements SyntheticService {
     @Override
     public SyntheticCoda update(SyntheticCoda payload) {
         SyntheticCoda merged;
-        if (payload.getId() != null) {
-            merged = repository.findById(payload.getId()).get();
+        Optional<SyntheticCoda> existing = repository.findById(payload.getId());
+        if (payload.getId() != null && existing.isPresent()) {
+            merged = existing.get();
             merged = merged.mergeNonNullOrEmptyFields(payload);
         } else {
             merged = payload;
@@ -110,8 +112,9 @@ public class SyntheticServiceImpl implements SyntheticService {
         List<SyntheticCoda> vals = new ArrayList<>(values.size());
         for (SyntheticCoda payload : values) {
             SyntheticCoda merged;
-            if (payload.getId() != null) {
-                merged = repository.findById(payload.getId()).get();
+            Optional<SyntheticCoda> existing = repository.findById(payload.getId());
+            if (payload.getId() != null && existing.isPresent()) {
+                merged = existing.get();
                 merged = merged.mergeNonNullOrEmptyFields(payload);
             } else {
                 merged = payload;

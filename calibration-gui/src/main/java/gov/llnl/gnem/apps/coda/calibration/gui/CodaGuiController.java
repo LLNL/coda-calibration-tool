@@ -68,6 +68,7 @@ import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
+import gov.llnl.gnem.apps.coda.envelope.gui.EnvelopeGuiController;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -134,6 +135,8 @@ public class CodaGuiController {
 
     @FXML
     private CheckMenuItem waveformFocus;
+    
+    private EnvelopeGuiController envelopeGui;
 
     private Label activeMapIcon;
 
@@ -142,7 +145,7 @@ public class CodaGuiController {
     private GeoMap mapController;
 
     private WaveformClient waveformClient;
-    
+
     private ParameterClient configClient;
 
     private EnvelopeLoadingController envelopeLoadingController;
@@ -184,7 +187,8 @@ public class CodaGuiController {
     @Autowired
     public CodaGuiController(GeoMap mapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
             ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, WaveformGui waveformGui, DataController data,
-            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient, EventBus bus) {
+            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient, EnvelopeGuiController envelopeGui,
+            EventBus bus) {
         super();
         this.mapController = mapController;
         this.waveformClient = waveformClient;
@@ -201,6 +205,7 @@ public class CodaGuiController {
         this.site = site;
         this.measuredMws = measuredMws;
         this.configClient = configClient;
+        this.envelopeGui = envelopeGui;
         this.bus = bus;
         bus.register(this);
 
@@ -225,7 +230,7 @@ public class CodaGuiController {
         fiModelFileChooser.getExtensionFilters().add(allFilesFilter);
 
         referenceEventFileChooser.getExtensionFilters().add(new ExtensionFilter("Reference Event Files (.txt,.dat)", "*.txt", "*.dat"));
-        referenceEventFileChooser.getExtensionFilters().add(allFilesFilter);
+        referenceEventFileChooser.getExtensionFilters().add(allFilesFilter);                
     }
 
     @FXML
@@ -421,6 +426,11 @@ public class CodaGuiController {
     }
 
     @FXML
+    private void openEnvelopeTool(ActionEvent e) {
+        envelopeGui.toFront();
+    }
+
+    @FXML
     private void snapshotTab(ActionEvent e) {
         File folder = screenshotFolderChooser.showDialog(rootElement.getScene().getWindow());
         try {
@@ -463,7 +473,7 @@ public class CodaGuiController {
             mapController.setPolygonGeoJSON(event.getGeoJSON());
         }
     }
-    
+
     //TODO: Move this to a controller
     @Subscribe
     private void listener(CalibrationStatusEvent event) {

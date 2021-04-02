@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -29,8 +29,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.EnvelopeFit;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeCalibrationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ShapeMeasurementService;
@@ -38,9 +39,9 @@ import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.CalibrationCu
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.ShapeCalculator;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
+import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
-import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 
 @Service
 public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
@@ -48,24 +49,30 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
     private static final Logger log = LoggerFactory.getLogger(ShapeCalibrationServiceImpl.class);
     private ShapeMeasurementService shapeMeasurementService;
     private ShapeCalculator shapeCalc;
-    private WaveformService waveService;
-    private AutopickingServiceImpl picker;
 
     @Autowired
-    public ShapeCalibrationServiceImpl(ShapeMeasurementService shapeMeasurementService, ShapeCalculator shapeCalc, WaveformService waveService, AutopickingServiceImpl picker) {
+    public ShapeCalibrationServiceImpl(ShapeMeasurementService shapeMeasurementService, ShapeCalculator shapeCalc) {
         this.shapeMeasurementService = shapeMeasurementService;
         this.shapeCalc = shapeCalc;
-        this.waveService = waveService;
-        this.picker = picker;
     }
 
     @Override
-    public Map<FrequencyBand, SharedFrequencyBandParameters> measureShapes(Collection<PeakVelocityMeasurement> velocityMeasurements,
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints, boolean autoPickingEnabled) throws InterruptedException {
-        if (frequencyBandParameters.isEmpty()) {
+    public Map<FrequencyBand, SharedFrequencyBandParameters> measureShapes(List<PeakVelocityMeasurement> velocityMeasurements,
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, ShapeFitterConstraints constraints) throws InterruptedException {
+        return measureShapes(velocityMeasurements, frequencyBandParameters, constraints, false, true);
+    }
+
+    @Override
+    public Map<FrequencyBand, SharedFrequencyBandParameters> measureShapes(List<PeakVelocityMeasurement> velocityMeasurements,
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParamInputs, ShapeFitterConstraints constraints, boolean autoPickingEnabled, boolean shouldPersistResults)
+            throws InterruptedException {
+        Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters = new HashMap<>();
+        if (frequencyBandParamInputs.isEmpty()) {
             // TODO: Propagate warning to the status API
             log.warn("No frequency band parameters available, unable to compute shape parameters without them!");
-            return new HashMap<>();
+            return frequencyBandParameters;
+        } else {
+            frequencyBandParamInputs.entrySet().forEach(entry -> frequencyBandParameters.put(entry.getKey(), new SharedFrequencyBandParameters().mergeNonNullOrEmptyFields(entry.getValue())));
         }
         final CalibrationCurveFitter fitter = new CalibrationCurveFitter();
 
@@ -78,42 +85,79 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                     constraints);
 
         ConcurrencyUtils.checkInterrupt();
-        // 1) If auto-picking is enabled attempt to pick any envelopes that
-        // don't already have F-picks in this set
-        if (autoPickingEnabled) {
-            velocityMeasurements = picker.autoPickVelocityMeasuredWaveforms(velocityMeasurements, frequencyBandParameters);
-            velocityMeasurements = velocityMeasurements.parallelStream().map(v -> v.setWaveform(waveService.save(v.getWaveform()))).collect(Collectors.toList());
-        }
-        ConcurrencyUtils.checkInterrupt();
 
-        // 2) Filter to only measurements with an end pick
+        // 1) Filter to only measurements with an end pick
         Collection<Entry<PeakVelocityMeasurement, WaveformPick>> filteredVelocityMeasurements = filterMeasurementsToEndPickedOnly(velocityMeasurements);
 
         ConcurrencyUtils.checkInterrupt();
-        // 3) For every Waveform remaining, measure picks based on start
+        // 2) For every Waveform remaining, measure picks based on start
         // (computed from velocity) and end (from 'End'/'F' picks)
-        List<ShapeMeasurement> betaAndGammaMeasurements = shapeCalc.fitShapelineToMeasuredEnvelopes(filteredVelocityMeasurements, frequencyBandCurveFits, constraints);
+        List<ShapeMeasurement> betaAndGammaMeasurements = shapeCalc.fitShapelineToMeasuredEnvelopes(filteredVelocityMeasurements, frequencyBandCurveFits, constraints, autoPickingEnabled);
 
         ConcurrencyUtils.checkInterrupt();
-        
-        // Shape measurements are intermediary results so rather than trying to
-        // merge them we want to just drop them wholesale if they exist and
-        // replace them with the new data set.
-        // TODO: Need to only delete these for the current project
-        shapeMeasurementService.deleteAll();
 
-        Map<FrequencyBand, List<ShapeMeasurement>> frequencyBandShapeMeasurementMap = shapeMeasurementService.save(betaAndGammaMeasurements)
-                                                                                                             .parallelStream()
-                                                                                                             .filter(meas -> meas.getWaveform() != null)
-                                                                                                             .collect(
-                                                                                                                     Collectors.groupingBy(
-                                                                                                                             meas -> new FrequencyBand(meas.getWaveform().getLowFrequency(),
-                                                                                                                                                       meas.getWaveform().getHighFrequency())));
+        if (shouldPersistResults) {
+            // Shape measurements are intermediary results so rather than trying to
+            // merge them we want to just drop them wholesale if they exist and
+            // replace them with the new data set.
+            // TODO: Need to only delete these for the current project
+            shapeMeasurementService.deleteAll();
+            betaAndGammaMeasurements = shapeMeasurementService.save(betaAndGammaMeasurements);
+        }
+
+        Map<FrequencyBand, List<ShapeMeasurement>> frequencyBandShapeMeasurementMap = betaAndGammaMeasurements.parallelStream()
+                                                                                                              .filter(meas -> meas.getWaveform() != null)
+                                                                                                              .collect(
+                                                                                                                      Collectors.groupingBy(
+                                                                                                                              meas -> new FrequencyBand(meas.getWaveform().getLowFrequency(),
+                                                                                                                                                        meas.getWaveform().getHighFrequency())));
         ConcurrencyUtils.checkInterrupt();
         frequencyBandCurveFits = fitter.fitAllBeta(frequencyBandShapeMeasurementMap, frequencyBandCurveFits, constraints);
         ConcurrencyUtils.checkInterrupt();
         frequencyBandCurveFits = fitter.fitAllGamma(frequencyBandShapeMeasurementMap, frequencyBandCurveFits, constraints);
         return frequencyBandCurveFits;
+    }
+
+    @Override
+    public List<PeakVelocityMeasurement> adjustEndPicksBasedOnSynthetics(List<PeakVelocityMeasurement> velocityMeasurements, List<SyntheticCoda> synthetics, ShapeFitterConstraints constraints) {
+        final CalibrationCurveFitter fitter = new CalibrationCurveFitter();
+
+        velocityMeasurements.parallelStream().forEach(velocityMeasurement -> {
+            boolean isAutoPicked = velocityMeasurement.getWaveform().getAssociatedPicks().stream().anyMatch(wp -> wp.getPickName().equalsIgnoreCase(PICK_TYPES.AP.name()));
+            if (isAutoPicked) {
+                SyntheticCoda synthetic = null;
+                if (synthetics != null && !synthetics.isEmpty()) {
+                    synthetic = synthetics.parallelStream().filter(syn -> {
+                        boolean matching;
+                        if (syn.getSourceWaveform().getId() != null) {
+                            matching = syn.getSourceWaveform().getId().equals(velocityMeasurement.getWaveform().getId());
+                        } else {
+                            matching = syn.getSourceWaveform().equals(velocityMeasurement.getWaveform());
+                        }
+                        return matching;
+                    }).findAny().orElse(null);
+                }
+
+                ShapeMeasurement measurement = shapeMeasurementService.findOneByWaveformId(velocityMeasurement.getWaveform().getId());
+                WaveformPick endPick = velocityMeasurement.getWaveform().getAssociatedPicks().stream().filter(p -> PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType())).findAny().orElse(null);
+
+                if (synthetic != null && measurement != null && measurement.getId() != null && endPick != null) {
+                    EnvelopeFit curve = fitter.fitCurveLengthByDivergenceFromSynthetic(
+                            measurement,
+                                synthetic,
+                                endPick.getPickTimeSecFromOrigin(),
+                                constraints,
+                                synthetic.getSourceModel().getMinLength());
+                    //Ensure pick is propagated back to waveform
+                    double end = curve.getEndTime();
+                    if (end >= 0d) {
+                        endPick.setPickTimeSecFromOrigin((float) end);
+                    }
+                }
+            }
+        });
+        return velocityMeasurements;
+
     }
 
     /**
@@ -130,4 +174,5 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
+
 }

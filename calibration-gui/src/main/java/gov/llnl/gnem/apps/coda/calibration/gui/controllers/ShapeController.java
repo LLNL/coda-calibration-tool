@@ -551,13 +551,16 @@ public class ShapeController implements MapListeningController, RefreshableContr
         List<Long> nonNull = wce.getIds().stream().filter(Objects::nonNull).collect(Collectors.toList());
         synchronized (waveformIdMapping) {
             if (wce.isAddOrUpdate()) {
-                waveformClient.getWaveformMetadataFromIds(nonNull).collect(Collectors.toList()).block(Duration.ofSeconds(10l)).forEach(md -> {
-                    Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>> pair = waveformIdMapping.get(md.getId());
-                    if (pair != null) {
-                        pair.getLeft().forEach(v -> v.getWaveform().setActive(md.isActive()));
-                        pair.getRight().forEach(v -> v.getWaveform().setActive(md.isActive()));
-                    }
-                });
+                List<Waveform> results = waveformClient.getWaveformMetadataFromIds(nonNull).collect(Collectors.toList()).block(Duration.ofSeconds(10l));
+                if (results != null) {
+                    results.forEach(md -> {
+                        Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>> pair = waveformIdMapping.get(md.getId());
+                        if (pair != null) {
+                            pair.getLeft().forEach(v -> v.getWaveform().setActive(md.isActive()));
+                            pair.getRight().forEach(v -> v.getWaveform().setActive(md.isActive()));
+                        }
+                    });
+                }
                 Platform.runLater(() -> refreshView());
             }
         }

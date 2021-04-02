@@ -444,26 +444,9 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     public void WriteASCIIfile(String filename) throws IOException {
-        FileOutputStream out = null;
-        BufferedOutputStream bout = null;
-        PrintStream pout = null;
-        try {
-            out = new FileOutputStream(filename);
-
-            bout = new BufferedOutputStream(out);
-            pout = new PrintStream(bout);
+        try (FileOutputStream out = new FileOutputStream(filename); BufferedOutputStream bout = new BufferedOutputStream(out); PrintStream pout = new PrintStream(bout);) {
             for (int j = 0; j < data.length; ++j) {
                 pout.println(String.valueOf((j / samprate)) + "   " + data[j]);
-            }
-        } finally {
-            if (pout != null) {
-                pout.close();
-            }
-            if (bout != null) {
-                bout.close();
-            }
-            if (out != null) {
-                out.close();
             }
         }
     }
@@ -497,13 +480,13 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         int myOffset = (int) Math.round((myStart - earliest) * getSamprate());
         int myLast = myOffset + data.length - 1;
         if (myLast > nsamps - 1) {
-            nsamps = myLast + 1;
+            nsamps = myLast + 1l;
         }
         int otherOffset = (int) Math.round((otherStart - earliest) * samprate);
 
         int otherLast = otherOffset + other.data.length - 1;
         if (otherLast > nsamps - 1) {
-            nsamps = otherLast + 1;
+            nsamps = otherLast + 1l;
         }
         float[] result = new float[(int) nsamps];
         System.arraycopy(data, 0, result, myOffset, data.length);
@@ -1173,7 +1156,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         int pick = getIndexForTime(pickEpochTime);
         int startIndex = getIndexForTime(Math.max(start, pickEpochTime - preSeconds));
         int endIndex = getIndexForTime(Math.min(end, pickEpochTime + postSeconds));
-        return SeriesMath.getSnr(data, samprate, pick, startIndex, endIndex);
+        return SeriesMath.getSnr(data, pick, startIndex, endIndex);
     }
 
     /**

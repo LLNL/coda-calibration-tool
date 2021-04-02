@@ -71,21 +71,9 @@ public class FileInputArrayLoader {
     }
 
     public static String[] fillStrings(final String filename, boolean discardEmptyLines) throws IOException {
-        BufferedReader input = null;
-        FileReader file = null;
-        try {
-            file = new FileReader(filename);
-            input = new BufferedReader(file);
+        try (FileReader file = new FileReader(filename); BufferedReader input = new BufferedReader(file);) {
             return fillStrings(input, discardEmptyLines);
-        } finally {
-            if (input != null) {
-                input.close();
-            }
-            if (file != null) {
-                file.close();
-            }
         }
-
     }
 
     private static String[] fillStrings(BufferedReader input, boolean discardEmptyLines) throws IOException {

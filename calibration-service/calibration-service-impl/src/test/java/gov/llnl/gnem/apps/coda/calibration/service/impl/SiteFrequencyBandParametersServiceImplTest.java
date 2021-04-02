@@ -41,7 +41,7 @@ public class SiteFrequencyBandParametersServiceImplTest {
         SiteFrequencyBandParameters initial = genSite();
         service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
         service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
-        assertThat(service.findAll()).size().isEqualTo(1).describedAs("Should have saved only one site entry");
+        assertThat(service.findAll()).size().describedAs("Should have saved only one site entry").isEqualTo(1);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class SiteFrequencyBandParametersServiceImplTest {
         service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
         initial.getStation().setNetworkName("UNK");
         service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
-        assertThat(service.findAll()).size().isEqualTo(1).describedAs("Should have saved only one site entry");
+        assertThat(service.findAll()).size().describedAs("Should have saved only one site entry").isEqualTo(1);
     }
 
     @Test
@@ -61,7 +61,7 @@ public class SiteFrequencyBandParametersServiceImplTest {
         service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
         initial.getStation().setNetworkName("UNK");
         service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
-        assertThat(service.findAll()).size().isEqualTo(2).describedAs("Should have saved only one site entry");
+        assertThat(service.findAll()).size().describedAs("Should have saved only one site entry").isEqualTo(2);
     }
 
     @Test
@@ -70,8 +70,8 @@ public class SiteFrequencyBandParametersServiceImplTest {
         initial = service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
         initial.getStation().setNetworkName("B");
         service.save(new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(initial));
-        assertThat(service.findAll()).size().isEqualTo(1).describedAs("Should have saved only one site entry");
-        assertThat(service.findAll().get(0).getStation().getNetworkName()).isEqualTo("B").describedAs("Should have the modified network name");
+        assertThat(service.findAll()).size().describedAs("Should have saved only one site entry").isEqualTo(1);
+        assertThat(service.findAll().get(0).getStation().getNetworkName()).describedAs("Should have the modified network name").isEqualTo("B");
     }
 
     private SiteFrequencyBandParameters genSite() {

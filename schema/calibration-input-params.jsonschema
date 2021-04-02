@@ -1067,6 +1067,24 @@
                     "examples": [
                         1
                     ]
+                },
+                "fittingPointCount": {
+                    "$id": "#/properties/shape-constraints/properties/fittingPointCount",
+                    "type": "number",
+                    "title": "Maximum number of samples for the initial shape calibration curve fitting to use for the optimization pass. If the sample number is higher than this for the envelope being fit it will down-sample to reach this number.",
+                    "default": 10000,
+                    "examples": [
+                        10000
+                    ]
+                },
+                "lengthWeight": {
+                    "$id": "#/properties/shape-constraints/properties/lengthWeight",
+                    "type": "number",
+                    "title": "This is the cost function weighting used during autopicking to preferentially weight stopping times that are longer. Effectively this discounts the length normalized misfit value, M, using the current length as a fraction of maximum acceptable length. The optimization is then min(residual) { residual = M - ((M * length-weight) * (current-length/possible-length)) }. ",
+                    "default": 0.001,
+                    "examples": [
+                        0.001
+                    ]
                 }
             }
         }        

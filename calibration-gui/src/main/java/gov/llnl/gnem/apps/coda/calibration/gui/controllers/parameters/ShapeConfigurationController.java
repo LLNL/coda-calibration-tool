@@ -43,6 +43,8 @@ public class ShapeConfigurationController {
     private static final Logger log = LoggerFactory.getLogger(ShapeConfigurationController.class);
 
     private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
+    
+    private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
 
     @FXML
     private TableView<ShapeFitterConstraints> shapeVelConfTableView;
@@ -140,6 +142,8 @@ public class ShapeConfigurationController {
     TableColumn<ShapeFitterConstraints, String> iterations;
     @FXML
     TableColumn<ShapeFitterConstraints, String> fittingPointCount;
+    @FXML
+    TableColumn<ShapeFitterConstraints, String> lengthWeight;
 
     private ObservableList<ShapeFitterConstraints> data = FXCollections.observableArrayList();
 
@@ -209,7 +213,8 @@ public class ShapeConfigurationController {
         CellBindingUtils.attachEditableTextCellFactories(maxGamma, ShapeFitterConstraints::getMaxGamma, ShapeFitterConstraints::setMaxGamma, dfmt2);
         CellBindingUtils.attachEditableIntegerCellFactories(iterations, ShapeFitterConstraints::getIterations, ShapeFitterConstraints::setIterations);
         CellBindingUtils.attachEditableIntegerCellFactories(fittingPointCount, ShapeFitterConstraints::getFittingPointCount, ShapeFitterConstraints::setFittingPointCount);
-
+        CellBindingUtils.attachEditableTextCellFactories(lengthWeight, ShapeFitterConstraints::getLengthWeight, ShapeFitterConstraints::setLengthWeight, dfmt4);
+        
         shapeVelConfTableView.setItems(data);
         shapeBetaConfTableView.setItems(data);
         shapeGammaConfTableView.setItems(data);

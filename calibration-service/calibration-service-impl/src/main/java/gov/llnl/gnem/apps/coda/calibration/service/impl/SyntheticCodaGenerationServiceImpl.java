@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -74,16 +74,15 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
             double vr = syntheticCodaModel.getDistanceFunction(model.getVelocity0(), model.getVelocity1(), model.getVelocity2(), distance);
             double gr = syntheticCodaModel.getDistanceFunction(model.getGamma0(), model.getGamma1(), model.getGamma2(), distance);
 
-            // note distance/vr is a singularity point - start at t = dt
             TimeT eventTime = new TimeT(event.getOriginTime());
-            TimeT codastart = eventTime;
-            if (vr != 0.0) {
-                codastart = codastart.add(distance / vr);
-            }
-            double maxTime = seis.getMaxTime()[0];
-            double timediff = maxTime - codastart.subtractD(eventTime);
-            if (Math.abs(timediff) < 5.0) {
-                codastart.add(timediff);
+            TimeT codastart;
+            if (sourceWaveform.getMaxVelTime() != null) {
+                codastart = new TimeT(sourceWaveform.getMaxVelTime());
+            } else {
+                codastart = eventTime;
+                if (vr != 0.0) {
+                    codastart = codastart.add(distance / vr);
+                }
             }
 
             TimeT endTime = new TimeT(sourceWaveform.getEndTime());

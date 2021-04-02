@@ -76,6 +76,11 @@
 								<MenuItem fx:id="clearData" mnemonicParsing="false" onAction="#clearData" text="Clear All" />
 							</items>
 						</Menu>
+						<Menu mnemonicParsing="false" text="Tools">
+							<items>
+								<MenuItem fx:id="envelopeTool" mnemonicParsing="false" onAction="#openEnvelopeTool" text="Create Envelopes" />
+							</items>
+						</Menu>
 					</menus>
 					<opaqueInsets>
 						<Insets />

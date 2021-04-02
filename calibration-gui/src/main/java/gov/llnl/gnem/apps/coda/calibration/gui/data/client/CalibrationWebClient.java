@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -42,7 +42,7 @@ public class CalibrationWebClient implements CalibrationClient {
 
     @Override
     public Mono<String> runCalibration(Boolean autoPickingEnabled) {
-        return client.get().uri("/calibration/start/" + autoPickingEnabled).accept(MediaType.APPLICATION_JSON).exchange().flatMap(resp -> resp.bodyToMono(String.class));
+        return client.get().uri("/calibration/start/" + autoPickingEnabled).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(String.class);
     }
 
     @Override
@@ -52,10 +52,11 @@ public class CalibrationWebClient implements CalibrationClient {
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
                      .bodyValue(id)
-                     .exchange()
+                     .retrieve()
+                     .bodyToMono(String.class)
                      .doOnError(e -> log.error(e.getMessage(), e))
                      .doOnSuccess(cr -> log.error(cr.toString()))
-                     .flatMap(resp -> resp.bodyToMono(String.class).map(Boolean::valueOf));
+                     .map(Boolean::valueOf);
     }
 
     @Override
@@ -69,14 +70,14 @@ public class CalibrationWebClient implements CalibrationClient {
                      .uri("/measurement/measure-mws")
                      .bodyValue(new MeasurementJob().setAutopickingEnabled(autoPickingEnabled).setPersistResults(Boolean.TRUE).setEventIds(eventIds))
                      .accept(MediaType.APPLICATION_JSON)
-                     .exchange()
+                     .retrieve()
+                     .bodyToMono(MeasuredMwReportByEvent.class)
                      .doOnError(e -> log.trace(e.getMessage(), e))
-                     .doOnSuccess(cr -> log.trace(cr.toString()))
-                     .flatMap(resp -> resp.bodyToMono(MeasuredMwReportByEvent.class));
+                     .doOnSuccess(cr -> log.trace(cr.toString()));
     }
 
     @Override
     public Mono<String> clearData() {
-        return client.get().uri("/calibration/clear-data").accept(MediaType.APPLICATION_JSON).exchange().flatMap(resp -> resp.bodyToMono(String.class));
+        return client.get().uri("/calibration/clear-data").accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(String.class);
     }
 }

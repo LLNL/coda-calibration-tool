@@ -15,7 +15,9 @@
 package gov.llnl.gnem.apps.coda.calibration.gui;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -54,6 +56,8 @@ import reactor.core.publisher.Hooks;
 @SpringBootApplication
 @ComponentScan("gov.llnl.gnem.apps.coda.common.mapping")
 @ComponentScan("gov.llnl.gnem.apps.coda.common.gui")
+@ComponentScan("gov.llnl.gnem.apps.coda.envelope.model")
+@ComponentScan("gov.llnl.gnem.apps.coda.envelope.gui")
 @ComponentScan("gov.llnl.gnem.apps.coda.calibration.gui")
 public class GuiApplication extends Application {
 
@@ -67,6 +71,7 @@ public class GuiApplication extends Application {
 
     @PostConstruct
     void started() {
+        Locale.setDefault(Locale.ENGLISH);
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 
@@ -98,10 +103,15 @@ public class GuiApplication extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
-        primaryStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/coda_32x32.png")));
-        primaryStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/coda_64x64.png")));
-        primaryStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/coda_128x128.png")));
-        primaryStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/coda_256x256.png")));
+        try (InputStream icon1 = this.getClass().getResourceAsStream("/coda_32x32.png");
+                InputStream icon2 = this.getClass().getResourceAsStream("/coda_64x64.png");
+                InputStream icon3 = this.getClass().getResourceAsStream("/coda_128x128.png");
+                InputStream icon4 = this.getClass().getResourceAsStream("/coda_256x256.png");) {
+            primaryStage.getIcons().add(new Image(icon1));
+            primaryStage.getIcons().add(new Image(icon2));
+            primaryStage.getIcons().add(new Image(icon3));
+            primaryStage.getIcons().add(new Image(icon4));
+        }
         primaryStage.setOnCloseRequest((evt) -> Platform.exit());
         primaryStage.setOnShown((evt) -> bus.post(new CalibrationStageShownEvent()));
 

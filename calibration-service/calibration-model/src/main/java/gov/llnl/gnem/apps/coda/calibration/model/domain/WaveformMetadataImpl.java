@@ -32,6 +32,7 @@ public class WaveformMetadataImpl implements WaveformMetadata {
     private Stream stream;
     private Date beginTime;
     private Date endTime;
+    private Date maxVelTime;
     private String segmentType;
     private String segmentUnits;
     private Double lowFrequency;
@@ -51,6 +52,7 @@ public class WaveformMetadataImpl implements WaveformMetadata {
         this.stream = waveform.getStream();
         this.beginTime = waveform.getBeginTime();
         this.endTime = waveform.getEndTime();
+        this.maxVelTime = waveform.getMaxVelTime();
         this.segmentType = waveform.getSegmentType();
         this.segmentUnits = waveform.getSegmentUnits();
         this.lowFrequency = waveform.getLowFrequency();
@@ -89,6 +91,11 @@ public class WaveformMetadataImpl implements WaveformMetadata {
     @Override
     public Date getEndTime() {
         return endTime;
+    }
+
+    @Override
+    public Date getMaxVelTime() {
+        return maxVelTime;
     }
 
     @Override

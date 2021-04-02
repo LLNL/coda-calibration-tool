@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -50,7 +50,6 @@ import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.PickMovedState;
 import llnl.gnem.core.gui.plotting.jmultiaxisplot.VPickLine;
 import llnl.gnem.core.gui.plotting.plotobject.AbstractLine;
-import llnl.gnem.core.gui.plotting.plotobject.JDataRectangle;
 import llnl.gnem.core.gui.plotting.plotobject.Line;
 import llnl.gnem.core.gui.plotting.plotobject.PinnedText;
 import llnl.gnem.core.gui.plotting.plotobject.PlotObject;
@@ -258,44 +257,27 @@ public class CodaWaveformPlot extends SeriesPlot {
 
         interpolatedSeries.interpolate(synthSeriesBeforeEndMarker.getSamprate());
 
-        double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
-        if (vr == 0.0) {
-            vr = 1.0;
-        }
-        TimeT startTime;
-        TimeT trimTime = originTime.add(distance / vr);
-        if (trimTime.lt(endTime)) {
-            TimeSeries trimmedWaveform = new TimeSeries(waveformSegment, waveform.getSampleRate(), beginTime);
-            try {
-                trimmedWaveform.cutBefore(trimTime);
-                trimmedWaveform.cutAfter(trimTime.add(30.0));
-                startTime = new TimeT(trimTime.getEpochTime() + trimmedWaveform.getMaxTime()[0]);
-            } catch (IllegalArgumentException e) {
-                startTime = trimTime;
-            }
+        TimeT startTime = new TimeT(synth.getBeginTime());
+        if (startTime.lt(endTime)) {
+            interpolatedSeries.cut(startTime, endTime);
+            synthSeriesBeforeEndMarker.cut(startTime, endTime);
+            if (synthSeriesBeforeEndMarker.getLength() > 1) {
+                TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
+                int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
+                double median = diffSeis.getMedian();
 
-            if (startTime.lt(endTime)) {
-                interpolatedSeries.cut(startTime, endTime);
-                synthSeriesBeforeEndMarker.cut(startTime, endTime);
-                if (synthSeriesBeforeEndMarker.getLength() > 1) {
-                    TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
-                    int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
-                    double median = diffSeis.getMedian();
+                subplot.DeletePlotObject(legendRef);
+                subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
+                subplot.AddPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
 
-                    subplot.DeletePlotObject(legendRef);
-                    subplot.AddPlotObject(createLegend(labelText + "Shift: " + dfmt4.format(median)));
-                    subplot.AddPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
-
-                    if (endTime.lt(synthSeriesRemaining.getEndtime())) {
-                        synthSeriesRemaining.cutBefore(endTime);
-                        int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
-                        if (synthSeriesRemaining.getLength() > 1) {
-                            subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, PenStyle.DASH),
-                                                  PLOT_ORDERING.MODEL_FIT.getZOrder());
-                        }
+                if (endTime.lt(synthSeriesRemaining.getEndtime())) {
+                    synthSeriesRemaining.cutBefore(endTime);
+                    int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
+                    if (synthSeriesRemaining.getLength() > 1) {
+                        subplot.AddPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, PenStyle.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
                     }
-                    repaint();
                 }
+                repaint();
             }
         }
     }
@@ -341,12 +323,6 @@ public class CodaWaveformPlot extends SeriesPlot {
         subplot.AddPlotObject(object, PLOT_ORDERING.PICKS.getZOrder());
     }
 
-    private PlotObject createRectangle(int timeStart, int timeEnd, int heightMin, int heightMax, Color pink) {
-        JDataRectangle rect = new JDataRectangle(timeStart, heightMin, timeEnd - timeStart, heightMax - heightMin);
-        rect.setFillColor(pink);
-        return rect;
-    }
-
     /*
      * (non-Javadoc)
      *
@@ -367,11 +343,12 @@ public class CodaWaveformPlot extends SeriesPlot {
                     pick.setPickTimeSecFromOrigin((float) (vpl.getXval() - new TimeT(pick.getWaveform().getEvent().getOriginTime()).subtractD(new TimeT(pick.getWaveform().getBeginTime()))));
                     if (pick.getPickName() != null && PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickName().trim())) {
                         pick.getWaveform()
-                            .setAssociatedPicks(pick.getWaveform()
-                                                    .getAssociatedPicks()
-                                                    .stream()
-                                                    .filter(p -> p.getPickName() != null && !PICK_TYPES.AP.getPhase().equalsIgnoreCase(p.getPickName().trim()))
-                                                    .collect(Collectors.toList()));
+                            .setAssociatedPicks(
+                                    pick.getWaveform()
+                                        .getAssociatedPicks()
+                                        .stream()
+                                        .filter(p -> p.getPickName() != null && !PICK_TYPES.AP.getPhase().equalsIgnoreCase(p.getPickName().trim()))
+                                        .collect(Collectors.toList()));
                     }
                     waveformClient.postWaveform(pick.getWaveform()).subscribe(this::setWaveform);
                 }

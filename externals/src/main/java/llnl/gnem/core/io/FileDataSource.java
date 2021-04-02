@@ -162,6 +162,8 @@ public class FileDataSource extends AbstractDataSource {
 
             if (legitFormat) {
                 dis = new DataInputStream(new ByteArrayInputStream(buffer));
+            } else {
+                dis = new DataInputStream(new ByteArrayInputStream(new byte[0]));
             }
 
             // perform appropriate read

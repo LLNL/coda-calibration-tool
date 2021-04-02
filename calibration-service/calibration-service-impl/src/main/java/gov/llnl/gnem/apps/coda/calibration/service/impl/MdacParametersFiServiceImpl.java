@@ -124,7 +124,7 @@ public class MdacParametersFiServiceImpl implements MdacParametersFiService {
     public MdacParametersFI update(MdacParametersFI entry) {
         MdacParametersFI mergedEntry;
         if (entry.getId() != null) {
-            mergedEntry = mdacParametersRepository.findById(entry.getId()).get();
+            mergedEntry = mdacParametersRepository.findById(entry.getId()).orElse(null);
         } else {
             mergedEntry = mdacParametersRepository.findFirstByOrderById();
         }

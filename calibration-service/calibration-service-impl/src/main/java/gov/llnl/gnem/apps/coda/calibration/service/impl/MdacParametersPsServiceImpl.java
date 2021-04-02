@@ -124,7 +124,7 @@ public class MdacParametersPsServiceImpl implements MdacParametersPsService {
     public MdacParametersPS update(MdacParametersPS entry) {
         MdacParametersPS mergedEntry;
         if (entry.getId() != null) {
-            mergedEntry = mdacParametersRepository.findById(entry.getId()).get();
+            mergedEntry = mdacParametersRepository.findById(entry.getId()).orElse(null);
         } else {
             mergedEntry = mdacParametersRepository.findByPhase(entry.getPhase());
         }

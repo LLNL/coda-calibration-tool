@@ -14,12 +14,15 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.model.domain;
 
+import java.util.Objects;
+
 public class EnvelopeFit {
 
     private Double gamma;
     private Double beta;
     private Double intercept;
     private Double error;
+    private double endTime = -1d;
 
     public Double getGamma() {
         return gamma;
@@ -57,20 +60,18 @@ public class EnvelopeFit {
         return this;
     }
 
-    @Override
-    public String toString() {
-        return "EnvelopeFit [gamma=" + gamma + ", beta=" + beta + ", intercept=" + intercept + ", error=" + error + "]";
+    public double getEndTime() {
+        return endTime;
+    }
+
+    public EnvelopeFit setEndTime(double endTime) {
+        this.endTime = endTime;
+        return this;
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((beta == null) ? 0 : beta.hashCode());
-        result = prime * result + ((error == null) ? 0 : error.hashCode());
-        result = prime * result + ((gamma == null) ? 0 : gamma.hashCode());
-        result = prime * result + ((intercept == null) ? 0 : intercept.hashCode());
-        return result;
+        return Objects.hash(beta, endTime, error, gamma, intercept);
     }
 
     @Override
@@ -78,42 +79,20 @@ public class EnvelopeFit {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof EnvelopeFit)) {
             return false;
         }
         EnvelopeFit other = (EnvelopeFit) obj;
-        if (beta == null) {
-            if (other.beta != null) {
-                return false;
-            }
-        } else if (!beta.equals(other.beta)) {
-            return false;
-        }
-        if (error == null) {
-            if (other.error != null) {
-                return false;
-            }
-        } else if (!error.equals(other.error)) {
-            return false;
-        }
-        if (gamma == null) {
-            if (other.gamma != null) {
-                return false;
-            }
-        } else if (!gamma.equals(other.gamma)) {
-            return false;
-        }
-        if (intercept == null) {
-            if (other.intercept != null) {
-                return false;
-            }
-        } else if (!intercept.equals(other.intercept)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(beta, other.beta)
+                && Double.doubleToLongBits(endTime) == Double.doubleToLongBits(other.endTime)
+                && Objects.equals(error, other.error)
+                && Objects.equals(gamma, other.gamma)
+                && Objects.equals(intercept, other.intercept);
+    }
+
+    @Override
+    public String toString() {
+        return "EnvelopeFit [gamma=" + gamma + ", beta=" + beta + ", intercept=" + intercept + ", error=" + error + ", endTime=" + endTime + "]";
     }
 
 }
