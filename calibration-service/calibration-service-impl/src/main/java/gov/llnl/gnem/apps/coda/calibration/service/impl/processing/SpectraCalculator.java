@@ -29,6 +29,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,9 +46,11 @@ import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.SimplePointChecker;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.MultiStartMultivariateOptimizer;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.random.SobolSequenceGenerator;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.SynchronizedMultivariateSummaryStatistics;
 import org.slf4j.Logger;
@@ -83,15 +86,15 @@ import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 @Component
 public class SpectraCalculator {
-    private double PHASE_VELOCITY_KM_S;
+    private final double PHASE_VELOCITY_KM_S;
 
     private static final Logger log = LoggerFactory.getLogger(SpectraCalculator.class);
 
-    private WaveformToTimeSeriesConverter converter;
-    private SyntheticCodaModel syntheticCodaModel;
-    private MdacCalculatorService mdacService;
-    private MdacParametersFiService mdacFiService;
-    private MdacParametersPsService mdacPsService;
+    private final WaveformToTimeSeriesConverter converter;
+    private final SyntheticCodaModel syntheticCodaModel;
+    private final MdacCalculatorService mdacService;
+    private final MdacParametersFiService mdacFiService;
+    private final MdacParametersPsService mdacPsService;
 
     @Value("${spectra-calc.iteration-cutoff:50}")
     private int iterationCutoff = 50;
@@ -99,10 +102,10 @@ public class SpectraCalculator {
     private double minMW = 0.01;
     @Value("${spectra-calc.max-mw:10.0}")
     private double maxMW = 10.0;
-    @Value("${spectra-calc.min-apparent-stress-mpa:0.01}")
-    private double minApparentStress = 0.01;
-    @Value("${spectra-calc.max-apparent-stress-mpa:100.00}")
-    private double maxApparentStress = 100.00;
+    @Value("${spectra-calc.min-apparent-stress-mpa:0.0001}")
+    private double minApparentStress = 0.0001;
+    @Value("${spectra-calc.max-apparent-stress-mpa:1000.00}")
+    private double maxApparentStress = 1000.00;
     @Value("${report-stress-bounds-in-uq:false}")
     private boolean reportStressBoundsInUQ = false;
 
@@ -147,8 +150,8 @@ public class SpectraCalculator {
     };
 
     @Autowired
-    public SpectraCalculator(WaveformToTimeSeriesConverter converter, SyntheticCodaModel syntheticCodaModel, MdacCalculatorService mdacService, MdacParametersFiService mdacFiService,
-            MdacParametersPsService mdacPsService, VelocityConfiguration velConf) {
+    public SpectraCalculator(final WaveformToTimeSeriesConverter converter, final SyntheticCodaModel syntheticCodaModel, final MdacCalculatorService mdacService,
+            final MdacParametersFiService mdacFiService, final MdacParametersPsService mdacPsService, final VelocityConfiguration velConf) {
         this.converter = converter;
         this.syntheticCodaModel = syntheticCodaModel;
         this.mdacService = mdacService;
@@ -157,40 +160,40 @@ public class SpectraCalculator {
         this.PHASE_VELOCITY_KM_S = velConf.getPhaseVelocityInKms();
     }
 
-    public List<SpectraMeasurement> measureAmplitudes(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
-            VelocityConfiguration velocityConfig) {
+    public List<SpectraMeasurement> measureAmplitudes(final List<SyntheticCoda> generatedSynthetics, final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
+            final VelocityConfiguration velocityConfig) {
         return measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, velocityConfig, null);
     }
 
-    public List<SpectraMeasurement> measureAmplitudes(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
-            VelocityConfiguration velocityConfig, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap) {
+    public List<SpectraMeasurement> measureAmplitudes(final List<SyntheticCoda> generatedSynthetics, final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
+            final VelocityConfiguration velocityConfig, final Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap) {
         return generatedSynthetics.parallelStream()
                                   .map(synth -> measureAmplitudeForSynthetic(synth, frequencyBandParameterMap, frequencyBandSiteParameterMap, velocityConfig))
                                   .filter(Objects::nonNull)
                                   .collect(Collectors.toList());
     }
 
-    private SpectraMeasurement measureAmplitudeForSynthetic(SyntheticCoda synth, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
-            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap, VelocityConfiguration velocityConfig) {
+    private SpectraMeasurement measureAmplitudeForSynthetic(final SyntheticCoda synth, final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
+            final Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap, final VelocityConfiguration velocityConfig) {
 
-        FrequencyBand frequencyBand = new FrequencyBand(synth.getSourceWaveform().getLowFrequency(), synth.getSourceWaveform().getHighFrequency());
-        SharedFrequencyBandParameters params = frequencyBandParameterMap.get(frequencyBand);
+        final FrequencyBand frequencyBand = new FrequencyBand(synth.getSourceWaveform().getLowFrequency(), synth.getSourceWaveform().getHighFrequency());
+        final SharedFrequencyBandParameters params = frequencyBandParameterMap.get(frequencyBand);
         if (params != null) {
-            TimeSeries envSeis = converter.convert(synth.getSourceWaveform());
-            TimeSeries synthSeis = new TimeSeries(WaveformUtils.doublesToFloats(synth.getSegment()), synth.getSampleRate(), new TimeT(synth.getBeginTime()));
+            final TimeSeries envSeis = converter.convert(synth.getSourceWaveform());
+            final TimeSeries synthSeis = new TimeSeries(WaveformUtils.doublesToFloats(synth.getSegment()), synth.getSampleRate(), new TimeT(synth.getBeginTime()));
 
             envSeis.interpolate(synthSeis.getSamprate());
 
-            Station station = synth.getSourceWaveform().getStream().getStation();
-            Event event = synth.getSourceWaveform().getEvent();
+            final Station station = synth.getSourceWaveform().getStream().getStation();
+            final Event event = synth.getSourceWaveform().getEvent();
 
-            double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
+            final double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
             double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
             if (vr == 0.0) {
                 vr = 1.0;
             }
 
-            TimeT originTime = new TimeT(event.getOriginTime());
+            final TimeT originTime = new TimeT(event.getOriginTime());
 
             TimeT codaStart;
             if (synth.getSourceWaveform().getMaxVelTime() != null) {
@@ -207,7 +210,7 @@ public class SpectraCalculator {
                 siteCorrection = frequencyBandSiteParameterMap.get(frequencyBand).get(station).getSiteTerm();
             }
 
-            double eshCorrection = log10ESHcorrection(
+            final double eshCorrection = log10ESHcorrection(
                     synth.getSourceWaveform().getLowFrequency(),
                         synth.getSourceWaveform().getHighFrequency(),
                         params.getP1(),
@@ -218,8 +221,8 @@ public class SpectraCalculator {
                         distance,
                         velocityConfig);
 
-            double minlength = params.getMinLength();
-            double maxlength = params.getMaxLength();
+            final double minlength = params.getMinLength();
+            final double maxlength = params.getMaxLength();
 
             TimeT endTime = null;
 
@@ -230,7 +233,7 @@ public class SpectraCalculator {
                                .filter(p -> p.getPickType() != null && PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType().trim()))
                                .findFirst()
                                .map(pick -> {
-                                   double startpick = startTime.subtractD(originTime);
+                                   final double startpick = startTime.subtractD(originTime);
                                    TimeT result = originTime;
                                    result = pick.getPickTimeSecFromOrigin() > (startpick + maxlength) ? result.add(startpick + maxlength) : result.add(pick.getPickTimeSecFromOrigin());
                                    return result;
@@ -252,18 +255,17 @@ public class SpectraCalculator {
                 return null;
             }
 
-            
             boolean cutSucceeded = false;
             try {
                 // Note this mutates envSeis and synthSeis!
                 cutSucceeded = WaveformUtils.cutSeismograms(envSeis, synthSeis, startTime, endTime);
-            } catch (IllegalArgumentException e) {
+            } catch (final IllegalArgumentException e) {
                 log.warn("Error attempting to cut seismograms during amplitude measurement; {}", e.getMessage());
             }
 
             if (cutSucceeded) {
-                float[] envdata = envSeis.getData();
-                float[] synthdata = synthSeis.getData();
+                final float[] envdata = envSeis.getData();
+                final float[] synthdata = synthSeis.getData();
 
                 // envelope minus synthetic
                 final double rawAmp = new TimeSeries(SeriesMath.subtract(envdata, synthdata), synthSeis.getSamprate(), synthSeis.getTime()).getMedian();
@@ -272,17 +274,17 @@ public class SpectraCalculator {
                 // calculated below
                 final double rawAtMeasurementTime;
 
-                float[] synthscaled = SeriesMath.add(synthdata, rawAmp);
-                Double fit = FitnessCriteria.CVRMSD(envdata, synthscaled);
+                final float[] synthscaled = SeriesMath.add(synthdata, rawAmp);
+                final Double fit = FitnessCriteria.CVRMSD(envdata, synthscaled);
 
                 // path corrected using Scott's Extended Street and Herrman
                 // method and site correction
                 double pathCorrectedAmp = rawAmp + eshCorrection;
 
                 // user defined coda measurement time
-                double measurementtime = params.getMeasurementTime();
+                final double measurementtime = params.getMeasurementTime();
                 if (measurementtime > 0.) {
-                    double shiftedvalue = syntheticCodaModel.getPointAtTimeAndDistance(params, measurementtime, distance);
+                    final double shiftedvalue = syntheticCodaModel.getPointAtTimeAndDistance(params, measurementtime, distance);
                     rawAtMeasurementTime = rawAmp + shiftedvalue;
                 } else {
                     rawAtMeasurementTime = rawAmp;
@@ -335,22 +337,23 @@ public class SpectraCalculator {
      *            the attenuation term
      * @return -log10(esh) + distance*pi*f0*log10(e) / (vphase* q)
      */
-    public double log10ESHcorrection(double lowfreq, double highfreq, double alpha1, double alpha2, double xc, double xt, double q, double distance, VelocityConfiguration velocityConfig) {
-        double log10esh = log10ESHcorrection(alpha1, alpha2, xc, xt, distance);
+    public double log10ESHcorrection(final double lowfreq, final double highfreq, final double alpha1, final double alpha2, final double xc, final double xt, final double q, final double distance,
+            final VelocityConfiguration velocityConfig) {
+        final double log10esh = log10ESHcorrection(alpha1, alpha2, xc, xt, distance);
 
         if ((log10esh == 0.) || (q == 0.)) {
             return 0.; // no ESH correction
         }
 
-        double f0 = Math.sqrt(lowfreq * highfreq);
-        double efact = Math.log10(Math.E);
+        final double f0 = Math.sqrt(lowfreq * highfreq);
+        final double efact = Math.log10(Math.E);
         double vphase;
         if (velocityConfig != null && velocityConfig.getPhaseVelocityInKms() != null && velocityConfig.getPhaseVelocityInKms() != 0.0) {
             vphase = velocityConfig.getPhaseVelocityInKms();
         } else {
             vphase = PHASE_VELOCITY_KM_S;
         }
-        double distQ = distance * Math.PI * f0 * efact / (q * vphase);
+        final double distQ = distance * Math.PI * f0 * efact / (q * vphase);
         // We want to return a positive number for path correction
         return -1 * log10esh + distQ;
     }
@@ -363,60 +366,60 @@ public class SpectraCalculator {
      *
      * translated from Scott Phillips original fortran function eshmod
      */
-    public double log10ESHcorrection(double s1, double s2, double xcross, double xtrans, double distance) {
+    public double log10ESHcorrection(final double s1, final double s2, final double xcross, final double xtrans, final double distance) {
         double eshmod;
-        double xstart = xcross / xtrans;
-        double xend = xcross * xtrans;
+        final double xstart = xcross / xtrans;
+        final double xend = xcross * xtrans;
 
         if (distance <= xstart) {
             eshmod = -1.0 * s1 * Math.log10(distance);
         } else if (distance >= xend) {
-            double ds = s2 - s1;
+            final double ds = s2 - s1;
             eshmod = -1.0 * s1 * Math.log10(xstart) - (s1 + ds / 2.) * Math.log10(xend / xstart) - s2 * Math.log10(distance / xend);
         } else {
             // singular if xtrans=1, but should not get here
-            double s = (s2 - s1) / Math.log10(xend / xstart);
-            double ds = s * Math.log10(distance / xstart);
+            final double s = (s2 - s1) / Math.log10(xend / xstart);
+            final double ds = s * Math.log10(distance / xstart);
             eshmod = -1.0 * s1 * Math.log10(xstart) - (s1 + ds / 2.) * Math.log10(distance / xstart);
         }
 
         return eshmod;
     }
 
-    public Spectra computeReferenceSpectra(ReferenceMwParameters refEvent, List<FrequencyBand> bands, PICK_TYPES selectedPhase) {
+    public Spectra computeReferenceSpectra(final ReferenceMwParameters refEvent, final List<FrequencyBand> bands, final PICK_TYPES selectedPhase) {
         return computeSpecificSpectra(refEvent.getRefMw(), refEvent.getRefApparentStressInMpa(), bands, selectedPhase, SPECTRA_TYPES.REF);
     }
 
-    public Spectra computeFitSpectra(MeasuredMwParameters event, Collection<FrequencyBand> bands, PICK_TYPES selectedPhase) {
+    public Spectra computeFitSpectra(final MeasuredMwParameters event, final Collection<FrequencyBand> bands, final PICK_TYPES selectedPhase) {
         return computeSpecificSpectra(event.getMw(), event.getApparentStressInMpa(), bands, selectedPhase, SPECTRA_TYPES.FIT);
     }
 
-    public Spectra computeSpecificSpectra(Double mw, Double apparentStress, Collection<FrequencyBand> bands, PICK_TYPES selectedPhase, SPECTRA_TYPES type) {
+    public Spectra computeSpecificSpectra(final Double mw, final Double apparentStress, final Collection<FrequencyBand> bands, final PICK_TYPES selectedPhase, final SPECTRA_TYPES type) {
 
-        MdacParametersFI mdacFiEntry = new MdacParametersFI(mdacFiService.findFirst());
-        MdacParametersPS psRows = mdacPsService.findMatchingPhase(selectedPhase.getPhase());
+        final MdacParametersFI mdacFiEntry = new MdacParametersFI(mdacFiService.findFirst());
+        final MdacParametersPS psRows = mdacPsService.findMatchingPhase(selectedPhase.getPhase());
 
-        List<Point2D.Double> xyPoints = new ArrayList<>();
+        final List<Point2D.Double> xyPoints = new ArrayList<>();
 
         if (apparentStress != null && apparentStress > 0.0) {
             mdacFiEntry.setSigma(apparentStress);
             mdacFiEntry.setPsi(0.0);
         }
 
-        Function<Double, Double> mdacFunction = mdacService.getCalculateMdacAmplitudeForMwFunction(psRows, mdacFiEntry, mw, selectedPhase);
-        double cornerFrequency = -1;
+        final DoubleUnaryOperator mdacFunction = mdacService.getCalculateMdacAmplitudeForMwFunction(psRows, mdacFiEntry, mw, selectedPhase);
+        Double cornerFrequency = null;
 
         if (type != null && type.equals(SPECTRA_TYPES.FIT)) {
             cornerFrequency = mdacService.getCornerFrequency(psRows, mdacFiEntry.setPsi(0.0).setSigma(apparentStress), mw);
         }
-        for (FrequencyBand band : bands) {
-            double centerFreq = band.getLowFrequency() + (band.getHighFrequency() - band.getLowFrequency()) / 2.;
-            double logFreq = Math.log10(centerFreq);
+        for (final FrequencyBand band : bands) {
+            final double centerFreq = band.getLowFrequency() + (band.getHighFrequency() - band.getLowFrequency()) / 2.;
+            final double logFreq = Math.log10(centerFreq);
 
-            double amplitude = mdacFunction.apply(centerFreq);
+            final double amplitude = mdacFunction.applyAsDouble(centerFreq);
 
             if (amplitude > 0) {
-                Point2D.Double point = new Point2D.Double(logFreq, amplitude);
+                final Point2D.Double point = new Point2D.Double(logFreq, amplitude);
                 xyPoints.add(point);
             }
         }
@@ -430,11 +433,11 @@ public class SpectraCalculator {
      * UCRL-ID-146882
      *
      */
-    public List<MeasuredMwParameters> measureMws(final Map<Event, Map<FrequencyBand, SummaryStatistics>> evidMap, Map<Event, Function<Map<Double, Double>, SortedMap<Double, Double>>> eventWeights,
-            final PICK_TYPES selectedPhase, MdacParametersPS mdacPs, MdacParametersFI mdacFi) {
+    public List<MeasuredMwParameters> measureMws(final Map<Event, Map<FrequencyBand, SummaryStatistics>> evidMap,
+            final Map<Event, Function<Map<Double, Double>, SortedMap<Double, Double>>> eventWeights, final PICK_TYPES selectedPhase, final MdacParametersPS mdacPs, final MdacParametersFI mdacFi) {
         return evidMap.entrySet().parallelStream().map(entry -> {
-            Map<FrequencyBand, SummaryStatistics> measurements = entry.getValue();
-            double[] MoMw = fitMw(entry.getKey(), measurements, selectedPhase, mdacFi, mdacPs, eventWeights.get(entry.getKey()));
+            final Map<FrequencyBand, SummaryStatistics> measurements = entry.getValue();
+            final double[] MoMw = fitMw(entry.getKey(), measurements, selectedPhase, mdacFi, mdacPs, eventWeights.get(entry.getKey()));
             if (MoMw == null) {
                 log.warn("MoMw calculation returned null value");
                 return null;
@@ -478,20 +481,20 @@ public class SpectraCalculator {
      *            parameter set
      * @return double[] containing the final fit measurements
      */
-    public double[] fitMw(Event event, final Map<FrequencyBand, SummaryStatistics> measurements, final PICK_TYPES phase, final MdacParametersFI mdacFi, final MdacParametersPS mdacPs,
-            Function<Map<Double, Double>, SortedMap<Double, Double>> weightFunction) {
-        double[] result = new double[PARAM_COUNT];
+    public double[] fitMw(final Event event, final Map<FrequencyBand, SummaryStatistics> measurements, final PICK_TYPES phase, final MdacParametersFI mdacFi, final MdacParametersPS mdacPs,
+            final Function<Map<Double, Double>, SortedMap<Double, Double>> weightFunction) {
+        final double[] result = new double[PARAM_COUNT];
 
         final SortedMap<Double, Double> frequencyBands = new TreeMap<>();
         final SortedSet<Triple<Double, Double, Double>> optimizerMeasurements = Collections.synchronizedSortedSet(new TreeSet<>(mwFittingComparator));
         long dataCount = 0l;
 
-        for (Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
-            double logAmplitude = meas.getValue().getMean();
+        for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
+            final double logAmplitude = meas.getValue().getMean();
             if (logAmplitude > 0.0) {
-                double lowFreq = meas.getKey().getLowFrequency();
-                double highFreq = meas.getKey().getHighFrequency();
-                double centerFreq = (highFreq + lowFreq) / 2.0;
+                final double lowFreq = meas.getKey().getLowFrequency();
+                final double highFreq = meas.getKey().getHighFrequency();
+                final double centerFreq = (highFreq + lowFreq) / 2.0;
                 frequencyBands.put(centerFreq, logAmplitude);
                 dataCount = dataCount + meas.getValue().getN();
             }
@@ -499,48 +502,45 @@ public class SpectraCalculator {
 
         final Map<Double, Double> weightMap = weightFunction.apply(frequencyBands);
         final SynchronizedMultivariateSummaryStatistics stats = new SynchronizedMultivariateSummaryStatistics(4, false);
-        MultivariateFunction mdacFunction = new MultivariateFunction() {
+        final MultivariateFunction mdacFunction = point -> {
+            final double testMw = point[0];
+            final double testSigma = point[1];
 
-            @Override
-            public double value(double[] point) {
-                double testMw = point[0];
-                double testSigma = point[1];
+            final Map<Object, double[]> dataMap = new HashMap<>();
 
-                Map<Object, double[]> dataMap = new HashMap<>();
+            final DoubleUnaryOperator mdacFunc = mdacService.getCalculateMdacAmplitudeForMwFunction(mdacPs, mdacFi, testMw, phase, testSigma);
 
-                Function<Double, Double> mdacFunc = mdacService.getCalculateMdacAmplitudeForMwFunction(mdacPs, mdacFi, testMw, phase, testSigma);
+            for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
+                final double logAmplitude = meas.getValue().getMean();
+                final double lowFreq = meas.getKey().getLowFrequency();
+                final double highFreq = meas.getKey().getHighFrequency();
+                final double centerFreq = (highFreq + lowFreq) / 2.0;
 
-                for (Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
-                    double logAmplitude = meas.getValue().getMean();
-                    double lowFreq = meas.getKey().getLowFrequency();
-                    double highFreq = meas.getKey().getHighFrequency();
-                    double centerFreq = (highFreq + lowFreq) / 2.0;
+                // Note this is in dyne-cm to match Kevin
+                final double log10mdacM0 = mdacFunc.applyAsDouble(centerFreq);
 
-                    // Note this is in dyne-cm to match Kevin
-                    double log10mdacM0 = mdacFunc.apply(centerFreq);
-
-                    if (logAmplitude > 0.) {
-                        double[] coda_vs_mdac = new double[] { logAmplitude, log10mdacM0 };
-                        dataMap.put(centerFreq, coda_vs_mdac);
-                    }
+                if (logAmplitude > 0.) {
+                    final double[] coda_vs_mdac = new double[] { logAmplitude, log10mdacM0 };
+                    dataMap.put(centerFreq, coda_vs_mdac);
                 }
-
-                double fit = WCVRMSD(weightMap, dataMap);
-                double corner = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(testSigma), testMw));
-                stats.addValue(new double[] { testMw, testSigma, fit, corner });
-                optimizerMeasurements.add(new ImmutableTriple<>(fit, testMw, testSigma));
-                return fit;
             }
+
+            final double fit = WCVRMSD(weightMap, dataMap);
+            final double corner = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(testSigma), testMw));
+            stats.addValue(new double[] { testMw, testSigma, fit, corner });
+            optimizerMeasurements.add(new ImmutableTriple<>(fit, testMw, testSigma));
+            return fit;
         };
 
-        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.00001, 0.00001, 100000);
-        CMAESOptimizer optimizer = new CMAESOptimizer(1000000, 0, true, 0, 10, new MersenneTwister(), false, convergenceChecker);
+        final ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.00001, 0.00001, 100000);
+        final CMAESOptimizer cmaes = new CMAESOptimizer(1000000, 0, true, 0, 10, new MersenneTwister(), false, convergenceChecker);
+        final MultiStartMultivariateOptimizer optimizer = new MultiStartMultivariateOptimizer(cmaes, 10, new SobolSequenceGenerator(2));
         int iterations = iterationCutoff;
         try {
-            PointValuePair optimizerResult = runOptimizer(mdacFunction, optimizer);
+            final PointValuePair optimizerResult = runOptimizer(mdacFunction, optimizer);
 
             // converted back into dyne-cm to match Kevin's format
-            double testMw = optimizerResult.getPoint()[MW];
+            final double testMw = optimizerResult.getPoint()[MW];
             // log10M0
             result[LOG10_M0] = Math.log10(mdacService.getMwInDyne(testMw));
             result[MW_FIT] = testMw; // best Mw fit
@@ -550,7 +550,7 @@ public class SpectraCalculator {
             result[RMS_FIT] = optimizerResult.getValue();
             // this is the stress
             result[APP_STRESS] = optimizerResult.getPoint()[MPA];
-            iterations = optimizer.getIterations();
+            iterations = cmaes.getIterations();
         } catch (TooManyEvaluationsException | TooManyIterationsException e) {
             log.warn("Failed to converge while attempting to fit an Mw to this event {}, falling back to a grid search.", event);
         }
@@ -559,8 +559,8 @@ public class SpectraCalculator {
             double best = result[RMS_FIT] != 0.0 ? result[RMS_FIT] : Double.MAX_VALUE;
             for (double mw = minMW; mw < maxMW; mw = mw + ((maxMW - minMW) / 100.)) {
                 for (double stress = minApparentStress; stress < maxApparentStress; stress = stress + ((maxApparentStress - minApparentStress) / 100.)) {
-                    double res = mdacFunction.value(new double[] { mw, stress });
-                    double corner = mdacService.getCornerFrequency(mdacPs, mdacFi.setPsi(0.0).setSigma(stress), mw);
+                    final double res = mdacFunction.value(new double[] { mw, stress });
+                    final double corner = mdacService.getCornerFrequency(mdacPs, mdacFi.setPsi(0.0).setSigma(stress), mw);
                     stats.addValue(new double[] { mw, stress, res, corner });
                     optimizerMeasurements.add(new ImmutableTriple<>(res, mw, stress));
                     if (res < best) {
@@ -576,9 +576,9 @@ public class SpectraCalculator {
             result[RMS_FIT] = best;
         }
 
-        RealMatrix C = stats.getCovariance();
+        final RealMatrix C = stats.getCovariance();
 
-        double[] mean = stats.getMean();
+        final double[] mean = stats.getMean();
         result[MW_MEAN] = mean[MW];
         result[MW_SD] = Math.sqrt(C.getEntry(MW, MW));
         result[APP_STRESS_MEAN] = mean[MPA];
@@ -588,9 +588,9 @@ public class SpectraCalculator {
         result[CORNER_FREQ_SD] = Math.sqrt(C.getEntry(CORNER, CORNER));
 
         //This is kinda wonky mathmatically but at least it roughly scales with N so until I can get a stats person to eyeball this it'll have to do.
-        double SE = Math.sqrt(C.getEntry(FIT, FIT) / (stats.getN() - 2.0));
-        double f1 = result[RMS_FIT] + SE;
-        double f2 = f1 + (2.0 * SE);
+        final double SE = Math.sqrt(C.getEntry(FIT, FIT) / (stats.getN() - 2.0));
+        final double f1 = result[RMS_FIT] + SE;
+        final double f2 = f1 + (2.0 * SE);
 
         double mw1min = Double.POSITIVE_INFINITY;
         double mw1max = Double.NEGATIVE_INFINITY;
@@ -602,10 +602,10 @@ public class SpectraCalculator {
         double as2min = Double.POSITIVE_INFINITY;
         double as2max = Double.NEGATIVE_INFINITY;
 
-        for (Triple<Double, Double, Double> meas : optimizerMeasurements) {
-            Double fit = meas.getLeft();
-            Double mw = meas.getMiddle();
-            Double apparentStress = meas.getRight();
+        for (final Triple<Double, Double, Double> meas : optimizerMeasurements) {
+            final Double fit = meas.getLeft();
+            final Double mw = meas.getMiddle();
+            final Double apparentStress = meas.getRight();
 
             if (fit < f1) {
                 if (mw < mw1min) {
@@ -652,7 +652,7 @@ public class SpectraCalculator {
         return result;
     }
 
-    private PointValuePair runOptimizer(MultivariateFunction mdacFunction, CMAESOptimizer optimizer) {
+    private PointValuePair runOptimizer(final MultivariateFunction mdacFunction, final MultiStartMultivariateOptimizer optimizer) {
         return optimizer.optimize(
                 new MaxEval(1000000),
                     new ObjectiveFunction(mdacFunction),
@@ -668,10 +668,10 @@ public class SpectraCalculator {
      * @param dataMap
      * @return
      */
-    protected static double WCVRMSD(Map<Double, Double> weightMap, Map<Object, double[]> dataMap) {
-        for (Entry<Object, double[]> entry : dataMap.entrySet()) {
+    protected static double WCVRMSD(final Map<Double, Double> weightMap, final Map<Object, double[]> dataMap) {
+        for (final Entry<Object, double[]> entry : dataMap.entrySet()) {
             if (weightMap.containsKey(entry.getKey())) {
-                double[] val = entry.getValue();
+                final double[] val = entry.getValue();
                 for (int i = 0; i < val.length; i++) {
                     val[i] *= weightMap.get(entry.getKey());
                 }

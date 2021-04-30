@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.DoubleFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -122,7 +123,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> siteCorrections = new HashMap<>();
 
         //0) Determine if we have a RefMw in the dataset with a GT stress
-        boolean hasGtSpectra = refMws.values().stream().flatMap(refs -> refs.stream()).filter(ref -> ref.getRefApparentStressInMpa() != null).anyMatch(ref -> ref.getRefApparentStressInMpa() > 0.0);
+        boolean hasGtSpectra = refMws.values().stream().flatMap(List::stream).filter(ref -> ref.getRefApparentStressInMpa() != null).anyMatch(ref -> ref.getRefApparentStressInMpa() > 0.0);
         //0-1A) If yes then omit everything above the corner frequency for MDAC model only events
         //0-1B) Add it to the GT spectra event map
         //0-1C) Weight the Mw fit for that event 1.0 at all bands for that event
@@ -147,7 +148,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                         weightFunctionMapByEvent.put(evid, this::evenWeights);
                     }
 
-                    Function<Double, double[]> mdacFunc = mdac.getCalculateMdacSourceSpectraFunction(psRows, mdacFiEntry, mw);
+                    DoubleFunction<double[]> mdacFunc = mdac.getCalculateMdacSourceSpectraFunction(psRows, mdacFiEntry, mw);
                     double cornerFreq = 0.0;
                     if (hasGtSpectra && !evidHasSpectra) {
                         cornerFreq = mdac.getCornerFrequency(mdacFunc);
@@ -306,12 +307,11 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
             }
             for (Double frequency : frequencies.keySet()) {
                 SummaryStatistics stats = rawData.getOrDefault(frequency, new SummaryStatistics());
-                
+
                 Double weight;
                 if (stats.getN() > 1 && Double.isFinite(stats.getStandardDeviation())) {
-                    weight = 1d + 1.0/(stats.getStandardDeviation()/Math.sqrt(stats.getN()));
-                }
-                else {
+                    weight = 1d + 1.0 / (stats.getStandardDeviation() / Math.sqrt(stats.getN()));
+                } else {
                     weight = Double.valueOf(1d);
                 }
                 if (!Double.isFinite(weight)) {
