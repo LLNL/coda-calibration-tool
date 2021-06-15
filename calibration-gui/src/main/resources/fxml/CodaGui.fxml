@@ -12,12 +12,12 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.HBox?>
 
-<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
+<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
 	<children>
 		<GridPane VBox.vgrow="NEVER">
 			<columnConstraints>
@@ -47,7 +47,7 @@
 								<SeparatorMenuItem mnemonicParsing="false" />
 								<MenuItem mnemonicParsing="false" onAction="#openCalibrationDataSavingWindow" text="Export Calibration..." />
 								<MenuItem fx:id="exportWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectorySavingWindow" text="Export Waveforms..." />
-								<MenuItem fx:id="exportMeasuredMws" mnemonicParsing="false" onAction="#openMeasuredMwDirectorySavingWindow" text="Export Measured Mws..." />								
+								<MenuItem fx:id="exportMeasuredMws" mnemonicParsing="false" onAction="#openMeasuredMwDirectorySavingWindow" text="Export Measured Mws..." />
 							</items>
 						</Menu>
 						<Menu mnemonicParsing="false" text="Calibration">
@@ -55,25 +55,26 @@
 								<MenuItem fx:id="importCodaParams" mnemonicParsing="false" onAction="#runCalibration" text="Run Calibration" />
 								<MenuItem mnemonicParsing="false" onAction="#runAutoPickingCalibration" text="Run Calibration (Auto Pick)" />
 							</items>
-						</Menu>				
-						
+						</Menu>
+
 						<Menu mnemonicParsing="false" text="Measurement">
 							<items>
 								<MenuItem fx:id="measureMws" mnemonicParsing="false" onAction="#measureMws" text="Measure Mws (Active)" />
 							</items>
-						</Menu>										
-						
+						</Menu>
+
 						<Menu mnemonicParsing="false" text="Window">
 							<items>
-                        <CheckMenuItem fx:id="waveformFocus" mnemonicParsing="false" text="Waveform Pop-ups" />
+								<CheckMenuItem fx:id="waveformFocus" mnemonicParsing="false" text="Waveform Pop-ups" />
 								<MenuItem mnemonicParsing="false" onAction="#openWaveformDisplay" text="Waveform View" />
-                        <MenuItem mnemonicParsing="false" onAction="#openFailureReportDisplay" text="View Load Failures" />
+								<MenuItem mnemonicParsing="false" onAction="#openFailureReportDisplay" text="View Load Failures" />
 							</items>
 						</Menu>
 
 						<Menu mnemonicParsing="false" text="Data">
 							<items>
 								<MenuItem fx:id="clearData" mnemonicParsing="false" onAction="#clearData" text="Clear All" />
+								<MenuItem fx:id="clearAutopicks" mnemonicParsing="false" onAction="#clearAutopicks" text="Make Picks Reviewed" />
 							</items>
 						</Menu>
 						<Menu mnemonicParsing="false" text="Tools">
@@ -103,19 +104,19 @@
 					<rowConstraints>
 						<RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
 					</rowConstraints>
-					<children>												
+					<children>
 						<Button fx:id="refreshButton" alignment="CENTER" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#refreshTab" prefHeight="27.0" prefWidth="100.0" text="Refresh" GridPane.columnIndex="2">
 							<GridPane.margin>
 								<Insets />
 							</GridPane.margin>
 						</Button>
-						<HBox minHeight="25.0" alignment="CENTER">
+						<HBox alignment="CENTER" minHeight="25.0">
 							<children>
-								<Button fx:id="snapshotButton" alignment="CENTER_RIGHT" minHeight="25.0" focusTraversable="false" mnemonicParsing="false" onAction="#snapshotTab"/>
-								<Pane minWidth="10.0" prefWidth="10.0" />								
+								<Button fx:id="snapshotButton" alignment="CENTER_RIGHT" focusTraversable="false" minHeight="25.0" mnemonicParsing="false" onAction="#snapshotTab" />
+								<Pane minWidth="10.0" prefWidth="10.0" />
 								<Button fx:id="showMapButton" alignment="CENTER_RIGHT" maxWidth="70.0" minHeight="25.0" minWidth="70.0" mnemonicParsing="false" onAction="#showMapWindow" prefWidth="70.0" text="Map" />
 							</children>
-						</HBox>			
+						</HBox>
 					</children>
 				</GridPane>
 			</children>
@@ -153,7 +154,7 @@
 							<content>
 								<fx:include fx:id="measuredMws" source="MeasuredMws.fxml" />
 							</content>
-						</Tab>						
+						</Tab>
 					</tabs>
 				</TabPane>
 			</center>

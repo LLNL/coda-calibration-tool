@@ -56,59 +56,59 @@ public class LeafletMap {
     private static final Logger log = LoggerFactory.getLogger(LeafletMap.class);
 
     private WebView webView;
-    private ObservableSet<Icon> icons = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new HashSet<>()));
-    private ObservableSet<GeoShape> shapes = FXCollections.observableSet(new HashSet<>());
+    private final ObservableSet<Icon> icons = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new HashSet<>()));
+    private final ObservableSet<GeoShape> shapes = FXCollections.observableSet(new HashSet<>());
     private Pane parent;
-    private Set<WMSLayerDescriptor> layers = new HashSet<>();
-    private AtomicBoolean mapReady = new AtomicBoolean(false);
-    private Map<String, BiConsumer<Boolean, String>> callbackMap = new HashMap<>();
+    private final Set<WMSLayerDescriptor> layers = new HashSet<>();
+    private final AtomicBoolean mapReady = new AtomicBoolean(false);
+    private final Map<String, BiConsumer<Boolean, String>> callbackMap = new HashMap<>();
     private IconCallbackHandler iconCallbackHandler;
     private PolygonChangeCallbackHandler polygonChangeCallbackHandler;
-    private List<Consumer<MapCallbackEvent>> eventCallbacks = new ArrayList<>();
+    private final List<Consumer<MapCallbackEvent>> eventCallbacks = new ArrayList<>();
     private ContextMenu contextMenu;
-    private MenuItem reload = new MenuItem("Reload");
-    private MenuItem include = new MenuItem("Include");
-    private MenuItem exclude = new MenuItem("Exclude");
-    private MenuItem excludeOutPolygon = new MenuItem("Exclude outside");
-    private MenuItem includeOutPolygon = new MenuItem("Include outside");
-    private MenuItem excludeInPolygon = new MenuItem("Exclude inside");
-    private MenuItem includeInPolygon = new MenuItem("Include inside");
+    private final MenuItem reload = new MenuItem("Reload");
+    private final MenuItem include = new MenuItem("Include");
+    private final MenuItem exclude = new MenuItem("Exclude");
+    private final MenuItem excludeOutPolygon = new MenuItem("Exclude outside");
+    private final MenuItem includeOutPolygon = new MenuItem("Include outside");
+    private final MenuItem excludeInPolygon = new MenuItem("Exclude inside");
+    private final MenuItem includeInPolygon = new MenuItem("Include inside");
 
     public class IconCallbackHandler {
-        private BiConsumer<Boolean, String> iconCallbackHandler;
+        private final BiConsumer<Boolean, String> iconCallbackHandler;
 
-        public IconCallbackHandler(BiConsumer<Boolean, String> iconCallbackHandler) {
+        public IconCallbackHandler(final BiConsumer<Boolean, String> iconCallbackHandler) {
             this.iconCallbackHandler = iconCallbackHandler;
         }
 
-        public void accept(Boolean selected, String value) {
+        public void accept(final Boolean selected, final String value) {
             iconCallbackHandler.accept(selected, value);
         }
     }
 
     public class PolygonChangeCallbackHandler {
-        private Consumer<String> polygonChangeCallbackHandler;
+        private final Consumer<String> polygonChangeCallbackHandler;
 
-        public PolygonChangeCallbackHandler(Consumer<String> polygonChangeCallbackHandler) {
+        public PolygonChangeCallbackHandler(final Consumer<String> polygonChangeCallbackHandler) {
             this.polygonChangeCallbackHandler = polygonChangeCallbackHandler;
         }
 
-        public void accept(String value) {
+        public void accept(final String value) {
             polygonChangeCallbackHandler.accept(value);
         }
     }
 
     public LeafletMap() {
         iconCallbackHandler = new IconCallbackHandler((selected, id) -> {
-            BiConsumer<Boolean, String> callback = callbackMap.get(id);
+            final BiConsumer<Boolean, String> callback = callbackMap.get(id);
             if (callback != null) {
                 callback.accept(selected, id);
             }
         });
 
         polygonChangeCallbackHandler = new PolygonChangeCallbackHandler(geoJSON -> {
-            List<Consumer<MapCallbackEvent>> callbacks = new ArrayList<>(eventCallbacks);
-            MapCallbackEvent event = new MapCallbackEvent(null, MAP_CALLBACK_EVENT_TYPE.POLYGON_CHANGE, true, geoJSON);
+            final List<Consumer<MapCallbackEvent>> callbacks = new ArrayList<>(eventCallbacks);
+            final MapCallbackEvent event = new MapCallbackEvent(null, MAP_CALLBACK_EVENT_TYPE.POLYGON_CHANGE, true, geoJSON);
             callbacks.forEach(cb -> cb.accept(event));
         });
 
@@ -121,10 +121,10 @@ public class LeafletMap {
 
             webView.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 if (MouseButton.SECONDARY == event.getButton()) {
-                    WebEngine engine = webView.getEngine();
+                    final WebEngine engine = webView.getEngine();
                     contextMenu.getItems().clear();
-                    Object activeIconId = engine.executeScript("getActiveIcon();");
-                    Object activePolygonId = engine.executeScript("getActivePolygon();");
+                    final Object activeIconId = engine.executeScript("getActiveIcon();");
+                    final Object activePolygonId = engine.executeScript("getActivePolygon();");
                     if (activeIconId instanceof String) {
                         icons.stream().filter(icon -> icon.getId().equalsIgnoreCase((String) activeIconId)).findFirst().ifPresent(icon -> {
                             include.setOnAction(e -> invokeActivationCallbacks(icon, true));
@@ -132,7 +132,7 @@ public class LeafletMap {
                             contextMenu.getItems().addAll(include, exclude);
                             contextMenu.show(webView, event.getScreenX(), event.getScreenY());
                         });
-                    } else if (activePolygonId instanceof Boolean && ((boolean) activePolygonId == true)) {
+                    } else if (activePolygonId instanceof Boolean && (boolean) activePolygonId) {
                         excludeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, false));
                         includeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, true));
                         excludeInPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_IN_ICON, false));
@@ -143,7 +143,6 @@ public class LeafletMap {
                         contextMenu.getItems().addAll(reload);
                         contextMenu.show(webView, event.getScreenX(), event.getScreenY());
                     }
-
                 } else {
                     contextMenu.hide();
                 }
@@ -152,7 +151,7 @@ public class LeafletMap {
                 if (n == Worker.State.SUCCEEDED) {
                     mapReady.set(true);
                     layers.forEach(this::addLayerToMap);
-                    JSObject wind = (JSObject) webView.getEngine().executeScript("window");
+                    final JSObject wind = (JSObject) webView.getEngine().executeScript("window");
                     wind.setMember("iconCallbackHandler", iconCallbackHandler);
                     wind.setMember("polygonChangeCallbackHandler", polygonChangeCallbackHandler);
                     return;
@@ -166,17 +165,17 @@ public class LeafletMap {
         });
     }
 
-    private void invokeActivationCallbacks(Icon icon, boolean active) {
-        List<Consumer<MapCallbackEvent>> callbacks = new ArrayList<>(eventCallbacks);
-        MapCallbackEvent event = new MapCallbackEvent(icon, MAP_CALLBACK_EVENT_TYPE.ACTIVATION, active);
+    private void invokeActivationCallbacks(final Icon icon, final boolean active) {
+        final List<Consumer<MapCallbackEvent>> callbacks = new ArrayList<>(eventCallbacks);
+        final MapCallbackEvent event = new MapCallbackEvent(icon, MAP_CALLBACK_EVENT_TYPE.ACTIVATION, active);
         callbacks.forEach(cb -> cb.accept(event));
     }
 
-    public void registerEventCallback(Consumer<MapCallbackEvent> callback) {
+    public void registerEventCallback(final Consumer<MapCallbackEvent> callback) {
         eventCallbacks.add(callback);
     }
 
-    public void removeEventCallback(Consumer<MapCallbackEvent> callback) {
+    public void removeEventCallback(final Consumer<MapCallbackEvent> callback) {
         eventCallbacks.remove(callback);
     }
 
@@ -184,7 +183,7 @@ public class LeafletMap {
         return icons.size();
     }
 
-    public void attach(Pane parent) {
+    public void attach(final Pane parent) {
         if (parent != null) {
             if (this.parent != null && webView != null) {
                 this.parent.getChildren().remove(webView);
@@ -208,7 +207,7 @@ public class LeafletMap {
         }
     }
 
-    public void addLayer(WMSLayerDescriptor layer) {
+    public void addLayer(final WMSLayerDescriptor layer) {
         if (layer != null) {
             layers.add(layer);
             if (mapReady.get()) {
@@ -217,9 +216,9 @@ public class LeafletMap {
         }
     }
 
-    public void addLayerToMap(WMSLayerDescriptor layer) {
+    public void addLayerToMap(final WMSLayerDescriptor layer) {
         Platform.runLater(() -> {
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder();
 
             sb.append("layerControl.addOverlay(");
             sb.append("L.tileLayer.wms('");
@@ -238,14 +237,14 @@ public class LeafletMap {
         });
     }
 
-    public boolean addIcon(Icon icon) {
+    public boolean addIcon(final Icon icon) {
         if (mapReady.get()) {
             addIconsToMap(Collections.singleton(icon));
         }
         return icons.add(icon);
     }
 
-    public boolean removeIcon(Icon icon) {
+    public boolean removeIcon(final Icon icon) {
         if (mapReady.get()) {
             removeIconsFromMap(Collections.singleton(icon));
         }
@@ -253,14 +252,14 @@ public class LeafletMap {
         return icons.remove(icon);
     }
 
-    public void addIcons(Collection<Icon> icons) {
+    public void addIcons(final Collection<Icon> icons) {
         this.icons.addAll(icons);
         if (mapReady.get()) {
             addIconsToMap(icons);
         }
     }
 
-    public void removeIcons(Collection<Icon> icons) {
+    public void removeIcons(final Collection<Icon> icons) {
         this.icons.removeAll(icons);
         icons.forEach(icon -> callbackMap.remove(icon.getId()));
         if (mapReady.get()) {
@@ -268,11 +267,11 @@ public class LeafletMap {
         }
     }
 
-    private void addIconsToMap(Collection<? extends Icon> icons) {
-        List<? extends Icon> iconCollection = new ArrayList<>(icons);
+    private void addIconsToMap(final Collection<? extends Icon> icons) {
+        final List<? extends Icon> iconCollection = new ArrayList<>(icons);
         Platform.runLater(() -> {
-            StringBuilder sb = new StringBuilder();
-            for (Icon icon : iconCollection) {
+            final StringBuilder sb = new StringBuilder();
+            for (final Icon icon : iconCollection) {
                 sb.append(createJsIconRepresentation(icon));
                 if (icon.getIconSelectionCallback() != null) {
                     callbackMap.put(icon.getId(), icon.getIconSelectionCallback());
@@ -282,31 +281,31 @@ public class LeafletMap {
         });
     }
 
-    private void removeIconsFromMap(Collection<? extends Icon> icons) {
+    private void removeIconsFromMap(final Collection<? extends Icon> icons) {
         Platform.runLater(() -> icons.forEach(icon -> {
             webView.getEngine().executeScript("removeIcon(\"" + icon.getId() + "\");");
         }));
     }
 
-    public void addShape(GeoShape shape) {
+    public void addShape(final GeoShape shape) {
         if (mapReady.get()) {
             addShapesToMap(Collections.singleton(shape));
         }
         shapes.add(shape);
     }
 
-    public void removeShape(GeoShape shape) {
+    public void removeShape(final GeoShape shape) {
         if (mapReady.get()) {
             removeShapesFromMap(Collections.singleton(shape));
         }
         shapes.remove(shape);
     }
 
-    private void addShapesToMap(Collection<? extends GeoShape> shapes) {
-        List<? extends GeoShape> shapeCollection = new ArrayList<>(shapes);
+    private void addShapesToMap(final Collection<? extends GeoShape> shapes) {
+        final List<? extends GeoShape> shapeCollection = new ArrayList<>(shapes);
         Platform.runLater(() -> {
-            StringBuilder sb = new StringBuilder();
-            for (GeoShape shape : shapeCollection) {
+            final StringBuilder sb = new StringBuilder();
+            for (final GeoShape shape : shapeCollection) {
                 sb.append(createJsShapeRepresentation(shape));
             }
             webView.getEngine().executeScript(sb.toString());
@@ -317,18 +316,18 @@ public class LeafletMap {
         Platform.runLater(() -> webView.getEngine().executeScript("fitViewToActiveShapes();"));
     }
 
-    private void removeShapesFromMap(Collection<? extends GeoShape> shapes) {
+    private void removeShapesFromMap(final Collection<? extends GeoShape> shapes) {
         Platform.runLater(() -> shapes.forEach(shape -> {
             webView.getEngine().executeScript("removeShape(\"" + shape.getId() + "\");");
         }));
     }
 
-    private String createJsShapeRepresentation(GeoShape shape) {
+    private String createJsShapeRepresentation(final GeoShape shape) {
         //TODO: Encapsulate this better...
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         if (shape instanceof Line) {
-            Line line = (Line) shape;
+            final Line line = (Line) shape;
             sb.append("if (!markers.has(\"");
             sb.append(line.getId());
             sb.append("\")) {");
@@ -355,9 +354,9 @@ public class LeafletMap {
         return sb.toString();
     }
 
-    private String createJsIconRepresentation(Icon icon) {
+    private String createJsIconRepresentation(final Icon icon) {
         //TODO: Encapsulate this better...
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         sb.append("if (!markers.has(\"");
         sb.append(icon.getId());
@@ -398,13 +397,23 @@ public class LeafletMap {
         return sb.toString();
     }
 
-    private String addCallbacks(String id, String name) {
-        return ".on('click', function() { iconCallbackHandler.accept(true, \"" + id + "\"); }).bindPopup('" + name + "').on('popupclose', function() { iconCallbackHandler.accept(false, \"" + id
-                + "\"); }).on('mouseover', function() { if (\"" + id + "\" !== mouseoverIconId) { mouseoverIconId = \"" + id + "\"; }}).on('mouseout', function() { if (\"" + id
+    private String addCallbacks(final String id, final String name) {
+        return ".on('click', function() { iconCallbackHandler.accept(true, \""
+                + id
+                + "\"); }).bindPopup('"
+                + name
+                + "').on('popupclose', function() { iconCallbackHandler.accept(false, \""
+                + id
+                + "\"); }).on('mouseover', function() { if (\""
+                + id
+                + "\" !== mouseoverIconId) { mouseoverIconId = \""
+                + id
+                + "\"; }}).on('mouseout', function() { if (\""
+                + id
                 + "\" === mouseoverIconId) { mouseoverIconId = null; }})";
     }
 
-    private String getTriangleStyle(IconStyles style) {
+    private String getTriangleStyle(final IconStyles style) {
         String jsonStyle;
         switch (style) {
         case FOCUSED:
@@ -421,7 +430,7 @@ public class LeafletMap {
         return jsonStyle;
     }
 
-    private String getCircleStyle(IconStyles style) {
+    private String getCircleStyle(final IconStyles style) {
         String jsonStyle;
         switch (style) {
         case FOCUSED:
@@ -446,17 +455,17 @@ public class LeafletMap {
         return (String) webView.getEngine().executeScript("getSvgLayer();");
     }
 
-    public void fitToBounds(GeoBox bounds) {
+    public void fitToBounds(final GeoBox bounds) {
         webView.getEngine().executeScript("fitBounds([[" + bounds.getMinX() + "," + bounds.getMinY() + "], [" + bounds.getMaxX() + "," + bounds.getMaxY() + "]]);");
     }
 
     public GeoBox getMapBounds() {
         GeoBox bounds;
         try {
-            Double mapXne = (Double) webView.getEngine().executeScript("getMapBoundXne();");
-            Double mapYne = (Double) webView.getEngine().executeScript("getMapBoundYne();");
-            Double mapXsw = (Double) webView.getEngine().executeScript("getMapBoundXsw();");
-            Double mapYsw = (Double) webView.getEngine().executeScript("getMapBoundYsw();");
+            final Double mapXne = (Double) webView.getEngine().executeScript("getMapBoundXne();");
+            final Double mapYne = (Double) webView.getEngine().executeScript("getMapBoundYne();");
+            final Double mapXsw = (Double) webView.getEngine().executeScript("getMapBoundXsw();");
+            final Double mapYsw = (Double) webView.getEngine().executeScript("getMapBoundYsw();");
             bounds = new GeoBox(mapXne, mapYne, mapXsw, mapYsw);
         } catch (ClassCastException | NullPointerException e) {
             bounds = null;
@@ -465,7 +474,7 @@ public class LeafletMap {
         return bounds;
     }
 
-    public void setShowOverlay(boolean showOverlay) {
+    public void setShowOverlay(final boolean showOverlay) {
         if (showOverlay) {
             webView.getEngine().executeScript("showOverlay();");
         } else {
@@ -481,7 +490,7 @@ public class LeafletMap {
         return (String) webView.getEngine().executeScript("getPolygonGeoJSON();");
     }
 
-    public void setPolygonGeoJSON(String geoJSON) {
+    public void setPolygonGeoJSON(final String geoJSON) {
         webView.getEngine().executeScript("setPolygonGeoJSON('" + geoJSON + "');");
     }
 }

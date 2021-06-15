@@ -1,0 +1,25 @@
+body,html{
+    margin: 0;
+    padding: 0;
+}
+#container{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.plot{
+    width: 100vw;
+    height: 100vh;
+    margin-bottom: 0px;
+    vertical-align: top;    
+}
+
+/* This drops the endpoint selectors one the vertical line edit to stop users rotating it around during edit mode.
+    You may need to make this more specific if you add more editing options to the charts. */
+.outline-controllers .cursor-grab {
+    fill: transparent !important;
+    stroke: transparent !important;
+    pointer-events: none !important;
+}

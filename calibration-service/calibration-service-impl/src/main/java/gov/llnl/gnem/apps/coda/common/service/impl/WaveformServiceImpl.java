@@ -44,7 +44,7 @@ import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 @Service
 public class WaveformServiceImpl implements WaveformService {
 
-    private WaveformRepository waveformRepository;    
+    private WaveformRepository waveformRepository;
     private NotificationService notificationService;
     private ExampleMatcher ignoreStandardFieldsMatcher = ExampleMatcher.matching().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
 
@@ -215,6 +215,11 @@ public class WaveformServiceImpl implements WaveformService {
     }
 
     @Override
+    public List<Waveform> getActiveSharedEventStationStacksById(Long id) {
+        return waveformRepository.findAllActiveSharedEventStationStacksById(id);
+    }
+
+    @Override
     public List<Waveform> getByExampleAllDistinctMatching(Waveform waveform) {
         return Optional.ofNullable(waveformRepository.findAll(Example.of(waveform, ignoreStandardFieldsMatcher))).orElseGet(ArrayList::new).stream().distinct().collect(Collectors.toList());
     }
@@ -263,4 +268,5 @@ public class WaveformServiceImpl implements WaveformService {
         }
         return ids;
     }
+
 }

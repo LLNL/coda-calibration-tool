@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="https://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.11.1</version>
+		<version>1.0.12</version>
 	</parent>
 
 	<artifactId>calibration-gui</artifactId>
@@ -200,11 +198,15 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>${maven.compile.source}</source>
-					<target>${maven.compile.target}</target>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -242,27 +244,22 @@
 						</goals>
 						<configuration>
 							<transformers>
-								<transformer
-										implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
+								<transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
 									<resource>META-INF/spring.handlers</resource>
 								</transformer>
-								<transformer
-										implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
+								<transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
 									<resource>META-INF/spring.factories</resource>
 								</transformer>
-								<transformer
-										implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
+								<transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
 									<resource>META-INF/spring.schemas</resource>
 								</transformer>
 								<transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
-                 					<resource>META-INF/spring.tooling</resource>								
-								</transformer>	
-								<transformer
-										implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-								<transformer
-										implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<resource>META-INF/spring.tooling</resource>
+								</transformer>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<manifestEntries>
-                   				 		<Main-Class>org.springframework.boot.loader.JarLauncher</Main-Class>		
+										<Main-Class>org.springframework.boot.loader.JarLauncher</Main-Class>
 										<Start-Class>gov.llnl.gnem.apps.coda.calibration.gui.GuiApplication</Start-Class>
 									</manifestEntries>
 								</transformer>
@@ -273,11 +270,11 @@
 				<configuration>
 					<filters>
 						<filter>
-							<artifact>*:*</artifact>	
+							<artifact>*:*</artifact>
 							<excludes>
 								<exclude>**/module-info.*</exclude>
 							</excludes>
-						</filter>					
+						</filter>
 						<filter>
 							<!-- filter out signature files from signed dependencies, else repackaging fails with security ex -->
 							<artifact>*:*</artifact>
@@ -286,13 +283,13 @@
 								<exclude>META-INF/*.DSA</exclude>
 								<exclude>META-INF/*.RSA</exclude>
 							</excludes>
-						</filter>						
-					</filters>				
+						</filter>
+					</filters>
 					<shadedArtifactAttached>true</shadedArtifactAttached>
-              		<shadedClassifierName>runnable</shadedClassifierName>
+					<shadedClassifierName>runnable</shadedClassifierName>
 					<createDependencyReducedPom>false</createDependencyReducedPom>
 				</configuration>
-			</plugin>			
+			</plugin>
 		</plugins>
 	</build>
 </project>

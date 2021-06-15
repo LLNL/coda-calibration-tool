@@ -1,12 +1,12 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -20,10 +20,6 @@ import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.util.seriesMathHelpers.DiscontinuityCollection;
 import llnl.gnem.core.util.seriesMathHelpers.MinMax;
 
-/**
- *
- * @author addair1
- */
 public interface SeismicSignal {
 
     /**
@@ -32,12 +28,12 @@ public interface SeismicSignal {
      * @param value
      *            The scalar value to be added to the time series
      */
-    void AddScalar(double value);
+    public void AddScalar(double value);
 
     /**
      * Replaces each point in this Seismogram with its log10 value.
      */
-    void Log10();
+    public void Log10();
 
     /**
      * Multiply the time series values of this CssSeismogram by a scalar
@@ -46,17 +42,17 @@ public interface SeismicSignal {
      * @param value
      *            The scalar value with which to multiply the time series values
      */
-    void MultiplyScalar(double value);
+    public void MultiplyScalar(double value);
 
     /**
      * Remove the mean of the time series of this CssSeismogram
      */
-    void RemoveMean();
+    public void RemoveMean();
 
     /**
      * Remove the median value of the time series of this CssSeismogram
      */
-    void RemoveMedian();
+    public void RemoveMedian();
 
     /**
      * Replaces each point in the Seismogram its signed sqrt
@@ -64,7 +60,7 @@ public interface SeismicSignal {
      * </p>
      * Note: values LT 0 are returned -1* sqrt(abs(value)).
      */
-    void SignedSqrt();
+    public void SignedSqrt();
 
     /**
      * Replaces each point in the Seismogram its signed square value
@@ -72,12 +68,12 @@ public interface SeismicSignal {
      * </p>
      * Note: values LT 0 are returned -1* value*value.
      */
-    void SignedSquare();
+    public void SignedSquare();
 
     /**
      * Convert to single bit (+1, -1 or 0)
      */
-    void Signum();
+    public void Signum();
 
     /**
      * Smooth the Seismogram using a sliding window of width halfWidth. replaces
@@ -89,7 +85,7 @@ public interface SeismicSignal {
      * @param halfwidth
      *            half width in samples.
      */
-    void Smooth(int halfwidth);
+    public void Smooth(int halfwidth);
 
     /**
      * Replaces each point in the Seismogram with its sqrt
@@ -97,12 +93,12 @@ public interface SeismicSignal {
      * </p>
      * Note: values LT 0 are returned 0.
      */
-    void Sqrt();
+    public void Sqrt();
 
     /**
      * Replaces each point in the Seismogram with its square value
      */
-    void Square();
+    public void Square();
 
     /**
      * Apply a cosine taper to the time series of this seismogram
@@ -115,11 +111,11 @@ public interface SeismicSignal {
      *            the center value of the CssSeismogram will be scaled by some
      *            value less than 1.0.
      */
-    void Taper(double TaperPercent);
+    public void Taper(double TaperPercent);
 
-    double computeExtremeStat();
+    public double computeExtremeStat();
 
-    boolean contains(Epoch epoch, boolean allowGaps);
+    public boolean contains(Epoch epoch, boolean allowGaps);
 
     /**
      * Differentiate the time series of this CssSeismogram. First two points are
@@ -129,11 +125,11 @@ public interface SeismicSignal {
      * 397 - 399 of Applied Numerical Methods for Digital Computation by James
      * et al. ) Must be at least 4 points in series for this to work.
      */
-    void differentiate();
+    public void differentiate();
 
-    void filter(double lc, double hc);
+    public void filter(double lc, double hc);
 
-    void filter(double lc, double hc, boolean twoPass);
+    public void filter(double lc, double hc, boolean twoPass);
 
     /**
      * Apply a Butterworth filter to the time series data of this CssSeismogram.
@@ -156,41 +152,45 @@ public interface SeismicSignal {
      *            When true, the filter is applied in both forward and reverse
      *            directions to achieve zero-phase.
      */
-    void filter(int order, Passband passband, double cutoff1, double cutoff2, boolean two_pass);
+    public void filter(int order, Passband passband, double cutoff1, double cutoff2, boolean two_pass);
 
-    DiscontinuityCollection findDiscontinuities(int winLength, double factor);
+    public DiscontinuityCollection findDiscontinuities(int winLength, double factor);
 
-    double getDelta();
+    public double getDelta();
 
-    double getDistinctValueRatio(int numSamples);
+    public float[] getData();
+
+    public double getDistinctValueRatio(int numSamples);
 
     /**
      * Gets the endtime attribute of the CssSeismogram object
      *
      * @return The endtime value
      */
-    TimeT getEndtime();
+    public TimeT getEndtime();
 
-    Epoch getEpoch();
+    public Epoch getEpoch();
 
-    float getExtremum();
+    public float getExtremum();
 
-    int getIdentifier();
+    public String getIdentifier();
 
-    int getIndexForTime(double epochtime);
+    public void setIdentifier(String identifier);
 
-    int getJdate();
+    public int getIndexForTime(double epochtime);
 
-    int getLength();
+    public int getJdate();
 
-    double getLengthInSeconds();
+    public int getLength();
+
+    public double getLengthInSeconds();
 
     /**
      * Gets the maximum value of the time series of the CssSeismogram object
      *
      * @return The max value
      */
-    float getMax();
+    public float getMax();
 
     /**
      * Gets the maximum value of the series and the time offset it occurs at.
@@ -198,14 +198,14 @@ public interface SeismicSignal {
      * @return The (time offset at the max in seconds, the max value) of the
      *         series
      */
-    double[] getMaxTime();
+    public double[] getMaxTime();
 
     /**
      * Gets the mean value of the time series of the CssSeismogram object
      *
      * @return The mean value
      */
-    double getMean();
+    public double getMean();
 
     /**
      * Gets the median value of the time series of the CssSeismogram object
@@ -219,16 +219,16 @@ public interface SeismicSignal {
      *
      * @return The min value
      */
-    float getMin();
+    public float getMin();
 
-    int getNsamp();
+    public int getNsamp();
 
     /**
      * Gets the Nyquist Frequency of the CssSeismogram
      *
      * @return The nyquistFreq value
      */
-    double getNyquistFreq();
+    public double getNyquistFreq();
 
     /**
      * Gets the peakToPeakAmplitude attribute of the CssSeismogram's timeseries
@@ -241,27 +241,27 @@ public interface SeismicSignal {
      *            The period in seconds at which to compute the value.
      * @return The maximum Peak-To-Peak value for the entire seismogram.
      */
-    double getPeakToPeakAmplitude(double period);
+    public double getPeakToPeakAmplitude(double period);
 
-    int getPointsIn(TimeT start, TimeT end);
+    public int getPointsIn(TimeT start, TimeT end);
 
-    int getPointsIn(double timeRange);
+    public int getPointsIn(double timeRange);
 
-    double getPower();
+    public double getPower();
 
     /**
      * Gets the RMS value of the CssSeismogram's time series.
      *
      * @return The RMS value
      */
-    double getRMS();
+    public double getRMS();
 
     /**
      * Gets the range of the time series
      *
      * @return The statistical range for all values in the data
      */
-    double getRange();
+    public double getRange();
 
     /**
      * Gets the samprate attribute of the CssSeismogram object
@@ -275,32 +275,32 @@ public interface SeismicSignal {
      *
      * @return The segmentLength value
      */
-    double getSegmentLength();
+    public double getSegmentLength();
 
-    double getSnr(double pickEpochTime, double preSeconds, double postSeconds);
+    public double getSnr(double pickEpochTime, double preSeconds, double postSeconds);
 
-    double getSnr(double pickEpochTime, Epoch epoch, double preSeconds, double postSeconds);
+    public double getSnr(double pickEpochTime, Epoch epoch, double preSeconds, double postSeconds);
 
     /**
      * Gets the variance of the time series of the CssSeismogram object
      *
      * @return The variance value
      */
-    double getStDev();
+    public double getStDev();
 
     /**
      * Gets the sum of the time series values of this CssSeismogram
      *
      * @return The sum of the time series values
      */
-    double getSum();
+    public double getSum();
 
     /**
      * Gets the start time of the CssSeismogram as a TimeT object
      *
      * @return The time value
      */
-    TimeT getTime();
+    public TimeT getTime();
 
     /**
      * Gets the start time of the CssSeismogram as a double holding the epoch
@@ -308,7 +308,7 @@ public interface SeismicSignal {
      *
      * @return The CssSeismogram start epoch time value
      */
-    double getTimeAsDouble();
+    public double getTimeAsDouble();
 
     /**
      * Get the value at a specific point in time
@@ -317,18 +317,18 @@ public interface SeismicSignal {
      *            The time expressed as a double epoch time.
      * @return the value at the requested time
      */
-    float getValueAt(double epochtime);
+    public float getValueAt(double epochtime);
 
     /**
      * Gets the variance of the time series of the CssSeismogram object
      *
      * @return The variance value
      */
-    double getVariance();
+    public double getVariance();
 
-    boolean isEmpty();
+    public boolean isEmpty();
 
-    void normalize();
+    public void normalize();
 
     /**
      * Computed the median in O(n) time in contrast to standard O(n lg n) time.
@@ -338,7 +338,7 @@ public interface SeismicSignal {
      *
      * @return The median or pseudo-median for even length series
      */
-    double quickMedian();
+    public double quickMedian();
 
     /**
      * remove glitches from the seismogram where glitches are defined by data
@@ -351,28 +351,48 @@ public interface SeismicSignal {
      * @param Threshhold
      *            - the threshhold value
      */
-    void removeGlitches(double Threshhold);
+    public void removeGlitches(double Threshhold);
 
     /**
      * Remove a linear trend from the time series data of this CssSeismogram.
      */
-    void removeTrend();
+    public void removeTrend();
 
     /**
      * Reverse the data series. This method is used in cross correlation
      * routines. Note none of the times are being reset. The user must be
      * careful to understand the implications
      */
-    void reverse();
+    public void reverse();
 
-    void scaleTo(double min, double max);
+    public void scaleTo(double min, double max);
 
-    void setMaximumRange(double maxRange);
+    public void setMaximumRange(double maxRange);
 
-    void setSamprate(double samprate);
+    public void setSamprate(double samprate);
 
-    void triangleTaper(double taperPercent);
+    public void triangleTaper(double taperPercent);
 
-    MinMax getMinMax();
+    public MinMax getMinMax();
 
+    /**
+     * This method returns what the zero time offset of the series is for this
+     * segment. This should define where your time axis should set 0 at in the
+     * trace relative to the begin time of the segment.
+     *
+     * @return double Offset defining time in seconds that the segment should be
+     *         shifted.
+     */
+    public double getZeroTimeOffsetSeconds();
+
+    /**
+     * This method sets what the zero time offset of the series is for this
+     * segment. This should define where your time axis should set 0 at in the
+     * trace relative to the begin time of the segment.
+     *
+     * @param double
+     *            Offset defining time in seconds that the segment should be
+     *            shifted.
+     */
+    public void setZeroTimeOffsetSeconds(double zeroTimeOffsetSeconds);
 }

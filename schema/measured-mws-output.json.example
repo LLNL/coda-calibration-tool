@@ -11,7 +11,9 @@
             "apparentStressInMpa": 0.7,
             "refMw" : 3.3,
             "refApparentStressInMpa" : 0.7,
-            "dataCount": 123
+            "dataCount": 123,
+            "stationCount": 7,
+            "bandCoverage": 0.677
         }
     ]
 }

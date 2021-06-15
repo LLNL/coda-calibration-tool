@@ -14,7 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
-import llnl.gnem.core.gui.plotting.jmultiaxisplot.JMultiAxisPlot;
+import llnl.gnem.core.gui.swing.plotting.jmultiaxisplot.JMultiAxisPlot;
 
 public class CurveFitPlot extends JMultiAxisPlot {
 

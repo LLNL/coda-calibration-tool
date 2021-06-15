@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -48,7 +49,6 @@ public class WaveformPicksCollectionJsonController {
 
     @PostMapping(name = "create")
     public ResponseEntity<?> create(@Valid @RequestBody WaveformPick waveformPick, BindingResult result) {
-
         if (waveformPick.getId() != null || waveformPick.getVersion() != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
@@ -57,7 +57,7 @@ public class WaveformPicksCollectionJsonController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
 
-        WaveformPick newWaveformPick = getWaveformPickService().save(waveformPick);
+        WaveformPick newWaveformPick = waveformPickService.save(waveformPick);
         UriComponents showURI = WaveformPicksItemJsonController.showURI(newWaveformPick);
 
         return ResponseEntity.created(showURI.toUri()).build();
@@ -65,13 +65,17 @@ public class WaveformPicksCollectionJsonController {
 
     @PostMapping(value = "/batch", name = "createBatch")
     public ResponseEntity<?> createBatch(@Valid @RequestBody Collection<WaveformPick> waveformPicks, BindingResult result) {
-
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
 
-        getWaveformPickService().save(waveformPicks);
+        waveformPickService.save(waveformPicks);
+        return ResponseEntity.ok().build();
+    }
 
+    @GetMapping(value = "/clear-autopicks", name = "clearAutopicks")
+    public ResponseEntity<?> clearAutopicks() {
+        waveformPickService.clearAutopicks();
         return ResponseEntity.ok().build();
     }
 
@@ -82,7 +86,7 @@ public class WaveformPicksCollectionJsonController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
 
-        getWaveformPickService().save(waveformPicks);
+        waveformPickService.save(waveformPicks);
 
         return ResponseEntity.ok().build();
     }
@@ -90,7 +94,7 @@ public class WaveformPicksCollectionJsonController {
     @DeleteMapping(value = "/batch/{ids}", name = "deleteBatch")
     public ResponseEntity<Void> deleteBatch(@PathVariable("ids") Collection<Long> ids) {
 
-        getWaveformPickService().delete(ids);
+        waveformPickService.delete(ids);
 
         return ResponseEntity.ok().build();
     }

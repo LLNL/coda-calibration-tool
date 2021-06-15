@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -25,14 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-
-import javax.swing.SwingUtilities;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -43,8 +42,8 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
-import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.ParamExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
@@ -62,11 +61,14 @@ import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.application.Platform;
-import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXML;
+import javafx.geometry.Point2D;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
-import llnl.gnem.core.gui.plotting.plotobject.Symbol;
+import llnl.gnem.core.gui.plotting.api.Axis;
+import llnl.gnem.core.gui.plotting.api.Axis.TickFormat;
+import llnl.gnem.core.gui.plotting.api.PlotFactory;
+import llnl.gnem.core.gui.plotting.plotly.BasicAxis;
 import reactor.core.scheduler.Schedulers;
 
 @Component
@@ -74,18 +76,18 @@ public class MeasuredMwsController extends AbstractMeasurementController {
 
     private static final Logger log = LoggerFactory.getLogger(MeasuredMwsController.class);
 
-    private static final String X_AXIS_LABEL = "center freq";
+    private static final String X_AXIS_LABEL = "center freq (Hz)";
 
-    private static final String displayName = "Measured_Mws";
+    private static final String DISPLAY_NAME = "Measured_Mws";
 
-    private CalibrationClient calibrationClient;
-    private ParamExporter paramExporter;
+    private final CalibrationClient calibrationClient;
+    private final ParamExporter paramExporter;
 
-    private Map<String, List<Spectra>> fitSpectra = new HashMap<>();
+    private final Map<String, List<Spectra>> fitSpectra = new HashMap<>();
     private ProgressGui progressGui;
 
-    private ThreadPoolExecutor exec = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
-        Thread thread = new Thread(r);
+    private final ThreadPoolExecutor exec = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
+        final Thread thread = new Thread(r);
         thread.setName("MeasureMwController");
         thread.setDaemon(true);
         return thread;
@@ -95,16 +97,17 @@ public class MeasuredMwsController extends AbstractMeasurementController {
     private StackPane measuredMws;
 
     @FXML
-    private SwingNode spectraPlotSwingNode;
+    private StackPane spectraPlotPane;
 
-    private List<MeasuredMwDetails> mwDetails = new ArrayList<>();
+    private final List<MeasuredMwDetails> mwDetails = new ArrayList<>();
 
     private MeasuredMwReportByEvent mfs = new MeasuredMwReportByEvent();
 
     @Autowired
-    private MeasuredMwsController(SpectraClient spectraClient, ParameterClient paramClient, WaveformClient waveformClient, SymbolStyleMapFactory styleFactory, GeoMap map,
-            MapPlottingUtilities iconFactory, EventBus bus, ParamExporter paramExporter, CalibrationClient calibrationClient, EventClient referenceEventClient) {
-        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, bus);
+    private MeasuredMwsController(final SpectraClient spectraClient, final ParameterClient paramClient, final WaveformClient waveformClient, final SymbolStyleMapFactory styleFactory, final GeoMap map,
+            final MapPlottingUtilities iconFactory, final EventBus bus, final ParamExporter paramExporter, final CalibrationClient calibrationClient, final EventClient referenceEventClient,
+            final PlotFactory plotFactory) {
+        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, plotFactory, bus);
         this.calibrationClient = calibrationClient;
         this.paramExporter = paramExporter;
     }
@@ -115,7 +118,7 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         spectraPlotPanel = measuredMws;
         super.initialize();
 
-        ProgressMonitor pm = new ProgressMonitor("Measuring Mws", new ProgressListener() {
+        final ProgressMonitor pm = new ProgressMonitor("Measuring Mws", new ProgressListener() {
             @Override
             public double getProgress() {
                 return -1d;
@@ -127,36 +130,35 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         progressGui.initModality(Modality.NONE);
         progressGui.setAlwaysOnTop(true);
 
-        SwingUtilities.invokeLater(() -> {
-            final SpectraPlotController spectra = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
-            SpectralPlot plot = spectra.getSpectralPlot();
-            plot.addPlotObjectObserver(getPlotpointObserver(() -> spectra.getSymbolMap()));
-            plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
-            plot.setYaxisVisibility(true);
-            spectra.setShowCornerFrequencies(true);
-            spectra.setYAxisResizable(true);
-            spectraPlotSwingNode.setContent(plot);
+        final SpectraPlotController spectra = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
+        final SpectralPlot plot = spectra.getSpectralPlot();
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(spectra::getSpectraMeasurementMap));
+        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
+        final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
+        rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
+        plot.getSubplot().addAxes(rightAxis);
+        spectra.setShowCornerFrequencies(true);
+        spectra.setYAxisResizable(true);
+        spectra.setShouldShowFits(true);
+        spectraPlotPane.getChildren().add(plot);
 
-            spectraPlotSwingNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, menuHideHandler);
-            spectraControllers.add(spectra);
-        });
+        spectraControllers.add(spectra);
     }
 
     @Override
     protected String getDisplayName() {
-        return displayName;
+        return DISPLAY_NAME;
     }
 
     @Override
     protected List<Spectra> getFitSpectra() {
-        List<Spectra> spectra = new ArrayList<>(fitSpectra.get(evidCombo.getSelectionModel().getSelectedItem()));
-        return spectra;
+        return new ArrayList<>(fitSpectra.get(evidCombo.getSelectionModel().getSelectedItem()));
     }
 
     @Override
-    protected void setActive(List<Waveform> waveforms, List<Symbol> plotObjects, boolean active, BiConsumer<List<Symbol>, Boolean> activationFunc) {
-        waveformClient.setWaveformsActiveByIds(waveforms.stream().peek(w -> w.setActive(active)).map(w -> w.getId()).collect(Collectors.toList()), active)
-                      .subscribe(s -> activationFunc.accept(plotObjects, active));
+    protected void setActive(final Set<Waveform> waveforms, final List<Point2D> points, final boolean active, final BiConsumer<List<Point2D>, Boolean> activationFunc) {
+        waveformClient.setWaveformsActiveByIds(waveforms.stream().map(w -> w.setActive(active)).map(Waveform::getId).collect(Collectors.toList()), active)
+                      .subscribe(s -> activationFunc.accept(points, active));
     }
 
     @Override
@@ -166,21 +168,21 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         mwDetails.clear();
         mfs = calibrationClient.makeMwMeasurements(Boolean.TRUE)
                                .doOnError(err -> log.trace(err.getMessage(), err))
-                               .doFinally((s) -> Platform.runLater(() -> progressGui.hide()))
+                               .doFinally(s -> Platform.runLater(() -> progressGui.hide()))
                                .block(Duration.of(1000l, ChronoUnit.SECONDS));
         if (mfs != null) {
             fitSpectra.putAll(mfs.getFitSpectra());
 
-            List<MeasuredMwDetails> refEvs = referenceEventClient.getMeasuredEventDetails()
-                                                                 .filter(ev -> ev.getEventId() != null)
-                                                                 .collect(Collectors.toList())
-                                                                 .subscribeOn(Schedulers.boundedElastic())
-                                                                 .block(Duration.ofSeconds(10l));
-            Collection<MeasuredMwDetails> measMws = mfs.getMeasuredMwDetails().values();
+            final List<MeasuredMwDetails> refEvs = referenceEventClient.getMeasuredEventDetails()
+                                                                       .filter(ev -> ev.getEventId() != null)
+                                                                       .collect(Collectors.toList())
+                                                                       .subscribeOn(Schedulers.boundedElastic())
+                                                                       .block(Duration.ofSeconds(10l));
+            final Collection<MeasuredMwDetails> measMws = mfs.getMeasuredMwDetails().values();
 
             //Not terribly efficient but this list should never be huge so eh...
-            for (MeasuredMwDetails ref : refEvs) {
-                for (MeasuredMwDetails meas : measMws) {
+            for (final MeasuredMwDetails ref : refEvs) {
+                for (final MeasuredMwDetails meas : measMws) {
                     if (meas.getEventId().equals(ref.getEventId())) {
                         meas.setRefMw(ref.getRefMw());
                         meas.setRefApparentStressInMpa(ref.getRefApparentStressInMpa());
@@ -200,8 +202,8 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         try {
             progressGui.show();
             progressGui.toFront();
-            exec.submit(() -> super.reloadData());
-        } catch (RejectedExecutionException e) {
+            exec.submit(super::reloadData);
+        } catch (final RejectedExecutionException e) {
             progressGui.hide();
         }
     }
@@ -211,25 +213,25 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         return mfs.getSpectraMeasurements()
                   .values()
                   .stream()
-                  .flatMap(x -> x.stream())
+                  .flatMap(List::stream)
                   .filter(Objects::nonNull)
                   .filter(spectra -> spectra.getWaveform() != null && spectra.getWaveform().getEvent() != null && spectra.getWaveform().getStream() != null)
-                  .map(md -> new SpectraMeasurement(md))
+                  .map(SpectraMeasurement::new)
                   .collect(Collectors.toList());
     }
 
     public void exportMws() {
         Platform.runLater(() -> {
-            File file = FileDialogs.openFileSaveDialog(getDisplayName(), ".json", spectraPlotPanel.getScene().getWindow());
+            final File file = FileDialogs.openFileSaveDialog(getDisplayName(), ".json", spectraPlotPanel.getScene().getWindow());
             if (file != null && FileDialogs.ensureFileIsWritable(file)) {
-                String filePath = file.getAbsolutePath();
+                final String filePath = file.getAbsolutePath();
                 paramExporter.writeMeasuredMws(Paths.get(FilenameUtils.getFullPath(filePath)), FilenameUtils.getName(filePath), mwParameters);
             }
         });
     }
 
     @Override
-    protected void runGuiUpdate(Runnable runnable) throws InvocationTargetException, InterruptedException {
+    protected void runGuiUpdate(final Runnable runnable) throws InvocationTargetException, InterruptedException {
         Platform.runLater(runnable);
     }
 

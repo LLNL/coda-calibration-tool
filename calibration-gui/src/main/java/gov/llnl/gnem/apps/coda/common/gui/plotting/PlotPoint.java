@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,23 +14,26 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.plotting;
 
-import java.awt.Color;
+import java.util.Objects;
 
-import llnl.gnem.core.gui.plotting.plotobject.SymbolStyle;
+import javafx.scene.paint.Color;
+import llnl.gnem.core.gui.plotting.api.SymbolStyles;
 
 public class PlotPoint {
 
     private Double x;
     private Double y;
-    private SymbolStyle style;
+    private SymbolStyles style;
     private Color color;
+    private Color edgeColor;
 
-    public PlotPoint(Double x, Double y, SymbolStyle style, Color color) {
+    public PlotPoint(Double x, Double y, SymbolStyles style, Color color, Color edgeColor) {
         super();
         this.x = x;
         this.y = y;
         this.style = style;
         this.color = color;
+        this.edgeColor = edgeColor;
     }
 
     public PlotPoint(PlotPoint pp) {
@@ -40,6 +43,7 @@ public class PlotPoint {
             this.y = pp.getY();
             this.style = pp.getStyle();
             this.color = pp.getColor();
+            this.edgeColor = pp.getEdgeColor();
         }
     }
 
@@ -65,11 +69,11 @@ public class PlotPoint {
         return this;
     }
 
-    public SymbolStyle getStyle() {
+    public SymbolStyles getStyle() {
         return style;
     }
 
-    public PlotPoint setStyle(SymbolStyle style) {
+    public PlotPoint setStyle(SymbolStyles style) {
         this.style = style;
         return this;
     }
@@ -83,15 +87,18 @@ public class PlotPoint {
         return this;
     }
 
+    public Color getEdgeColor() {
+        return edgeColor;
+    }
+
+    public PlotPoint setEdgeColor(Color edgeColor) {
+        this.edgeColor = edgeColor;
+        return this;
+    }
+
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((color == null) ? 0 : color.hashCode());
-        result = prime * result + ((style == null) ? 0 : style.hashCode());
-        result = prime * result + ((x == null) ? 0 : x.hashCode());
-        result = prime * result + ((y == null) ? 0 : y.hashCode());
-        return result;
+        return Objects.hash(color, edgeColor, style, x, y);
     }
 
     @Override
@@ -99,43 +106,15 @@ public class PlotPoint {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof PlotPoint)) {
             return false;
         }
         PlotPoint other = (PlotPoint) obj;
-        if (color == null) {
-            if (other.color != null) {
-                return false;
-            }
-        } else if (!color.equals(other.color)) {
-            return false;
-        }
-        if (style != other.style) {
-            return false;
-        }
-        if (x == null) {
-            if (other.x != null) {
-                return false;
-            }
-        } else if (!x.equals(other.x)) {
-            return false;
-        }
-        if (y == null) {
-            if (other.y != null) {
-                return false;
-            }
-        } else if (!y.equals(other.y)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(color, other.color) && Objects.equals(edgeColor, other.edgeColor) && style == other.style && Objects.equals(x, other.x) && Objects.equals(y, other.y);
     }
 
     @Override
     public String toString() {
-        return "PlotPoint [x=" + x + ", y=" + y + ", style=" + style + ", color=" + color + "]";
+        return "PlotPoint [x=" + x + ", y=" + y + ", style=" + style + ", color=" + color + ", edgeColor=" + edgeColor + "]";
     }
-
 }

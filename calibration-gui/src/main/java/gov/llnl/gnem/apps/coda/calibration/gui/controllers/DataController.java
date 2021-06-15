@@ -92,6 +92,9 @@ public class DataController implements MapListeningController, RefreshableContro
 
     @FXML
     private TableColumn<Waveform, String> stationCol;
+    
+    @FXML
+    private TableColumn<Waveform, String> networkCol;
 
     @FXML
     private TableColumn<Waveform, String> eventCol;
@@ -250,6 +253,13 @@ public class DataController implements MapListeningController, RefreshableContro
                                                                                        .map(Stream::getStation)
                                                                                        .map(Station::getStationName)
                                                                                        .orElseGet(String::new)));
+        
+        networkCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x)
+                .map(CellDataFeatures::getValue)
+                .map(Waveform::getStream)
+                .map(Stream::getStation)
+                .map(Station::getNetworkName)
+                .orElseGet(String::new)));
 
         tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
         //Workaround for https://bugs.openjdk.java.net/browse/JDK-8095943, for now we just clear the selection to avoid dumping a stack trace in the logs and mucking up event bubbling

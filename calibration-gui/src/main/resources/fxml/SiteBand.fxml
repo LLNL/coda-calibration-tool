@@ -5,28 +5,21 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.StackPane?>
 
-<StackPane fx:id="siteBand" maxHeight="1.7976931348623157E308"
-	maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css"
-	xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.SiteBandController">
+<StackPane fx:id="siteBand" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.SiteBandController">
 	<children>
 		<ScrollPane fitToHeight="true" fitToWidth="true">
 			<content>
-				<TableView fx:id="codaSiteTableView"
-					tableMenuButtonVisible="true">
+				<TableView fx:id="codaSiteTableView" tableMenuButtonVisible="true">
 					<columns>
-						<TableColumn fx:id="stationCol" editable="false"
-							prefWidth="75.0" text="Station" />
+						<TableColumn fx:id="stationCol" editable="false" prefWidth="75.0" text="Station" />
+                  		<TableColumn fx:id="networkCol" editable="false" prefWidth="75.0" text="Network" visible="false" />
 						<TableColumn editable="false" prefWidth="75.0" text="Frequency">
 							<columns>
-								<TableColumn fx:id="siteLowFreqCol" editable="false"
-									prefWidth="75.0" text="Low" />
-								<TableColumn fx:id="siteHighFreqCol" editable="false"
-									prefWidth="75.0" text="High" />
+								<TableColumn fx:id="siteLowFreqCol" editable="false" prefWidth="75.0" text="Low" />
+								<TableColumn fx:id="siteHighFreqCol" editable="false" prefWidth="75.0" text="High" />
 							</columns>
 						</TableColumn>
-						<TableColumn fx:id="siteCorrectionCol" editable="false"
-							prefWidth="75.0" text="Site" />
+						<TableColumn fx:id="siteCorrectionCol" editable="false" prefWidth="75.0" text="Site" />
 					</columns>
 					<columnResizePolicy>
 						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

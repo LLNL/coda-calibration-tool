@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -26,6 +26,10 @@ public class NumberFormatFactory {
         super();
     }
 
+    public static NumberFormat oneDecimalMinimum() {
+        return new DecimalFormat("#.0#");
+    }
+    
     public static NumberFormat oneDecimalOneLeadingZero() {
         return new DecimalFormat("#0.0");
     }

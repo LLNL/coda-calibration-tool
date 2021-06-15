@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Plot</title>
+	<script src='plotly.min.js'></script>
+	<link rel='stylesheet' href='plotly.css' />
+</head>
+
+<body>
+	<div>
+		<div id='plot' class='plot'></div>
+	</div>
+	<script>
+		'use strict';
+
+		//Forces the second yaxis to plot if it has no data when added to the plot.
+		const blankTrace = {
+			y: [-1E30, +1E30],
+			yaxis: 'y2',
+			showlegend: false,
+			type: 'scatter',
+			mode: 'none',
+			opacity: 0
+		};
+
+		var quickDragInProgress = false;
+
+		//Monkey patch in more formats to the Plotly d3 object
+		let originalLocale = Plotly.PD3.locale;
+		Plotly.PD3.locale = (locale) => {
+			var result = originalLocale(locale);
+			let originalFormatter = result.numberFormat;
+			result.numberFormat = (format) => {
+				if (format === 'pow10') {
+					return (num) => {
+						return Math.pow(10, Number.parseFloat(num)).toFixed(2).toString();
+					}
+				}
+				else if (format === 'log10_dyne_cm_to_mw') {
+					return (num) => {
+						return ((2.0 / 3.0) * Number.parseFloat(num) - 10.73).toFixed(2).toString();
+					}
+				}
+				return originalFormatter(format);
+			};
+			return result;
+		};
+
+		var plotDiv = document.getElementById('plot');
+		var plotTitle;
+		var backgroundColor;
+
+		var data = [];
+
+		var layout_template = {
+			title: {
+				text: '',
+				font: {
+					size: 16
+				},
+				yanchor: 'bottom'
+			},
+			xaxis: {
+				zeroline: false,
+				linecolor: 'black',
+				linewidth: 2,
+				mirror: true
+			},
+			yaxis: {
+				zeroline: false,
+				linecolor: 'black',
+				linewidth: 2,
+				mirror: true
+			},
+			zaxis: {
+				zeroline: false
+			},
+			legend: {
+			}
+		};
+
+		var layout = Object.assign({}, layout_template);
+
+		var config = {
+			responsive: true,
+			displaylogo: false,
+			showTips: false,
+			modeBarButtonsToRemove: ['autoScale2d', 'autoScale3d', 'toImage']
+		};
+
+		var plotSelection = function (type, data) {
+			let validPoints = undefined;
+			for (var i = 0; i < data.points.length; i++) {
+				let point = data.points[i];
+				if (plotData != undefined && point.x != undefined
+					&& point.y != undefined) {
+					validPoints = validPoints || {};
+					validPoints.x = validPoints.x || [];
+					validPoints.y = validPoints.y || [];
+
+					validPoints.x.push(point.x);
+					validPoints.y.push(point.y);
+					if (point.xaxis != undefined) {
+						validPoints.screenX = validPoints.screenX || [];
+						validPoints.screenY = validPoints.screenY || [];
+
+						let screenX = point.xaxis.c2p(point.x);
+						let screenY = point.yaxis.c2p(point.y);
+
+						validPoints.screenX.push(screenX);
+						validPoints.screenY.push(screenY);
+					}
+				}
+			}
+			if (validPoints != undefined) {
+				plotData.fireSelectionEvent(type, JSON.stringify(validPoints));
+			}
+		};
+
+		var plotClick = function (data) {
+			switch (data.event.button) {
+				case 0:
+					plotSelection("left_click", data)
+					break
+				case 1:
+					//Middle mouse, ignoring this one
+					break
+				case 2:
+					plotSelection("right_click", data)
+					break
+			}
+		};
+
+		//For moving picks on click-drag instead of requiring the click, click-drag, click default behavior from Plotly
+		var drag = Plotly.PD3.behavior.drag();
+		drag.on("drag", function () {
+			// Its a little hacky but the start/end drag events aren't exposed by Plotly so we attach
+			// a handler to check for mousedown/drag events that intersect the bbox for our shape annotations here. 
+			// If we find one we fire a click event to start the edit and then put the mouse back in mouse-down so 
+			// they user goes straight to drag mode.
+			var xaxis = plotDiv._fullLayout.xaxis;
+			var yaxis = plotDiv._fullLayout.yaxis;
+
+			var plotSize = plotDiv._fullLayout._size;
+			var leftMargin = plotSize.l;
+			var topMargin = plotSize.t;
+			var plotWidth = plotSize.w;
+			var plotHeight = plotSize.h;
+			//Copy these so we don't have edits messing with the message handler
+			var xrange = Object.assign({}, xaxis.range);
+			var yrange = Object.assign({}, yaxis.range);
+
+			if (plotDiv._fullLayout._activeShapeIndex == undefined) {
+				quickDragInProgress = true;
+				//Widen the range a little since we don't need to be exact with pick moves. We ignore the Y axis for the same reason.
+				var x = Plotly.PD3.event.sourceEvent.clientX - leftMargin;
+				const dragElement = plotDiv.querySelector('.cursor-crosshair');
+				for (var j = 0; j < layout.shapes.length; j++) {
+					let shape = layout.shapes[j];
+					if (shape.editable && (x >= xaxis.c2p(shape.x0) - 5 && x <= xaxis.c2p(shape.x1) + 5)) {
+						plotDiv._fullLayout._activeShapeIndex = j;
+						break;
+					}
+				}
+			}
+
+			var xx = Plotly.PD3.event.sourceEvent.clientX - leftMargin;
+			var yy = Plotly.PD3.event.sourceEvent.clientY - topMargin;
+
+			var x = xaxis.p2c(xx);
+			var y = yaxis.p2c(yy);
+
+			var shape = layout.shapes[plotDiv._fullLayout._activeShapeIndex];
+
+			var shapeWidth = Math.abs(shape.x0 - shape.x1);
+			var shapeHeight = Math.abs(shape.y0 - shape.y1);
+
+			var dx = x - (shape.x1 + shape.x0) / 2.0;
+			var dy = y - (shape.y1 + shape.y0) / 2.0;
+
+			//TODO: For now we just skip axis without straightforward p2c conversions because we are only
+			// moving picklines. If/when we ever have other movable shapes this will need to be revised!
+
+			//We also clamp to the range of the current domain for usability purposes
+			if (shape.xref != 'paper' && shape.xref != 'domain') {
+				if (shape.x0 + dx < xrange[0]) {
+					shape.x0 = xrange[0];
+					shape.x1 = xrange[0] + shapeWidth;
+				}
+				else if (shape.x1 + dx > xrange[1]) {
+					shape.x0 = xrange[1] - shapeWidth;
+					shape.x1 = xrange[1];
+				}
+				else {
+					shape.x0 += dx;
+					shape.x1 += dx;
+				}
+			}
+			if (shape.yref != 'paper' && shape.yref != 'domain') {
+				if (shape.y0 + dy < yrange[0]) {
+					shape.y0 = yrange[0];
+					shape.y1 = yrange[0] + shapeWidth;
+				}
+				else if (shape.y1 + dy > yrange[1]) {
+					shape.y0 = yrange[1] - shapeWidth;
+					shape.y1 = yrange[1];
+				}
+				else {
+					shape.y0 += dy;
+					shape.y1 += dy;
+				}
+			}
+			Plotly.relayout(plotDiv, layout).then(attach);
+		});
+
+		drag.on("dragend", function () {
+			if (quickDragInProgress) {
+				quickDragInProgress = false;
+				var shape = layout.shapes[plotDiv._fullLayout._activeShapeIndex];
+				plotDiv._fullLayout._activeShapeIndex = undefined;
+				Plotly.relayout(plotDiv, layout).then(attach);
+				plotData.fireShapeMoveEvent(shape.name, shape.x0, shape.x1, shape.y0, shape.y1);
+			}
+			Plotly.PD3.selectAll(".shapelayer path").call(drag);
+		});
+
+		var attachPlotDivHandlers = function () {
+			plotDiv.on('plotly_click', plotClick);
+			plotDiv.on('plotly_selected', function (data) {
+				plotSelection("selection", data)
+			});
+			plotDiv.on('plotly_relayout', function (data) {
+				//Check if this was a shape movement event
+				let shapeMoved = Object.keys(data).some(i => { return i.startsWith('shapes') });
+				if (shapeMoved) {
+					for (var j = 0; j < layout.shapes.length; j++) {
+						let shape = layout.shapes[j];
+						if (shape.editable && data["shapes[" + j + "].x0"]) {
+							//These are in coordinate space for the axis FYI so you might need to translate them if you swap axis range space
+							plotData.fireShapeMoveEvent(shape.name, shape.x0, shape.x1, shape.y0, shape.y1);
+						}
+					}
+				}
+				if (Object.keys(data).some(i => { return i.startsWith('yaxis') })) {
+					try {
+						//Make sure we don't go into an infinite update loop
+						//Yes I know that this effectively resets a move on the right Y axis but for our use case right now (spectral plot)
+						// I'm not worried about it.
+						if (layout.yaxis2.range[0] != plotDiv._fullLayout.yaxis.range[0] || layout.yaxis2.range[1] != plotDiv._fullLayout.yaxis.range[1]) {
+							layout.yaxis2.range = [plotDiv._fullLayout.yaxis.range[0], plotDiv._fullLayout.yaxis.range[1]];
+							layout.yaxis2.autorange = false;
+							Plotly.relayout(plotDiv, layout).then(attach);
+						}
+					}
+					catch (err) {
+						//nop
+					}
+				}
+			});
+		};
+
+		Plotly.newPlot("plot", data, layout, config).then(attach);
+		attachPlotDivHandlers();
+
+		var attach = function (gd) {
+			Plotly.PD3.selectAll(".shapelayer path").call(drag);
+		};
+
+		var target = document.querySelector('body');
+		// Create an observer instance as a hack to listen for node mutations on body related to deselecting shapes.
+		// We need this because plotly only fires events for data and not layout shapes.
+		var observer = new MutationObserver(function (mutations) {
+			mutations.forEach(function (mutation) {
+				//We don't need to do this every time but these are rare enough we don't care about 
+				// performance implications of checking nodes and this is more generalizable.
+				Plotly.PD3.selectAll(".shapelayer path").call(drag);
+			});
+		});
+
+		// Configuration of the observer to trim down to just the event type of interest
+		var obsConfig = { attributes: true, childList: true, characterData: true };
+		observer.observe(target, obsConfig);
+
+		var updatePlot = function () {
+			if (plotData != undefined) {
+				layout = {};
+				Object.assign(layout, layout_template);
+				if (plotTitle !== undefined) {
+					layout.title.text = plotTitle.getText();
+					layout.title.font.size = plotTitle.getFontSize();
+				}
+				data = JSON.parse(plotData.getPlotDataJSON());
+				var layout_new = JSON.parse(plotData.getPlotLayoutJSON());
+				if (layout_new != null) {
+					Object.assign(layout, layout_new);
+				}
+
+				if (backgroundColor !== undefined) {
+					layout.plot_bgcolor = "\'rgba("
+						+ (backgroundColor.getRed() * 255) + ','
+						+ (backgroundColor.getGreen() * 255) + ','
+						+ (backgroundColor.getBlue() * 255) + ','
+						+ (backgroundColor.getOpacity() * 255) + ")\'";
+				}
+				try {
+					if (layout.yaxis2 && layout.yaxis2.side === 'right' && !data.includes(blankTrace)) {
+						blankTrace.y = [plotDiv._fullLayout.yaxis.range[0], plotDiv._fullLayout.yaxis.range[1]];
+						layout.yaxis2.range = plotDiv._fullLayout.yaxis.range;
+						//This trace is only here to force the secondary Y axis to show up if it exists.
+						data.push(blankTrace);
+						//Shove the legend over a little to support the right axis to try and avoid overlap
+						//Ideally we would calculate this some other way to get it pixel perfect but good enough for today
+						layout.legend.x = 1.1;
+					}
+				} catch (msg) {
+					//nop
+					//We are catching this because when the page first loads you might not have a layout object by the time you get here.
+					//Its a don't care right now because we will catch it on a relayout before the user sees it.
+				}
+				if (plotData.hasPersistentChanges()) {
+					Plotly.newPlot("plot", data, layout, config).then(attach);
+					attachPlotDivHandlers();
+				} else {
+					Plotly.react("plot", data, layout, config).then(attach);
+				}
+			}
+		};
+
+		var getSvg = function () {
+			let gd = document.getElementById("plot");
+			let oldWidth = gd._fullLayout.width;
+			let oldHeight = gd._fullLayout.height;
+			layout.width = oldWidth * 2;
+			layout.height = oldHeight * 2;
+			layout.autosize = false;
+			Plotly.react(gd, data, layout, config);
+			let svg = Plotly.Snapshot.toSVG(gd, {
+				format: 'svg'
+			});
+			layout.width = oldWidth;
+			layout.height = oldHeight;
+			layout.autosize = true;
+			Plotly.react(gd, data, layout, config).then(attach);
+			return svg;
+		};
+	</script>
+</body>
+
+</html>

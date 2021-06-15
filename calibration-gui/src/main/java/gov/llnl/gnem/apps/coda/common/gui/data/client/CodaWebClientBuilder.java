@@ -77,14 +77,14 @@ public class CodaWebClientBuilder {
     private WebclientConfig config;
     private static final Logger log = LoggerFactory.getLogger(CodaWebClientBuilder.class);
     private String websocketBase;
-    private String trustStoreName = "coda-truststore.jks";
+    private final String trustStoreName = "coda-truststore.jks";
 
     private final HostnameVerifier defaultHostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
-    private HostnameVerifier hostnameVerifier = (hostname, session) -> {
+    private final HostnameVerifier hostnameVerifier = (hostname, session) -> {
         if (hostname == null) {
             return false;
         }
-        boolean local = config.getBasePath().toLowerCase(Locale.ENGLISH).startsWith(hostname.toLowerCase(Locale.ENGLISH));
+        final boolean local = config.getBasePath().toLowerCase(Locale.ENGLISH).startsWith(hostname.toLowerCase(Locale.ENGLISH));
         if (!local) {
             return defaultHostnameVerifier.verify(hostname, session);
         }
@@ -92,9 +92,9 @@ public class CodaWebClientBuilder {
     };
     private SockJsClient sockJsClient;
     private StompSession stompSession;
-    private StompSessionHandlerAdapter frameHandler;
-    private ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread thread = new Thread(r);
+    private final StompSessionHandlerAdapter frameHandler;
+    private final ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+        final Thread thread = new Thread(r);
         thread.setName("Webclient-Retry");
         thread.setDaemon(true);
         thread.setName("Retry-Stomp-Thread");
@@ -103,9 +103,9 @@ public class CodaWebClientBuilder {
     private WebSocketStompClient stompClient;
     private SslEngineConfigurator sslEngineConfigurator;
     private ReactorClientHttpConnector connector;
-    private ExchangeStrategies strategies;
+    private final ExchangeStrategies strategies;
 
-    public CodaWebClientBuilder(EventBus bus, WebclientConfig config, StompSessionHandlerAdapter frameHandler, @Nullable ExchangeStrategies strategies) {
+    public CodaWebClientBuilder(final EventBus bus, final WebclientConfig config, final StompSessionHandlerAdapter frameHandler, @Nullable final ExchangeStrategies strategies) {
         this.config = config;
         this.strategies = strategies;
         bus.register(this);
@@ -114,9 +114,9 @@ public class CodaWebClientBuilder {
             config.getSubscriptions().add("/topic/status-events");
         }
         HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try (InputStream keyStore = classLoader.getResourceAsStream(trustStoreName)) {
-            SSLContext sc = SslUtils.initMergedSSLTrustStore(keyStore);
+            final SSLContext sc = SslUtils.initMergedSSLTrustStore(keyStore);
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
             sslEngineConfigurator = new SslEngineConfigurator(sc);
             sslEngineConfigurator.setHostnameVerifier(hostnameVerifier);
@@ -124,7 +124,7 @@ public class CodaWebClientBuilder {
             throw new IllegalStateException("Unable to load trust store.", e);
         }
         try (InputStream keyStore = classLoader.getResourceAsStream(trustStoreName)) {
-            SslContext sslContext = SslUtils.initMergedSSLTrustStore(() -> SslContextBuilder.forClient(), keyStore);
+            final SslContext sslContext = SslUtils.initMergedSSLTrustStore(SslContextBuilder::forClient, keyStore);
             connector = new ReactorClientHttpConnector(HttpClient.create().secure(t -> t.sslContext(sslContext)));
         } catch (IOException | GeneralSecurityException e) {
             throw new IllegalStateException("Unable to load trust store.", e);
@@ -134,11 +134,11 @@ public class CodaWebClientBuilder {
     @PostConstruct
     private void initialize() throws InterruptedException, ExecutionException {
         websocketBase = config.getWebsocketPrefix() + config.getBasePath() + config.getSocketPath();
-        ClientManager client = ClientManager.createClient();
+        final ClientManager client = ClientManager.createClient();
         client.getProperties().put(ClientProperties.SSL_ENGINE_CONFIGURATOR, sslEngineConfigurator);
-        StandardWebSocketClient standardClient = new StandardWebSocketClient(client);
+        final StandardWebSocketClient standardClient = new StandardWebSocketClient(client);
 
-        List<Transport> transports = new ArrayList<>(2);
+        final List<Transport> transports = new ArrayList<>(2);
         transports.add(new WebSocketTransport(standardClient));
         transports.add(new RestTemplateXhrTransport());
 
@@ -153,18 +153,23 @@ public class CodaWebClientBuilder {
     }
 
     @Subscribe
-    private void disconnectedListener(SocketDisconnectEvent evt) {
+    private void disconnectedListener(final SocketDisconnectEvent evt) {
         connectSocket();
     }
 
     private void connectSocket() {
         //Clear existing sessions if we have one
         if (stompSession != null && stompSession.isConnected()) {
-            stompSession.disconnect();
+            try {
+                stompSession.disconnect();
+            } catch (final RuntimeException ex) {
+                //Socket is likely closed, this should not be a fatal exception
+                log.trace(ex.getLocalizedMessage());
+            }
         }
 
         //TODO: Fire off connect/disconnect events for the UI to display to the user
-        FailsafeExecutor<StompSession> failsafe = Failsafe.with(new RetryPolicy<StompSession>().withBackoff(1l, 30l, ChronoUnit.SECONDS).withMaxRetries(-1));
+        final FailsafeExecutor<StompSession> failsafe = Failsafe.with(new RetryPolicy<StompSession>().withBackoff(1l, 30l, ChronoUnit.SECONDS).withMaxRetries(-1));
         failsafe.with(retryExecutor).onFailure(evt -> {
             log.trace("Attempting to connect to stomp: {}", evt);
         }).runAsync(r -> {
@@ -182,7 +187,7 @@ public class CodaWebClientBuilder {
     }
 
     public @Bean @Scope("prototype") WebClient getWebClient() {
-        Builder builder = WebClient.builder().clientConnector(connector).baseUrl(config.getHTTPPath());
+        final Builder builder = WebClient.builder().clientConnector(connector).baseUrl(config.getHTTPPath());
         if (strategies != null) {
             builder.exchangeStrategies(strategies);
         }

@@ -148,8 +148,8 @@ public class InjectedCalibrationShapeFitterConstraints {
 
     @Value("${shape-constraints.fittingPointCount:10000}")
     private int fittingPointCount;
-    
-    @Value("${shape-constraints.lengthWeight:0.2}")
+
+    @Value("${shape-constraints.lengthWeight:0.5}")
     private double lengthWeight;
 
     @Bean

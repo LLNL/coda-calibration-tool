@@ -540,9 +540,6 @@ public class ShapeFitterConstraints implements Serializable {
         if (other.getId() != null) {
             id = other.getId();
         }
-        if (other.getVersion() != null) {
-            version = other.getVersion();
-        }
         maxVP1 = other.getMaxVP1();
         minVP1 = other.getMinVP1();
         v0reg = other.getV0reg();

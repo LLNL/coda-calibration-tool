@@ -43,6 +43,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.calibration.repository.SharedFrequencyBandParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersFiService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersPsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
@@ -89,6 +90,9 @@ public class SiteCalibrationServiceImplTest {
 
     @Mock
     private ServiceConfig svcConf;
+    
+    @Mock
+    private SharedFrequencyBandParametersRepository sharedFrequencyBandParametersRepository;
 
     @InjectMocks
     private SiteCalibrationServiceImpl siteCalibrationServiceImpl;
@@ -97,7 +101,8 @@ public class SiteCalibrationServiceImplTest {
     protected void setUp() throws Exception {
         Mockito.when(mdac.getCalculateMdacSourceSpectraFunction(Mockito.any(), Mockito.any(), Mockito.anyDouble())).thenReturn(f -> new double[] { 1.0, 1.0, 1.0, 1.0 });
         Mockito.when(mdac.getCalculateMdacAmplitudeForMwFunction(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.any(), Mockito.anyDouble())).thenReturn(f -> Double.valueOf(1.0d));
-
+        Mockito.when(sharedFrequencyBandParametersRepository.findDistinctFrequencyBands()).thenReturn(new ArrayList<FrequencyBand>());
+        
         SpectraCalculator spectraCalc = new SpectraCalculator(converter, syntheticCodaModel, mdac, mdacFiService, mdacPsService, velConf);
         siteCalibrationServiceImpl.setSpectraCalc(spectraCalc);
         siteCalibrationServiceImpl.setServiceConfig(new ServiceConfig());

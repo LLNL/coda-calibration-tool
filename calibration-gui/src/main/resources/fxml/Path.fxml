@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.embed.swing.SwingNode?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
@@ -48,16 +47,16 @@
 				</HBox>
 				<SplitPane dividerPositions="0.5" VBox.vgrow="ALWAYS">
 					<items>
-								<StackPane>
-									<children>
-										<SwingNode fx:id="sdPlotSwingNode" />
-									</children>
-								</StackPane>
-								<StackPane>
-									<children>
-										<SwingNode fx:id="stationPlotSwingNode" />
-									</children>
-								</StackPane>
+						<StackPane>
+							<children>
+								<Pane fx:id="sdPlotPane" />
+							</children>
+						</StackPane>
+						<StackPane>
+							<children>
+								<Pane fx:id="stationPlotPane" />
+							</children>
+						</StackPane>
 					</items>
 				</SplitPane>
 			</children>

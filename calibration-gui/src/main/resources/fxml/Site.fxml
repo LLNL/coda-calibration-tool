@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.embed.swing.SwingNode?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
@@ -20,8 +19,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="site" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/11.0.1"
-	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController">
+<StackPane fx:id="sitePane" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController">
 	<children>
 		<VBox>
 			<children>
@@ -76,41 +74,15 @@
 												<Insets bottom="10.0" top="10.0" />
 											</padding>
 										</HBox>
-										<SplitPane dividerPositions="0.15" VBox.vgrow="ALWAYS">
+										<SplitPane dividerPositions="0.25" VBox.vgrow="ALWAYS">
 											<items>
-												<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
-													<content>
-														<TableView fx:id="iconTable" prefHeight="200.0" prefWidth="160.0">
-															<columns>
-																<TableColumn fx:id="iconCol" text="Icon" />
-																<TableColumn fx:id="stationCol" text="Station" />
-															</columns>
-														</TableView>
-													</content>
-												</ScrollPane>
-												<SplitPane dividerPositions="0.33" prefHeight="160.0" prefWidth="200.0">
+												<SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="160.0" prefWidth="200.0">
 													<items>
-														<SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="160.0" prefWidth="200.0">
-															<items>
-																<StackPane>
-																	<children>
-																		<SwingNode fx:id="rawPlotSwingNode" />
-																	</children>
-																</StackPane>
-																<StackPane>
-																	<children>
-																		<SwingNode fx:id="pathPlotSwingNode" />
-																	</children>
-																</StackPane>
-															</items>
-														</SplitPane>
-														<StackPane>
-															<children>
-																<SwingNode fx:id="sitePlotSwingNode" />
-															</children>
-														</StackPane>
+														<StackPane fx:id="rawPlotNode" />
+														<StackPane fx:id="pathPlotNode" />
 													</items>
 												</SplitPane>
+												<StackPane fx:id="sitePlotNode" />
 											</items>
 										</SplitPane>
 									</children>
@@ -127,18 +99,16 @@
 													<items>
 														<SplitPane dividerPositions="0.5" orientation="VERTICAL" VBox.vgrow="ALWAYS">
 															<items>
-																<ScrollPane fitToHeight="true" fitToWidth="true">
+																<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
 																	<content>
-																		<SwingNode fx:id="mwPlotSwingNode">
-																		</SwingNode>
+																		<StackPane fx:id="mwPlotPane" />
 																	</content>
 																</ScrollPane>
 															</items>
 															<items>
-																<ScrollPane fitToHeight="true" fitToWidth="true">
+																<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
 																	<content>
-																		<SwingNode fx:id="stressPlotSwingNode">
-																		</SwingNode>
+																		<StackPane fx:id="stressPlotPane" />
 																	</content>
 																</ScrollPane>
 															</items>
@@ -147,8 +117,7 @@
 													<items>
 														<ScrollPane fitToHeight="true" fitToWidth="true">
 															<content>
-																<SwingNode fx:id="sdPlotSwingNode">
-																</SwingNode>
+																<StackPane fx:id="sdPlotPane" SplitPane.resizableWithParent="false" />
 															</content>
 														</ScrollPane>
 													</items>
@@ -160,14 +129,17 @@
 														<TableView fx:id="eventTable" tableMenuButtonVisible="true">
 															<columns>
 																<TableColumn fx:id="evidCol" editable="false" prefWidth="100.0" text="Evid" />
+                                                				<TableColumn fx:id="stationCountCol" editable="false" prefWidth="75.0" text="Station Count" visible="false" />
+                                                				<TableColumn fx:id="bandCoverageCol" editable="false" prefWidth="75.0" text="Band Coverage" visible="false" />
+                                                				<TableColumn fx:id="dateCol" editable="false" prefWidth="150.0" text="Date" />
 																<TableColumn fx:id="measuredMwCol" editable="false" prefWidth="75.0" text="Mw" />
 																<TableColumn fx:id="measuredStressCol" editable="false" prefWidth="150.0" text="App.Stress (MPa)" />
 																<TableColumn fx:id="mwCol" editable="false" prefWidth="75.0" text="Ref Mw" />
 																<TableColumn fx:id="stressCol" editable="false" prefWidth="150.0" text="Ref Stress" />
 																<TableColumn fx:id="measuredCornerFreqCol" editable="false" prefWidth="150.0" text="Fc (Hz)" />
 																<TableColumn fx:id="mistfitCol" editable="false" prefWidth="150.0" text="Misfit" />
-																<TableColumn fx:id="valMwCol" editable="false" prefWidth="75.0" text="Val Mw" visible="false"/>
-																<TableColumn fx:id="valStressCol" editable="false" prefWidth="150.0" text="Val Stress" visible="false"/>
+																<TableColumn fx:id="valMwCol" editable="false" prefWidth="75.0" text="Val Mw" visible="false" />
+																<TableColumn fx:id="valStressCol" editable="false" prefWidth="150.0" text="Val Stress" visible="false" />
 																<TableColumn fx:id="iterationsCol" editable="false" prefWidth="150.0" text="Iterations" visible="false" />
 																<TableColumn fx:id="dataCountCol" editable="false" prefWidth="150.0" text="Data Count" visible="false" />
 																<TableColumn prefWidth="75.0" text="Mw UQ">

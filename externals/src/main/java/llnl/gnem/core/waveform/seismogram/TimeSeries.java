@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -47,17 +47,22 @@ import llnl.gnem.core.util.seriesMathHelpers.SampleStatistics.Order;
 import llnl.gnem.core.waveform.io.BinaryData;
 import llnl.gnem.core.waveform.merge.MergeException;
 
-/**
- * User: dodge1 Date: Mar 23, 2006
- */
 public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneable, SeismicSignal {
     private static final Logger log = LoggerFactory.getLogger(TimeSeries.class);
+    public static final double EPSILON = 0.0000001;
+    private static final int MIN_WINDOW_SAMPLES = 10;
+    private static final long serialVersionUID = 1L;
+
     private float[] data;
     private final Collection<Epoch> dataGaps; // TODO these are not being properly updated for in-place modifications
     private final Collection<TimeSeries.SeriesListener> listeners;
     private double samprate = 1.0;
     private SampleStatistics statistics;
     private TimeT time;
+    private double timeOffset;
+
+    private double allowableSampleRateError = 0.005;
+    private String identifier;
 
     /**
      * no-arg constructor only for Serialization
@@ -65,38 +70,37 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     public TimeSeries() {
         this.dataGaps = new ArrayList<>();
         this.listeners = new ArrayList<>();
+        this.timeOffset = 0.0;
     }
 
-    public TimeSeries(float[] data, double samprate, TimeT time) {
+    public TimeSeries(final float[] data, final double samprate, final TimeT time) {
         this(data, samprate, time, true);
     }
 
-    public TimeSeries(BinaryData data, double samprate, TimeT time) {
+    public TimeSeries(final BinaryData data, final double samprate, final TimeT time) {
         this(data.getFloatData(), samprate, time, false);
     }
 
-    public TimeSeries(TimeSeries s) {
+    public TimeSeries(final TimeSeries s) {
+        this.identifier = s.getIdentifier();
         data = s.data.clone();
         samprate = s.samprate;
         time = new TimeT(s.time);
         this.dataGaps = new ArrayList<>(s.dataGaps);
         listeners = new ArrayList<>(s.listeners);
         statistics = null;
+        this.timeOffset = s.getZeroTimeOffsetSeconds();
     }
 
-    private TimeSeries(float[] data, double samprate, TimeT time, boolean clone) {
+    private TimeSeries(final float[] data, final double samprate, final TimeT time, final boolean clone) {
         this.data = clone ? data.clone() : data;
         this.samprate = samprate;
         this.time = new TimeT(time);
         dataGaps = findDataGaps(data, time, samprate);
         listeners = new ArrayList<>();
         statistics = null;
+        timeOffset = 0.0;
     }
-
-    public static final double EPSILON = 0.0000001;
-    private static double ALLOWABLE_SAMPLE_RATE_ERROR = 0.005;
-    private static final int MIN_WINDOW_SAMPLES = 10;
-    private static final long serialVersionUID = 1L;
 
     /**
      * Gets the peakToPeakAmplitude attribute of an input timeseries at the
@@ -114,19 +118,19 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            The sample interval of the data in the data array.
      * @return The maximum Peak-To-Peak value for the array.
      */
-    public static double getPeakToPeakAmplitude(float[] data, double sampleInterval, double period) {
-        int N = data.length;
+    public static double getPeakToPeakAmplitude(final float[] data, final double sampleInterval, final double period) {
+        final int N = data.length;
         if (N < 1) {
             throw new IllegalArgumentException("Cannot compute PeakToPeak amplitude on empty array.");
         }
         double result = 0.0;
-        int SampsInWindow = (int) Math.round(period / sampleInterval) + 1;
-        int LastWindowStart = N - SampsInWindow;
+        final int SampsInWindow = (int) Math.round(period / sampleInterval) + 1;
+        final int LastWindowStart = N - SampsInWindow;
         if (LastWindowStart <= 0) {
             return getWindowPeakToPeak(data, 0, N);
         } else {
             for (int j = 0; j <= LastWindowStart; ++j) {
-                double p2p = getWindowPeakToPeak(data, j, SampsInWindow);
+                final double p2p = getWindowPeakToPeak(data, j, SampsInWindow);
                 if (p2p > result) {
                     result = p2p;
                 }
@@ -135,27 +139,27 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return result;
     }
 
-    public static <T extends TimeSeries> PairT<T, T> rotateTraces(T seis1, T seis2, double theta) {
-        float[] data1 = seis1.getData();
-        float[] data2 = seis2.getData();
+    public static <T extends TimeSeries> PairT<T, T> rotateTraces(final T seis1, final T seis2, final double theta) {
+        final float[] data1 = seis1.getData();
+        final float[] data2 = seis2.getData();
         SeriesMath.rotate(data1, data2, theta, true, true);
         seis1.setData(data1);
         seis2.setData(data2);
         return new PairT<>(seis1, seis2);
     }
 
-    public static void setSampleRateErrorThreshold(double value) {
-        ALLOWABLE_SAMPLE_RATE_ERROR = value;
+    public void setSampleRateErrorThreshold(final double value) {
+        allowableSampleRateError = value;
     }
 
-    private static Collection<Epoch> findDataGaps(float[] data, TimeT time, double samprate) {
-        Collection<Epoch> result = new ArrayList<>();
-        int minGapLength = 5;
+    private static Collection<Epoch> findDataGaps(final float[] data, final TimeT time, final double samprate) {
+        final Collection<Epoch> result = new ArrayList<>();
+        final int minGapLength = 5;
         boolean inGap = false;
         int gapStart = -1;
         int gapEnd = -1;
         for (int j = 0; j < data.length; ++j) {
-            float value = data[j];
+            final float value = data[j];
             if (value == 0.0f) {
                 if (!inGap) {
                     inGap = true;
@@ -177,7 +181,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     }
 
-    private static double getWindowPeakToPeak(float[] data, int idx, int Nsamps) {
+    private static double getWindowPeakToPeak(final float[] data, final int idx, final int Nsamps) {
         float min = Float.MAX_VALUE;
         float max = -min;
         for (int j = 0; j < Nsamps; ++j) {
@@ -191,22 +195,22 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return max - min;
     }
 
-    private static Epoch makeGapEpoch(TimeT time, double samprate, int gapStart, int gapEnd) {
-        double startOffset = gapStart / samprate;
-        double endOffset = gapEnd / samprate;
-        TimeT start = new TimeT(time.getEpochTime() + startOffset);
-        TimeT end = new TimeT(time.getEpochTime() + endOffset);
+    private static Epoch makeGapEpoch(final TimeT time, final double samprate, final int gapStart, final int gapEnd) {
+        final double startOffset = gapStart / samprate;
+        final double endOffset = gapEnd / samprate;
+        final TimeT start = new TimeT(time.getEpochTime() + startOffset);
+        final TimeT end = new TimeT(time.getEpochTime() + endOffset);
         return new Epoch(start, end);
     }
 
-    private static boolean merge(float[] data1, float[] data2, float[] newData, int destOffset, boolean ignoreMismatch) {
+    private static boolean merge(final float[] data1, final float[] data2, final float[] newData, final int destOffset, final boolean ignoreMismatch) {
         try {
             // First copy samples from the earlier-starting trace to the destination trace. Nothing to merge here.
-            int maxIdx = Math.min(destOffset, data2.length);
+            final int maxIdx = Math.min(destOffset, data2.length);
             System.arraycopy(data2, 0, newData, 0, maxIdx);
 
             // Now merge the overlapped portions...
-            int maxMergeIndexBound = Math.min(destOffset + data1.length, data2.length);
+            final int maxMergeIndexBound = Math.min(destOffset + data1.length, data2.length);
             for (int j = destOffset; j < maxMergeIndexBound; ++j) {
                 newData[j] = mergeSamples(data2[j], data1[j - destOffset], ignoreMismatch);
             }
@@ -216,31 +220,29 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
                 System.arraycopy(data2, maxMergeIndexBound, newData, maxMergeIndexBound, data2.length - maxMergeIndexBound);
             } else if (maxMergeIndexBound < data1.length + destOffset) {
                 for (int j = maxMergeIndexBound; j < data1.length + destOffset; ++j) {
-                    int idx = j - destOffset;
+                    final int idx = j - destOffset;
                     if (idx >= 0 && idx < data1.length && j < newData.length) {
                         newData[j] = data1[idx];
                     }
                 }
             }
             return true;
-        } catch (MergeException e) {
+        } catch (final MergeException e) {
             return false;
         }
     }
 
-    private static float mergeSamples(float value1, float value2, boolean ignoreMismatch) throws MergeException {
+    private static float mergeSamples(final float value1, final float value2, final boolean ignoreMismatch) throws MergeException {
         if (value1 == value2) {
             return value1;
         } else if (value1 == 0) {
             return value2;
         } else if (value2 == 0) {
             return value1;
+        } else if (ignoreMismatch) {
+            return (value1 + value2) / 2;
         } else {
-            if (ignoreMismatch) {
-                return (value1 + value2) / 2;
-            } else {
-                throw new MergeException(String.format("Overlapped data have different values (%f vs %f)!", value1, value2));
-            }
+            throw new MergeException(String.format("Overlapped data have different values (%f vs %f)!", value1, value2));
         }
     }
 
@@ -253,7 +255,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            the other SacSeismogram object
      * @return
      */
-    public boolean AddAlignedSeismogram(TimeSeries otherseis) {
+    public boolean AddAlignedSeismogram(final TimeSeries otherseis) {
         if (otherseis == null) {
             return false;
         }
@@ -262,16 +264,16 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
             return false;
         }
 
-        TimeT starttime = getTime();
-        TimeT endtime = getEndtime();
+        final TimeT starttime = getTime();
+        final TimeT endtime = getEndtime();
 
         try {
-            float[] otherdata = otherseis.getSubSection(starttime, endtime);
+            final float[] otherdata = otherseis.getSubSection(starttime, endtime);
 
             for (int ii = 0; ii < data.length; ii++) {
                 data[ii] = data[ii] + otherdata[ii];
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return false;
         }
 
@@ -286,7 +288,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            The scalar value to be added to the time series
      */
     @Override
-    public void AddScalar(double value) {
+    public void AddScalar(final double value) {
         SeriesMath.addScalar(data, value);
         onModify();
     }
@@ -300,7 +302,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            the other CssSeismogram object
      * @return Returns true if the operation was successful.
      */
-    public boolean AddSeismogram(TimeSeries otherseis) {
+    public boolean AddSeismogram(final TimeSeries otherseis) {
         if (!rateIsComparable(otherseis)) {
             return false;
         }
@@ -333,7 +335,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            The scalar value with which to multiply the time series values
      */
     @Override
-    public void MultiplyScalar(double value) {
+    public void MultiplyScalar(final double value) {
         SeriesMath.multiplyScalar(data, value);
         onModify();
     }
@@ -400,7 +402,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            half width in samples.
      */
     @Override
-    public void Smooth(int halfwidth) {
+    public void Smooth(final int halfwidth) {
         data = SeriesMath.meanSmooth(data, halfwidth);//TODO note the SeriesMath.MeanSmooth() method should replace data with the smoothed version, but this isn't happening. Fix
         onModify();
     }
@@ -438,12 +440,12 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            value less than 1.0.
      */
     @Override
-    public void Taper(double TaperPercent) {
+    public void Taper(final double TaperPercent) {
         SeriesMath.taper(data, TaperPercent);
         onModify();
     }
 
-    public void WriteASCIIfile(String filename) throws IOException {
+    public void WriteASCIIfile(final String filename) throws IOException {
         try (FileOutputStream out = new FileOutputStream(filename); BufferedOutputStream bout = new BufferedOutputStream(out); PrintStream pout = new PrintStream(bout);) {
             for (int j = 0; j < data.length; ++j) {
                 pout.println(String.valueOf((j / samprate)) + "   " + data[j]);
@@ -451,44 +453,39 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         }
     }
 
-    public TimeSeries add(TimeSeries other) {
-        TimeSeries.BivariateFunction f = new TimeSeries.BivariateFunction() {
-            @Override
-            public double eval(double x, double y) {
-                return x + y;
-            }
-        };
+    public TimeSeries add(final TimeSeries other) {
+        final TimeSeries.BivariateFunction f = (x, y) -> x + y;
         return intersect(other, f);
     }
 
-    public void addInPlace(TimeSeries other) {
+    public void addInPlace(final TimeSeries other) {
         if (!rateIsComparable(other)) {
-            String msg = String.format("Seismograms have different sample rates! (%s)  -  (%s)", this.toString(), other.toString());
+            final String msg = String.format("Seismograms have different sample rates! (%s)  -  (%s)", this.toString(), other.toString());
             throw new IllegalStateException(msg);
         }
-        double myStart = time.getEpochTime();
-        double otherStart = other.getTimeAsDouble();
-        double earliest = myStart < otherStart ? myStart : otherStart;
+        final double myStart = time.getEpochTime();
+        final double otherStart = other.getTimeAsDouble();
+        final double earliest = myStart < otherStart ? myStart : otherStart;
 
-        double myEnd = getEndtime().getEpochTime();
-        double otherEnd = other.getEndtime().getEpochTime();
-        double latest = myEnd > otherEnd ? myEnd : otherEnd;
+        final double myEnd = getEndtime().getEpochTime();
+        final double otherEnd = other.getEndtime().getEpochTime();
+        final double latest = myEnd > otherEnd ? myEnd : otherEnd;
 
-        double timeRange = latest - earliest;
+        final double timeRange = latest - earliest;
         long nsamps = Math.round(timeRange * samprate) + 1;
 
-        int myOffset = (int) Math.round((myStart - earliest) * getSamprate());
-        int myLast = myOffset + data.length - 1;
+        final int myOffset = (int) Math.round((myStart - earliest) * getSamprate());
+        final int myLast = myOffset + data.length - 1;
         if (myLast > nsamps - 1) {
             nsamps = myLast + 1l;
         }
-        int otherOffset = (int) Math.round((otherStart - earliest) * samprate);
+        final int otherOffset = (int) Math.round((otherStart - earliest) * samprate);
 
-        int otherLast = otherOffset + other.data.length - 1;
+        final int otherLast = otherOffset + other.data.length - 1;
         if (otherLast > nsamps - 1) {
             nsamps = otherLast + 1l;
         }
-        float[] result = new float[(int) nsamps];
+        final float[] result = new float[(int) nsamps];
         System.arraycopy(data, 0, result, myOffset, data.length);
         for (int j = 0; j < other.data.length; ++j) {
             result[j + otherOffset] += other.data[j];
@@ -498,42 +495,42 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         onModify();
     }
 
-    public void addListener(TimeSeries.SeriesListener listener) {
+    public void addListener(final TimeSeries.SeriesListener listener) {
         listeners.add(listener);
     }
 
-    public TimeSeries append(TimeSeries other) {
+    public TimeSeries append(final TimeSeries other) {
         if (!rateIsComparable(other)) {
             log.warn("Seismograms have different sample rates! {} - {}", this, other);
         }
-        double expectedAppendeeStart = this.getEndtime().getEpochTime() + getDelta();
-        double actualAppendeeStart = other.getTimeAsDouble();
+        final double expectedAppendeeStart = this.getEndtime().getEpochTime() + getDelta();
+        final double actualAppendeeStart = other.getTimeAsDouble();
 
         int newDataNpts = data.length + other.data.length;
         int newDataOffset = data.length;
-        long errorInSamples = Math.round((expectedAppendeeStart - actualAppendeeStart) * samprate);
+        final long errorInSamples = Math.round((expectedAppendeeStart - actualAppendeeStart) * samprate);
         newDataNpts -= (int) errorInSamples;
         newDataOffset -= (int) errorInSamples;
         if (newDataNpts < 1) {
-            String msg = String.format("After correcting for start time mismatch " + "of %d samples, new data array is less than 1 sample in length", errorInSamples);
+            final String msg = String.format("After correcting for start time mismatch " + "of %d samples, new data array is less than 1 sample in length", errorInSamples);
             throw new IllegalStateException(msg);
         }
-        float[] tmp = new float[newDataNpts];
+        final float[] tmp = new float[newDataNpts];
         System.arraycopy(data, 0, tmp, 0, data.length);
 
         System.arraycopy(other.data, 0, tmp, newDataOffset, other.data.length);
 
         if (errorInSamples < 0) {
-            int sampsToSet = (int) Math.abs(errorInSamples);
+            final int sampsToSet = (int) Math.abs(errorInSamples);
             for (int j = data.length; j < data.length + sampsToSet + 1; ++j) {
                 tmp[j] = data[data.length - 1];
             }
         }
         double rate = samprate;
         if (other.samprate != samprate) {
-            double otherEndTime = other.getEndtimeAsDouble();
-            double newDuration = otherEndTime - time.getEpochTime();
-            double newDelta = newDuration / (newDataNpts - 1);
+            final double otherEndTime = other.getEndtimeAsDouble();
+            final double newDuration = otherEndTime - time.getEpochTime();
+            final double newDelta = newDuration / (newDataNpts - 1);
             rate = 1 / newDelta;
         }
         return new TimeSeries(tmp, rate, time);
@@ -541,8 +538,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public int compareTo(TimeSeries other) {
-        double diff = time.getEpochTime() - other.time.getEpochTime();
+    public int compareTo(final TimeSeries other) {
+        final double diff = time.getEpochTime() - other.time.getEpochTime();
         if (diff < 0) {
             return -1;
         } else if (diff > 0) {
@@ -554,8 +551,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     @Override
     public double computeExtremeStat() {
-        double v = getStatistics().getMean() - getStatistics().getMedian();
-        double range = getStatistics().getRange();
+        final double v = getStatistics().getMean() - getStatistics().getMedian();
+        final double range = getStatistics().getRange();
         if (range > 0) {
             return v / range;
         } else {
@@ -564,13 +561,13 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public boolean contains(Epoch epoch, boolean allowGaps) {
-        Epoch myEpoch = new Epoch(time, getEndtime());
+    public boolean contains(final Epoch epoch, final boolean allowGaps) {
+        final Epoch myEpoch = new Epoch(time, getEndtime());
         if (myEpoch.isSuperset(epoch)) {
             if (allowGaps) {
                 return true;
             } else {
-                for (Epoch gapEpoch : dataGaps) {
+                for (final Epoch gapEpoch : dataGaps) {
                     if (gapEpoch.intersects(epoch)) {
                         return false;
                     }
@@ -582,17 +579,17 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         }
     }
 
-    public TimeSeries crop(Epoch epoch) {
+    public TimeSeries crop(final Epoch epoch) {
         return crop(epoch.getTime(), epoch.getEndtime());
     }
 
     public TimeSeries crop(TimeT start, TimeT end) {
-        TimeT currentStart = getTime();
+        final TimeT currentStart = getTime();
         if (currentStart.gt(start)) {
             start = currentStart;
         }
 
-        TimeT currentEnd = getEndtime();
+        final TimeT currentEnd = getEndtime();
         if (currentEnd.lt(end)) {
             end = currentEnd;
         }
@@ -600,8 +597,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return new TimeSeries(getSubSection(start, end), getSamprate(), start);
     }
 
-    public TimeSeries crop(int start, int end) {
-        TimeSeries series = new TimeSeries(this);
+    public TimeSeries crop(final int start, final int end) {
+        final TimeSeries series = new TimeSeries(this);
         series.cut(start, end);
         return series;
     }
@@ -623,7 +620,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            is less than start then an IllegalArgumentException will be
      *            thrown.
      */
-    public void cut(TimeT start, TimeT end) {
+    public void cut(final TimeT start, final TimeT end) {
         log.trace(
                 "Trying to cut seismogram, startcut {}, endcut {}, starttime {}, endtime {}",
                     start.getMilliseconds(),
@@ -647,12 +644,12 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         if (E.gt(this.getEndtime())) {
             E = getEndtime();
         }
-        double duration = E.getEpochTime() - S.getEpochTime();
+        final double duration = E.getEpochTime() - S.getEpochTime();
         data = getSubSection(S, duration);
-        double dataStart = time.getEpochTime();
+        final double dataStart = time.getEpochTime();
 
-        int startIndex = (int) Math.round((S.getEpochTime() - dataStart) * samprate);
-        TimeT actualNewStart = new TimeT(getTimeAsDouble() + startIndex / samprate);
+        final int startIndex = (int) Math.round((S.getEpochTime() - dataStart) * samprate);
+        final TimeT actualNewStart = new TimeT(getTimeAsDouble() + startIndex / samprate);
 
         this.setTime(actualNewStart);
         onModify();
@@ -672,14 +669,14 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            The end time in seconds after the start of the uncut
      *            seismogram
      */
-    public void cut(double start, double end) {
-        TimeT startT = time.add(start);
-        TimeT endT = time.add(end);
+    public void cut(final double start, final double end) {
+        final TimeT startT = time.add(start);
+        final TimeT endT = time.add(end);
         cut(startT, endT);
     }
 
-    public void cut(int idx0, int idx1) {
-        int maxIdx = data.length - 1;
+    public void cut(final int idx0, final int idx1) {
+        final int maxIdx = data.length - 1;
         if (idx0 < 0 || idx0 > maxIdx) {
             throw new IllegalStateException("Illegal value for start cut index: " + idx0);
         }
@@ -691,21 +688,21 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
             throw new IllegalStateException("End index  must be >= start index : ");
         }
 
-        int length = idx1 - idx0 + 1;
+        final int length = idx1 - idx0 + 1;
 
-        float[] tmp = new float[length];
+        final float[] tmp = new float[length];
         System.arraycopy(data, idx0, tmp, 0, length);
         data = tmp;
 
-        double deltaT = idx0 / samprate;
+        final double deltaT = idx0 / samprate;
         time = new TimeT(time.getEpochTime() + deltaT);
     }
 
-    public void cutAfter(TimeT end) {
+    public void cutAfter(final TimeT end) {
         cut(getTime(), end);
     }
 
-    public void cutBefore(TimeT start) {
+    public void cutBefore(final TimeT start) {
         cut(start, getEndtime());
     }
 
@@ -723,7 +720,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @param decimationfactor
      *            The amount by which to decimate the series.
      */
-    public void decimate(int decimationfactor) {
+    public void decimate(final int decimationfactor) {
         if (decimationfactor < 2) {
             return; // decimationfactor of 1 is the original series
         }
@@ -746,13 +743,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         onModify();
     }
 
-    public TimeSeries divide(TimeSeries other) {
-        TimeSeries.BivariateFunction f = new TimeSeries.BivariateFunction() {
-            @Override
-            public double eval(double x, double y) {
-                return x / y;
-            }
-        };
+    public TimeSeries divide(final TimeSeries other) {
+        final TimeSeries.BivariateFunction f = (x, y) -> x / y;
         return intersect(other, f);
     }
 
@@ -761,12 +753,12 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (!(obj instanceof TimeSeries)) {
             return false;
         }
-        TimeSeries other = (TimeSeries) obj;
-        double diff = time.getEpochTime() - other.time.getEpochTime();
+        final TimeSeries other = (TimeSeries) obj;
+        final double diff = time.getEpochTime() - other.time.getEpochTime();
         if (Math.abs(diff) > EPSILON) {
             return false;
         }
@@ -788,9 +780,9 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return true;
     }
 
-    public void fill(float[] buffer, int inc, double start, double end) {
-        int startIndex = getIndexForTime(start);
-        int endIndex = getIndexForTime(end);
+    public void fill(final float[] buffer, final int inc, final double start, final double end) {
+        final int startIndex = getIndexForTime(start);
+        final int endIndex = getIndexForTime(end);
 
         int b = 0;
         for (int i = startIndex; i <= endIndex && b < buffer.length; i++) {
@@ -805,19 +797,19 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public void filter(double lc, double hc) {
+    public void filter(final double lc, final double hc) {
         filter(lc, hc, false);
     }
 
     @Override
-    public void filter(double lc, double hc, boolean twoPass) {
+    public void filter(final double lc, final double hc, final boolean twoPass) {
         filter(2, Passband.BAND_PASS, lc, hc, twoPass);
     }
 
     @Override
-    public void filter(int order, Passband passband, double cutoff1, double cutoff2, boolean two_pass) {
-        double dt = 1.0 / samprate;
-        IIRFilter filt = new ButterworthFilter(order, passband, cutoff1, cutoff2, dt);
+    public void filter(final int order, final Passband passband, final double cutoff1, final double cutoff2, final boolean two_pass) {
+        final double dt = 1.0 / samprate;
+        final IIRFilter filt = new ButterworthFilter(order, passband, cutoff1, cutoff2, dt);
         filt.initialize();
         filt.filter(data);
         if (two_pass) {
@@ -830,7 +822,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public DiscontinuityCollection findDiscontinuities(int winLength, double factor) {
+    public DiscontinuityCollection findDiscontinuities(final int winLength, final double factor) {
         return SeriesMath.findDiscontinuities(data, samprate, winLength, factor);
     }
 
@@ -839,6 +831,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *
      * @return The data array
      */
+    @Override
     public float[] getData() {
         return data.clone();
     }
@@ -854,15 +847,15 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public double getDistinctValueRatio(int numSamples) {
+    public double getDistinctValueRatio(final int numSamples) {
         if (data.length < 1) {
             return 0;
         }
-        Set<Float> values = new HashSet<>();
-        int nsamples = Math.min(numSamples, data.length);
-        RandomAlgorithm algorithm = RandomAlgorithmFactory.getAlgorithm();
+        final Set<Float> values = new HashSet<>();
+        final int nsamples = Math.min(numSamples, data.length);
+        final RandomAlgorithm algorithm = RandomAlgorithmFactory.getAlgorithm();
         for (int j = 0; j < nsamples; ++j) {
-            int k = algorithm.getBoundedInt(0, data.length - 1);
+            final int k = algorithm.getBoundedInt(0, data.length - 1);
             values.add(data[k]);
         }
         return values.size() / (double) nsamples;
@@ -889,14 +882,14 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     @Override
     public float getExtremum() {
-        float max = getMax();
-        float absmin = Math.abs(getMin());
+        final float max = getMax();
+        final float absmin = Math.abs(getMin());
 
-        float result = 0.f;
+        float result;
 
         if (max >= absmin) {
             result = max;
-        } else if (absmin > max) {
+        } else {
             result = absmin;
         }
 
@@ -905,13 +898,24 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public int getIdentifier() {
-        return -1;
+    public String getIdentifier() {
+        return identifier;
     }
 
     @Override
-    public int getIndexForTime(double epochtime) {
-        double dataStart = time.getEpochTime();
+    public void setIdentifier(final String identifier) {
+        this.identifier = identifier;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        // TODO Auto-generated method stub
+        return super.clone();
+    }
+
+    @Override
+    public int getIndexForTime(final double epochtime) {
+        final double dataStart = time.getEpochTime();
         return (int) Math.round((epochtime - dataStart) * samprate);
     }
 
@@ -948,11 +952,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      */
     @Override
     public double[] getMaxTime() {
-        PairT<Integer, Float> value = SeriesMath.getMaxIndex(data);
-
-        // maxat[0] is the index of the maximum value (written as a double)
-        // data[maxat[0]] = maxvalue;
-        double offset = value.getFirst() / samprate;
+        final PairT<Integer, Float> value = SeriesMath.getMaxIndex(data);
+        final double offset = value.getFirst() / samprate;
         return new double[] { offset, value.getSecond() };
     }
 
@@ -991,10 +992,10 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return getStatistics().getMinMax();
     }
 
-    public double getNormalizedRMSE(TimeSeries other) {
+    public double getNormalizedRMSE(final TimeSeries other) {
         double error = getRMSE(other);
 
-        double norm = Math.abs(getMax() - getMin());
+        final double norm = Math.abs(getMax() - getMin());
         if (norm > 0) {
             error /= norm;
         }
@@ -1033,24 +1034,24 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @return The maximum Peak-To-Peak value for the entire seismogram.
      */
     @Override
-    public double getPeakToPeakAmplitude(double period) {
+    public double getPeakToPeakAmplitude(final double period) {
         return getPeakToPeakAmplitude(data, 1.0 / samprate, period);
     }
 
     @Override
-    public int getPointsIn(TimeT start, TimeT end) {
+    public int getPointsIn(final TimeT start, final TimeT end) {
         return getPointsIn(end.getEpochTime() - start.getEpochTime());
     }
 
     @Override
-    public int getPointsIn(double timeRange) {
+    public int getPointsIn(final double timeRange) {
         return (int) Math.round(timeRange * samprate) + 1;
     }
 
     @Override
     public double getPower() {
         double power = 0.0;
-        for (double v : data) {
+        for (final double v : data) {
             power += v * v;
         }
 
@@ -1067,13 +1068,13 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return getStatistics().getRMS();
     }
 
-    public double getRMSE(TimeSeries other) {
-        float[] t = data;
-        float[] o = other.data;
+    public double getRMSE(final TimeSeries other) {
+        final float[] t = data;
+        final float[] o = other.data;
 
         double error = 0.0;
         for (int i = 0; i < t.length; i++) {
-            double residual = Math.abs(t[i] - o[i]);
+            final double residual = Math.abs(t[i] - o[i]);
             error += residual * residual;
         }
         return Math.sqrt(error / t.length);
@@ -1089,8 +1090,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return getStatistics().getRange();
     }
 
-    public double getRange(Epoch epoch) {
-        float[] subSection = this.getSubSection(epoch.getTime(), epoch.getEndtime());
+    public double getRange(final Epoch epoch) {
+        final float[] subSection = this.getSubSection(epoch.getTime(), epoch.getEndtime());
         return SeriesMath.getRange(subSection);
     }
 
@@ -1123,13 +1124,13 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public double getSnr(double pickEpochTime, double preSeconds, double postSeconds) {
-        double availablePreSeconds = pickEpochTime - getTimeAsDouble();
+    public double getSnr(final double pickEpochTime, final double preSeconds, final double postSeconds) {
+        final double availablePreSeconds = pickEpochTime - getTimeAsDouble();
         double samples = availablePreSeconds * samprate;
         if (samples < MIN_WINDOW_SAMPLES) {
             return -1;
         }
-        double availablePostSeconds = getEndtime().getEpochTime() - pickEpochTime;
+        final double availablePostSeconds = getEndtime().getEpochTime() - pickEpochTime;
         samples = availablePostSeconds * samprate;
         if (samples < MIN_WINDOW_SAMPLES) {
             return -1;
@@ -1138,24 +1139,24 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public double getSnr(double pickEpochTime, Epoch epoch, double preSeconds, double postSeconds) {
-        double start = Math.max(getTimeAsDouble(), epoch.getStart());
-        double end = Math.min(getEndtime().getEpochTime(), epoch.getEnd());
+    public double getSnr(final double pickEpochTime, final Epoch epoch, final double preSeconds, final double postSeconds) {
+        final double start = Math.max(getTimeAsDouble(), epoch.getStart());
+        final double end = Math.min(getEndtime().getEpochTime(), epoch.getEnd());
 
-        double availablePreSeconds = pickEpochTime - start;
+        final double availablePreSeconds = pickEpochTime - start;
         double samples = availablePreSeconds * samprate;
         if (samples < MIN_WINDOW_SAMPLES) {
             return -1;
         }
-        double availablePostSeconds = end - pickEpochTime;
+        final double availablePostSeconds = end - pickEpochTime;
         samples = availablePostSeconds * samprate;
         if (samples < MIN_WINDOW_SAMPLES) {
             return -1;
         }
 
-        int pick = getIndexForTime(pickEpochTime);
-        int startIndex = getIndexForTime(Math.max(start, pickEpochTime - preSeconds));
-        int endIndex = getIndexForTime(Math.min(end, pickEpochTime + postSeconds));
+        final int pick = getIndexForTime(pickEpochTime);
+        final int startIndex = getIndexForTime(Math.max(start, pickEpochTime - preSeconds));
+        final int endIndex = getIndexForTime(Math.min(end, pickEpochTime + postSeconds));
         return SeriesMath.getSnr(data, pick, startIndex, endIndex);
     }
 
@@ -1189,12 +1190,12 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            the ending time of the subsection
      * @return the subsection float[] array
      */
-    public float[] getSubSection(TimeT start, TimeT end) {
+    public float[] getSubSection(final TimeT start, final TimeT end) {
         return getSubSection(start, end, null);
     }
 
-    public float[] getSubSection(TimeT start, TimeT end, float[] result) {
-        double duration = end.getEpochTime() - start.getEpochTime();
+    public float[] getSubSection(final TimeT start, final TimeT end, final float[] result) {
+        final double duration = end.getEpochTime() - start.getEpochTime();
         return getSubSection(start.getEpochTime(), duration, result);
     }
 
@@ -1209,7 +1210,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            The duration in seconds of the subsection.
      * @return The subSection array
      */
-    public float[] getSubSection(TimeT start, double duration) {
+    public float[] getSubSection(final TimeT start, final double duration) {
         return getSubSection(start.getEpochTime(), duration);
     }
 
@@ -1224,14 +1225,14 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            The duration in seconds of the subsection.
      * @return The subSection array
      */
-    public float[] getSubSection(double startEpoch, double requesteduration) {
+    public float[] getSubSection(final double startEpoch, final double requesteduration) {
         return getSubSection(startEpoch, requesteduration, null);
     }
 
-    public float[] getSubSection(double startEpoch, double requestedDuration, float[] result) {
-        int Nsamps = data.length;
+    public float[] getSubSection(final double startEpoch, final double requestedDuration, float[] result) {
+        final int Nsamps = data.length;
         if (Nsamps >= 1) {
-            double duration = Math.abs(requestedDuration);
+            final double duration = Math.abs(requestedDuration);
             int startIndex = getIndexForTime(startEpoch);
             int endIndex = getIndexForTime(startEpoch + duration);
 
@@ -1243,14 +1244,14 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
                 endIndex = data.length - 1;
             }
 
-            int sampsRequired = endIndex - startIndex + 1;
+            final int sampsRequired = endIndex - startIndex + 1;
             if (result == null) {
                 result = new float[sampsRequired];
             }
             try {
                 System.arraycopy(data, startIndex, result, 0, sampsRequired);
-            } catch (ArrayIndexOutOfBoundsException ex) {
-                String msg = String.format("Requested %d samples from seismogram of length %d from index %d into buffer of length %d", sampsRequired, data.length, startIndex, result.length);
+            } catch (final ArrayIndexOutOfBoundsException ex) {
+                final String msg = String.format("Requested %d samples from seismogram of length %d from index %d into buffer of length %d", sampsRequired, data.length, startIndex, result.length);
                 throw new IllegalStateException(msg, ex);
             }
             return result;
@@ -1266,19 +1267,19 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @param sampsRequired
      * @return
      */
-    public float[] getSubSection(int startIndex, int sampsRequired) {
-        float[] result = new float[sampsRequired];
+    public float[] getSubSection(final int startIndex, final int sampsRequired) {
+        final float[] result = new float[sampsRequired];
         try {
             System.arraycopy(data, startIndex, result, 0, sampsRequired);
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            String msg = String.format("Requested %d samples from seismogram of length %d from index %d into buffer of length %d", sampsRequired, data.length, startIndex, result.length);
+        } catch (final ArrayIndexOutOfBoundsException ex) {
+            final String msg = String.format("Requested %d samples from seismogram of length %d from index %d into buffer of length %d", sampsRequired, data.length, startIndex, result.length);
             throw new IllegalStateException(msg, ex);
         }
         return result;
     }
 
-    public double getSubsectionStartTime(double startEpoch) {
-        int startIndex = getIndexForTime(startEpoch);
+    public double getSubsectionStartTime(final double startEpoch) {
+        final int startIndex = getIndexForTime(startEpoch);
         return time.getEpochTime() + startIndex / samprate;
     }
 
@@ -1321,7 +1322,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @return the value at the requested time
      */
     @Override
-    public float getValueAt(double epochtime) {
+    public float getValueAt(final double epochtime) {
         if (epochtime < time.getEpochTime()) {
             throw new IllegalArgumentException(String.format("Requested time (%s) is before seismogram start time!", new TimeT(epochtime).toString()));
         }
@@ -1329,19 +1330,19 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
             throw new IllegalArgumentException(String.format("Requested time (%s) is after seismogram end time!", new TimeT(epochtime).toString()));
 
         }
-        double unroundedIndex = getUnroundedTimeIndex(epochtime);
-        int x1 = (int) unroundedIndex;
+        final double unroundedIndex = getUnroundedTimeIndex(epochtime);
+        final int x1 = (int) unroundedIndex;
         if (unroundedIndex == x1) {
             return data[x1];
         } else {
-            int x2 = x1 + 1;
-            float y1 = data[x1];
-            float y2 = data[x2];
+            final int x2 = x1 + 1;
+            final float y1 = data[x1];
+            final float y2 = data[x2];
             return (float) (y1 + (unroundedIndex - x1) * (y2 - y1));
         }
     }
 
-    public float getValueAt(int j) {
+    public float getValueAt(final int j) {
         return data[j];
     }
 
@@ -1363,9 +1364,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            the shortest number of datapoints that must be identical
      *            before it qualifies as "flat"
      */
-    public boolean hasFlatSegments(int minsegmentlength) {
+    public boolean hasFlatSegments(final int minsegmentlength) {
         return SeriesMath.hasFlatSegments(data, minsegmentlength);
-        //onModify();
     }
 
     @Override
@@ -1383,7 +1383,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            Note the samprate changes and the number of points in the data
      *            series changes based on the new desired sample rate
      */
-    public void interpolate(double newsamprate) {
+    public void interpolate(final double newsamprate) {
         if ((newsamprate > 0.)) {
             data = SeriesMath.interpolate(0., 1. / samprate, data, 1. / newsamprate);
             samprate = newsamprate;
@@ -1400,17 +1400,12 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return getNsamp() == 0;
     }
 
-    public boolean isSubset(TimeSeries other) {
+    public boolean isSubset(final TimeSeries other) {
         return getTime().ge(other.getTime()) && getEndtime().le(other.getEndtime());
     }
 
-    public TimeSeries multiply(TimeSeries other) {
-        TimeSeries.BivariateFunction f = new TimeSeries.BivariateFunction() {
-            @Override
-            public double eval(double x, double y) {
-                return x * y;
-            }
-        };
+    public TimeSeries multiply(final TimeSeries other) {
+        final TimeSeries.BivariateFunction f = (x, y) -> x * y;
         return intersect(other, f);
     }
 
@@ -1435,7 +1430,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *
      * @param norm
      */
-    public void normalize(TimeSeries.Norm norm) {
+    public void normalize(final TimeSeries.Norm norm) {
         switch (norm) {
         case EXTREMUM:
             doNormalize(SeriesMath.getExtremum(data));
@@ -1458,7 +1453,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         }
     }
 
-    public void normalize(double value) {
+    public void normalize(final double value) {
         doNormalize(SeriesMath.getExtremum(data) / value);
     }
 
@@ -1473,17 +1468,17 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            normalize("10") or normalize("EXTREMUM")
      *
      */
-    public void normalize(String value) {
+    public void normalize(final String value) {
         try {
             // attempt to parse as a Number
-            Double dvalue = Double.parseDouble(value);
+            final Double dvalue = Double.parseDouble(value);
             normalize(dvalue);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             try {
                 // attempt to parse as a Norm type
-                TimeSeries.Norm type = TimeSeries.Norm.valueOf(value.toUpperCase(Locale.ENGLISH));
+                final TimeSeries.Norm type = TimeSeries.Norm.valueOf(value.toUpperCase(Locale.ENGLISH));
                 normalize(type);
-            } catch (Exception ee) {
+            } catch (final Exception ee) {
             }
         }
     }
@@ -1492,7 +1487,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         // Must recalculate statistics, but do so lazily
         statistics = null;
 
-        for (TimeSeries.SeriesListener listener : listeners) {
+        for (final TimeSeries.SeriesListener listener : listeners) {
             listener.dataChanged(data);
         }
     }
@@ -1518,11 +1513,11 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            the other timeseries to compare this one with
      * @return true if the sample rates are close enough
      */
-    public boolean rateIsComparable(TimeSeries other) {
-        double fileOneDelta = this.getDelta();
-        double fileTwoDelta = other.getDelta();
-        double percentError = 100 * Math.abs((fileOneDelta - fileTwoDelta) / fileOneDelta);
-        boolean isSameSampRate = percentError < ALLOWABLE_SAMPLE_RATE_ERROR;
+    public boolean rateIsComparable(final TimeSeries other) {
+        final double fileOneDelta = this.getDelta();
+        final double fileTwoDelta = other.getDelta();
+        final double percentError = 100 * Math.abs((fileOneDelta - fileTwoDelta) / fileOneDelta);
+        final boolean isSameSampRate = percentError < allowableSampleRateError;
         return isSameSampRate;
     }
 
@@ -1538,12 +1533,12 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *            - the threshhold value
      */
     @Override
-    public void removeGlitches(double Threshhold) {
+    public void removeGlitches(final double Threshhold) {
         SeriesMath.removeGlitches(data, Threshhold);
         onModify();
     }
 
-    public void removeListener(TimeSeries.SeriesListener listener) {
+    public void removeListener(final TimeSeries.SeriesListener listener) {
         listeners.remove(listener);
     }
 
@@ -1556,7 +1551,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         onModify();
     }
 
-    public void resample(double newRate) {
+    public void resample(final double newRate) {
         data = SeriesMath.interpolate(0., 1. / samprate, data, 1. / newRate);
         samprate = newRate;
         onModify();
@@ -1573,22 +1568,22 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         onModify();
     }
 
-    public void reverseAt(TimeT mirrorTime) {
-        TimeT endtime = getEndtime();
-        double shifttime = endtime.subtract(mirrorTime).getEpochTime();
+    public void reverseAt(final TimeT mirrorTime) {
+        final TimeT endtime = getEndtime();
+        final double shifttime = endtime.subtract(mirrorTime).getEpochTime();
 
-        TimeT newbegintime = mirrorTime.add(-1 * shifttime);
+        final TimeT newbegintime = mirrorTime.add(-1 * shifttime);
         reverse();
         setTime(newbegintime);
     }
 
     @Override
-    public void scaleTo(double min, double max) {
-        double myMax = getStatistics().getMax();
-        double myMin = getStatistics().getMin();
-        double myRange = myMax - myMin;
-        double requiredRange = max - min;
-        double scale = requiredRange / myRange;
+    public void scaleTo(final double min, final double max) {
+        final double myMax = getStatistics().getMax();
+        final double myMin = getStatistics().getMin();
+        final double myRange = myMax - myMin;
+        final double requiredRange = max - min;
+        final double scale = requiredRange / myRange;
         SeriesMath.multiplyScalar(data, scale);
         onModify();
     }
@@ -1599,7 +1594,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @param v
      *            The new data value
      */
-    public void setData(float[] v) {
+    public void setData(final float[] v) {
         data = v.clone();
         onModify();
     }
@@ -1610,7 +1605,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @param v
      * @param index
      */
-    public void setDataPoint(float v, int index) {
+    public void setDataPoint(final float v, final int index) {
         data[index] = v;
         onModify();
     }
@@ -1621,8 +1616,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @param v
      * @param startindex
      */
-    public void setDataPoints(float[] v, int startindex) {
-        int maxindex = getNsamp() - 1;
+    public void setDataPoints(final float[] v, final int startindex) {
+        final int maxindex = getNsamp() - 1;
         int endindex = startindex + v.length - 1;
 
         if ((startindex < 0) || (startindex > maxindex)) {
@@ -1642,12 +1637,12 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public void setMaximumRange(double maxRange) {
+    public void setMaximumRange(final double maxRange) {
         SeriesMath.setMaximumRange(data, maxRange);
     }
 
     @Override
-    public void setSamprate(double samprate) {
+    public void setSamprate(final double samprate) {
         this.samprate = samprate;
     }
 
@@ -1657,7 +1652,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @param v
      *            The new time value
      */
-    public void setTime(TimeT v) {
+    public void setTime(final TimeT v) {
         time = new TimeT(v);
     }
 
@@ -1673,7 +1668,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      *         number of samples. The new time series will have a length
      *         different than that of this instance.
      */
-    public TimeSeries shift(int samples) {
+    public TimeSeries shift(final int samples) {
         return shift(samples, false);
     }
 
@@ -1691,15 +1686,15 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @return a new timeseries, based on this one, shifted by the specified
      *         number of samples
      */
-    public TimeSeries shift(int samples, boolean keepLength) {
+    public TimeSeries shift(final int samples, final boolean keepLength) {
         TimeSeries timeseries = new TimeSeries(this);
 
         if (samples == 0) {
             return timeseries;
         }
 
-        int absSamples = Math.abs(samples);
-        float[] data1 = timeseries.getData();
+        final int absSamples = Math.abs(samples);
+        final float[] data1 = timeseries.getData();
         final int originalLength = timeseries.getNsamp();
         if (samples < 0) {
             final int newLength;
@@ -1714,7 +1709,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
             }
 
             // Reference: arraycopy(src,srcPos,dest,destPos,length)
-            float[] data2 = new float[newLength];
+            final float[] data2 = new float[newLength];
             final int lengthToCopy = originalLength - absSamples;
             System.arraycopy(data1, absSamples, data2, 0, lengthToCopy);
 
@@ -1724,7 +1719,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
                 Arrays.fill(data2, lengthToCopy, data2.length - 1, data1[data1.length - 1]);
             }
 
-            TimeT newTime = new TimeT(this.getTimeAsDouble() + (absSamples / this.samprate));
+            final TimeT newTime = new TimeT(this.getTimeAsDouble() + (absSamples / this.samprate));
 
             timeseries = new TimeSeries(data2, samprate, newTime);
         } else {
@@ -1735,18 +1730,18 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
                 newLength = originalLength;
             }
 
-            float[] data2 = new float[newLength];
+            final float[] data2 = new float[newLength];
 
             // Reference: arraycopy(src,srcPos,dest,destPos,length)
             final int lengthToCopy = originalLength - absSamples;
             System.arraycopy(data1, 0, data2, absSamples, lengthToCopy);
 
             // pad the new samples at the start of the buffer with what was the orginal starting sample value
-            float startingSampleValue = data1[0];
+            final float startingSampleValue = data1[0];
             Arrays.fill(data2, 0, absSamples, startingSampleValue);
 
             // adjust the time for the shift
-            TimeT newTime = new TimeT(this.getTimeAsDouble() - (absSamples / this.samprate));
+            final TimeT newTime = new TimeT(this.getTimeAsDouble() - (absSamples / this.samprate));
 
             timeseries = new TimeSeries(data2, samprate, newTime);
         }
@@ -1754,28 +1749,23 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return timeseries;
     }
 
-    public void stretch(double interpolationfactor) {
+    public void stretch(final double interpolationfactor) {
         // TODO is it correct to compare the interpolationfactor to samprate like this?
         if ((interpolationfactor > 0.) && (Math.abs(interpolationfactor - samprate) > EPSILON)) {
-            double multiplier = interpolationfactor * samprate;
+            final double multiplier = interpolationfactor * samprate;
             data = SeriesMath.interpolate(0., 1. / samprate, data, 1. / multiplier);
             onModify();
         }
     }
 
-    public TimeSeries subtract(TimeSeries other) {
-        TimeSeries.BivariateFunction f = new TimeSeries.BivariateFunction() {
-            @Override
-            public double eval(double x, double y) {
-                return x - y;
-            }
-        };
+    public TimeSeries subtract(final TimeSeries other) {
+        final TimeSeries.BivariateFunction f = (x, y) -> x - y;
         return intersect(other, f);
     }
 
     @Override
     public String toString() {
-        StringBuilder s = new StringBuilder("Samprate = ");
+        final StringBuilder s = new StringBuilder("Samprate = ");
         s.append(getSamprate());
         s.append(", Time = ");
         s.append(getTime());
@@ -1785,7 +1775,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     @Override
-    public void triangleTaper(double taperPercent) {
+    public void triangleTaper(final double taperPercent) {
         SeriesMath.triangleTaper(data, taperPercent);
         onModify();
     }
@@ -1804,43 +1794,43 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return crop(start, end);
     }
 
-    public void trimTo(Epoch epoch) {
+    public void trimTo(final Epoch epoch) {
         if (!(getTime().equals(epoch.getTime()) && getEndtime().equals(epoch.getEndtime()))) {
             cut(epoch.getTime(), epoch.getEndtime());
         }
     }
 
-    public TimeSeries union(TimeSeries other, boolean ignoreMismatch) throws MergeException {
+    public TimeSeries union(final TimeSeries other, final boolean ignoreMismatch) throws MergeException {
         if (other.isEmpty() || !rateIsComparable(other)) {
             return this;
         } else if (this.isEmpty()) {
             return other;
         } else {
-            double start = getTime().getEpochTime();
-            double otherStart = other.getTime().getEpochTime();
-            double end = getEndtime().getEpochTime();
-            double otherEnd = other.getEndtime().getEpochTime();
+            final double start = getTime().getEpochTime();
+            final double otherStart = other.getTime().getEpochTime();
+            final double end = getEndtime().getEpochTime();
+            final double otherEnd = other.getEndtime().getEpochTime();
 
-            double minStart = Math.min(start, otherStart);
-            double maxEnd = Math.max(end, otherEnd);
-            int npts = getPointsIn(maxEnd - minStart);
+            final double minStart = Math.min(start, otherStart);
+            final double maxEnd = Math.max(end, otherEnd);
+            final int npts = getPointsIn(maxEnd - minStart);
 
             // Ideally only the zero-shift is required, but in case of one-off error, try forward and backward shifts
-            int[] shifts = { 0, -1, 1 };
+            final int[] shifts = { 0, -1, 1 };
             if (start == minStart) {
-                for (int shift : shifts) {
-                    int mpts = npts + shift;
-                    float[] newData = new float[mpts];
-                    int destOffset = (int) Math.round((otherStart - minStart) * other.getSamprate()) + shift;
+                for (final int shift : shifts) {
+                    final int mpts = npts + shift;
+                    final float[] newData = new float[mpts];
+                    final int destOffset = (int) Math.round((otherStart - minStart) * other.getSamprate()) + shift;
                     if (merge(other.data, data, newData, destOffset, ignoreMismatch)) {
                         return new TimeSeries(newData, samprate, new TimeT(minStart));
                     }
                 }
             } else {
-                for (int shift : shifts) {
-                    int mpts = npts + shift;
-                    float[] newData = new float[mpts];
-                    int destOffset = (int) Math.round((start - minStart) * samprate) + shift;
+                for (final int shift : shifts) {
+                    final int mpts = npts + shift;
+                    final float[] newData = new float[mpts];
+                    final int destOffset = (int) Math.round((start - minStart) * samprate) + shift;
                     if (merge(data, other.data, newData, destOffset, ignoreMismatch)) {
                         return new TimeSeries(newData, samprate, new TimeT(minStart));
                     }
@@ -1851,7 +1841,7 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         }
     }
 
-    protected void doNormalize(double scale) {
+    protected void doNormalize(final double scale) {
         // First remove the mean value
         RemoveMean();
 
@@ -1860,19 +1850,19 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         }
     }
 
-    protected TimeSeries intersect(TimeSeries other, TimeSeries.BivariateFunction f) {
+    protected TimeSeries intersect(TimeSeries other, final TimeSeries.BivariateFunction f) {
         if (!rateIsComparable(other)) {
             other = new TimeSeries(other);
             other.interpolate(samprate);
         }
 
-        TimeT start = new TimeT(Math.max(getTime().getEpochTime(), other.getTime().getEpochTime()));
-        TimeT end = new TimeT(Math.min(getEndtime().getEpochTime(), other.getEndtime().getEpochTime()));
+        final TimeT start = new TimeT(Math.max(getTime().getEpochTime(), other.getTime().getEpochTime()));
+        final TimeT end = new TimeT(Math.min(getEndtime().getEpochTime(), other.getEndtime().getEpochTime()));
 
         float[] overlap;
         if (start.lt(end)) {
-            float[] section = getSubSection(start, end);
-            float[] otherSection = other.getSubSection(start, end);
+            final float[] section = getSubSection(start, end);
+            final float[] otherSection = other.getSubSection(start, end);
 
             overlap = new float[Math.min(section.length, otherSection.length)];
             for (int i = 0; i < overlap.length; i++) {
@@ -1885,8 +1875,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
         return new TimeSeries(overlap, samprate, start);
     }
 
-    private double getUnroundedTimeIndex(double epochtime) {
-        double dataStart = time.getEpochTime();
+    private double getUnroundedTimeIndex(final double epochtime) {
+        final double dataStart = time.getEpochTime();
         return (epochtime - dataStart) * samprate;
     }
 
@@ -1900,5 +1890,15 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     protected interface BivariateFunction {
         public double eval(double x, double y);
+    }
+
+    @Override
+    public double getZeroTimeOffsetSeconds() {
+        return timeOffset;
+    }
+
+    @Override
+    public void setZeroTimeOffsetSeconds(final double timeOffset) {
+        this.timeOffset = timeOffset;
     }
 }

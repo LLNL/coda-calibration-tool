@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
@@ -14,12 +14,14 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.plotting;
 
+import java.util.Objects;
+
 public class LabeledPlotPoint extends PlotPoint {
 
     private String label;
 
     public LabeledPlotPoint(String label, PlotPoint point) {
-        super(point.getX(), point.getY(), point.getStyle(), point.getColor());
+        super(point.getX(), point.getY(), point.getStyle(), point.getColor(), point.getEdgeColor());
         this.label = label;
     }
 
@@ -31,4 +33,31 @@ public class LabeledPlotPoint extends PlotPoint {
         this.label = label;
     }
 
+    @Override
+    public String toString() {
+        return "LabeledPlotPoint [label=" + label + ", PlotPoint [" + super.toString() + "]]";
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + Objects.hash(label);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        if (!(obj instanceof LabeledPlotPoint)) {
+            return false;
+        }
+        LabeledPlotPoint other = (LabeledPlotPoint) obj;
+        return Objects.equals(label, other.label);
+    }
 }

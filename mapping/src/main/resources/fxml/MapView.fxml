@@ -25,6 +25,7 @@
                   <Insets bottom="10.0" left="5.0" />
                </StackPane.margin>
             </Button>
-         </children></StackPane>
+         </children>
+      </StackPane>
    </children>
 </AnchorPane>

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -19,10 +19,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-
-import javax.swing.SwingUtilities;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,86 +40,81 @@ import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
-import javafx.embed.swing.SwingNode;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Point2D;
 import javafx.scene.layout.StackPane;
-import llnl.gnem.core.gui.plotting.plotobject.Symbol;
+import llnl.gnem.core.gui.plotting.api.Axis;
+import llnl.gnem.core.gui.plotting.api.Axis.TickFormat;
+import llnl.gnem.core.gui.plotting.api.PlotFactory;
+import llnl.gnem.core.gui.plotting.plotly.BasicAxis;
 import reactor.core.scheduler.Schedulers;
 
 @Component
 public class SiteController extends AbstractMeasurementController {
 
-    private static final String X_AXIS_LABEL = "center freq";
+    private static final String X_AXIS_LABEL = "center freq (Hz)";
 
-    private static final String displayName = "Site";
-    
-    @FXML
-    private StackPane site;
+    private static final String DISPLAY_NAME = "Site";
 
     @FXML
-    private SwingNode rawPlotSwingNode;
+    private StackPane sitePane;
 
     @FXML
-    private SwingNode pathPlotSwingNode;
+    private StackPane rawPlotNode;
 
     @FXML
-    private SwingNode sitePlotSwingNode;
+    private StackPane pathPlotNode;
+
+    @FXML
+    private StackPane sitePlotNode;
 
     @Autowired
-    private SiteController(SpectraClient spectraClient, ParameterClient paramClient, EventClient referenceEventClient, WaveformClient waveformClient, SymbolStyleMapFactory styleFactory,
-            GeoMap map, MapPlottingUtilities iconFactory, EventBus bus) {
-        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, bus);
+    private SiteController(final SpectraClient spectraClient, final ParameterClient paramClient, final EventClient referenceEventClient, final WaveformClient waveformClient,
+            final SymbolStyleMapFactory styleFactory, final GeoMap map, final MapPlottingUtilities iconFactory, final PlotFactory plotFactory, final EventBus bus) {
+        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, plotFactory, bus);
     }
 
     @Override
     @FXML
     public void initialize() {
-        spectraPlotPanel = site;
+        spectraPlotPanel = sitePane;
         super.initialize();
 
-        SwingUtilities.invokeLater(() -> {
-            final SpectraPlotController raw = new SpectraPlotController(SpectraMeasurement::getRawAtMeasurementTime);
-            SpectralPlot plot = raw.getSpectralPlot();
-            plot.addPlotObjectObserver(getPlotpointObserver(() -> raw.getSymbolMap()));
-            plot.setLabels("Raw Plot", X_AXIS_LABEL, "log10(non-dim)");
-            plot.setYaxisVisibility(true);
-            plot.setAllXlimits(0.0, 0.0);
-            plot.setDefaultYMin(-2.0);
-            plot.setDefaultYMax(7.0);
-            rawPlotSwingNode.setContent(plot);
+        final SpectraPlotController raw = new SpectraPlotController(SpectraMeasurement::getRawAtMeasurementTime);
+        SpectralPlot plot = raw.getSpectralPlot();
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(raw::getSpectraMeasurementMap));
+        plot.setLabels("Raw Plot", X_AXIS_LABEL, "log10(non-dim)");
+        plot.setAutoCalculateYaxisRange(true);
+        rawPlotNode.getChildren().add(plot);
 
-            final SpectraPlotController path = new SpectraPlotController(SpectraMeasurement::getPathCorrected);
-            plot = path.getSpectralPlot();
-            plot.addPlotObjectObserver(getPlotpointObserver(() -> path.getSymbolMap()));
-            plot.setLabels("Path Corrected", X_AXIS_LABEL, "log10(non-dim)");
-            plot.setYaxisVisibility(true);
-            plot.setAllXlimits(0.0, 0.0);
-            plot.setDefaultYMin(-2.0);
-            plot.setDefaultYMax(7.0);
-            pathPlotSwingNode.setContent(plot);
+        final SpectraPlotController path = new SpectraPlotController(SpectraMeasurement::getPathCorrected);
+        plot = path.getSpectralPlot();
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(path::getSpectraMeasurementMap));
+        plot.setLabels("Path Corrected", X_AXIS_LABEL, "log10(non-dim)");
+        plot.setAutoCalculateYaxisRange(true);
+        pathPlotNode.getChildren().add(plot);
 
-            final SpectraPlotController site = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
-            plot = site.getSpectralPlot();
-            plot.addPlotObjectObserver(getPlotpointObserver(() -> site.getSymbolMap()));
-            plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
-            plot.setYaxisVisibility(true);
-            site.setShowCornerFrequencies(true);
-            site.setYAxisResizable(true);
-            sitePlotSwingNode.setContent(plot);
+        final SpectraPlotController site = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
+        plot = site.getSpectralPlot();
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(site::getSpectraMeasurementMap));
+        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
+        final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
+        rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
+        plot.getSubplot().addAxes(rightAxis);
+        site.setShowCornerFrequencies(true);
+        site.setYAxisResizable(true);
+        site.setShouldShowFits(true);
+        sitePlotNode.getChildren().add(plot);
 
-            rawPlotSwingNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, menuHideHandler);
-            pathPlotSwingNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, menuHideHandler);
-            sitePlotSwingNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, menuHideHandler);
-
-            spectraControllers.add(raw);
-            spectraControllers.add(path);
-            spectraControllers.add(site);
-        });
+        spectraControllers.add(raw);
+        spectraControllers.add(path);
+        spectraControllers.add(site);
     }
 
     @Override
     protected String getDisplayName() {
-        return displayName;
+        return DISPLAY_NAME;
     }
 
     @Override
@@ -129,8 +123,8 @@ public class SiteController extends AbstractMeasurementController {
     }
 
     @Override
-    protected void setActive(List<Waveform> waveforms, List<Symbol> plotObjects, boolean active, BiConsumer<List<Symbol>, Boolean> activationFunc) {
-        waveformClient.setWaveformsActiveByIds(waveforms.stream().map(w -> w.getId()).collect(Collectors.toList()), active).subscribe(s -> activationFunc.accept(plotObjects, active));
+    protected void setActive(final Set<Waveform> waveforms, final List<Point2D> points, final boolean active, final BiConsumer<List<Point2D>, Boolean> activationFunc) {
+        waveformClient.setWaveformsActiveByIds(waveforms.stream().map(Waveform::getId).collect(Collectors.toList()), active).subscribe(s -> activationFunc.accept(points, active));
     }
 
     @Override
@@ -141,18 +135,18 @@ public class SiteController extends AbstractMeasurementController {
                             .toStream()
                             .collect(Collectors.toList());
     }
-    
+
     @Override
-    protected void runGuiUpdate(Runnable runnable) throws InvocationTargetException, InterruptedException {
-        SwingUtilities.invokeAndWait(runnable);
+    protected void runGuiUpdate(final Runnable runnable) throws InvocationTargetException, InterruptedException {
+        Platform.runLater(runnable);
     }
 
     @Override
     protected List<MeasuredMwDetails> getEvents() {
         return referenceEventClient.getMeasuredEventDetails()
-        .filter(ev -> ev.getEventId() != null)
-        .collect(Collectors.toList())
-        .subscribeOn(Schedulers.boundedElastic())
-        .block(Duration.ofSeconds(10l));
+                                   .filter(ev -> ev.getEventId() != null)
+                                   .collect(Collectors.toList())
+                                   .subscribeOn(Schedulers.boundedElastic())
+                                   .block(Duration.ofSeconds(10l));
     }
 }

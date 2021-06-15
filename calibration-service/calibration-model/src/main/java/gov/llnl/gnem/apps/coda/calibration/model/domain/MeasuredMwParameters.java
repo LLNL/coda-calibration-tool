@@ -122,6 +122,10 @@ public class MeasuredMwParameters implements Serializable {
 
     private int dataCount;
 
+    private int stationCount;
+
+    private Double bandCoverage;
+
     private int iterations;
 
     public Long getId() {
@@ -281,6 +285,15 @@ public class MeasuredMwParameters implements Serializable {
         return this;
     }
 
+    public Integer getStationCount() {
+        return stationCount;
+    }
+
+    public MeasuredMwParameters setStationCount(Integer stationCount) {
+        this.stationCount = stationCount;
+        return this;
+    }
+
     public Double getMeanMw() {
         return meanMw;
     }
@@ -335,6 +348,15 @@ public class MeasuredMwParameters implements Serializable {
         return this;
     }
 
+    public Double getBandCoverage() {
+        return bandCoverage;
+    }
+
+    public MeasuredMwParameters setBandCoverage(Double bandCoverage) {
+        this.bandCoverage = bandCoverage;
+        return this;
+    }
+
     public MeasuredMwParameters merge(MeasuredMwParameters overlay) {
         this.mw = overlay.getMw();
         this.meanMw = overlay.getMeanMw();
@@ -354,6 +376,8 @@ public class MeasuredMwParameters implements Serializable {
         this.meanMisfit = overlay.getMeanMisfit();
         this.misfitSd = overlay.getMisfitSd();
         this.dataCount = overlay.getDataCount();
+        this.stationCount = overlay.getStationCount();
+        this.bandCoverage = overlay.getBandCoverage();
         this.iterations = overlay.getIterations();
         this.cornerFrequency = overlay.getCornerFrequency();
         this.cornerFrequencySd = overlay.getCornerFrequencySd();
@@ -369,6 +393,7 @@ public class MeasuredMwParameters implements Serializable {
                     apparentStress2Min,
                     apparentStressInMpa,
                     apparentStressSd,
+                    bandCoverage,
                     cornerFrequency,
                     cornerFrequencySd,
                     dataCount,
@@ -386,6 +411,7 @@ public class MeasuredMwParameters implements Serializable {
                     mw2Max,
                     mw2Min,
                     mwSd,
+                    stationCount,
                     version);
     }
 
@@ -404,6 +430,7 @@ public class MeasuredMwParameters implements Serializable {
                 && Objects.equals(apparentStress2Min, other.apparentStress2Min)
                 && Objects.equals(apparentStressInMpa, other.apparentStressInMpa)
                 && Objects.equals(apparentStressSd, other.apparentStressSd)
+                && Objects.equals(bandCoverage, other.bandCoverage)
                 && Objects.equals(cornerFrequency, other.cornerFrequency)
                 && Objects.equals(cornerFrequencySd, other.cornerFrequencySd)
                 && dataCount == other.dataCount
@@ -421,62 +448,66 @@ public class MeasuredMwParameters implements Serializable {
                 && Objects.equals(mw2Max, other.mw2Max)
                 && Objects.equals(mw2Min, other.mw2Min)
                 && Objects.equals(mwSd, other.mwSd)
+                && stationCount == other.stationCount
                 && Objects.equals(version, other.version);
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("MeasuredMwParameters [id=")
-               .append(id)
-               .append(", version=")
-               .append(version)
-               .append(", eventId=")
-               .append(eventId)
-               .append(", mw=")
-               .append(mw)
-               .append(", meanMw=")
-               .append(meanMw)
-               .append(", mwSd=")
-               .append(mwSd)
-               .append(", mw1Min=")
-               .append(mw1Min)
-               .append(", mw1Max=")
-               .append(mw1Max)
-               .append(", mw2Min=")
-               .append(mw2Min)
-               .append(", mw2Max=")
-               .append(mw2Max)
-               .append(", apparentStressInMpa=")
-               .append(apparentStressInMpa)
-               .append(", meanApparentStressInMpa=")
-               .append(meanApparentStressInMpa)
-               .append(", apparentStressSd=")
-               .append(apparentStressSd)
-               .append(", apparentStress1Min=")
-               .append(apparentStress1Min)
-               .append(", apparentStress1Max=")
-               .append(apparentStress1Max)
-               .append(", apparentStress2Min=")
-               .append(apparentStress2Min)
-               .append(", apparentStress2Max=")
-               .append(apparentStress2Max)
-               .append(", misfit=")
-               .append(misfit)
-               .append(", meanMisfit=")
-               .append(meanMisfit)
-               .append(", misfitSd=")
-               .append(misfitSd)
-               .append(", cornerFrequency=")
-               .append(cornerFrequency)
-               .append(", cornerFrequencySd=")
-               .append(cornerFrequencySd)
-               .append(", dataCount=")
-               .append(dataCount)
-               .append(", iterations=")
-               .append(iterations)
-               .append("]");
+        builder.append("MeasuredMwParameters [id=");
+        builder.append(id);
+        builder.append(", version=");
+        builder.append(version);
+        builder.append(", eventId=");
+        builder.append(eventId);
+        builder.append(", mw=");
+        builder.append(mw);
+        builder.append(", meanMw=");
+        builder.append(meanMw);
+        builder.append(", mwSd=");
+        builder.append(mwSd);
+        builder.append(", mw1Min=");
+        builder.append(mw1Min);
+        builder.append(", mw1Max=");
+        builder.append(mw1Max);
+        builder.append(", mw2Min=");
+        builder.append(mw2Min);
+        builder.append(", mw2Max=");
+        builder.append(mw2Max);
+        builder.append(", apparentStressInMpa=");
+        builder.append(apparentStressInMpa);
+        builder.append(", meanApparentStressInMpa=");
+        builder.append(meanApparentStressInMpa);
+        builder.append(", apparentStressSd=");
+        builder.append(apparentStressSd);
+        builder.append(", apparentStress1Min=");
+        builder.append(apparentStress1Min);
+        builder.append(", apparentStress1Max=");
+        builder.append(apparentStress1Max);
+        builder.append(", apparentStress2Min=");
+        builder.append(apparentStress2Min);
+        builder.append(", apparentStress2Max=");
+        builder.append(apparentStress2Max);
+        builder.append(", misfit=");
+        builder.append(misfit);
+        builder.append(", meanMisfit=");
+        builder.append(meanMisfit);
+        builder.append(", misfitSd=");
+        builder.append(misfitSd);
+        builder.append(", cornerFrequency=");
+        builder.append(cornerFrequency);
+        builder.append(", cornerFrequencySd=");
+        builder.append(cornerFrequencySd);
+        builder.append(", dataCount=");
+        builder.append(dataCount);
+        builder.append(", stationCount=");
+        builder.append(stationCount);
+        builder.append(", bandCoverage=");
+        builder.append(bandCoverage);
+        builder.append(", iterations=");
+        builder.append(iterations);
+        builder.append("]");
         return builder.toString();
     }
-
 }

@@ -127,7 +127,7 @@ public class SharedBandController {
         this.client = client;
         this.bus = bus;
         this.bus.register(this);
-        this.scheduler = new TimeLatchedGetSet(() -> requestData(), () -> sharedFbData.forEach(sfb -> {
+        this.scheduler = new TimeLatchedGetSet(this::requestData, () -> sharedFbData.forEach(sfb -> {
             try {
                 client.setSharedFrequencyBandParameter(sfb).subscribe();
             } catch (JsonProcessingException e1) {
@@ -206,8 +206,8 @@ public class SharedBandController {
                   .filter(Objects::nonNull)
                   .filter(value -> null != value.getId())
                   .doOnComplete(() -> Optional.ofNullable(codaSharedTableView).ifPresent(TableView::sort))
-                  .subscribe(value -> sharedFbData.add(value), err -> log.error(err.getMessage(), err));
-            Optional.ofNullable(codaSharedTableView).ifPresent(v -> v.refresh());
+                  .subscribe(value -> sharedFbData.add(value), err -> log.trace(err.getMessage(), err));
+            Optional.ofNullable(codaSharedTableView).ifPresent(TableView::refresh);
         });
     }
 }

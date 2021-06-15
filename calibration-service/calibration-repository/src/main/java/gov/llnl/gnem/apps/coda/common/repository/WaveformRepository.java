@@ -42,7 +42,7 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
 
     @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w order by w.id desc")
     public Set<Waveform> getWaveformMetadata();
-    
+
     @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.active = :active order by w.id desc")
     public List<Waveform> getWaveformMetadataByActive(@Param("active") boolean active);
 
@@ -67,25 +67,25 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     public int setActiveByStationName(@Param("stationName") String stationName, @Param("active") boolean active);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Waveform w SET w.active = :active")    
-    public void setAllActive(boolean active);    
-    
+    @Query("update Waveform w SET w.active = :active")
+    public void setAllActive(boolean active);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Waveform w SET w.active = :active where w.id in (:ids)")
-    public int setActiveIn(@Param("active") boolean active, @Param("ids") List<Long> waveformIds);   
-    
+    public int setActiveIn(@Param("active") boolean active, @Param("ids") List<Long> waveformIds);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Waveform w SET w.active = :active where w.id not in (:ids)")
     public int setActiveNotIn(@Param("active") boolean active, @Param("ids") List<Long> waveformIds);
-    
+
     @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w "
             + "where w.active = :active and"
             + "(w.stream.station.latitude between :minX and :maxX "
             + "and w.stream.station.longitude between :minY and :maxY) "
             + "or (w.event.latitude between :minX and :maxX "
             + "and w.event.longitude between :minY and :maxY)")
-    public List<Waveform> getMetadataInsideBounds(@Param("active") boolean active, @Param("minX") Double minX, @Param("minY") Double minY, @Param("maxX") Double maxX, @Param("maxY") Double maxY);       
-    
+    public List<Waveform> getMetadataInsideBounds(@Param("active") boolean active, @Param("minX") Double minX, @Param("minY") Double minY, @Param("maxX") Double maxX, @Param("maxY") Double maxY);
+
     @Query("select w.id from Waveform w where w.event.eventId = :eventId")
     public List<Long> findAllIdsByEventId(@Param("eventId") String eventId);
 
@@ -100,7 +100,12 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
 
     @Query("select w.id from Waveform w where w.active = false")
     public List<Long> findAllInactiveIds();
-    
+
     @Query("select w.id from Waveform w where w.id not in (:ids)")
     public List<Long> findIdsNotIn(@Param("ids") List<Long> ids);
+
+    @Query("select w from Waveform w where w.active = true and w.stream.channelName = 'STACK' "
+            + "and w.event.eventId in (select ev.event.eventId from Waveform ev where ev.id = :id) "
+            + "and w.stream.station.stationName in (select sta.stream.station.stationName from Waveform sta where sta.id = :id)")
+    public List<Waveform> findAllActiveSharedEventStationStacksById(@Param("id") Long id);
 }

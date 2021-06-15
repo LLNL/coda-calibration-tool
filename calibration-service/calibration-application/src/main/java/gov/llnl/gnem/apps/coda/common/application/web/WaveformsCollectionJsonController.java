@@ -75,6 +75,11 @@ public class WaveformsCollectionJsonController {
         return ResponseEntity.ok(waveforms);
     }
 
+    @GetMapping(value = "/query/shared-event-station-by-id/{id}", name = "getActiveSharedEventStationStacksById")
+    public ResponseEntity<?> getActiveSharedEventStationStacksById(@PathVariable Long id) {
+        return ResponseEntity.ok(getWaveformService().getActiveSharedEventStationStacksById(id));
+    }
+
     @GetMapping(value = "/query/unique-by-event-station", name = "getAllStacks")
     public ResponseEntity<?> getUniqueEventStationStacks() {
         return ResponseEntity.ok(getWaveformService().getUniqueEventStationStacks());

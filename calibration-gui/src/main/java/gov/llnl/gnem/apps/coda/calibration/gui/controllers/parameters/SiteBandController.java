@@ -49,6 +49,9 @@ public class SiteBandController {
 
     @FXML
     TableColumn<SiteFrequencyBandParameters, String> stationCol;
+    
+    @FXML
+    TableColumn<SiteFrequencyBandParameters, String> networkCol;
 
     @FXML
     TableColumn<SiteFrequencyBandParameters, String> siteLowFreqCol;
@@ -83,6 +86,16 @@ public class SiteBandController {
                                       .map(SiteFrequencyBandParameters::getStation)
                                       .filter(Objects::nonNull)
                                       .map(Station::getStationName)
+                                      .filter(Objects::nonNull)
+                                      .orElseGet(String::new)));
+        
+        networkCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(
+                        () -> Optional.ofNullable(x)
+                                      .map(CellDataFeatures::getValue)
+                                      .map(SiteFrequencyBandParameters::getStation)
+                                      .filter(Objects::nonNull)
+                                      .map(Station::getNetworkName)
                                       .filter(Objects::nonNull)
                                       .orElseGet(String::new)));
 

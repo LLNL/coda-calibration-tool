@@ -36,8 +36,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.apache.commons.math3.exception.TooManyIterationsException;
+import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.optim.InitialGuess;
@@ -433,17 +432,19 @@ public class SpectraCalculator {
      * UCRL-ID-146882
      *
      */
-    public List<MeasuredMwParameters> measureMws(final Map<Event, Map<FrequencyBand, SummaryStatistics>> evidMap,
-            final Map<Event, Function<Map<Double, Double>, SortedMap<Double, Double>>> eventWeights, final PICK_TYPES selectedPhase, final MdacParametersPS mdacPs, final MdacParametersFI mdacFi) {
-        return evidMap.entrySet().parallelStream().map(entry -> {
-            final Map<FrequencyBand, SummaryStatistics> measurements = entry.getValue();
-            final double[] MoMw = fitMw(entry.getKey(), measurements, selectedPhase, mdacFi, mdacPs, eventWeights.get(entry.getKey()));
+    public List<MeasuredMwParameters> measureMws(MwMeasurementInputData inputData, final PICK_TYPES selectedPhase, MdacParametersFI mdacFi) {
+        return inputData.getEvidMap().entrySet().parallelStream().map(entry -> {
+            Map<FrequencyBand, SummaryStatistics> measurements = entry.getValue();
+            double[] MoMw = fitMw(entry.getKey(), measurements, selectedPhase, mdacFi, inputData.getMdacPs(), inputData.getEventWeights().get(entry.getKey()));
             if (MoMw == null) {
                 log.warn("MoMw calculation returned null value");
                 return null;
             }
+
             return new MeasuredMwParameters().setEventId(entry.getKey().getEventId())
                                              .setDataCount((int) MoMw[DATA_COUNT])
+                                             .setStationCount(inputData.getStationCount().get(entry.getKey().getEventId()))
+                                             .setBandCoverage(inputData.getBandCoverageMetric().get(entry.getKey().getEventId()))
                                              .setMw(MoMw[MW_FIT])
                                              .setMeanMw(MoMw[MW_MEAN])
                                              .setMwSd(MoMw[MW_SD])
@@ -551,7 +552,7 @@ public class SpectraCalculator {
             // this is the stress
             result[APP_STRESS] = optimizerResult.getPoint()[MPA];
             iterations = cmaes.getIterations();
-        } catch (TooManyEvaluationsException | TooManyIterationsException e) {
+        } catch (MaxCountExceededException e) {
             log.warn("Failed to converge while attempting to fit an Mw to this event {}, falling back to a grid search.", event);
         }
 

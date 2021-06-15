@@ -1,12 +1,12 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -14,36 +14,26 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.SortedMap;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JToolBar;
-import javax.swing.SwingUtilities;
-
-import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +41,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
+import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
@@ -58,159 +49,253 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import javafx.event.EventHandler;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ToolBar;
+import javafx.scene.input.InputEvent;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import reactor.core.scheduler.Schedulers;
 
 //TODO: Split this out into a few separate functional areas when time permits (i.e. CodaWaveformPlotGUI, CodaWaveformPlotManager, etc).
 // As it currently is this class is pretty entangled.
-public class CodaWaveformPlotManager extends JPanel {
+public class CodaWaveformPlotManager {
 
+    private static final String TIME_SECONDS_FROM_ORIGIN = "Time (seconds from origin)";
+    private static final String WAVEFORM_PREFIX = "Waveform_";
     private static final Logger log = LoggerFactory.getLogger(CodaWaveformPlotManager.class);
-    private static final long serialVersionUID = 1L;
-
-    private WaveformClient waveformClient;
-    private ShapeMeasurementClient shapeClient;
-    private ParameterClient paramsClient;
-    private PeakVelocityClient peakVelocityClient;
-    private GeoMap map;
-    private MapPlottingUtilities mapPlotUtils;
-    private JToolBar toolbar;
-    private JPanel waveformPanel;
+    private final WaveformClient waveformClient;
+    private final ShapeMeasurementClient shapeClient;
+    private final ParameterClient paramsClient;
+    private final PeakVelocityClient peakVelocityClient;
+    private final GeoMap map;
+    private final MapPlottingUtilities mapPlotUtils;
+    private final ToolBar multiPageToolbar;
+    private final ToolBar multiFrequencyToolbar;
     private List<Icon> mappedIcons = new ArrayList<>();
     private Map<Long, Integer> orderedWaveformIDs = new HashMap<>();
-    private SortedMap<Integer, CodaWaveformPlot> orderedWaveformPlots = new TreeMap<>();
-    private List<Long> allWaveformIDs = new ArrayList<>();
-    private GridLayout constraints = new GridLayout(0, 1);
-    private Long pageSize = 5l;
+    private final SortedMap<Integer, CodaWaveformPlot> orderedWaveformPlots = new TreeMap<>();
+    private final Set<Long> allWaveformIDs = new LinkedHashSet<>();
+    private static final Integer PAGE_SIZE = 5;
+    private final Object bagLock = new Object();
+    private final Stack<CodaWaveformPlot> plotBag = new Stack<>();
     private int currentPage = 0;
     private int totalPages = 0;
-    private JLabel pagingLabel;
+    private final Label pagingLabel;
+    private Label freqBandLabel = new Label();
+    private List<Waveform> curEventStationWaveforms;
+    private int curFreqIndex = -1;
+    private EventStaFreqStringComparator eventStaFreqComparator = new EventStaFreqStringComparator();
 
-    private final Action forwardAction = new AbstractAction() {
-        private static final long serialVersionUID = 1L;
+    private final BorderPane borderPane;
+    private final VBox waveformPanel;
 
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if ((currentPage + 1) < totalPages) {
-                currentPage++;
-                loadWaveformsForPage(currentPage);
+    final Button forwardButton = new Button(">");
+    final Button backButton = new Button("<");
+    final Button nextButton = new Button("↑");
+    final Button prevButton = new Button("↓");
+
+    private final EventHandler<InputEvent> forwardAction = event -> {
+        if ((currentPage + 1) < totalPages) {
+            currentPage++;
+            loadWaveformsForPage(currentPage);
+        }
+    };
+
+    private final EventHandler<InputEvent> backwardAction = event -> {
+        if (currentPage > 0) {
+            currentPage--;
+            loadWaveformsForPage(currentPage);
+        }
+    };
+
+    private final EventHandler<InputEvent> nextAction = event -> {
+
+        if (curEventStationWaveforms != null && curFreqIndex < curEventStationWaveforms.size() - 1) {
+            curFreqIndex += 1;
+            Waveform wave = curEventStationWaveforms.get(curFreqIndex);
+            if (wave != null) {
+                setFrequencyDisplayText(wave);
+                plotWaveform(wave.getId());
             }
         }
     };
 
-    private final Action backwardAction = new AbstractAction() {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (currentPage > 0) {
-                currentPage--;
-                loadWaveformsForPage(currentPage);
+    private final EventHandler<InputEvent> prevAction = event -> {
+        if (curEventStationWaveforms != null && curFreqIndex > 0) {
+            curFreqIndex -= 1;
+            Waveform wave = curEventStationWaveforms.get(curFreqIndex);
+            if (wave != null) {
+                setFrequencyDisplayText(wave);
+                plotWaveform(wave.getId());
             }
         }
     };
 
-    public CodaWaveformPlotManager(WaveformClient waveformClient, ShapeMeasurementClient shapeClient, ParameterClient paramsClient, PeakVelocityClient peakVelocityClient, GeoMap map,
-            MapPlottingUtilities mapPlotUtils) {
+    public CodaWaveformPlotManager(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
+            final GeoMap map, final MapPlottingUtilities mapPlotUtils) {
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
         this.peakVelocityClient = peakVelocityClient;
         this.map = map;
         this.mapPlotUtils = mapPlotUtils;
-        SwingUtilities.invokeLater(() -> {
-            this.setLayout(new BorderLayout());
-            this.waveformPanel = new JPanel();
-            waveformPanel.setLayout(constraints);
-            this.add(waveformPanel, BorderLayout.CENTER);
-            toolbar = new JToolBar();
-            toolbar.setFloatable(false);
+        this.borderPane = new BorderPane();
+        this.waveformPanel = new VBox();
+        borderPane.setCenter(waveformPanel);
+        multiPageToolbar = new ToolBar();
+        multiFrequencyToolbar = new ToolBar();
 
-            pagingLabel = new JLabel("0/0");
-            JButton forwardButton = new JButton(">");
-            JButton backButton = new JButton("<");
+        pagingLabel = new Label("0/0");
+        freqBandLabel = new Label("Frequency Band");
 
-            forwardButton.setBorderPainted(false);
-            forwardButton.setFocusPainted(false);
-            forwardButton.setContentAreaFilled(false);
+        forwardButton.addEventHandler(MouseEvent.MOUSE_CLICKED, forwardAction::handle);
+        backButton.addEventHandler(MouseEvent.MOUSE_CLICKED, backwardAction::handle);
+        nextButton.addEventHandler(MouseEvent.MOUSE_CLICKED, nextAction::handle);
+        prevButton.addEventHandler(MouseEvent.MOUSE_CLICKED, prevAction::handle);
 
-            backButton.setBorderPainted(false);
-            backButton.setFocusPainted(false);
-            backButton.setContentAreaFilled(false);
+        multiPageToolbar.getItems().add(backButton);
+        multiPageToolbar.getItems().add(pagingLabel);
+        multiPageToolbar.getItems().add(forwardButton);
 
-            forwardButton.addActionListener(action -> {
-                forwardAction.actionPerformed(action);
-            });
+        multiFrequencyToolbar.getItems().add(freqBandLabel);
+        multiFrequencyToolbar.getItems().add(prevButton);
+        multiFrequencyToolbar.getItems().add(nextButton);
 
-            backButton.addActionListener(action -> {
-                backwardAction.actionPerformed(action);
-            });
+        final Font sizedFont = Font.font(forwardButton.getFont().getFamily(), 12f);
+        forwardButton.setFont(sizedFont);
+        backButton.setFont(sizedFont);
+        nextButton.setFont(sizedFont);
+        prevButton.setFont(sizedFont);
 
-            toolbar.add(backButton);
-            toolbar.add(pagingLabel);
-            toolbar.add(forwardButton);
+        forwardButton.setFocusTraversable(false);
+        backButton.setFocusTraversable(false);
+        nextButton.setFocusTraversable(false);
+        prevButton.setFocusTraversable(false);
+    }
 
-            Font sizedFont = forwardButton.getFont().deriveFont(24f);
-            forwardButton.setFont(sizedFont);
-            backButton.setFont(sizedFont);
-        });
+    private String getStationNetworkName(Waveform waveform) {
+        if (waveform != null && waveform.getStream() != null && waveform.getStream().getStation() != null) {
+            Station station = waveform.getStream().getStation();
+            return station.getNetworkName() + station.getStationName();
+        }
+        return "";
+    }
+
+    private void setFrequencyDisplayText(Waveform wave) {
+        if (wave != null && curEventStationWaveforms != null) {
+            freqBandLabel.setText("Frequency Band (" + (curFreqIndex + 1) + "/" + curEventStationWaveforms.size() + ") - Low: " + wave.getLowFrequency() + " High: " + wave.getHighFrequency());
+        } else {
+            freqBandLabel.setText("No frequency bands to select");
+        }
+    }
+
+    private void plotWaveform(long waveformId) {
+        clear();
+        final List<Pair<Waveform, CodaWaveformPlot>> results = new ArrayList<>();
+        final SyntheticCoda synth = waveformClient.getSyntheticFromWaveformId(waveformId).publishOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(10));
+        if (synth != null && synth.getId() != null) {
+            results.add(createPlot(synth));
+        } else {
+            results.add(createPlot(waveformClient.getWaveformFromId(waveformId).publishOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(10))));
+        }
+
+        waveformPanel.getChildren().clear();
+
+        final Pair<Waveform, CodaWaveformPlot> plotPair = results.get(0);
+        final Waveform waveform = plotPair.getLeft();
+        final CodaWaveformPlot plot = plotPair.getRight();
+        if (waveform != null) {
+
+            final Collection<Icon> icons = mapWaveform(waveform);
+            mappedIcons.addAll(icons);
+            map.addIcons(icons);
+            if (plot != null) {
+                plot.setMargin(null, null, null, null);
+                plot.getxAxis().setText(TIME_SECONDS_FROM_ORIGIN);
+                plot.attachToDisplayNode(waveformPanel);
+            }
+        }
+
+    }
+
+    private void setWaveformsByEventStation(long waveformId) {
+        final List<Waveform> eventWaveforms = waveformClient.getActiveSharedEventStationWaveformsById(waveformId).sort(eventStaFreqComparator).collectList().block(Duration.ofSeconds(10));
+        if (eventWaveforms != null && !eventWaveforms.isEmpty() && eventWaveforms.get(0).getId() != null) {
+            Waveform waveform = eventWaveforms.parallelStream().filter(w -> w.getId() != null && w.getId() == waveformId).findAny().orElseGet(Waveform::new);
+            curEventStationWaveforms = eventWaveforms;
+            curFreqIndex = curEventStationWaveforms.indexOf(waveform);
+            setFrequencyDisplayText(waveform);
+            borderPane.setTop(multiFrequencyToolbar);
+        }
     }
 
     private void clear() {
-        List<Icon> oldIcons = mappedIcons;
+        final List<Icon> oldIcons = mappedIcons;
         mappedIcons = new ArrayList<>();
         map.removeIcons(oldIcons);
-        waveformPanel.removeAll();
+        synchronized (bagLock) {
+            plotBag.addAll(orderedWaveformPlots.values().stream().filter(plot -> {
+                plot.clear();
+                return true;
+            }).collect(Collectors.toList()));
+        }
+        orderedWaveformPlots.clear();
     }
 
-    private List<Pair<Waveform, CodaWaveformPlot>> createSyntheticPlots(List<SyntheticCoda> synthetics) {
-        List<Pair<Waveform, CodaWaveformPlot>> plots = new ArrayList<>(synthetics.size());
-        for (SyntheticCoda s : synthetics) {
-            Pair<Waveform, CodaWaveformPlot> plot = createPlot(s);
-            plot = dropBox(plot);
+    private List<Pair<Waveform, CodaWaveformPlot>> createSyntheticPlots(final List<SyntheticCoda> synthetics) {
+        final List<Pair<Waveform, CodaWaveformPlot>> plots = new ArrayList<>(synthetics.size());
+        for (final SyntheticCoda s : synthetics) {
+            final Pair<Waveform, CodaWaveformPlot> plot = createPlot(s);
             plots.add(plot);
         }
         return plots;
     }
 
-    private List<Pair<Waveform, CodaWaveformPlot>> createWaveformPlots(List<Waveform> waveforms) {
-        List<Pair<Waveform, CodaWaveformPlot>> plots = new ArrayList<>(waveforms.size());
-        for (Waveform w : waveforms) {
-            Pair<Waveform, CodaWaveformPlot> plot = createPlot(w);
-            plot = dropBox(plot);
+    private List<Pair<Waveform, CodaWaveformPlot>> createWaveformPlots(final List<Waveform> waveforms) {
+        final List<Pair<Waveform, CodaWaveformPlot>> plots = new ArrayList<>(waveforms.size());
+        for (final Waveform w : waveforms) {
+            final Pair<Waveform, CodaWaveformPlot> plot = createPlot(w);
             plots.add(plot);
         }
         return plots;
     }
 
-    private Pair<Waveform, CodaWaveformPlot> dropBox(Pair<Waveform, CodaWaveformPlot> plotPair) {
-        CodaWaveformPlot plot = plotPair.getRight();
-        if (plot != null) {
-            plot.setVerticalOffset(5);
-            plot.setBoxHeight(0);
-            plot.setBoxWidth(0);
-            plot.setShowBorder(false);
-        }
-        return new Pair<>(plotPair.getLeft(), plot);
-    }
-
-    private Pair<Waveform, CodaWaveformPlot> createPlot(SyntheticCoda synth) {
-        CodaWaveformPlot plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient);
+    private Pair<Waveform, CodaWaveformPlot> createPlot(final SyntheticCoda synth) {
+        final CodaWaveformPlot plot = getOrCreatePlot();
         plot.setWaveform(synth);
         return new Pair<>(synth.getSourceWaveform(), plot);
     }
 
-    private Pair<Waveform, CodaWaveformPlot> createPlot(Waveform waveform) {
-        CodaWaveformPlot plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient);
+    private Pair<Waveform, CodaWaveformPlot> createPlot(final Waveform waveform) {
+        final CodaWaveformPlot plot = getOrCreatePlot();
         plot.setWaveform(waveform);
         return new Pair<>(waveform, plot);
     }
 
-    private Collection<Icon> mapWaveform(Waveform waveform) {
+    private CodaWaveformPlot getOrCreatePlot() {
+        CodaWaveformPlot plot;
+        synchronized (bagLock) {
+            if (!plotBag.isEmpty()) {
+                plot = plotBag.pop();
+            } else {
+                plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient);
+            }
+        }
+        return plot;
+    }
+
+    private Collection<Icon> mapWaveform(final Waveform waveform) {
         return Stream.of(waveform).filter(Objects::nonNull).flatMap(w -> {
-            List<Icon> icons = new ArrayList<>();
+            final List<Icon> icons = new ArrayList<>();
             if (w.getStream() != null && w.getStream().getStation() != null) {
-                Station station = w.getStream().getStation();
+                final Station station = w.getStream().getStation();
                 icons.add(mapPlotUtils.createStationIconForeground(station));
             }
             if (w.getEvent() != null) {
@@ -220,9 +305,7 @@ public class CodaWaveformPlotManager extends JPanel {
         }).collect(Collectors.toList());
     }
 
-    @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
+    public void setVisible(final boolean visible) {
         if (visible) {
             map.addIcons(mappedIcons);
         } else {
@@ -230,8 +313,8 @@ public class CodaWaveformPlotManager extends JPanel {
         }
     }
 
-    public void setOrderedWaveformIDs(List<Long> waveformIDs) {
-        //FIXME: Handle concurrency issues w.r.t. to mid-layout updates to this
+    public void setOrderedWaveformIDs(final List<Long> waveformIDs) {
+        // FIXME: Handle concurrency issues w.r.t. to mid-layout updates to this
         orderedWaveformIDs = new HashMap<>(waveformIDs.size());
         allWaveformIDs.clear();
 
@@ -239,8 +322,8 @@ public class CodaWaveformPlotManager extends JPanel {
             orderedWaveformIDs.put(waveformIDs.get(i), i);
             allWaveformIDs.add(waveformIDs.get(i));
         }
-        if (waveformIDs.size() > pageSize) {
-            double page = waveformIDs.size() / (double) pageSize;
+        if (waveformIDs.size() > PAGE_SIZE) {
+            final double page = waveformIDs.size() / (double) PAGE_SIZE;
             if (page % 1.0 > 0.001) {
                 totalPages = (int) (page + 1.0);
             } else {
@@ -256,96 +339,129 @@ public class CodaWaveformPlotManager extends JPanel {
         loadWaveformsForPage(currentPage);
     }
 
-    private void adjustShowingToolbar(int totalPages) {
+    private void adjustShowingToolbar(final int totalPages) {
         if (totalPages > 1) {
-            this.add(toolbar, BorderLayout.NORTH);
+            borderPane.setTop(multiPageToolbar);
         } else {
-            this.remove(toolbar);
+            borderPane.setTop(null);
         }
     }
 
-    private void loadWaveformsForPage(int pageNumber) {
+    private void loadWaveformsForPage(final int pageNumber) {
         clear();
-        List<Pair<Waveform, CodaWaveformPlot>> results = new ArrayList<>();
+        final List<Pair<Waveform, CodaWaveformPlot>> results = new ArrayList<>();
         if (allWaveformIDs.size() == 1) {
-            SyntheticCoda synth = waveformClient.getSyntheticFromWaveformId(allWaveformIDs.get(0)).publishOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(10));
-            if (synth != null && synth.getId() != null) {
-                results.add(createPlot(synth));
-            } else {
-                results.add(createPlot(waveformClient.getWaveformFromId(allWaveformIDs.get(0)).publishOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(10))));
+            Optional<Long> firstElement = allWaveformIDs.stream().findFirst();
+            if (firstElement.isPresent()) {
+                setWaveformsByEventStation(firstElement.get());
+                plotWaveform(firstElement.get());
             }
+            return;
         } else {
+            curEventStationWaveforms = null;
+            curFreqIndex = -1;
             pagingLabel.setText(pageNumber + 1 + "/" + totalPages);
-            List<Long> pageIds = new ArrayList<>(pageSize.intValue());
-            long skipVal = pageNumber * pageSize;
-            if (skipVal != 0 && allWaveformIDs.size() > pageSize && allWaveformIDs.size() - skipVal < pageSize) {
-                skipVal = allWaveformIDs.size() - pageSize;
+            final List<Long> pageIds = new ArrayList<>(PAGE_SIZE.intValue());
+            int skipVal = pageNumber * PAGE_SIZE;
+            if (skipVal != 0 && allWaveformIDs.size() > PAGE_SIZE && allWaveformIDs.size() - skipVal < PAGE_SIZE) {
+                skipVal = allWaveformIDs.size() - PAGE_SIZE;
             }
-            allWaveformIDs.stream().sequential().skip(skipVal).limit(pageSize).forEach(pageIds::add);
-            List<SyntheticCoda> synthetics = waveformClient.getSyntheticsFromWaveformIds(pageIds)
-                                                           .filter(synth -> synth != null && synth.getId() != null)
-                                                           .collectList()
-                                                           .publishOn(Schedulers.boundedElastic())
-                                                           .block(Duration.ofSeconds(10));
+            allWaveformIDs.stream().sequential().skip(skipVal).limit(PAGE_SIZE).forEach(pageIds::add);
+            final List<SyntheticCoda> synthetics = waveformClient.getSyntheticsFromWaveformIds(pageIds)
+                                                                 .filter(synth -> synth != null && synth.getId() != null)
+                                                                 .collectList()
+                                                                 .publishOn(Schedulers.boundedElastic())
+                                                                 .block(Duration.ofSeconds(10));
             if (synthetics != null && !synthetics.isEmpty()) {
                 pageIds.removeAll(synthetics.stream().map(synth -> synth.getSourceWaveform().getId()).collect(Collectors.toList()));
                 results.addAll(createSyntheticPlots(synthetics));
             }
 
-            List<Waveform> waveforms = waveformClient.getWaveformsFromIds(pageIds)
-                                                     .filter(waveform -> waveform != null && waveform.getId() != null)
-                                                     .collectList()
-                                                     .publishOn(Schedulers.boundedElastic())
-                                                     .block(Duration.ofSeconds(10));
+            final List<Waveform> waveforms = waveformClient.getWaveformsFromIds(pageIds)
+                                                           .filter(waveform -> waveform != null && waveform.getId() != null)
+                                                           .collectList()
+                                                           .publishOn(Schedulers.boundedElastic())
+                                                           .block(Duration.ofSeconds(10));
             if (waveforms != null && !waveforms.isEmpty()) {
                 results.addAll(createWaveformPlots(waveforms));
             }
         }
         setPlots(results);
-        this.revalidate();
     }
 
-    private void setPlots(List<Pair<Waveform, CodaWaveformPlot>> plotPairs) {
-        orderedWaveformPlots.clear();
-        for (Pair<Waveform, CodaWaveformPlot> plotPair : plotPairs) {
-            Waveform waveform = plotPair.getLeft();
+    private void setPlots(final List<Pair<Waveform, CodaWaveformPlot>> plotPairs) {
+        waveformPanel.getChildren().clear();
+        for (int i = 0; i < plotPairs.size(); i++) {
+            final Pair<Waveform, CodaWaveformPlot> plotPair = plotPairs.get(i);
+            final Waveform waveform = plotPair.getLeft();
+            final CodaWaveformPlot plot = plotPair.getRight();
             if (waveform != null) {
-                Integer index = orderedWaveformIDs.get(waveform.getId());
+                final Integer index = orderedWaveformIDs.get(waveform.getId());
                 orderedWaveformPlots.put(index, plotPair.getRight());
-                Collection<Icon> icons = mapWaveform(waveform);
+                final Collection<Icon> icons = mapWaveform(waveform);
                 mappedIcons.addAll(icons);
                 map.addIcons(icons);
-            }
-        }
-        for (CodaWaveformPlot plot : orderedWaveformPlots.values()) {
-            this.waveformPanel.add(plot);
-        }
-    }
-
-    public void triggerKeyEvent(javafx.scene.input.KeyEvent event) {
-        if (event.getCode() == KeyCode.LEFT) {
-            SwingUtilities.invokeLater(() -> backwardAction.actionPerformed(new ActionEvent(event.getSource(), KeyEvent.KEY_RELEASED, "BackwardAction")));
-        } else if (event.getCode() == KeyCode.RIGHT) {
-            SwingUtilities.invokeLater(() -> forwardAction.actionPerformed(new ActionEvent(event.getSource(), KeyEvent.KEY_RELEASED, "ForwardAction")));
-        }
-    }
-
-    public void exportScreenshots(File folder) {
-        String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
-        for (CodaWaveformPlot wp : orderedWaveformPlots.values()) {
-            Color originalBackground = wp.getBackground();
-            wp.setBackground(Color.WHITE);
-            try {
-                String plotId = wp.getPlotIdentifier();
-                if (plotId != null && !plotId.isEmpty()) {
-                    wp.exportSVG(folder + File.separator + "Waveform_" + plotId + "_" + timestamp + ".svg");
-                } else {
-                    wp.exportSVG(folder + File.separator + "Waveform_" + SnapshotUtils.getTimestampWithLeadingSeparator() + ".svg");
+                if (plot != null) {
+                    if (plotPairs.size() > 1) {
+                        if (i == plotPairs.size() - 1) {
+                            plot.setMargin(25, 30, 30, 0);
+                            plot.getxAxis().setText(TIME_SECONDS_FROM_ORIGIN);
+                        } else {
+                            plot.getxAxis().setText("");
+                            plot.setMargin(25, 20, 30, 0);
+                        }
+                    } else {
+                        plot.setMargin(null, null, null, null);
+                        plot.getxAxis().setText(TIME_SECONDS_FROM_ORIGIN);
+                    }
+                    plot.attachToDisplayNode(waveformPanel);
+                    plot.replot();
                 }
-            } catch (UnsupportedEncodingException | FileNotFoundException | SVGGraphics2DIOException e) {
-                log.error("Error attempting to write plots for waveform plot {} : {}", e.getLocalizedMessage(), e);
             }
-            wp.setBackground(originalBackground);
         }
     }
+
+    public void triggerKeyEvent(final KeyEvent event) {
+        if (event.getCode() == KeyCode.LEFT) {
+            backButton.requestFocus();
+            backwardAction.handle(event);
+        } else if (event.getCode() == KeyCode.RIGHT) {
+            forwardButton.requestFocus();
+            forwardAction.handle(event);
+        } else if (event.getCode() == KeyCode.UP) {
+            nextButton.requestFocus();
+            nextAction.handle(event);
+        } else if (event.getCode() == KeyCode.DOWN) {
+            prevAction.handle(event);
+            prevButton.requestFocus();
+        }
+    }
+
+    public void exportScreenshots(final File folder) {
+        String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
+        SnapshotUtils.writePng(folder, new Pair<>(WAVEFORM_PREFIX, waveformPanel), timestamp);
+        for (CodaWaveformPlot wp : orderedWaveformPlots.values()) {
+            String plotId = wp.getPlotIdentifier();
+            if (plotId != null && !plotId.isEmpty()) {
+                exportSVG(wp, folder + File.separator + WAVEFORM_PREFIX + plotId + "_" + timestamp + ".svg");
+            } else {
+                exportSVG(wp, folder + File.separator + WAVEFORM_PREFIX + SnapshotUtils.getTimestampWithLeadingSeparator() + ".svg");
+            }
+        }
+    }
+
+    private void exportSVG(CodaWaveformPlot plot, String path) {
+        try {
+            Files.write(Paths.get(path), plot.getSVG().getBytes());
+        } catch (final IOException e) {
+            log.error("Error attempting to write plots for controller : {}", e.getLocalizedMessage(), e);
+        }
+    }
+
+    public void attachToDisplayNode(final Pane parent) {
+        if (parent != null) {
+            parent.getChildren().add(borderPane);
+        }
+    }
+
 }

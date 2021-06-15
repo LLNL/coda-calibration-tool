@@ -1,12 +1,12 @@
 /*
-* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -14,9 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
-import java.awt.Color;
-import java.awt.geom.Point2D;
-import java.text.DecimalFormat;
+import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,126 +25,117 @@ import java.util.stream.Collectors;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
+import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
-import llnl.gnem.core.gui.plotting.HorizPinEdge;
-import llnl.gnem.core.gui.plotting.Legend;
-import llnl.gnem.core.gui.plotting.PaintMode;
-import llnl.gnem.core.gui.plotting.PenStyle;
-import llnl.gnem.core.gui.plotting.VertPinEdge;
-import llnl.gnem.core.gui.plotting.jmultiaxisplot.JMultiAxisPlot;
-import llnl.gnem.core.gui.plotting.jmultiaxisplot.JSubplot;
-import llnl.gnem.core.gui.plotting.jmultiaxisplot.PlotProperties;
-import llnl.gnem.core.gui.plotting.jmultiaxisplot.TickScaleFunc;
-import llnl.gnem.core.gui.plotting.jmultiaxisplot.VPickLine;
-import llnl.gnem.core.gui.plotting.plotobject.Line;
-import llnl.gnem.core.gui.plotting.plotobject.Symbol;
-import llnl.gnem.core.gui.plotting.plotobject.SymbolFactory;
+import javafx.geometry.Point2D;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import llnl.gnem.core.gui.plotting.api.Axis;
+import llnl.gnem.core.gui.plotting.api.AxisLimits;
+import llnl.gnem.core.gui.plotting.api.BasicPlot;
+import llnl.gnem.core.gui.plotting.api.Line;
+import llnl.gnem.core.gui.plotting.api.LineStyles;
+import llnl.gnem.core.gui.plotting.api.PlotFactory;
+import llnl.gnem.core.gui.plotting.api.PlotObject;
+import llnl.gnem.core.gui.plotting.api.PlottingUtils;
+import llnl.gnem.core.gui.plotting.api.Symbol;
+import llnl.gnem.core.gui.plotting.api.SymbolStyles;
 
-/**
- * @author E. Matzel
- * @since Oct 22, 2007
- */
-public class SpectralPlot extends JMultiAxisPlot {
-
+public class SpectralPlot extends Pane implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final String AVG_MW_LEGEND_LABEL = "Avg";
 
-    private static final double EPSILON = 0.00000000000001;
+    private static final double EPSILON = 1E-14;
 
-    private transient JSubplot jsubplot;
-
-    private double xmin = 0.0;
+    private double xmin = 1.0;
     private double xmax = -xmin;
     private double ymin = xmin;
     private double ymax = xmax;
 
-    private transient PlotProperties properties = new PlotProperties();
-
-    private double defaultXMin = 0.0;
-    private double defaultXMax = 0.0;
+    private double defaultXMin = 1.0;
+    private double defaultXMax = 1.0;
     private double defaultYMin = 15.0;
     private double defaultYMax = 27.0;
 
-    private final Map<Point2D.Double, List<Symbol>> symbolMap = new HashMap<>();
-    private final NumberFormat dfmt = new DecimalFormat("#0.0#");
-    
-    private transient boolean plotCorners = false;
+    private final NumberFormat dfmt = NumberFormatFactory.twoDecimalOneLeadingZero();
+
+    private boolean plotCorners = false;
+
+    private BasicPlot plot;
+    private transient PlotFactory plotFactory;
+
+    private Axis yAxis;
+    private Axis xAxis;
+
+    private boolean autoCalculateXaxisRange = true;
+    private boolean autoCalculateYaxisRange = true;
+    private final Map<Point2D, List<Symbol>> symbolMap = new HashMap<>();
+    private final transient Object symbolMapLock = new Object();
+
+    private final transient List<Symbol> selectedData = new ArrayList<>();
+    private final transient Object selectedDataLock = new Object();
 
     public SpectralPlot() {
-        super();
+        plotFactory = new PlotlyPlotFactory();
         setupPlot();
     }
 
     private void setupPlot() {
+        plot = plotFactory.basicPlot();
 
-        this.getXaxis().setLabelText("X-axis label");
-        this.getXaxis().setTickScaleFunction(new TickScaleFunc() {
+        yAxis = plotFactory.axis(Axis.Type.Y, "Y-axis label");
+        xAxis = plotFactory.axis(Axis.Type.LOG_X, "X-axis label");
+        plot.addAxes(yAxis, xAxis);
 
-            private final NumberFormat dfmt2 = new DecimalFormat("#0.0#");
-
-            @Override
-            public String func(String tick) {
-                if (tick == null || tick.isEmpty()) {
-                    return tick;
-                }
-                try {
-                    Double val = Math.pow(10, Double.parseDouble(tick));
-                    return dfmt2.format(val);
-                } catch (NumberFormatException e) {
-                    return tick;
-                }
-            }
-        });
-
-        this.getPlotBorder().setBackgroundColor(new Color(200, 200, 200));
-        this.setHorizontalOffset(15);
-        this.setVerticalOffset(15);
-        this.setBorderWidth(15);
-        this.getPlotBorder().setDrawBox(true);
-        this.getPlotBorder().setFillRegion(true);
-        this.getPlotRegion().setDrawBox(false);
-        this.getPlotRegion().setFillRegion(true);
-        this.getPlotRegion().setBackgroundColor(Color.white);
-        this.getTitle().setText("Title String");
-        this.getTitle().setFontSize(14);
-
-        jsubplot = this.addSubplot();
-        jsubplot.getPlotRegion().setDrawBox(true);
-
-        jsubplot.getPlotRegion().setFillRegion(true);
-        jsubplot.getPlotRegion().setDrawBox(true);
-        jsubplot.getPlotRegion().setBackgroundColor(new Color(0.96F, 0.96F, 0.96F));
-        jsubplot.getYaxis().setLabelText("Y-axis label");
-
-        properties.setSymbolSize(3.5d);
+        plot.getTitle().setText("Title String");
+        plot.getTitle().setFontSize(14);
+        plot.setSymbolSize(8);
+        plot.attachToDisplayNode(this);
     }
 
     public void clearPlot() {
-        xmin = defaultXMin;
-        xmax = defaultXMax;
-        ymin = defaultYMin;
-        ymax = defaultYMax;
-        jsubplot.Clear();
+        xmin = 0.0;
+        xmax = 0.0;
+        ymin = 0.0;
+        ymax = 0.0;
     }
 
     /**
-     * @param plots
+     * @param points
      *            <p>
-     *            List of {X, Y, Symbol} values. Presently this is used mostly
-     *            as { log10(centerFrequency), log10(amplitiude), Symbol }
+     *            List of {X, Y, {@link SymbolStyles}} values. Presently this is
+     *            used mostly as { log10(centerFrequency), log10(amplitiude),
+     *            {@link SymbolStyles} }
      *            </p>
-     * @param showLegend
      */
-    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend) {
-        plotXYdata(plots, showLegend, null);
+    protected void plotXYdata(final List<PlotPoint> points) {
+        if (points != null) {
+            symbolMap.clear();
+            selectedData.clear();
+            points.stream().filter(p -> rescalePlot(p.getX(), p.getY())).map(v -> {
+                String label;
+                if (v instanceof LabeledPlotPoint) {
+                    label = ((LabeledPlotPoint) v).getLabel();
+                } else {
+                    label = "";
+                }
+                return plotFactory.createSymbol(v.getStyle(), label, v.getX(), v.getY(), v.getColor(), Color.BLACK, v.getColor(), label, true);
+            }).forEach(symbol -> {
+                synchronized (symbolMapLock) {
+                    symbolMap.computeIfAbsent(new Point2D(symbol.getX(), symbol.getY()), v -> new ArrayList<>()).add(symbol);
+                }
+                plot.addPlotObject(symbol);
+            });
+        }
     }
 
     /**
      * @param plots
      *            <p>
-     *            List of {X, Y, Symbol} values. Presently this is used mostly
-     *            as { log10(centerFrequency), log10(amplitiude), Symbol }
+     *            List of {X, Y, {@link SymbolStyles}} values. Presently this is
+     *            used mostly as { log10(centerFrequency), log10(amplitiude),
+     *            {@link SymbolStyles} }
      *            </p>
      * @param showLegend
      * @param spectra
@@ -155,35 +144,32 @@ public class SpectralPlot extends JMultiAxisPlot {
      *            calibration spectra
      *            </p>
      */
-    public void plotXYdata(final List<PlotPoint> plots, Boolean showLegend, List<Spectra> spectra) {        
-        symbolMap.clear();
-        // line based legends for trending
-        Legend legend = new Legend(getTitle().getFontName(), getTitle().getFontSize(), HorizPinEdge.RIGHT, VertPinEdge.TOP, 5, 5);
+    public void plotXYdata(final List<PlotPoint> plots, final List<Spectra> spectra) {
+        plot.clear();
 
         if (plots.size() > 1) {
             // get the average for each freq and plot it - connect the points
-            List<PlotPoint> averages = createAveragePlot(sortPointsByX(plots));
+            final List<PlotPoint> averages = createAveragePlot(sortPointsByX(plots));
 
-            float[] x = new float[averages.size()];
-            float[] y = new float[averages.size()];
+            final double[] x = new double[averages.size()];
+            final double[] y = new double[averages.size()];
             for (int i = 0; i < averages.size(); i++) {
-                PlotPoint point = averages.get(i);
-                x[i] = point.getX().floatValue();
-                y[i] = point.getY().floatValue();
+                final PlotPoint point = averages.get(i);
+                x[i] = point.getX();
+                y[i] = point.getY();
             }
 
-            Line line = new Line(x, y, Color.BLACK, PaintMode.COPY, PenStyle.SOLID, 2);
-            jsubplot.AddPlotObject(line);
-            legend.addLabeledLine(AVG_MW_LEGEND_LABEL, line);
+            final Line line = plotFactory.line(x, y, Color.BLACK, LineStyles.SOLID, 2);
+            line.setName(AVG_MW_LEGEND_LABEL);
+            plot.addPlotObject(line);
         }
 
         if (spectra != null) {
-            spectra.sort((s1, s2) -> (s1.getType() == SPECTRA_TYPES.UQ1 || s1.getType() == SPECTRA_TYPES.UQ2) ? -1 : 1);
-            for (Spectra spec : spectra) {
+            for (final Spectra spec : spectra) {
                 if (plotCorners && spec.getCornerFrequency() != null) {
                     plotCornerFrequency(spec.getCornerFrequency());
                 }
-                plotSpectraObject(jsubplot, spec, legend);
+                plotSpectraObject(plot, spec);
             }
         }
 
@@ -191,78 +177,89 @@ public class SpectralPlot extends JMultiAxisPlot {
 
         refreshPlotAxes();
 
-        if (showLegend) {
-            jsubplot.AddPlotObject(legend);
-        }
-
-        repaint();
+        plot.replot();
     }
 
-    private void plotCornerFrequency(double cornerFreq) {
-        jsubplot.AddPlotObject(new VPickLine(Math.log10(cornerFreq), 0.5, "~Fc (" + dfmt.format(cornerFreq) + ")").setDraggable(false));
+    private void plotCornerFrequency(final double cornerFreq) {
+        plot.addPlotObject(plotFactory.verticalLine(cornerFreq, 50, "~Fc (" + dfmt.format(cornerFreq) + ")").setDraggable(false).setLogScaleX(true).setFillColor(Color.BLACK));
     }
 
-    private void plotSpectraObject(JSubplot jsubplot, Spectra spectra, Legend legend) {
+    private void plotSpectraObject(final BasicPlot jsubplot, final Spectra spectra) {
         if (spectra != null && !spectra.getSpectraXY().isEmpty()) {
-            List<PlotPoint> netMwValues = spectra.getSpectraXY().stream().map(d -> new PlotPoint(d.getX(), d.getY(), null, null)).collect(Collectors.toList());
-            float[] x = new float[netMwValues.size()];
-            float[] y = new float[netMwValues.size()];
+            final List<PlotPoint> netMwValues = spectra.getSpectraXY().stream().map(d -> new PlotPoint(Math.pow(10, d.getX()), d.getY(), null, null, null)).collect(Collectors.toList());
+            final double[] x = new double[netMwValues.size()];
+            final double[] y = new double[netMwValues.size()];
             for (int i = 0; i < netMwValues.size(); i++) {
-                PlotPoint point = netMwValues.get(i);
-                x[i] = point.getX().floatValue();
-                y[i] = point.getY().floatValue();
+                final PlotPoint point = netMwValues.get(i);
+                x[i] = point.getX();
+                y[i] = point.getY();
             }
 
             Line line = null;
             switch (spectra.getType()) {
             case REF:
-                line = new Line(x, y, Color.BLACK, PaintMode.COPY, PenStyle.DASH, 2);
+                line = plotFactory.line(x, y, Color.BLACK, LineStyles.DASH, 2);
                 break;
             case VAL:
-                line = new Line(x, y, Color.BLUE, PaintMode.COPY, PenStyle.DASHDOT, 2);
+                line = plotFactory.line(x, y, Color.BLUE, LineStyles.DASH_DOT, 2);
                 break;
             case UQ1:
-                line = new Line(x, y, Color.LIGHT_GRAY, PaintMode.COPY, PenStyle.DASH, 2);
+                if (y.length > 0) {
+                    line = plotFactory.line(x, y, Color.LIGHTGRAY, LineStyles.DASH, 2);
+                    line.setLegendGrouping("UQ1");
+                    line.setName(dfmt.format(y[0]));
+                    line.showInLegend(false);
+
+                    jsubplot.addPlotObject(PlottingUtils.legendOnlyLine("UQ1", plotFactory, Color.LIGHTGRAY, LineStyles.DASH));
+                }
                 break;
             case UQ2:
-                line = new Line(x, y, Color.LIGHT_GRAY, PaintMode.COPY, PenStyle.DOT, 2);
+                if (y.length > 0) {
+                    line = plotFactory.line(x, y, Color.LIGHTGRAY, LineStyles.DOT, 2);
+                    line.setLegendGrouping("UQ2");
+                    line.setName(dfmt.format(y[0]));
+                    line.showInLegend(false);
+
+                    jsubplot.addPlotObject(PlottingUtils.legendOnlyLine("UQ2", plotFactory, Color.LIGHTGRAY, LineStyles.DASH));
+                }
                 break;
             case FIT:
-                line = new Line(x, y, Color.RED, PaintMode.COPY, PenStyle.DASH, 2);
+                line = plotFactory.line(x, y, Color.RED, LineStyles.DASH, 2);
                 break;
             default:
                 break;
             }
             if (line != null) {
-                jsubplot.AddPlotObject(line);
                 if (SPECTRA_TYPES.UQ1 != spectra.getType() && SPECTRA_TYPES.UQ2 != spectra.getType()) {
-                    DecimalFormat df = new DecimalFormat("#.0#");
+                    final NumberFormat df = NumberFormatFactory.oneDecimalMinimum();
                     if (spectra.getApparentStress() > 0.0) {
-                        DecimalFormat df2 = new DecimalFormat("#0.0#");
-                        legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa", line);
+                        final NumberFormat df2 = NumberFormatFactory.twoDecimalOneLeadingZero();
+                        line.setName(spectra.getType().name() + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa");
                     } else {
-                        legend.addLabeledLine(spectra.getType().name() + ' ' + df.format(spectra.getMw()), line);
+                        line.setName(spectra.getType().name() + ' ' + df.format(spectra.getMw()));
                     }
                 }
+
+                jsubplot.addPlotObject(line);
             }
         }
     }
 
-    private List<PlotPoint> createAveragePlot(List<PlotPoint> allOrderedPoints) {
-        List<PlotPoint> xyvector = new ArrayList<>();
-        List<Double> amplitudes = new ArrayList<>();
+    private List<PlotPoint> createAveragePlot(final List<PlotPoint> allOrderedPoints) {
+        final List<PlotPoint> xyvector = new ArrayList<>();
+        final List<Double> amplitudes = new ArrayList<>();
         double xTest = allOrderedPoints.get(0).getX();
 
-        for (PlotPoint point : allOrderedPoints) {
+        for (final PlotPoint point : allOrderedPoints) {
             if (Math.abs(Math.abs(point.getX()) - Math.abs(xTest)) < EPSILON) {
                 amplitudes.add(point.getY());
             } else {
                 Double sum = 0d;
-                for (Double vals : amplitudes) {
+                for (final Double vals : amplitudes) {
                     sum += vals;
                 }
-                Double amplitude = sum / amplitudes.size();
-                PlotPoint xypoint = new PlotPoint(xTest, amplitude, null, null);
+                final Double amplitude = sum / amplitudes.size();
+                final PlotPoint xypoint = new PlotPoint(xTest, amplitude, null, null, null);
                 xyvector.add(xypoint);
 
                 xTest = point.getX();
@@ -273,25 +270,25 @@ public class SpectralPlot extends JMultiAxisPlot {
         // don't forget to add the last point
         if (!amplitudes.isEmpty()) {
             Double sum = 0d;
-            for (Double vals : amplitudes) {
+            for (final Double vals : amplitudes) {
                 sum += vals;
             }
-            Double amplitude = sum / amplitudes.size();
-            PlotPoint xypoint = new PlotPoint(xTest, amplitude, null, null);
+            final Double amplitude = sum / amplitudes.size();
+            final PlotPoint xypoint = new PlotPoint(xTest, amplitude, null, null, null);
             xyvector.add(xypoint);
         }
 
         return xyvector;
     }
 
-    private List<PlotPoint> sortPointsByX(List<PlotPoint> inPlots) {
-        List<PlotPoint> plots = new ArrayList<>(inPlots);
-        int smallestIndex = getSmallestX(plots);
-        List<PlotPoint> orderedList = new ArrayList<>(plots.size());
+    private List<PlotPoint> sortPointsByX(final List<PlotPoint> inPlots) {
+        final List<PlotPoint> plots = new ArrayList<>(inPlots);
+        final int smallestIndex = getSmallestX(plots);
+        final List<PlotPoint> orderedList = new ArrayList<>(plots.size());
         orderedList.add(plots.remove(smallestIndex));
         while (!plots.isEmpty()) {
             // Find the index of the closest point (using another method)
-            int nearestIndex = findNearestIndex(orderedList.get(orderedList.size() - 1), plots);
+            final int nearestIndex = findNearestIndex(orderedList.get(orderedList.size() - 1), plots);
             // Remove from the unorderedList and add to the ordered one
             orderedList.add(plots.remove(nearestIndex));
         }
@@ -299,7 +296,7 @@ public class SpectralPlot extends JMultiAxisPlot {
         return orderedList;
     }
 
-    private int getSmallestX(List<PlotPoint> plots) {
+    private int getSmallestX(final List<PlotPoint> plots) {
         int smallest = -1;
         double test = Double.MAX_VALUE;
         for (int i = 0; i < plots.size(); i++) {
@@ -311,12 +308,12 @@ public class SpectralPlot extends JMultiAxisPlot {
         return smallest;
     }
 
-    private int findNearestIndex(PlotPoint thisPoint, List<PlotPoint> listToSearch) {
+    private int findNearestIndex(final PlotPoint thisPoint, final List<PlotPoint> listToSearch) {
         double nearestDistSquared = Double.POSITIVE_INFINITY;
         int nearestIndex = -1;
         for (int i = 0; i < listToSearch.size(); i++) {
-            PlotPoint point2 = listToSearch.get(i);
-            double distsq = (thisPoint.getX() - point2.getX()) * (thisPoint.getX() - point2.getX());
+            final PlotPoint point2 = listToSearch.get(i);
+            final double distsq = (thisPoint.getX() - point2.getX()) * (thisPoint.getX() - point2.getX());
             if (distsq < nearestDistSquared) {
                 nearestDistSquared = distsq;
                 nearestIndex = i;
@@ -326,44 +323,13 @@ public class SpectralPlot extends JMultiAxisPlot {
     }
 
     /**
-     * Plot a series of double valued (x,y) points in the subplot
-     *
-     * @param datavector
-     *            - a vector of PlotPoint objects
-     */
-    public final void plotXYdata(List<PlotPoint> data) {
-        if (data != null) {
-            data.stream().peek(p -> rescalePlot(p.getX(), p.getY())).map(v -> {
-                String label;
-                if (v instanceof LabeledPlotPoint) {
-                    label = ((LabeledPlotPoint) v).getLabel();
-                } else {
-                    label = "";
-                }
-                Symbol symbol = SymbolFactory.createSymbol(v.getStyle(),
-                                                           v.getX(),
-                                                           v.getY(),
-                                                           properties.getSymbolSize(),
-                                                           v.getColor(),
-                                                           properties.getSymbolEdgeColor(),
-                                                           v.getColor(),
-                                                           label,
-                                                           true,
-                                                           false,
-                                                           10.0);
-                symbolMap.computeIfAbsent(new Point2D.Double(v.getX(), v.getY()), key -> new ArrayList<>()).add(symbol);
-                return symbol;
-            }).forEach(jsubplot::AddPlotObject);
-        }
-    }
-
-    /**
      * Ensure that the plot includes the minimum and maximum x and y points
      *
      * @param x
      * @param y
+     * @return
      */
-    public void rescalePlot(double x, double y) {
+    public boolean rescalePlot(final double x, final double y) {
         if (x < xmin) {
             xmin = x;
         }
@@ -376,32 +342,35 @@ public class SpectralPlot extends JMultiAxisPlot {
         if (y > ymax) {
             ymax = y;
         }
+        return true;
     }
 
-    @Override
-    public void setAllXlimits(double xmin, double xmax) {   
-        super.setAllXlimits(xmin, xmax);
-        properties.setMaxXAxisValue(xmax);
-        properties.setMinXAxisValue(xmin);
+    public void setAllXlimits(final double xmin, final double xmax) {
+        plot.setAxisLimits(new AxisLimits(Axis.Type.LOG_X, xmin, xmax));
+        this.xmin = xmin;
+        this.xmax = xmax;
+        plot.replot();
     }
 
-    @Override
     public void setAllXlimits() {
-        super.setAllXlimits();
-        properties.setMaxXAxisValue(xmax);
-        properties.setMinXAxisValue(xmin);
+        plot.setAxisLimits(new AxisLimits(Axis.Type.LOG_X, defaultXMin, defaultXMax));
+        this.xmin = defaultXMin;
+        this.xmax = defaultXMax;
+        plot.replot();
     }
 
-    public void setAllYlimits(double ymin, double ymax) {        
-        jsubplot.setYlimits(ymin, ymax);
+    public void setAllYlimits(final double ymin, final double ymax) {
+        plot.setAxisLimits(new AxisLimits(Axis.Type.Y, ymin, ymax));
         this.ymin = ymin;
         this.ymax = ymax;
+        plot.replot();
     }
 
-    public void setAllYlimits() {        
-        jsubplot.setYlimits(defaultYMin, defaultYMax);
+    public void setAllYlimits() {
+        plot.setAxisLimits(new AxisLimits(Axis.Type.Y, defaultYMin, defaultYMax));
         this.ymin = defaultYMin;
         this.ymax = defaultYMax;
+        plot.replot();
     }
 
     public void refreshPlotAxes() {
@@ -410,46 +379,41 @@ public class SpectralPlot extends JMultiAxisPlot {
         double yMin;
         double yMax;
 
-        if (properties.getAutoCalculateYaxisRange()) {
-            yMin = ymin;
-            yMax = ymax;
+        if (autoCalculateYaxisRange) {
+            yMin = ymin - Math.abs(ymin * .1);
+            yMax = ymax + Math.abs(ymax * .1);
         } else {
-            yMin = properties.getMinYAxisValue();
-            yMax = properties.getMaxYAxisValue();
+            yMin = defaultYMin;
+            yMax = defaultYMax;
         }
 
-        if (properties.getAutoCalculateXaxisRange()) {
-            xMin = xmin;
-            xMax = xmax;
+        if (autoCalculateXaxisRange) {
+            xMin = xmin - Math.abs(xmin * .1);
+            xMax = xmax + Math.abs(xmax * .1);
         } else {
-            xMin = properties.getMinXAxisValue();
-            xMax = properties.getMaxXAxisValue();
+            xMin = defaultXMin;
+            xMax = defaultXMax;
         }
-        jsubplot.setAxisLimits(xMin, xMax, yMin, yMax);       
+        plot.setAxisLimits(new AxisLimits(Axis.Type.LOG_X, Math.log10(xMin), Math.log10(xMax)), new AxisLimits(Axis.Type.Y, yMin, yMax));
+        plot.replot();
     }
 
     /** Set the Title, X and Y axis labels simultaneously */
-    public void setLabels(String title, String xlabel, String ylabel) {
-        this.getTitle().setText(title);
-        this.getXaxis().setLabelText(xlabel);
-        jsubplot.getYaxis().setLabelText(ylabel);
-        jsubplot.getYaxis().setLabelOffset(12d);
+    public void setLabels(final String title, final String xlabel, final String ylabel) {
+        plot.getTitle().setText(title);
+        xAxis.setText(xlabel);
+        yAxis.setText(ylabel);
     }
 
-    public JSubplot getSubplot() {
-        return jsubplot;
-    }
-
-    @Override
-    public void grabFocus() {
-        requestFocusInWindow();
+    public BasicPlot getSubplot() {
+        return plot;
     }
 
     public double getDefaultYMin() {
         return defaultYMin;
     }
 
-    public void setDefaultYMin(double defaultYMin) {
+    public void setDefaultYMin(final double defaultYMin) {
         this.defaultYMin = defaultYMin;
     }
 
@@ -457,7 +421,7 @@ public class SpectralPlot extends JMultiAxisPlot {
         return defaultYMax;
     }
 
-    public void setDefaultYMax(double defaultYMax) {
+    public void setDefaultYMax(final double defaultYMax) {
         this.defaultYMax = defaultYMax;
     }
 
@@ -465,7 +429,7 @@ public class SpectralPlot extends JMultiAxisPlot {
         return defaultXMin;
     }
 
-    public void setDefaultXMin(double defaultXMin) {
+    public void setDefaultXMin(final double defaultXMin) {
         this.defaultXMin = defaultXMin;
     }
 
@@ -473,47 +437,93 @@ public class SpectralPlot extends JMultiAxisPlot {
         return defaultXMax;
     }
 
-    public void setDefaultXMax(double defaultXMax) {
+    public void setDefaultXMax(final double defaultXMax) {
         this.defaultXMax = defaultXMax;
     }
 
-    public void setAutoCalculateXaxisRange(boolean autoCalculateXaxisRange) {
-        properties.setAutoCalculateXaxisRange(autoCalculateXaxisRange);
+    public void setAutoCalculateXaxisRange(final boolean autoCalculateXaxisRange) {
+        this.autoCalculateXaxisRange = autoCalculateXaxisRange;
     }
 
-    public void setAutoCalculateYaxisRange(boolean autoCalculateYaxisRange) {
-        properties.setAutoCalculateYaxisRange(autoCalculateYaxisRange);
+    public void setAutoCalculateYaxisRange(final boolean autoCalculateYaxisRange) {
+        this.autoCalculateYaxisRange = autoCalculateYaxisRange;
     }
 
-    public void selectPoint(Point2D.Double xyPoint) {
+    public Map<Point2D, List<Symbol>> getSymbolMap() {
+        return symbolMap;
+    }
+
+    public void selectPoint(Point2D xyPoint) {
         List<Symbol> symbols = symbolMap.get(xyPoint);
         if (symbols != null) {
             symbols.forEach(symbol -> {
+                plot.removePlotObject(symbol);
                 symbol.setEdgeColor(symbol.getFillColor());
                 symbol.setFillColor(Color.YELLOW);
-                symbol.setSymbolSize(symbol.getSymbolSize() * 1.25);
-                jsubplot.DeletePlotObject(symbol);
-                jsubplot.AddPlotObject(symbol, 1000);
+                symbol.setZindex(1000);
+                plot.addPlotObject(symbol);
+                synchronized (selectedDataLock) {
+                    selectedData.add(symbol);
+                }
             });
         }
-        repaint();
     }
 
-    public void deselectPoint(Point2D.Double xyPoint) {
+    public void deselectPoint(Point2D xyPoint) {
         List<Symbol> symbols = symbolMap.get(xyPoint);
         if (symbols != null) {
             symbols.forEach(symbol -> {
-                symbol.setFillColor(symbol.getEdgeColor());
-                symbol.setEdgeColor(Color.BLACK);
-                symbol.setSymbolSize(symbol.getSymbolSize() / 1.25);
-                jsubplot.DeletePlotObject(symbol);
-                jsubplot.AddPlotObject(symbol);
+                //proxy for "are you active"
+                if (symbol.getZindex() != null) {
+                    setStandardSymbolStyle(symbol);
+                    synchronized (selectedDataLock) {
+                        selectedData.remove(symbol);
+                    }
+                }
             });
         }
-        repaint();
     }
-    
-    public void showCornerFrequency(boolean showCornerFreq) {
+
+    public void deselectAllPoints() {
+        synchronized (selectedDataLock) {
+            selectedData.forEach(this::setStandardSymbolStyle);
+            selectedData.clear();
+        }
+    }
+
+    private void setStandardSymbolStyle(PlotObject symbol) {
+        plot.removePlotObject(symbol);
+        symbol.setFillColor(symbol.getEdgeColor());
+        symbol.setEdgeColor(Color.BLACK);
+        symbol.setZindex(null);
+        plot.addPlotObject(symbol);
+    }
+
+    public void setPointsActive(List<Point2D> points, boolean active) {
+        for (Point2D xyPoint : points) {
+            List<Symbol> symbols = symbolMap.get(xyPoint);
+            if (symbols != null) {
+                symbols.forEach(symbol -> {
+                    plot.removePlotObject(symbol);
+                    if (active) {
+                        symbol.setFillColor(symbol.getEdgeColor());
+                        symbol.setEdgeColor(Color.BLACK);
+                    } else {
+                        symbol.setEdgeColor(symbol.getFillColor());
+                        symbol.setFillColor(Color.GRAY);
+                    }
+                    plot.addPlotObject(symbol);
+                });
+            }
+        }
+        plot.replot();
+    }
+
+    public void showCornerFrequency(final boolean showCornerFreq) {
         this.plotCorners = showCornerFreq;
+    }
+
+    public String getTitle() {
+        return plot.getTitle().getText();
     }
 }

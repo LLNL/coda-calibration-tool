@@ -103,7 +103,25 @@
                         "examples": [
                             100
                         ]
-                    },                        
+                    },         
+                    "stationCount": {
+                        "$id": "#/properties/reference-events/entry/properties/stationCount",
+                        "type": "number",
+                        "title": "The number of stations with measurements for the event.",
+                        "default": 0,
+                        "examples": [
+                            7
+                        ]
+                    },
+                    "bandCoverage": {
+                        "$id": "#/properties/reference-events/entry/properties/bandCoverage",
+                        "type": "number",
+                        "title": "The ratio of frequency bands measured vs total frequency bands.",
+                        "default": 0,
+                        "examples": [
+                            7
+                        ]
+                    },               
                     "datetime": {
                         "$id": "#/properties/reference-events/entry/properties/datetime",
                         "type": "string",

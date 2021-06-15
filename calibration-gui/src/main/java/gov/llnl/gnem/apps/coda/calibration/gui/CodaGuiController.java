@@ -135,7 +135,7 @@ public class CodaGuiController {
 
     @FXML
     private CheckMenuItem waveformFocus;
-    
+
     private EnvelopeGuiController envelopeGui;
 
     private Label activeMapIcon;
@@ -187,9 +187,8 @@ public class CodaGuiController {
     @Autowired
     public CodaGuiController(GeoMap mapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
             ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, WaveformGui waveformGui, DataController data,
-            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient, EnvelopeGuiController envelopeGui,
-            EventBus bus) {
-        super();
+            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient,
+            EnvelopeGuiController envelopeGui, EventBus bus) {
         this.mapController = mapController;
         this.waveformClient = waveformClient;
         this.envelopeLoadingController = waveformLoadingController;
@@ -230,7 +229,7 @@ public class CodaGuiController {
         fiModelFileChooser.getExtensionFilters().add(allFilesFilter);
 
         referenceEventFileChooser.getExtensionFilters().add(new ExtensionFilter("Reference Event Files (.txt,.dat)", "*.txt", "*.dat"));
-        referenceEventFileChooser.getExtensionFilters().add(allFilesFilter);                
+        referenceEventFileChooser.getExtensionFilters().add(allFilesFilter);
     }
 
     @FXML
@@ -335,6 +334,12 @@ public class CodaGuiController {
     }
 
     @FXML
+    private void clearAutopicks() {
+        waveformClient.clearAutoPicks().subscribe(val -> {
+        }, err -> log.trace(err.getMessage(), err), () -> data.getRefreshFunction().run());
+    }
+
+    @FXML
     private void runAutoPickingCalibration() {
         calibrationClient.runCalibration(Boolean.TRUE).subscribe(value -> {
         }, err -> log.trace(err.getMessage(), err));
@@ -355,14 +360,14 @@ public class CodaGuiController {
         snapshotButton.setContentDisplay(ContentDisplay.CENTER);
 
         addEnabledTabListeners(dataTab, data);
-        activeTabScreenshot = (folder) -> SnapshotUtils.writePng(folder, new Pair<>(dataTab.getText(), dataTab.getContent()));
+        activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(dataTab.getText(), dataTab.getContent()));
         data.setVisible(true);
 
         paramTab.setOnSelectionChanged(e -> {
             if (paramTab.isSelected()) {
                 mapController.clearIcons();
                 activeTabRefresh = param.getRefreshFunction();
-                activeTabScreenshot = (folder) -> SnapshotUtils.writePng(folder, new Pair<>(paramTab.getText(), paramTab.getContent()));
+                activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(paramTab.getText(), paramTab.getContent()));
             }
         });
 
@@ -411,7 +416,7 @@ public class CodaGuiController {
                 if (controller instanceof ScreenshotEnabledController) {
                     activeTabScreenshot = ((ScreenshotEnabledController) controller).getScreenshotFunction();
                 } else {
-                    activeTabScreenshot = (folder) -> SnapshotUtils.writePng(folder, new Pair<>(tab.getText(), tab.getContent()));
+                    activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(tab.getText(), tab.getContent()));
                 }
             } else {
                 tab.setGraphic(null);

@@ -6,19 +6,18 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.StackPane?>
 
-<StackPane fx:id="data" stylesheets="@CommonGui.css" 
-	xmlns="http://javafx.com/javafx/8.0.171" 
-	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.DataController">
+<StackPane fx:id="data" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.DataController">
 	<children>
 		<BorderPane prefHeight="200.0" prefWidth="200.0">
 			<center>
 				<ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" BorderPane.alignment="CENTER">
 					<content>
-						<TableView fx:id="tableView">
+						<TableView fx:id="tableView" tableMenuButtonVisible="true">
 							<columns>
 								<TableColumn fx:id="usedCol" editable="false" maxWidth="50.0" minWidth="50.0" prefWidth="50.0" text="Used" />
 								<TableColumn fx:id="eventCol" editable="false" prefWidth="75.0" text="Event" />
 								<TableColumn fx:id="stationCol" editable="false" prefWidth="75.0" text="Station" />
+                        		<TableColumn fx:id="networkCol" editable="false" prefWidth="75.0" text="Network" visible="false" />
 								<TableColumn editable="false" maxWidth="-1.0" minWidth="-1.0" prefWidth="-1.0" sortable="false" text="Frequency">
 									<columns>
 										<TableColumn fx:id="lowFreqCol" editable="false" minWidth="-1.0" prefWidth="-1.0" text="Low" />
