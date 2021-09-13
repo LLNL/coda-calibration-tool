@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -22,91 +22,125 @@ import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 
 public class Spectra {
 
-    private List<java.awt.geom.Point2D.Double> xyVals;
-    private double apparentStress = -1;
-    private double mw = -1;
-    private Double cornerFrequency = null;
-    private SPECTRA_TYPES type;
+	private List<java.awt.geom.Point2D.Double> xyVals;
+	private double apparentStress = -1;
+	private double mw = -1;
+	private Double cornerFrequency = null;
+	private double obsEnergy;
+	private double logTotalEnergy = 0;
+	private double logTotalEnergyMDAC = 0;
+	private double obsAppStress = 0;
+	private SPECTRA_TYPES type;
 
-    /**
-     * @param xyVals
-     *            List of java.awt.geom.Point2D.Double entries representing X, Y
-     *            points
-     * @param mw
-     * @param stress
-     */
-    public Spectra(SPECTRA_TYPES type, List<java.awt.geom.Point2D.Double> xyVals, Double mw, Double stress, Double cornerFrequency) {
-        this.type = type;
-        this.xyVals = xyVals;
-        if (mw != null) {
-            this.mw = mw;
-        }
-        if (stress != null) {
-            this.apparentStress = stress;
-        }
-        if (cornerFrequency != null) {
-            this.cornerFrequency = cornerFrequency;
-        }
-    }
+	/**
+	 * @param xyVals List of java.awt.geom.Point2D.Double entries representing X, Y
+	 *               points
+	 * @param mw
+	 * @param stress
+	 */
+	public Spectra(SPECTRA_TYPES type, List<java.awt.geom.Point2D.Double> xyVals, Double mw, Double stress,
+			Double cornerFrequency, Double obsEnergy, Double logTotalEnergy, Double logTotalEnergyMDAC,
+			Double obsAppStress) {
+		this.type = type;
+		this.xyVals = xyVals;
+		if (mw != null) {
+			this.mw = mw;
+		}
+		if (stress != null) {
+			this.apparentStress = stress;
+		}
+		if (cornerFrequency != null) {
+			this.cornerFrequency = cornerFrequency;
+		}
+		if (obsEnergy != null) {
+			this.obsEnergy = obsEnergy;
+		}
+		if (logTotalEnergy != null) {
+			this.logTotalEnergy = logTotalEnergy;
+		}
+		if (logTotalEnergyMDAC != null) {
+			this.logTotalEnergyMDAC = logTotalEnergyMDAC;
+		}
+		if (obsAppStress != null) {
+			this.obsAppStress = obsAppStress;
+		}
+	}
 
-    public Spectra() {
-        this.type = SPECTRA_TYPES.UNK;
-        xyVals = new ArrayList<>();
-    }
+	public Spectra() {
+		this.type = SPECTRA_TYPES.UNK;
+		xyVals = new ArrayList<>();
+	}
 
-    public List<java.awt.geom.Point2D.Double> getSpectraXY() {
-        return xyVals;
-    }
+	public List<java.awt.geom.Point2D.Double> getSpectraXY() {
+		return xyVals;
+	}
 
-    public double getApparentStress() {
-        return apparentStress;
-    }
+	public double getApparentStress() {
+		return apparentStress;
+	}
 
-    public double getMw() {
-        return mw;
-    }
+	public double getObsAppStress() {
+		return obsAppStress;
+	}
 
-    public SPECTRA_TYPES getType() {
-        return type;
-    }
+	public double getMw() {
+		return mw;
+	}
 
-    public Double getCornerFrequency() {
-        return cornerFrequency;
-    }
+	public SPECTRA_TYPES getType() {
+		return type;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(apparentStress, cornerFrequency, mw, type, xyVals);
-    }
+	public Double getCornerFrequency() {
+		return cornerFrequency;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof Spectra)) {
-            return false;
-        }
-        Spectra other = (Spectra) obj;
-        return Double.doubleToLongBits(apparentStress) == Double.doubleToLongBits(other.apparentStress) && Objects.equals(cornerFrequency, other.cornerFrequency)
-                && Double.doubleToLongBits(mw) == Double.doubleToLongBits(other.mw) && type == other.type && Objects.equals(xyVals, other.xyVals);
-    }
+	public Double getObsEnergy() {
+		return obsEnergy;
+	}
 
-    @Override
-    public String toString() {
-        final int maxLen = 10;
-        StringBuilder builder = new StringBuilder();
-        builder.append("Spectra [xyVals=")
-               .append(xyVals != null ? xyVals.subList(0, Math.min(xyVals.size(), maxLen)) : null)
-               .append(", apparentStress=")
-               .append(apparentStress)
-               .append(", mw=")
-               .append(mw)
-               .append(", cornerFrequency=")
-               .append(cornerFrequency)
-               .append(", type=")
-               .append(type)
-               .append("]");
-        return builder.toString();
-    }
+	public Double getLogTotalEnergy() {
+		return logTotalEnergy;
+	}
+
+	public Double getlogTotalEnergyMDAC() {
+		return logTotalEnergyMDAC;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(apparentStress, cornerFrequency, mw, obsEnergy, logTotalEnergy, logTotalEnergyMDAC, type,
+				xyVals);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof Spectra)) {
+			return false;
+		}
+		Spectra other = (Spectra) obj;
+		return Double.doubleToLongBits(apparentStress) == Double.doubleToLongBits(other.apparentStress)
+				&& Objects.equals(cornerFrequency, other.cornerFrequency)
+				&& Double.doubleToLongBits(mw) == Double.doubleToLongBits(other.mw)
+				&& Objects.equals(obsEnergy, other.obsEnergy) && Objects.equals(logTotalEnergy, other.logTotalEnergy)
+				&& Objects.equals(logTotalEnergyMDAC, other.logTotalEnergyMDAC) && type == other.type
+				&& Objects.equals(xyVals, other.xyVals);
+	}
+
+	@Override
+	public String toString() {
+		final int maxLen = 10;
+		StringBuilder builder = new StringBuilder();
+		builder.append("Spectra [xyVals=")
+				.append(xyVals != null ? xyVals.subList(0, Math.min(xyVals.size(), maxLen)) : null)
+				.append(", apparentStress=").append(apparentStress).append(", mw=").append(mw)
+				.append(", cornerFrequency=").append(cornerFrequency).append(", obsEnergy=").append(obsEnergy)
+				.append(", logTotalEnergy=").append(logTotalEnergy).append(", logTotalEnergyMDAC=")
+				.append(logTotalEnergyMDAC).append(", obsAppStress=").append(obsAppStress).append("]").append(", type=")
+				.append(type).append("]");
+		return builder.toString();
+	}
 }

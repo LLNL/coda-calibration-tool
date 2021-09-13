@@ -149,11 +149,11 @@ public class LeafletMap {
             });
             webView.getEngine().getLoadWorker().stateProperty().addListener((obs, o, n) -> {
                 if (n == Worker.State.SUCCEEDED) {
-                    mapReady.set(true);
                     layers.forEach(this::addLayerToMap);
                     final JSObject wind = (JSObject) webView.getEngine().executeScript("window");
                     wind.setMember("iconCallbackHandler", iconCallbackHandler);
                     wind.setMember("polygonChangeCallbackHandler", polygonChangeCallbackHandler);
+                    mapReady.set(true);
                     return;
                 }
             });

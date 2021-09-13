@@ -130,7 +130,8 @@ public class SpectraCalculator {
     private static final int CORNER_FREQ = 19;
     private static final int CORNER_FREQ_SD = 20;
     private static final int ITR_COUNT = 21;
-    private static final int PARAM_COUNT = 22;
+    private static final int MDAC_ENERGY = 22;
+    private static final int PARAM_COUNT = 23;
 
     private static final int MW = 0;
     private static final int MPA = 1;
@@ -386,14 +387,16 @@ public class SpectraCalculator {
     }
 
     public Spectra computeReferenceSpectra(final ReferenceMwParameters refEvent, final List<FrequencyBand> bands, final PICK_TYPES selectedPhase) {
-        return computeSpecificSpectra(refEvent.getRefMw(), refEvent.getRefApparentStressInMpa(), bands, selectedPhase, SPECTRA_TYPES.REF);
+        return computeSpecificSpectra(refEvent.getRefMw(), refEvent.getRefApparentStressInMpa(), null, bands, selectedPhase, SPECTRA_TYPES.REF);
     }
 
     public Spectra computeFitSpectra(final MeasuredMwParameters event, final Collection<FrequencyBand> bands, final PICK_TYPES selectedPhase) {
-        return computeSpecificSpectra(event.getMw(), event.getApparentStressInMpa(), bands, selectedPhase, SPECTRA_TYPES.FIT);
+        EnergyInfo eInfo = new EnergyInfo(event.getObsEnergy(), event.getLogTotalEnergy(), event.getLogTotalEnergyMDAC(), event.getEnergyRatio(), event.getObsAppStress());
+        return computeSpecificSpectra(event.getMw(), event.getApparentStressInMpa(), eInfo, bands, selectedPhase, SPECTRA_TYPES.FIT);
     }
 
-    public Spectra computeSpecificSpectra(final Double mw, final Double apparentStress, final Collection<FrequencyBand> bands, final PICK_TYPES selectedPhase, final SPECTRA_TYPES type) {
+    public Spectra computeSpecificSpectra(final Double mw, final Double apparentStress, final EnergyInfo energyInfo, final Collection<FrequencyBand> bands, final PICK_TYPES selectedPhase,
+            final SPECTRA_TYPES type) {
 
         final MdacParametersFI mdacFiEntry = new MdacParametersFI(mdacFiService.findFirst());
         final MdacParametersPS psRows = mdacPsService.findMatchingPhase(selectedPhase.getPhase());
@@ -423,7 +426,18 @@ public class SpectraCalculator {
             }
         }
         Collections.sort(xyPoints, (p1, p2) -> Double.compare(p1.getX(), p2.getX()));
-        return new Spectra(type, xyPoints, mw, apparentStress, cornerFrequency);
+        if (energyInfo == null) {
+            return new Spectra(type, xyPoints, mw, apparentStress, cornerFrequency, null, null, null, null);
+        }
+        return new Spectra(type,
+                           xyPoints,
+                           mw,
+                           apparentStress,
+                           cornerFrequency,
+                           energyInfo.getObsEnergy(),
+                           energyInfo.getLogTotalEnergy(),
+                           energyInfo.getLogEnergyMDAC(),
+                           energyInfo.getObsApparentStress());
     }
 
     /**
@@ -434,17 +448,24 @@ public class SpectraCalculator {
      */
     public List<MeasuredMwParameters> measureMws(MwMeasurementInputData inputData, final PICK_TYPES selectedPhase, MdacParametersFI mdacFi) {
         return inputData.getEvidMap().entrySet().parallelStream().map(entry -> {
-            Map<FrequencyBand, SummaryStatistics> measurements = entry.getValue();
+            SortedMap<FrequencyBand, SummaryStatistics> measurements = new TreeMap<>(entry.getValue());
             double[] MoMw = fitMw(entry.getKey(), measurements, selectedPhase, mdacFi, inputData.getMdacPs(), inputData.getEventWeights().get(entry.getKey()));
             if (MoMw == null) {
                 log.warn("MoMw calculation returned null value");
                 return null;
             }
 
+            EnergyInfo info = calcTotalEnergyInfo(measurements, MoMw[MW_FIT], MoMw[APP_STRESS], mdacFi);
+
             return new MeasuredMwParameters().setEventId(entry.getKey().getEventId())
                                              .setDataCount((int) MoMw[DATA_COUNT])
                                              .setStationCount(inputData.getStationCount().get(entry.getKey().getEventId()))
                                              .setBandCoverage(inputData.getBandCoverageMetric().get(entry.getKey().getEventId()))
+                                             .setObsEnergy(info.getObsEnergy())
+                                             .setLogTotalEnergy(info.getLogTotalEnergy())
+                                             .setLogTotalEnergyMDAC(info.getLogEnergyMDAC())
+                                             .setEnergyRatio(info.getEnergyRatio())
+                                             .setObsAppStress(info.getObsApparentStress())
                                              .setMw(MoMw[MW_FIT])
                                              .setMeanMw(MoMw[MW_MEAN])
                                              .setMwSd(MoMw[MW_SD])
@@ -466,6 +487,115 @@ public class SpectraCalculator {
                                              .setCornerFrequencySd(MoMw[CORNER_FREQ_SD])
                                              .setIterations((int) MoMw[ITR_COUNT]);
         }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    /**
+     * Now compute the total energy by summing the squared product of the
+     * discrete path-corrected moment rate spectra and omega. Then divide by
+     * 4*pi*pi*rho*(vel**5)/(Radiation) Radiation=(2/5)
+     *
+     * rho=2.7 gm/cm**3 vel=3.5E5 cm/s
+     *
+     * Then finally multiply by delta omega at the front.
+     *
+     * Mayeda, K., and Walter, W. R. (1996), Moment, energy, stress drop, and
+     * source spectra of western United States earthquakes from regional coda
+     * envelopes, J. Geophys. Res., 101( B5), 11195– 11208,
+     * doi:10.1029/96JB00112.
+     */
+    public EnergyInfo calcTotalEnergyInfo(final SortedMap<FrequencyBand, SummaryStatistics> measurements, double mwMDAC, double apparentStress, MdacParametersFI mdacFI) {
+
+        final int measCount = measurements.entrySet().size();
+
+        double[] logAmplitudes = new double[measCount];
+        double[] lowFreq = new double[measCount];
+        double[] highFreq = new double[measCount];
+
+        // Initialize data for calculations below
+        int idx = 0;
+        for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
+            // Unit conversion from Dyne cm to MKS
+            logAmplitudes[idx] = meas.getValue().getMean() - 7.0;
+            lowFreq[idx] = meas.getKey().getLowFrequency();
+            highFreq[idx] = meas.getKey().getHighFrequency();
+            idx++;
+        }
+
+        // double k = Math.sqrt(0.4 / (4 * Math.PI * Math.PI * mdacFI.getRhos() * Math.pow(mdacFI.getBetas(), 5)));
+        double k = Math.sqrt(6.48E-24); // Numerically derived k constant
+        double sumEnergy = 0.0;
+        double end;
+        double start;
+        double amp;
+        double curEnergy;
+        for (int i = 1; i < measCount - 1; i++) {
+            end = 2.0 * Math.PI * highFreq[i];
+            start = 2.0 * Math.PI * lowFreq[i];
+
+            amp = Math.pow(10.0, logAmplitudes[i]) * k;
+            curEnergy = (Math.pow(amp, 2.0) / 3.0) * (Math.pow(end, 3.0) - Math.pow(start, 3.0));
+            sumEnergy = sumEnergy + curEnergy;
+        }
+
+        /**
+         * Now for the last point, assume an omega square fall-off and integrate
+         * from wN to infinity.
+         */
+        final double wN = Math.PI * (highFreq[measCount - 1] + lowFreq[measCount - 1]);
+        final double AN = (Math.pow(10, logAmplitudes[measCount - 1])) * k;
+        final double delta_wN = (Math.PI * (highFreq[measCount - 1] + lowFreq[measCount - 1]) / 2.0);
+        final double EN = ((Math.pow(AN, 2.0)) / 3.0) * (Math.pow(wN, 3.0) - Math.pow(wN - delta_wN, 3.0));
+        final double eTotal_obs = sumEnergy + EN;
+
+        /**
+         * mw : Compute moment, from the low frequency level of the 2 lowest
+         * values
+         */
+        double logMoment = 0.0;
+        double mw = 0.0;
+
+        /**
+         * A moment magnitude scale ISSN: 0148-0227 , 2156-2202; DOI:
+         * 10.1029/JB084iB05p02348 Journal of geophysical research. , 1979,
+         * Vol.84(B5), p.2348-2350 energyContMKS = 9.1 / 1.5
+         */
+        final double energyConstMKS = 9.1 / 1.5;
+        for (int i = 0; i < measCount - 1; i++) {
+            if (logAmplitudes[i] > 0.0 && logAmplitudes[i + 1] > 0.0) {
+                logMoment = (logAmplitudes[i] + logAmplitudes[i + 1]) / 2.0;
+                mw = ((2.0 / 3.0) * logMoment - energyConstMKS);
+                break;
+            }
+        }
+
+        double logMomentMDAC = 1.5 * (mwMDAC + energyConstMKS); // Log10(moment)
+
+        // Extrapolated low frequency energy
+        final double lowAmp = (Math.pow(10, logMoment)) * k;
+
+        final double wF = 2.0 * Math.PI * lowFreq[0];
+        final double eTotal_low = Math.pow(lowAmp, 2) * Math.pow(wF, 3.0) / 3.0;
+
+        // We do the same thing for the high frequency extrapolation.
+        final double ahi = Math.pow(10.0, logAmplitudes[measCount - 1]) * k;
+        final double eTotal_hi = Math.pow(ahi, 2) * Math.pow(wN, 3.0);
+
+        // This is the total energy of low, observed and high
+        double energyS = eTotal_low + eTotal_obs + eTotal_hi;
+
+        // Calculate ratio of the P to S wave spectral energy
+        double pContribution = 1.0
+                + (Math.pow(mdacFI.getRadPatP(), 2) / Math.pow(mdacFI.getRadPatS(), 2)) * (Math.pow(mdacFI.getBetas(), 5) / Math.pow(mdacFI.getAlphas(), 5)) * Math.pow(mdacFI.getZeta(), 3);
+
+        double energy = energyS * pContribution;
+
+        double obsEnergy = (Math.log10(eTotal_obs));
+        double logTotalEnergy = (Math.log10(energy));
+        double mu = mdacFI.getRhos() * mdacFI.getBetas() * mdacFI.getBetas();
+        double stressTotal = (mu * energy / (Math.pow(10, logMoment))) / 1E6;
+        double logEnergyMDAC = Math.log10(((MdacCalculator.MPA_TO_PA * apparentStress * Math.pow(10, logMomentMDAC)) / mu));
+
+        return new EnergyInfo(obsEnergy, logTotalEnergy, logEnergyMDAC, eTotal_obs / energy, stressTotal);
     }
 
     /**
@@ -587,8 +717,10 @@ public class SpectraCalculator {
         result[FIT_MEAN] = mean[FIT];
         result[FIT_SD] = Math.sqrt(C.getEntry(FIT, FIT));
         result[CORNER_FREQ_SD] = Math.sqrt(C.getEntry(CORNER, CORNER));
+        result[MDAC_ENERGY] = mdacService.getEnergy(result[MW_FIT], result[APP_STRESS], mdacPs, mdacFi);
 
-        //This is kinda wonky mathmatically but at least it roughly scales with N so until I can get a stats person to eyeball this it'll have to do.
+        // This is kinda wonky mathmatically but at least it roughly scales with N so
+        // until I can get a stats person to eyeball this it'll have to do.
         final double SE = Math.sqrt(C.getEntry(FIT, FIT) / (stats.getN() - 2.0));
         final double f1 = result[RMS_FIT] + SE;
         final double f2 = f1 + (2.0 * SE);
@@ -650,6 +782,7 @@ public class SpectraCalculator {
         result[CORNER_FREQ] = mdacService.getCornerFrequency(
                 mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(result[APP_STRESS]), result[MW_FIT]));
         result[ITR_COUNT] = iterations;
+
         return result;
     }
 

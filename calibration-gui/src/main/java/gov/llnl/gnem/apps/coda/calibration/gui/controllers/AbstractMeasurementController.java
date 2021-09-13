@@ -143,6 +143,21 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     protected TableColumn<MeasuredMwDetails, String> mwCol;
 
     @FXML
+    protected TableColumn<MeasuredMwDetails, String> obsEnergyCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> energyRatioCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> energyStressCol;
+
+    @FXML
     protected TableColumn<MeasuredMwDetails, String> stressCol;
 
     @FXML
@@ -195,6 +210,12 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
     @FXML
     protected TextField eventLoc;
+
+    @FXML
+    protected TextField obsTotalEnergy;
+
+    @FXML
+    protected TextField obsEnergy;
 
     protected List<SpectraMeasurement> spectralMeasurements = new ArrayList<>();
     private final ObservableList<String> evids = FXCollections.observableArrayList();
@@ -334,8 +355,14 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
         CellBindingUtils.attachTextCellFactories(valMwCol, MeasuredMwDetails::getValMw, dfmt4);
         CellBindingUtils.attachTextCellFactories(valStressCol, MeasuredMwDetails::getValApparentStressInMpa, dfmt4);
-
         CellBindingUtils.attachTextCellFactories(measuredMwCol, MeasuredMwDetails::getMw, dfmt4);
+
+        CellBindingUtils.attachTextCellFactories(obsEnergyCol, MeasuredMwDetails::getObsEnergy, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyCol, MeasuredMwDetails::getTotalEnergy, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyMDACCol, MeasuredMwDetails::getTotalEnergyMDAC, dfmt4);
+        CellBindingUtils.attachTextCellFactories(energyRatioCol, MeasuredMwDetails::getEnergyRatio, dfmt4);
+        CellBindingUtils.attachTextCellFactories(energyStressCol, MeasuredMwDetails::getEnergyStress, dfmt4);
+
         CellBindingUtils.attachTextCellFactories(measuredStressCol, MeasuredMwDetails::getApparentStressInMpa, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredCornerFreqCol, MeasuredMwDetails::getCornerFreq, dfmt4);
 
@@ -401,20 +428,27 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             fittingSpectra.add(validationSpectra);
             if (filteredMeasurements != null && !filteredMeasurements.isEmpty() && filteredMeasurements.get(0).getWaveform() != null) {
                 final Event event = filteredMeasurements.get(0).getWaveform().getEvent();
+                final Spectra fitSpectra = fittingSpectra.get(0);
                 eventTime.setText(
                         "Date: "
                                 + DateTimeFormatter.ISO_INSTANT.format(event.getOriginTime().toInstant())
                                 + " Julian Day: "
                                 + TimeT.jdateToTimeT(TimeT.EpochToJdate(event.getOriginTime().toInstant().getEpochSecond())).getJDay());
                 eventLoc.setText("Lat: " + dfmt4.format(event.getLatitude()) + " Lon: " + dfmt4.format(event.getLongitude()) + " Depth: " + dfmt2.format(event.getDepth()));
+                obsEnergy.setText("Observed Energy: " + dfmt4.format(fitSpectra.getObsEnergy()) + " J  MDAC Energy: " + dfmt4.format(fitSpectra.getlogTotalEnergyMDAC()) + " J");
+                obsTotalEnergy.setText("Observed Total Energy: " + dfmt4.format(fitSpectra.getLogTotalEnergy()) + " J @ " + dfmt4.format(fitSpectra.getObsAppStress()) + " MPa");
                 eventTime.setVisible(true);
                 eventLoc.setVisible(true);
+                obsEnergy.setVisible(true);
+                obsTotalEnergy.setVisible(true);
             } else {
                 filteredMeasurements = Collections.emptyList();
             }
         } else {
             eventTime.setVisible(false);
             eventLoc.setVisible(false);
+            obsEnergy.setVisible(false);
+            obsTotalEnergy.setVisible(false);
             filteredMeasurements = spectralMeasurements;
             fittingSpectra = null;
         }
@@ -911,7 +945,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         List<Point2D> points = poc.getPlotPoints();
         Set<Waveform> waveforms = new HashSet<>();
 
-        //FIXME: This entire scheme is tremendously inefficient and needs a rework at some point.
+        // FIXME: This entire scheme is tremendously inefficient and needs a rework at
+        // some point.
         for (SpectraPlotController spc : spectraControllers) {
             spc.getSpectralPlot().deselectAllPoints();
         }

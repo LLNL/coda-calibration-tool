@@ -66,6 +66,12 @@
 														<TextField fx:id="eventLoc" editable="false" prefWidth="5000.0" visible="false" />
 													</children>
 												</VBox>
+												<VBox layoutX="270.0" layoutY="20.0">
+												<children>
+													<TextField fx:id="obsTotalEnergy" editable="false" prefWidth="5000.0" visible="false" />
+													<TextField fx:id="obsEnergy" editable="false" prefWidth="5000.0" visible="false" />
+												</children>
+												</VBox>
 											</children>
 											<VBox.margin>
 												<Insets />
@@ -123,8 +129,13 @@
                                                 				<TableColumn fx:id="bandCoverageCol" editable="false" prefWidth="75.0" text="Band Coverage" visible="false" />
                                                 				<TableColumn fx:id="dateCol" editable="false" prefWidth="150.0" text="Date" />
 																<TableColumn fx:id="measuredMwCol" editable="false" prefWidth="75.0" text="Mw" />
-																<TableColumn fx:id="measuredStressCol" editable="false" prefWidth="150.0" text="App.Stress (MPa)" />
-																<TableColumn fx:id="mwCol" editable="false" prefWidth="75.0" text="Ref Mw" />
+                                                				<TableColumn fx:id="obsEnergyCol" editable="false" prefWidth="75.0" text="ObsEnergy" />
+                                                				<TableColumn fx:id="totalEnergyCol" editable="false" prefWidth="75.0" text="ObsTotalEnergy" />
+                                                				<TableColumn fx:id="totalEnergyMDACCol" editable="false" prefWidth="75.0" text="MDAC_Energy" />
+                                                				<TableColumn fx:id="energyRatioCol" editable="false" prefWidth="137.5" text="Obs/TotalObs" />
+                                                				<TableColumn fx:id="energyStressCol" editable="false" prefWidth="137.5" text="ObsAppStress" />
+																<TableColumn fx:id="measuredStressCol" editable="false" prefWidth="137.5" text="App.Stress (MPa)" />
+																<TableColumn fx:id="mwCol" editable="false" prefWidth="28.5" text="Ref Mw" />
 																<TableColumn fx:id="stressCol" editable="false" prefWidth="150.0" text="Ref Stress" />
 																<TableColumn fx:id="measuredCornerFreqCol" editable="false" prefWidth="150.0" text="Fc (Hz)" />
 																<TableColumn fx:id="valMwCol" editable="false" prefWidth="75.0" text="Val Mw" visible="false" />

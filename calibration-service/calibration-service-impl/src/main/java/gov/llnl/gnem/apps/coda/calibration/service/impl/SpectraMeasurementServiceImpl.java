@@ -35,6 +35,7 @@ import gov.llnl.gnem.apps.coda.calibration.repository.ReferenceMwParametersRepos
 import gov.llnl.gnem.apps.coda.calibration.repository.SpectraMeasurementRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.ValidationMwParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SpectraMeasurementService;
+import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.EnergyInfo;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -47,114 +48,130 @@ import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 @Transactional
 public class SpectraMeasurementServiceImpl implements SpectraMeasurementService {
 
-    private SpectraCalculator spectraCalc;
+	private SpectraCalculator spectraCalc;
 
-    private SpectraMeasurementRepository spectraRepo;
+	private SpectraMeasurementRepository spectraRepo;
 
-    private ReferenceMwParametersRepository referenceEventRepo;
-    
-    private ValidationMwParametersRepository validationEventRepo;
+	private ReferenceMwParametersRepository referenceEventRepo;
 
-    private MeasuredMwsRepository measuredEventRepo;
+	private ValidationMwParametersRepository validationEventRepo;
 
-    @Autowired
-    public SpectraMeasurementServiceImpl(SpectraMeasurementRepository spectraRepo, SpectraCalculator spectraCalc, MeasuredMwsRepository measuredEventRepo,
-            ReferenceMwParametersRepository referenceEventRepo, ValidationMwParametersRepository validationEventRepo) {
-        this.spectraRepo = spectraRepo;
-        this.spectraCalc = spectraCalc;
-        this.measuredEventRepo = measuredEventRepo;
-        this.referenceEventRepo = referenceEventRepo;
-        this.validationEventRepo = validationEventRepo;
-    }
+	private MeasuredMwsRepository measuredEventRepo;
 
-    @Override
-    public SpectraMeasurement findOne(Long id) {
-        return spectraRepo.findOneDetached(id);
-    }
+	@Autowired
+	public SpectraMeasurementServiceImpl(SpectraMeasurementRepository spectraRepo, SpectraCalculator spectraCalc,
+			MeasuredMwsRepository measuredEventRepo, ReferenceMwParametersRepository referenceEventRepo,
+			ValidationMwParametersRepository validationEventRepo) {
+		this.spectraRepo = spectraRepo;
+		this.spectraCalc = spectraCalc;
+		this.measuredEventRepo = measuredEventRepo;
+		this.referenceEventRepo = referenceEventRepo;
+		this.validationEventRepo = validationEventRepo;
+	}
 
-    @Override
-    public SpectraMeasurement findOneForUpdate(Long id) {
-        return spectraRepo.findOneDetached(id);
-    }
+	@Override
+	public SpectraMeasurement findOne(Long id) {
+		return spectraRepo.findOneDetached(id);
+	}
 
-    @Override
-    public List<SpectraMeasurement> findAll(Iterable<Long> ids) {
-        return spectraRepo.findAllById(ids);
-    }
+	@Override
+	public SpectraMeasurement findOneForUpdate(Long id) {
+		return spectraRepo.findOneDetached(id);
+	}
 
-    @Override
-    public List<SpectraMeasurementMetadata> findAllMetadataOnly(Iterable<Long> ids) {
-        return spectraRepo.findAllMetadataById(ids);
-    }
+	@Override
+	public List<SpectraMeasurement> findAll(Iterable<Long> ids) {
+		return spectraRepo.findAllById(ids);
+	}
 
-    @Override
-    public List<SpectraMeasurement> findAll() {
-        return spectraRepo.findAll();
-    }
+	@Override
+	public List<SpectraMeasurementMetadata> findAllMetadataOnly(Iterable<Long> ids) {
+		return spectraRepo.findAllMetadataById(ids);
+	}
 
-    @Override
-    public List<SpectraMeasurementMetadata> findAllMetadataOnly() {
-        return spectraRepo.findAllMetadataOnly();
-    }
+	@Override
+	public List<SpectraMeasurement> findAll() {
+		return spectraRepo.findAll();
+	}
 
-    @Override
-    public long count() {
-        return spectraRepo.count();
-    }
+	@Override
+	public List<SpectraMeasurementMetadata> findAllMetadataOnly() {
+		return spectraRepo.findAllMetadataOnly();
+	}
 
-    @Override
-    public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
-            VelocityConfiguration velocityConfig) {
-        List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, velocityConfig);
-        if (!measurements.isEmpty()) {
-            spectraRepo.deleteAllInBatch();
-            measurements = spectraRepo.saveAll(measurements);
-        }
-        return measurements;
-    }
+	@Override
+	public long count() {
+		return spectraRepo.count();
+	}
 
-    @Override
-    public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
-            VelocityConfiguration velocityConfig, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap) {
-        List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics, frequencyBandParameterMap, velocityConfig, frequencyBandSiteParameterMap);
-        if (!measurements.isEmpty()) {
-            spectraRepo.deleteAllInBatch();
-            measurements = spectraRepo.saveAll(measurements);
-        }
-        return measurements;
-    }
+	@Override
+	public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics,
+			Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
+			VelocityConfiguration velocityConfig) {
+		List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics,
+				frequencyBandParameterMap, velocityConfig);
+		if (!measurements.isEmpty()) {
+			spectraRepo.deleteAllInBatch();
+			measurements = spectraRepo.saveAll(measurements);
+		}
+		return measurements;
+	}
 
-    @Override
-    public Spectra computeReferenceSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
-        Spectra refSpectra = new Spectra();
-        ReferenceMwParameters refEvent = referenceEventRepo.findOneByEventId(eventId);
-        if (refEvent != null) {
-            refSpectra = spectraCalc.computeReferenceSpectra(refEvent, frequencyBands, selectedPhase);
-        }
-        return refSpectra;
-    }
-    
-    @Override
-    public Spectra computeValidationSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
-        Spectra valSpectra = new Spectra();
-        ValidationMwParameters valEvent = validationEventRepo.findOneByEventId(eventId);
-        if (valEvent != null) {
-            valSpectra = spectraCalc.computeSpecificSpectra(valEvent.getMw(), valEvent.getApparentStressInMpa(), frequencyBands, selectedPhase, SPECTRA_TYPES.VAL);
-        }
-        return valSpectra;
-    }    
+	@Override
+	public List<SpectraMeasurement> measureSpectra(List<SyntheticCoda> generatedSynthetics,
+			Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap,
+			VelocityConfiguration velocityConfig,
+			Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> frequencyBandSiteParameterMap) {
+		List<SpectraMeasurement> measurements = spectraCalc.measureAmplitudes(generatedSynthetics,
+				frequencyBandParameterMap, velocityConfig, frequencyBandSiteParameterMap);
+		if (!measurements.isEmpty()) {
+			spectraRepo.deleteAllInBatch();
+			measurements = spectraRepo.saveAll(measurements);
+		}
+		return measurements;
+	}
 
-    @Override
-    public List<Spectra> getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase) {
-        List<Spectra> spectra = new ArrayList<>();
-        MeasuredMwParameters event = measuredEventRepo.findOneByEventId(eventId);
-        if (event != null) {
-            spectra.add(spectraCalc.computeFitSpectra(event, frequencyBands, selectedPhase));
-            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw1Max(), event.getApparentStress1Max(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ1));
-            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw1Min(), event.getApparentStress1Min(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ1));
-            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw2Max(), event.getApparentStress2Max(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ2));
-            spectra.add(spectraCalc.computeSpecificSpectra(event.getMw2Min(), event.getApparentStress2Min(), frequencyBands, selectedPhase, SPECTRA_TYPES.UQ2));
-        }
-        return spectra;
-    }
+	@Override
+	public Spectra computeReferenceSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands,
+			PICK_TYPES selectedPhase) {
+		Spectra refSpectra = new Spectra();
+		ReferenceMwParameters refEvent = referenceEventRepo.findOneByEventId(eventId);
+		if (refEvent != null) {
+			refSpectra = spectraCalc.computeReferenceSpectra(refEvent, frequencyBands, selectedPhase);
+		}
+		return refSpectra;
+	}
+
+	@Override
+	public Spectra computeValidationSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands,
+			PICK_TYPES selectedPhase) {
+		Spectra valSpectra = new Spectra();
+		ValidationMwParameters valEvent = validationEventRepo.findOneByEventId(eventId);
+		if (valEvent != null) {
+			valSpectra = spectraCalc.computeSpecificSpectra(valEvent.getMw(), valEvent.getApparentStressInMpa(), null,
+					frequencyBands, selectedPhase, SPECTRA_TYPES.VAL);
+		}
+		return valSpectra;
+	}
+
+	@Override
+	public List<Spectra> getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands,
+			PICK_TYPES selectedPhase) {
+		List<Spectra> spectra = new ArrayList<>();
+		MeasuredMwParameters event = measuredEventRepo.findOneByEventId(eventId);
+		if (event != null) {
+			EnergyInfo eInfo = new EnergyInfo(event.getObsEnergy(), event.getLogTotalEnergy(),
+					event.getLogTotalEnergyMDAC(), event.getEnergyRatio(), event.getObsAppStress());
+			spectra.add(spectraCalc.computeFitSpectra(event, frequencyBands, selectedPhase));
+			spectra.add(spectraCalc.computeSpecificSpectra(event.getMw1Max(), event.getApparentStress1Max(), eInfo,
+					frequencyBands, selectedPhase, SPECTRA_TYPES.UQ1));
+			spectra.add(spectraCalc.computeSpecificSpectra(event.getMw1Min(), event.getApparentStress1Min(), eInfo,
+					frequencyBands, selectedPhase, SPECTRA_TYPES.UQ1));
+			spectra.add(spectraCalc.computeSpecificSpectra(event.getMw2Max(), event.getApparentStress2Max(), eInfo,
+					frequencyBands, selectedPhase, SPECTRA_TYPES.UQ2));
+			spectra.add(spectraCalc.computeSpecificSpectra(event.getMw2Min(), event.getApparentStress2Min(), eInfo,
+					frequencyBands, selectedPhase, SPECTRA_TYPES.UQ2));
+		}
+		return spectra;
+	}
 }

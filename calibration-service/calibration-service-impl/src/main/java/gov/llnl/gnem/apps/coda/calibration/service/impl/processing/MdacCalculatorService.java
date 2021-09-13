@@ -135,4 +135,21 @@ public class MdacCalculatorService {
     public double getCornerFrequency(final MdacParametersPS mdacPs, final MdacParametersFI stress, final double mw) {
         return getCornerFrequency(getCalculateMdacSourceSpectraFunction(mdacPs, stress, mw));
     }
+
+    public double getEnergy(double Mw, double appStressMpa, final MdacParametersPS psEntry, final MdacParametersFI fiEntry) {
+        // M0 in N-m units
+        final double M0 = MdacCalculator.mwToM0(Mw);
+        final MdacCalculator mdc = new MdacCalculator(fiEntry.getSigma(),
+                                                      fiEntry.getM0ref(),
+                                                      fiEntry.getPsi(),
+                                                      fiEntry.getZeta(),
+                                                      fiEntry.getAlphas(),
+                                                      fiEntry.getBetas(),
+                                                      fiEntry.getRadPatP(),
+                                                      fiEntry.getRadPatS(),
+                                                      M0);
+        mdc.initializePhaseSpecificVariables(psEntry, fiEntry, M0);
+
+        return mdc.calculateEnergy(M0, appStressMpa, psEntry, fiEntry);
+    }
 }

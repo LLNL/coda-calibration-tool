@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -24,14 +24,14 @@ import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
  * class directly. It will handle the setup and care and feeding needed to
  * ensure you get a correct (or any) answer.</b>
  * <p>
- * 
+ *
  * <p>
  * Revised Moment and Distance Amplitude Corrections (MDAC2) Based on the MDAC2
  * report by Walter and Taylor (2002). Original program was mdacsac.f based on
  * paper by Taylor et al. (2002) PAGEOPH, but modified by Walter to use known
  * moments from coda spectra and fit or correct all spectra simultaneously.
  * </p>
- * 
+ *
  * <p>
  * This version is based on the Java version written by E. Matzel, which is in
  * turn based on the 2003 version of MDAC2SAC.java
@@ -75,7 +75,7 @@ public class MdacCalculator {
     /**
      * Calculate the Mdac Source Spectra (No Q, site or geometrical spreading
      * terms)
-     * 
+     *
      * @param freq
      *            the frequency(Hz)
      * @param M0
@@ -117,16 +117,16 @@ public class MdacCalculator {
         double K = calculateK(zeta, alphaS, betaS, radpatP, radpatS);
 
         // Note the default is for shear velocity "Sn" or "Lg"
-        double wcs = calculateAngularCornerFrequency(K, MPA_TO_PA * sigma, m0, m0_ref, psi);
+        double cornerFrequency = calculateAngularCornerFrequency(K, MPA_TO_PA * sigma, m0, m0_ref, psi);
         if (PICK_TYPES.PN.equals(phase) || PICK_TYPES.PG.equals(phase)) {
-            wcs = zeta * wcs;
+            cornerFrequency = zeta * cornerFrequency;
         }
-        return calculateMomentRateSpectra(frequency, wcs, m0);
+        return calculateMomentRateSpectra(frequency, cornerFrequency, m0);
     }
 
     /**
      * Calculate the shear wave angular corner frequency (wcs in Walter and
-     * Taylor)
+     * Taylor, Moment Rate Spectra V2 2006)
      *
      * @param K
      *            a variable defined by Walter and Taylor including the P and S
@@ -152,7 +152,7 @@ public class MdacCalculator {
     /**
      * Calculate variable K from Walter and Taylor. K is used to calculate
      * corner frequencies and Moment rate spectra
-     * 
+     *
      * @param zeta
      * @param alphaS
      * @param betaS
@@ -161,7 +161,7 @@ public class MdacCalculator {
      *
      * @return K
      */
-    private double calculateK(double zeta, double alphaS, double betaS, double radpatP, double radpatS) {
+    public static double calculateK(double zeta, double alphaS, double betaS, double radpatP, double radpatS) {
         double z3 = Math.pow(zeta, 3);
         double a5 = Math.pow(alphaS, 5);
         double b5 = Math.pow(betaS, 5);
@@ -299,12 +299,16 @@ public class MdacCalculator {
         return new double[][] { { wcp, a5 }, { wcs, b5 } };
     }
 
+    public double calculateEnergy(double M0, double appStressMpa, final MdacParametersPS mdacPs, final MdacParametersFI mdacFi) {
+        return (M0 * appStressMpa * MPA_TO_PA) / (mdacFi.getRhos() * Math.pow(mdacFi.getBetas(), 2.0));
+    }
+
     public static double mwToM0(double Mw) {
-        return Math.pow(10.0, (1.5 * Mw + 9.09));
+        return Math.pow(10.0, (1.5 * Mw + 9.10));
     }
 
     public static double mwInDyne(double testMw) {
-        return (DYNE_CM_TO_NEWTON_M * Math.pow(10, 1.5 * (testMw + 10.73))) / DYNE_CM_TO_NEWTON_M;
+        return (DYNE_CM_TO_NEWTON_M * Math.pow(10, 1.5 * testMw + 10.73)) / DYNE_CM_TO_NEWTON_M;
     }
 
     public double apparentStressFromMwFc(Double mw, Double fc) {

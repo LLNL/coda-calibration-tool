@@ -125,7 +125,7 @@ public class PlotlyWaveformPlot extends PlotlyPlot {
     }
 
     private VerticalLine plotPick(final SeismicSignal seismogram, final String phase, double time) {
-        final int pickLineWidth = 4;
+        int pickLineWidth = 4;
         boolean draggable = false;
         //Weed out NaNs and +-Inf and mark as "bad"
         if (!Double.isFinite(time)) {
@@ -136,6 +136,7 @@ public class PlotlyWaveformPlot extends PlotlyPlot {
         if ("f".equalsIgnoreCase(phase)) {
             pickColor = Color.RED;
             draggable = true;
+            pickLineWidth = 6;
         } else {
             pickColor = Color.LIGHTGRAY;
         }

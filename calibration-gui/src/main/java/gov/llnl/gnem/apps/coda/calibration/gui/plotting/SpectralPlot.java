@@ -46,6 +46,8 @@ public class SpectralPlot extends Pane implements Serializable {
 
     private static final String AVG_MW_LEGEND_LABEL = "Avg";
 
+    private static final String CODA_MW_LABEL = "Mw_coda";
+
     private static final double EPSILON = 1E-14;
 
     private double xmin = 1.0;
@@ -225,6 +227,7 @@ public class SpectralPlot extends Pane implements Serializable {
                 break;
             case FIT:
                 line = plotFactory.line(x, y, Color.RED, LineStyles.DASH, 2);
+
                 break;
             default:
                 break;
@@ -232,11 +235,17 @@ public class SpectralPlot extends Pane implements Serializable {
             if (line != null) {
                 if (SPECTRA_TYPES.UQ1 != spectra.getType() && SPECTRA_TYPES.UQ2 != spectra.getType()) {
                     final NumberFormat df = NumberFormatFactory.oneDecimalMinimum();
+                    String spectraName;
+                    if (SPECTRA_TYPES.FIT == spectra.getType()) {
+                        spectraName = CODA_MW_LABEL;
+                    } else {
+                        spectraName = spectra.getType().name();
+                    }
                     if (spectra.getApparentStress() > 0.0) {
                         final NumberFormat df2 = NumberFormatFactory.twoDecimalOneLeadingZero();
-                        line.setName(spectra.getType().name() + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa");
+                        line.setName(spectraName + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa");
                     } else {
-                        line.setName(spectra.getType().name() + ' ' + df.format(spectra.getMw()));
+                        line.setName(spectraName + ' ' + df.format(spectra.getMw()));
                     }
                 }
 
@@ -473,7 +482,7 @@ public class SpectralPlot extends Pane implements Serializable {
         List<Symbol> symbols = symbolMap.get(xyPoint);
         if (symbols != null) {
             symbols.forEach(symbol -> {
-                //proxy for "are you active"
+                // proxy for "are you active"
                 if (symbol.getZindex() != null) {
                     setStandardSymbolStyle(symbol);
                     synchronized (selectedDataLock) {
