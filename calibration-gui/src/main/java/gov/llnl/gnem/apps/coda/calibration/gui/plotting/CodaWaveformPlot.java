@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -40,6 +42,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
+import javafx.application.Platform;
 import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.Line;
@@ -84,6 +87,12 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
     private final Axis yAxis;
 
+    private VerticalLine groupVelocityLineStart;
+
+    private VerticalLine groupVelocityLineEnd;
+
+    private BooleanSupplier showGroupVelocity;
+
     private enum PLOT_ORDERING {
         BACKGROUND(0), NOISE_BOX(1), WAVEFORM(2), NOISE_LINE(3), SHAPE_FIT(4), MODEL_FIT(5), PICKS(6);
 
@@ -99,7 +108,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
     }
 
     public CodaWaveformPlot(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramClient, final PeakVelocityClient velocityClient,
-            final TimeSeries... seismograms) {
+            BooleanSupplier showGroupVelocity, final TimeSeries... seismograms) {
         super(seismograms);
         xAxis = new BasicAxis(Axis.Type.X, "Time (seconds from origin)");
         yAxis = new BasicAxis(Axis.Type.Y, "log10(amplitude)");
@@ -108,6 +117,21 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         this.shapeClient = shapeClient;
         this.paramClient = paramClient;
         this.velocityClient = velocityClient;
+        this.showGroupVelocity = showGroupVelocity;
+    }
+
+    public void setGroupVelocityVisbility() {
+        if (groupVelocityLineStart != null && groupVelocityLineEnd != null) {
+            final String script = "setGroupVelocityVisibility(" + showGroupVelocity.getAsBoolean() + ");";
+            plotData.setShowGroupVelocity(showGroupVelocity.getAsBoolean());
+            Platform.runLater(() -> {
+                try {
+                    engine.executeScript(script);
+                } catch (final Exception e) {
+                    log.debug(e.getLocalizedMessage());
+                }
+            });
+        }
     }
 
     public void setWaveform(final Waveform waveform) {
@@ -148,6 +172,9 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             plotIdentifier = waveform.getEvent().getEventId() + "_" + waveform.getStream().getStation().getStationName() + "_" + waveform.getLowFrequency() + "_" + waveform.getHighFrequency();
             final String labelText = plotIdentifier + "; Distance: " + dfmt4.format(distance) + "km; BAz(deg): " + dfmt4.format(baz);
             setTitle(labelText);
+
+            setGroupVelocityLines(distance); // Adds group velocity lines to the appropriate location based on distance
+            setGroupVelocityVisbility();
 
             final List<WaveformPick> picks = waveform.getAssociatedPicks();
             final double beginEpochTime = new TimeT(waveform.getBeginTime()).getEpochTime();
@@ -251,6 +278,34 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             });
         } else {
             plotIdentifier = "";
+        }
+    }
+
+    private void setGroupVelocityLines(double distance) {
+        VelocityConfiguration veloConfig = paramClient.getVelocityConfiguration().block();
+
+        if (veloConfig != null) {
+            double critDistance = veloConfig.getDistanceThresholdInKm();
+            double startGV1Lt = veloConfig.getGroupVelocity1InKmsLtDistance();
+            double endGV2Lt = veloConfig.getGroupVelocity2InKmsLtDistance();
+            double startGV1Gt = veloConfig.getGroupVelocity1InKmsGtDistance();
+            double endGV2Gt = veloConfig.getGroupVelocity2InKmsGtDistance();
+
+            double startTime = (distance / startGV1Gt);
+            double endTime = (distance / endGV2Gt);
+            if (distance < critDistance) {
+                startTime = (distance / startGV1Lt);
+                endTime = (distance / endGV2Lt);
+            }
+
+            groupVelocityLineStart = new VerticalLine(startTime, 95, "Start");
+            groupVelocityLineEnd = new VerticalLine(endTime, 95, "End");
+
+            groupVelocityLineStart.setFillColor(Color.ORANGE);
+            groupVelocityLineEnd.setFillColor(Color.ORANGE);
+
+            addPlotObject(groupVelocityLineStart, PLOT_ORDERING.PICKS.getZOrder());
+            addPlotObject(groupVelocityLineEnd, PLOT_ORDERING.PICKS.getZOrder());
         }
     }
 

@@ -70,10 +70,10 @@ public class PlotlyPlot implements BasicPlot {
     private final PropertyChangeSupport propertyChange = new PropertyChangeSupport(this);
 
     private transient WebView webView;
-    private transient WebEngine engine;
+    protected transient WebEngine engine;
     private transient StackPane view;
     private static final String SHAPES = "shapes";
-    private final PlotlyPlotData plotData = new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle());
+    protected final PlotlyPlotData plotData = new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle());
     private final List<PlotlyPlot> subPlots = new ArrayList<>(0);
     private Integer subplotId;
     private Integer topMargin;
@@ -106,6 +106,7 @@ public class PlotlyPlot implements BasicPlot {
     private void intializePlotData() {
         plotData.setMapper(new ObjectMapper());
         plotData.setShowLegend(true);
+        plotData.setShowGroupVelocity(false);
         plotData.setAxes(new ArrayList<>(0));
         plotData.setPlotReady(new AtomicBoolean(false));
         plotData.setDefaultTypePlots(new HashMap<>());
@@ -180,8 +181,8 @@ public class PlotlyPlot implements BasicPlot {
                                 button = MouseButton.SECONDARY;
                             }
                             Bounds bounds = webView.localToScreen(webView.getLayoutBounds());
-                            double clickX = bounds.getCenterX();
-                            double clickY = bounds.getCenterY();
+                            double clickX = (bounds.getMaxX() + bounds.getMinX()) / 2.0;
+                            double clickY = (bounds.getMaxY() + bounds.getMinY()) / 2.0;
                             if (screenX != null) {
                                 clickX = screenX[0] + bounds.getMinX();
                                 clickY = screenY[0] + bounds.getMinY();
@@ -392,6 +393,10 @@ public class PlotlyPlot implements BasicPlot {
         hasChanges.set(true);
     }
 
+    public void setShowGroupVelocity(final boolean showGroupVelocity) {
+        this.plotData.setShowGroupVelocity(showGroupVelocity);
+    }
+
     @Override
     public void showLegend(final boolean showLegend) {
         this.plotData.setShowLegend(showLegend);
@@ -526,6 +531,7 @@ public class PlotlyPlot implements BasicPlot {
     private ObjectNode getPlotLayoutNode() {
         ObjectNode layoutNode = plotData.getMapper().createObjectNode();
         layoutNode.put("hovermode", "closest");
+        layoutNode.put("showGroupVelocity", plotData.isShowGroupVelocity());
         if (!subPlots.isEmpty()) {
             layoutNode.with("grid").put("rows", subPlots.size()).put("columns", 1).put("pattern", "independent");
             for (int i = 0; i < subPlots.size(); i++) {
@@ -550,6 +556,8 @@ public class PlotlyPlot implements BasicPlot {
                 case X:
                     axisType = "xaxis";
                     break;
+                case LOG_Y:
+                    dataType = "log";
                 case Y:
                     axisType = "yaxis";
                     break;

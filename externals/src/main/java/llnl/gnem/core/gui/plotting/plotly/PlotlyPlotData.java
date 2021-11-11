@@ -35,6 +35,7 @@ public class PlotlyPlotData implements Serializable {
     private Title plotTitle;
     private ObjectMapper mapper;
     private boolean showLegend;
+    private boolean showGroupVelocity;
 
     public PlotlyPlotData(final PlotlyTrace defaultTraceStyle, final Color backgroundColor, final Title plotTitle) {
         this.defaultTraceStyle = defaultTraceStyle;
@@ -104,5 +105,13 @@ public class PlotlyPlotData implements Serializable {
 
     public void setShowLegend(final boolean showLegend) {
         this.showLegend = showLegend;
+    }
+
+    public boolean isShowGroupVelocity() {
+        return showGroupVelocity;
+    }
+
+    public void setShowGroupVelocity(final boolean showGroupVelocity) {
+        this.showGroupVelocity = showGroupVelocity;
     }
 }

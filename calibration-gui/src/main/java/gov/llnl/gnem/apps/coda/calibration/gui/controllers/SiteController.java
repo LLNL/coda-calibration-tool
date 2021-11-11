@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -34,19 +35,28 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
+import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
+import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.Axis.TickFormat;
+import llnl.gnem.core.gui.plotting.api.AxisLimits;
+import llnl.gnem.core.gui.plotting.api.BasicPlot;
 import llnl.gnem.core.gui.plotting.api.PlotFactory;
+import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.plotly.BasicAxis;
 import reactor.core.scheduler.Schedulers;
 
@@ -64,10 +74,17 @@ public class SiteController extends AbstractMeasurementController {
     private StackPane rawPlotNode;
 
     @FXML
-    private StackPane pathPlotNode;
+    private StackPane sitePlotNode;
 
     @FXML
-    private StackPane sitePlotNode;
+    private StackPane siteTermsPlotPane;
+    private BasicPlot siteTermsPlot;
+
+    @FXML
+    private TitledPane rawTitledPane;
+
+    @FXML
+    private SplitPane rawSplitPane;
 
     @Autowired
     private SiteController(final SpectraClient spectraClient, final ParameterClient paramClient, final EventClient referenceEventClient, final WaveformClient waveformClient,
@@ -88,17 +105,10 @@ public class SiteController extends AbstractMeasurementController {
         plot.setAutoCalculateYaxisRange(true);
         rawPlotNode.getChildren().add(plot);
 
-        final SpectraPlotController path = new SpectraPlotController(SpectraMeasurement::getPathCorrected);
-        plot = path.getSpectralPlot();
-        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(path::getSpectraMeasurementMap));
-        plot.setLabels("Path Corrected", X_AXIS_LABEL, "log10(non-dim)");
-        plot.setAutoCalculateYaxisRange(true);
-        pathPlotNode.getChildren().add(plot);
-
         final SpectraPlotController site = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
         plot = site.getSpectralPlot();
         plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(site::getSpectraMeasurementMap));
-        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(dyne-cm)");
+        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(nm)");
         final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         plot.getSubplot().addAxes(rightAxis);
@@ -108,8 +118,24 @@ public class SiteController extends AbstractMeasurementController {
         sitePlotNode.getChildren().add(plot);
 
         spectraControllers.add(raw);
-        spectraControllers.add(path);
         spectraControllers.add(site);
+
+        rawTitledPane.expandedProperty().addListener((v, o, n) -> {
+            if (n != null) {
+                if (n.booleanValue()) {
+                    rawSplitPane.setDividerPositions(0.5);
+                } else {
+                    rawSplitPane.setDividerPositions(1.0);
+                }
+            }
+        });
+
+        siteTermsPlot = plotFactory.basicPlot();
+        siteTermsPlot.getTitle().setText("Site corrections");
+        siteTermsPlot.getTitle().setFontSize(16);
+        siteTermsPlot.addAxes(plotFactory.axis(Axis.Type.X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Site correction log10(nm)"));
+        siteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, 0.0, 10.0), new AxisLimits(Axis.Type.Y, 0.0, 2.0));
+        siteTermsPlot.attachToDisplayNode(siteTermsPlotPane);
     }
 
     @Override
@@ -139,6 +165,68 @@ public class SiteController extends AbstractMeasurementController {
     @Override
     protected void runGuiUpdate(final Runnable runnable) throws InvocationTargetException, InterruptedException {
         Platform.runLater(runnable);
+    }
+
+    @Override
+    protected void reloadData() {
+        super.reloadData();
+        List<SiteFrequencyBandParameters> siteTerms = paramClient.getSiteSpecificFrequencyBandParameters().filter(Objects::nonNull).collectList().block(Duration.of(10l, ChronoUnit.SECONDS));
+        try {
+            runGuiUpdate(() -> {
+                siteTermsPlot.clear();
+
+                double minSite = 1E2;
+                double maxSite = -1E2;
+                double minCenterFreq = 1E2;
+                double maxCenterFreq = -1E2;
+
+                for (SiteFrequencyBandParameters val : siteTerms) {
+                    if (val != null && val.getStation() != null) {
+                        final String key = val.getStation().getStationName();
+                        final PlotPoint pp = getPlotPoint(key, true);
+                        double centerFreq = centerFreq(val.getLowFrequency(), val.getHighFrequency());
+                        //Dyne-cm to nm for plot, in log
+                        double site = val.getSiteTerm() - 7.0;
+
+                        if (site < minSite) {
+                            minSite = site;
+                        }
+                        if (site > maxSite) {
+                            maxSite = site;
+                        }
+                        if (centerFreq < minCenterFreq) {
+                            minCenterFreq = centerFreq;
+                        }
+                        if (centerFreq > maxCenterFreq) {
+                            maxCenterFreq = centerFreq;
+                        }
+
+                        final LabeledPlotPoint point = new LabeledPlotPoint(key, new PlotPoint(centerFreq, site, pp.getStyle(), pp.getColor(), pp.getColor()));
+                        Symbol symbol = plotFactory.createSymbol(point.getStyle(), key, point.getX(), point.getY(), point.getColor(), Color.BLACK, point.getColor(), key, true);
+                        siteTermsPlot.addPlotObject(symbol);
+                    }
+                }
+
+                maxSite = maxSite + .1;
+                if (minSite > maxSite) {
+                    minSite = maxSite - .1;
+                } else {
+                    minSite = Math.max(0.0, minSite - .1);
+                }
+
+                maxCenterFreq = maxCenterFreq + .1;
+                if (minCenterFreq > maxCenterFreq) {
+                    minCenterFreq = maxCenterFreq - .1;
+                } else {
+                    minCenterFreq = minCenterFreq - 1.0;
+                }
+
+                siteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minCenterFreq, maxCenterFreq), new AxisLimits(Axis.Type.Y, minSite, maxSite));
+                siteTermsPlot.replot();
+            });
+        } catch (InvocationTargetException | InterruptedException e) {
+            //nop
+        }
     }
 
     @Override

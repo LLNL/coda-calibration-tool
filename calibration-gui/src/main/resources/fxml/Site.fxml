@@ -13,6 +13,7 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
@@ -25,7 +26,7 @@
 			<children>
 				<TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
 					<tabs>
-						<Tab fx:id="resultsTab" text="Results">
+						<Tab fx:id="resultsTab" text="Source Spectra">
 							<content>
 								<VBox>
 									<children>
@@ -67,10 +68,10 @@
 													</children>
 												</VBox>
 												<VBox layoutX="270.0" layoutY="20.0">
-												<children>
-													<TextField fx:id="obsTotalEnergy" editable="false" prefWidth="5000.0" visible="false" />
-													<TextField fx:id="obsEnergy" editable="false" prefWidth="5000.0" visible="false" />
-												</children>
+													<children>
+														<TextField fx:id="obsTotalEnergy" editable="false" prefWidth="5000.0" visible="false" />
+														<TextField fx:id="obsEnergy" editable="false" prefWidth="5000.0" visible="false" />
+													</children>
 												</VBox>
 											</children>
 											<VBox.margin>
@@ -80,54 +81,95 @@
 												<Insets bottom="10.0" top="10.0" />
 											</padding>
 										</HBox>
-										<SplitPane dividerPositions="0.25" VBox.vgrow="ALWAYS">
+										<SplitPane fx:id="rawSplitPane" dividerPositions="1.0" orientation="VERTICAL" VBox.vgrow="ALWAYS">
 											<items>
-												<SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="160.0" prefWidth="200.0">
-													<items>
-														<StackPane fx:id="rawPlotNode" />
-														<StackPane fx:id="pathPlotNode" />
-													</items>
-												</SplitPane>
 												<StackPane fx:id="sitePlotNode" />
+												<StackPane>
+													<children>
+														<TitledPane fx:id="rawTitledPane" animated="false" expanded="false" maxHeight="1.7976931348623157E308" text="Raw">
+															<content>
+																<StackPane>
+																	<children>
+																		<StackPane fx:id="rawPlotNode" />
+																	</children>
+																</StackPane>
+															</content>
+														</TitledPane>
+													</children>
+												</StackPane>
 											</items>
 										</SplitPane>
 									</children>
 								</VBox>
 							</content>
 						</Tab>
-						<Tab text="Mw Results">
+						<Tab text="Source Results">
 							<content>
 								<VBox>
 									<children>
-										<SplitPane dividerPositions="0.3" VBox.vgrow="ALWAYS">
+										<SplitPane dividerPositions="0.66" orientation="VERTICAL" VBox.vgrow="ALWAYS">
 											<items>
-												<SplitPane dividerPositions="0.66" orientation="VERTICAL" VBox.vgrow="ALWAYS">
+												<SplitPane dividerPositions="0.5" orientation="VERTICAL" VBox.vgrow="ALWAYS">
 													<items>
-														<SplitPane dividerPositions="0.5" orientation="VERTICAL" VBox.vgrow="ALWAYS">
+														<SplitPane dividerPositions="0.66" orientation="HORIZONTAL" VBox.vgrow="ALWAYS">
 															<items>
-																<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
-																	<content>
-																		<StackPane fx:id="mwPlotPane" />
-																	</content>
-																</ScrollPane>
+																<SplitPane dividerPositions="0.5" orientation="HORIZONTAL" VBox.vgrow="ALWAYS">
+																	<items>
+																		<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
+																			<content>
+																				<StackPane fx:id="mwPlotPane" />
+																			</content>
+																		</ScrollPane>
+																	</items>
+																	<items>
+																		<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
+																			<content>
+																				<StackPane fx:id="stressPlotPane" />
+																			</content>
+																		</ScrollPane>
+																	</items>
+																</SplitPane>
 															</items>
 															<items>
-																<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
+																<ScrollPane fitToHeight="true" fitToWidth="true">
 																	<content>
-																		<StackPane fx:id="stressPlotPane" />
+																		<StackPane fx:id="sdPlotPane" SplitPane.resizableWithParent="false" />
 																	</content>
 																</ScrollPane>
 															</items>
 														</SplitPane>
 													</items>
 													<items>
-														<ScrollPane fitToHeight="true" fitToWidth="true">
-															<content>
-																<StackPane fx:id="sdPlotPane" SplitPane.resizableWithParent="false" />
-															</content>
-														</ScrollPane>
+														<SplitPane dividerPositions="0.66" orientation="HORIZONTAL" VBox.vgrow="ALWAYS">
+															<items>
+																<SplitPane dividerPositions="0.5" orientation="HORIZONTAL" VBox.vgrow="ALWAYS">
+																	<items>
+																		<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
+																			<content>
+																				<StackPane fx:id="energyVsMomentPane" />
+																			</content>
+																		</ScrollPane>
+																	</items>
+																	<items>
+																		<ScrollPane fitToHeight="true" fitToWidth="true" SplitPane.resizableWithParent="false">
+																			<content>
+																				<StackPane fx:id="apparentStressVsMomentPane" />
+																			</content>
+																		</ScrollPane>
+																	</items>
+																</SplitPane>
+															</items>
+															<items>
+																<ScrollPane fitToHeight="true" fitToWidth="true">
+																	<content>
+																		<StackPane fx:id="cornerFreqVsMomentPane" SplitPane.resizableWithParent="false" />
+																	</content>
+																</ScrollPane>
+															</items>
+														</SplitPane>
 													</items>
 												</SplitPane>
+
 											</items>
 											<items>
 												<ScrollPane fitToHeight="true" fitToWidth="true">
@@ -135,20 +177,20 @@
 														<TableView fx:id="eventTable" tableMenuButtonVisible="true">
 															<columns>
 																<TableColumn fx:id="evidCol" editable="false" prefWidth="100.0" text="Evid" />
-                                                				<TableColumn fx:id="stationCountCol" editable="false" prefWidth="75.0" text="Station Count" visible="false" />
-                                                				<TableColumn fx:id="bandCoverageCol" editable="false" prefWidth="75.0" text="Band Coverage" visible="false" />
-                                                				<TableColumn fx:id="dateCol" editable="false" prefWidth="150.0" text="Date" />
+																<TableColumn fx:id="stationCountCol" editable="false" prefWidth="75.0" text="Station Count" visible="false" />
+																<TableColumn fx:id="bandCoverageCol" editable="false" prefWidth="75.0" text="Band Coverage" visible="false" />
+																<TableColumn fx:id="dateCol" editable="false" prefWidth="150.0" text="Date" />
 																<TableColumn fx:id="measuredMwCol" editable="false" prefWidth="75.0" text="Mw" />
-                                                				<TableColumn fx:id="obsEnergyCol" editable="false" prefWidth="75.0" text="ObsEnergy" />
-                                                				<TableColumn fx:id="totalEnergyCol" editable="false" prefWidth="75.0" text="ObsTotalEnergy" />
-                                                				<TableColumn fx:id="totalEnergyMDACCol" editable="false" prefWidth="97.5" text="MDAC_Energy" />
-                                                				<TableColumn fx:id="energyRatioCol" editable="false" prefWidth="97.5" text="Obs/TotalObs" />
-                                                				<TableColumn fx:id="energyStressCol" editable="false" prefWidth="97.5" text="ObsAppStress" />
+																<TableColumn fx:id="obsEnergyCol" editable="false" prefWidth="75.0" text="ObsEnergy" visible="false" />
+																<TableColumn fx:id="totalEnergyCol" editable="false" prefWidth="75.0" text="ObsTotalEnergy" />
+																<TableColumn fx:id="totalEnergyMDACCol" editable="false" prefWidth="97.5" text="MDAC_Energy" visible="false" />
+																<TableColumn fx:id="energyRatioCol" editable="false" prefWidth="97.5" text="Obs/TotalObs" />
+																<TableColumn fx:id="energyStressCol" editable="false" prefWidth="97.5" text="ObsAppStress" />
 																<TableColumn fx:id="measuredStressCol" editable="false" prefWidth="60.5" text="App.Stress (MPa)" />
 																<TableColumn fx:id="mwCol" editable="false" prefWidth="75.0" text="Ref Mw" />
 																<TableColumn fx:id="stressCol" editable="false" prefWidth="150.0" text="Ref Stress" />
 																<TableColumn fx:id="measuredCornerFreqCol" editable="false" prefWidth="150.0" text="Fc (Hz)" />
-																<TableColumn fx:id="mistfitCol" editable="false" prefWidth="150.0" text="Misfit" />
+																<TableColumn fx:id="mistfitCol" editable="false" prefWidth="150.0" text="Misfit" visible="false" />
 																<TableColumn fx:id="valMwCol" editable="false" prefWidth="75.0" text="Val Mw" visible="false" />
 																<TableColumn fx:id="valStressCol" editable="false" prefWidth="150.0" text="Val Stress" visible="false" />
 																<TableColumn fx:id="iterationsCol" editable="false" prefWidth="150.0" text="Iterations" visible="false" />
@@ -181,6 +223,15 @@
 										</SplitPane>
 									</children>
 								</VBox>
+							</content>
+						</Tab>
+						<Tab text="Site Terms">
+							<content>
+								<ScrollPane fitToHeight="true" fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+									<content>
+										<StackPane fx:id="siteTermsPlotPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+									</content>
+								</ScrollPane>
 							</content>
 						</Tab>
 					</tabs>

@@ -71,7 +71,7 @@ public class EnvelopeParamsController {
     private TextField overlapField;
 
     @FXML
-    private TextField spacingField;
+    private TextField bandwidthField;
 
     @FXML
     private ChoiceBox<String> spacingTypeField;
@@ -142,13 +142,13 @@ public class EnvelopeParamsController {
     @FXML
     public void generateTable() {
         //TODO: populate these fields with defaults on edit commits when the new value is empty
-        if (!minFreqField.getText().isEmpty() && !maxFreqField.getText().isEmpty() && !overlapField.getText().isEmpty() && !spacingField.getText().isEmpty()) {
+        if (!minFreqField.getText().isEmpty() && !maxFreqField.getText().isEmpty() && !overlapField.getText().isEmpty() && !bandwidthField.getText().isEmpty()) {
             try {
                 //TODO: Validators for these fields
                 Double minFreq = Double.valueOf(minFreqField.getText());
                 Double maxFreq = Double.valueOf(maxFreqField.getText());
                 Double overlap = Double.valueOf(overlapField.getText());
-                Double spacing = Double.valueOf(spacingField.getText());
+                Double spacing = Double.valueOf(bandwidthField.getText());
 
                 BandGenerator tableGenerator;
                 if (SpacingType.LOG.name().equalsIgnoreCase(spacingTypeField.getSelectionModel().getSelectedItem())) {
@@ -160,7 +160,7 @@ public class EnvelopeParamsController {
                 spacing = tableGenerator.clampSpacing(spacing);
                 overlap = tableGenerator.clampOverlap(overlap);
 
-                spacingField.setText(spacing.toString());
+                bandwidthField.setText(spacing.toString());
                 overlapField.setText(overlap.toString());
 
                 List<EnvelopeBandParameters> oldBands = new ArrayList<>(bands);

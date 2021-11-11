@@ -52,6 +52,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.KeyCode;
@@ -78,9 +79,11 @@ public class CodaWaveformPlotManager {
     private final MapPlottingUtilities mapPlotUtils;
     private final ToolBar multiPageToolbar;
     private final ToolBar multiFrequencyToolbar;
+    private final ToolBar multiPlotToolbar;
     private List<Icon> mappedIcons = new ArrayList<>();
     private Map<Long, Integer> orderedWaveformIDs = new HashMap<>();
     private final SortedMap<Integer, CodaWaveformPlot> orderedWaveformPlots = new TreeMap<>();
+    private CodaWaveformPlot selectedSinglePlot;
     private final Set<Long> allWaveformIDs = new LinkedHashSet<>();
     private static final Integer PAGE_SIZE = 5;
     private final Object bagLock = new Object();
@@ -100,6 +103,9 @@ public class CodaWaveformPlotManager {
     final Button backButton = new Button("<");
     final Button nextButton = new Button("↑");
     final Button prevButton = new Button("↓");
+    final ToggleButton groupVelToggle1 = new ToggleButton("GV");
+    final ToggleButton groupVelToggle2 = new ToggleButton("GV");
+    final ToggleButton groupVelToggle3 = new ToggleButton("GV");
 
     private final EventHandler<InputEvent> forwardAction = event -> {
         if ((currentPage + 1) < totalPages) {
@@ -138,6 +144,24 @@ public class CodaWaveformPlotManager {
         }
     };
 
+    private final EventHandler<InputEvent> groupVelToggleAction = event -> {
+        ToggleButton btnClicked = (ToggleButton) event.getSource();
+        if (btnClicked != null && btnClicked.isSelected()) {
+            groupVelToggle1.setSelected(true);
+            groupVelToggle2.setSelected(true);
+            groupVelToggle3.setSelected(true);
+        } else {
+            groupVelToggle1.setSelected(false);
+            groupVelToggle2.setSelected(false);
+            groupVelToggle3.setSelected(false);
+        }
+        if (orderedWaveformPlots.size() > 0) {
+            orderedWaveformPlots.values().forEach(CodaWaveformPlot::setGroupVelocityVisbility);
+        } else {
+            selectedSinglePlot.setGroupVelocityVisbility();
+        }
+    };
+
     public CodaWaveformPlotManager(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
             final GeoMap map, final MapPlottingUtilities mapPlotUtils) {
         this.waveformClient = waveformClient;
@@ -151,6 +175,7 @@ public class CodaWaveformPlotManager {
         borderPane.setCenter(waveformPanel);
         multiPageToolbar = new ToolBar();
         multiFrequencyToolbar = new ToolBar();
+        multiPlotToolbar = new ToolBar();
 
         pagingLabel = new Label("0/0");
         freqBandLabel = new Label("Frequency Band");
@@ -159,25 +184,38 @@ public class CodaWaveformPlotManager {
         backButton.addEventHandler(MouseEvent.MOUSE_CLICKED, backwardAction::handle);
         nextButton.addEventHandler(MouseEvent.MOUSE_CLICKED, nextAction::handle);
         prevButton.addEventHandler(MouseEvent.MOUSE_CLICKED, prevAction::handle);
+        groupVelToggle1.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
+        groupVelToggle2.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
+        groupVelToggle3.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
 
         multiPageToolbar.getItems().add(backButton);
         multiPageToolbar.getItems().add(pagingLabel);
         multiPageToolbar.getItems().add(forwardButton);
+        multiPageToolbar.getItems().add(groupVelToggle1);
 
         multiFrequencyToolbar.getItems().add(freqBandLabel);
         multiFrequencyToolbar.getItems().add(prevButton);
         multiFrequencyToolbar.getItems().add(nextButton);
+        multiFrequencyToolbar.getItems().add(groupVelToggle2);
+
+        multiPlotToolbar.getItems().add(groupVelToggle3);
 
         final Font sizedFont = Font.font(forwardButton.getFont().getFamily(), 12f);
         forwardButton.setFont(sizedFont);
         backButton.setFont(sizedFont);
         nextButton.setFont(sizedFont);
         prevButton.setFont(sizedFont);
+        groupVelToggle1.setFont(sizedFont);
+        groupVelToggle2.setFont(sizedFont);
+        groupVelToggle3.setFont(sizedFont);
 
         forwardButton.setFocusTraversable(false);
         backButton.setFocusTraversable(false);
         nextButton.setFocusTraversable(false);
         prevButton.setFocusTraversable(false);
+        groupVelToggle1.setFocusTraversable(false);
+        groupVelToggle2.setFocusTraversable(false);
+        groupVelToggle3.setFocusTraversable(false);
     }
 
     private String getStationNetworkName(Waveform waveform) {
@@ -211,6 +249,7 @@ public class CodaWaveformPlotManager {
         final Pair<Waveform, CodaWaveformPlot> plotPair = results.get(0);
         final Waveform waveform = plotPair.getLeft();
         final CodaWaveformPlot plot = plotPair.getRight();
+
         if (waveform != null) {
 
             final Collection<Icon> icons = mapWaveform(waveform);
@@ -220,9 +259,9 @@ public class CodaWaveformPlotManager {
                 plot.setMargin(null, null, null, null);
                 plot.getxAxis().setText(TIME_SECONDS_FROM_ORIGIN);
                 plot.attachToDisplayNode(waveformPanel);
+                selectedSinglePlot = plot;
             }
         }
-
     }
 
     private void setWaveformsByEventStation(long waveformId) {
@@ -285,9 +324,10 @@ public class CodaWaveformPlotManager {
             if (!plotBag.isEmpty()) {
                 plot = plotBag.pop();
             } else {
-                plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient);
+                plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient, () -> groupVelToggle1.isSelected());
             }
         }
+
         return plot;
     }
 
@@ -343,7 +383,7 @@ public class CodaWaveformPlotManager {
         if (totalPages > 1) {
             borderPane.setTop(multiPageToolbar);
         } else {
-            borderPane.setTop(null);
+            borderPane.setTop(multiPlotToolbar);
         }
     }
 

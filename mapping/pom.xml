@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.13</version>
+		<version>1.0.14</version>
 	</parent>
 
 	<groupId>gov.llnl.gnem.apps.coda.common</groupId>

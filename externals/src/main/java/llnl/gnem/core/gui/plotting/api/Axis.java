@@ -18,7 +18,7 @@ import java.io.Serializable;
 public interface Axis extends Serializable {
 
     public enum Type {
-        X, Y, Z, Y_RIGHT, LOG_X
+        X, Y, Z, Y_RIGHT, LOG_X, LOG_Y
     }
 
     public enum TickFormat {

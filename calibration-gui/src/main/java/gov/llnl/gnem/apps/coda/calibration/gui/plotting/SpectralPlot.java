@@ -57,8 +57,8 @@ public class SpectralPlot extends Pane implements Serializable {
 
     private double defaultXMin = 1.0;
     private double defaultXMax = 1.0;
-    private double defaultYMin = 15.0;
-    private double defaultYMax = 27.0;
+    private double defaultYMin = 8.0;
+    private double defaultYMax = 20.0;
 
     private final NumberFormat dfmt = NumberFormatFactory.twoDecimalOneLeadingZero();
 
@@ -188,7 +188,8 @@ public class SpectralPlot extends Pane implements Serializable {
 
     private void plotSpectraObject(final BasicPlot jsubplot, final Spectra spectra) {
         if (spectra != null && !spectra.getSpectraXY().isEmpty()) {
-            final List<PlotPoint> netMwValues = spectra.getSpectraXY().stream().map(d -> new PlotPoint(Math.pow(10, d.getX()), d.getY(), null, null, null)).collect(Collectors.toList());
+            //Dyne-cm to nm for plot, in log
+            final List<PlotPoint> netMwValues = spectra.getSpectraXY().stream().map(d -> new PlotPoint(Math.pow(10, d.getX()), d.getY() - 7.0, null, null, null)).collect(Collectors.toList());
             final double[] x = new double[netMwValues.size()];
             final double[] y = new double[netMwValues.size()];
             for (int i = 0; i < netMwValues.size(); i++) {

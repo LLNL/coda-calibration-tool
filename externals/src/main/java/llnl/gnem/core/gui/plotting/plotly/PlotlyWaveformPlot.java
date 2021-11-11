@@ -145,8 +145,9 @@ public class PlotlyWaveformPlot extends PlotlyPlot {
         double xValue = time - startTime;
         //If the xValue is sufficiently negative/positive we want to clamp it to the start/end time
         // just to make sure it plots and is interactable.
-        if (xValue < seismogram.getZeroTimeOffsetSeconds()) {
-            xValue = seismogram.getZeroTimeOffsetSeconds();
+        double minTime = seismogram.getZeroTimeOffsetSeconds();
+        if (xValue < minTime) {
+            xValue = minTime;
         } else if (xValue > endTime) {
             xValue = endTime;
         }

@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.time.Duration;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -93,6 +94,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
+import llnl.gnem.core.gui.plotting.api.Axis.TickFormat;
 import llnl.gnem.core.gui.plotting.api.AxisLimits;
 import llnl.gnem.core.gui.plotting.api.BasicPlot;
 import llnl.gnem.core.gui.plotting.api.ColorMaps;
@@ -102,6 +104,7 @@ import llnl.gnem.core.gui.plotting.api.PlotFactory;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.SymbolStyles;
 import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
+import llnl.gnem.core.gui.plotting.plotly.BasicAxis;
 import llnl.gnem.core.util.TimeT;
 
 public abstract class AbstractMeasurementController implements MapListeningController, RefreshableController, ScreenshotEnabledController {
@@ -124,6 +127,18 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     @FXML
     protected StackPane sdPlotPane;
     private BasicPlot sdPlot;
+
+    @FXML
+    protected StackPane energyVsMomentPane;
+    private BasicPlot energyVsMomentPlot;
+
+    @FXML
+    protected StackPane apparentStressVsMomentPane;
+    private BasicPlot apparentStressVsMomentPlot;
+
+    @FXML
+    protected StackPane cornerFreqVsMomentPane;
+    private BasicPlot cornerFreqVsMomentPlot;
 
     protected StackPane spectraPlotPanel;
 
@@ -265,7 +280,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
     protected List<SpectraPlotController> spectraControllers = new ArrayList<>(1);
 
-    private final PlotFactory plotFactory;
+    protected final PlotFactory plotFactory;
     private final EventBus bus;
 
     // TODO: Break this up into components so this isn't so incredibly huge.
@@ -323,7 +338,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         mwPlot.attachToDisplayNode(mwPlotPane);
 
         stressPlot = plotFactory.basicPlot();
-        stressPlot.getTitle().setText("Stress");
+        stressPlot.getTitle().setText("Apparent Stress");
         stressPlot.getTitle().setFontSize(16);
         stressPlot.addAxes(plotFactory.axis(Axis.Type.X, "Measured"), plotFactory.axis(Axis.Type.Y, "Comparison"));
         final AxisLimits stressXaxis = new AxisLimits(Axis.Type.X, 0.0, 10.0);
@@ -338,6 +353,36 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         sdPlot.setAxisLimits(new AxisLimits(Axis.Type.X, 0.0, 10.0), new AxisLimits(Axis.Type.Y, 0.0, 2.0));
         sdPlot.showLegend(false);
         sdPlot.attachToDisplayNode(sdPlotPane);
+
+        energyVsMomentPlot = plotFactory.basicPlot();
+        energyVsMomentPlot.getTitle().setText("Energy vs Moment");
+        energyVsMomentPlot.getTitle().setFontSize(16);
+        energyVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "Total Observed Energy"), plotFactory.axis(Axis.Type.Y, "log10 Mo (nm)"));
+        Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
+        rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
+        energyVsMomentPlot.addAxes(rightAxis);
+        energyVsMomentPlot.showLegend(false);
+        energyVsMomentPlot.attachToDisplayNode(energyVsMomentPane);
+
+        apparentStressVsMomentPlot = plotFactory.basicPlot();
+        apparentStressVsMomentPlot.getTitle().setText("Apparent Stress vs Moment");
+        apparentStressVsMomentPlot.getTitle().setFontSize(16);
+        apparentStressVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "App. Stress (Mpa)"), plotFactory.axis(Axis.Type.Y, "log10 Mo (nm)"));
+        rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
+        rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
+        apparentStressVsMomentPlot.addAxes(rightAxis);
+        apparentStressVsMomentPlot.showLegend(false);
+        apparentStressVsMomentPlot.attachToDisplayNode(apparentStressVsMomentPane);
+
+        cornerFreqVsMomentPlot = plotFactory.basicPlot();
+        cornerFreqVsMomentPlot.getTitle().setText("Corner Frequency vs Moment");
+        cornerFreqVsMomentPlot.getTitle().setFontSize(16);
+        cornerFreqVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "Corner Freq (Hz)"), plotFactory.axis(Axis.Type.Y, "log10 Mo (nm)"));
+        rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
+        rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
+        cornerFreqVsMomentPlot.addAxes(rightAxis);
+        cornerFreqVsMomentPlot.showLegend(false);
+        cornerFreqVsMomentPlot.attachToDisplayNode(cornerFreqVsMomentPane);
 
         evidCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.equals(oldValue) && isVisible) {
@@ -431,12 +476,19 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 final Spectra fitSpectra = fittingSpectra.get(0);
                 eventTime.setText(
                         "Date: "
-                                + DateTimeFormatter.ISO_INSTANT.format(event.getOriginTime().toInstant())
-                                + " Julian Day: "
-                                + TimeT.jdateToTimeT(TimeT.EpochToJdate(event.getOriginTime().toInstant().getEpochSecond())).getJDay());
+                                + DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant())
+                                + " ("
+                                + new TimeT(event.getOriginTime().toInstant().getEpochSecond()).getJDay()
+                                + ") Origin Time: "
+                                + DateTimeFormatter.ISO_TIME.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant()));
                 eventLoc.setText("Lat: " + dfmt4.format(event.getLatitude()) + " Lon: " + dfmt4.format(event.getLongitude()) + " Depth: " + dfmt2.format(event.getDepth()));
-                obsEnergy.setText("Observed Energy: " + dfmt4.format(fitSpectra.getObsEnergy()) + " J  MDAC Energy: " + dfmt4.format(fitSpectra.getlogTotalEnergyMDAC()) + " J");
                 obsTotalEnergy.setText("Observed Total Energy: " + dfmt4.format(fitSpectra.getLogTotalEnergy()) + " J @ " + dfmt4.format(fitSpectra.getObsAppStress()) + " MPa");
+                obsEnergy.setText(
+                        "Observed/Extrapolated energy: "
+                                + dfmt2.format(100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy())))
+                                + "% MDAC Energy: "
+                                + dfmt4.format(fitSpectra.getlogTotalEnergyMDAC())
+                                + " J");
                 eventTime.setVisible(true);
                 eventLoc.setVisible(true);
                 obsEnergy.setVisible(true);
@@ -483,7 +535,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                    .filter(spectra -> !func.apply(spectra).equals(0.0))
                                    .collect(
                                            Collectors.toMap(
-                                                   spectra -> new Point2D(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency()), func.apply(spectra)),
+                                                   //Dyne-cm to nm for plot, in log
+                                                   spectra -> new Point2D(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency()), func.apply(spectra) - 7.0),
                                                        Function.identity(),
                                                        (a, b) -> b,
                                                        HashMap::new));
@@ -520,7 +573,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                        final PlotPoint pp = getPlotPoint(key, spectra.getWaveform().isActive());
                                        final LabeledPlotPoint point = new LabeledPlotPoint(key,
                                                                                            new PlotPoint(centerFreq(spectra.getWaveform().getLowFrequency(), spectra.getWaveform().getHighFrequency()),
-                                                                                                         func.apply(spectra),
+                                                                                                         func.apply(spectra) - 7.0,
+                                                                                                         //Dyne-cm to nm for plot, in log
                                                                                                          pp.getStyle(),
                                                                                                          pp.getColor(),
                                                                                                          pp.getColor()));
@@ -533,10 +587,17 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                    .collect(Collectors.toList());
     }
 
-    private PlotPoint getPlotPoint(final String key, final boolean active) {
-        final PlotPoint pp = new PlotPoint(symbolStyleMap.get(key));
-        if (!active) {
+    protected PlotPoint getPlotPoint(final String key, final boolean active) {
+        final PlotPoint pp;
+        if (symbolStyleMap.containsKey(key)) {
+            pp = new PlotPoint(symbolStyleMap.get(key));
+            if (!active) {
+                pp.setColor(Color.GRAY);
+            }
+        } else {
+            pp = new PlotPoint();
             pp.setColor(Color.GRAY);
+            pp.setStyle(SymbolStyles.X);
         }
         return pp;
     }
@@ -551,7 +612,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 && spectra.getWaveform().getStream().getStation().getStationName() != null;
     }
 
-    private double centerFreq(final Double lowFrequency, final Double highFrequency) {
+    protected double centerFreq(final Double lowFrequency, final Double highFrequency) {
         return lowFrequency + (highFrequency - lowFrequency) / 2.;
     }
 
@@ -580,12 +641,18 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                     stressPlot.clear();
                     sdPlot.clear();
 
+                    cornerFreqVsMomentPlot.clear();
+                    apparentStressVsMomentPlot.clear();
+                    energyVsMomentPlot.clear();
+
                     final List<MeasuredMwDetails> evs = getEvents();
                     final List<Symbol> mwPlotSymbols = new ArrayList<>();
                     final List<Symbol> stressPlotSymbols = new ArrayList<>();
 
                     double minMw = 10.0;
                     double maxMw = 0.0;
+                    double minEnergy = 10.0;
+                    double maxEnergy = 0.0;
                     double minStress = 1.0;
                     double maxStress = 0.0;
                     for (final MeasuredMwDetails ev : evs) {
@@ -598,6 +665,26 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                             }
                             if (mw > maxMw) {
                                 maxMw = mw;
+                            }
+
+                            double m0 = (1.5 * mw) + 9.1;
+                            if (ev.getApparentStressInMpa() != null && ev.getApparentStressInMpa() != 0.0) {
+                                apparentStressVsMomentPlot.addPlotObject(
+                                        plotFactory.createSymbol(SymbolStyles.CIRCLE, "", ev.getApparentStressInMpa(), m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
+                            }
+                            if (ev.getCornerFreq() != null && ev.getCornerFreq() != 0.0) {
+                                cornerFreqVsMomentPlot.addPlotObject(
+                                        plotFactory.createSymbol(SymbolStyles.CIRCLE, "", ev.getCornerFreq(), m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
+                            }
+                            if (ev.getTotalEnergy() != null && ev.getTotalEnergy() != 0.0) {
+                                final double energy = ev.getTotalEnergy();
+                                if (energy < minEnergy) {
+                                    minEnergy = energy;
+                                }
+                                if (energy > maxEnergy) {
+                                    maxEnergy = energy;
+                                }
+                                energyVsMomentPlot.addPlotObject(plotFactory.createSymbol(SymbolStyles.CIRCLE, "", energy, m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
                             }
 
                             if (ev.getRefMw() != null && ev.getRefMw() != 0.0) {
@@ -680,6 +767,15 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
                     mwPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minMw, maxMw), new AxisLimits(Axis.Type.Y, minMw, maxMw));
 
+                    maxEnergy = maxEnergy + Math.abs(maxEnergy * .1);
+                    if (minEnergy > maxEnergy) {
+                        minEnergy = maxEnergy - .1;
+                    } else {
+                        minEnergy = minEnergy - Math.abs(minEnergy * .1);
+                    }
+
+                    energyVsMomentPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minEnergy, maxEnergy));
+
                     maxStress = maxStress + Math.abs(maxStress * .1);
                     if (minStress > maxStress) {
                         minStress = maxStress - .1;
@@ -709,6 +805,10 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
                     mwPlot.replot();
                     stressPlot.replot();
+
+                    apparentStressVsMomentPlot.replot();
+                    cornerFreqVsMomentPlot.replot();
+                    energyVsMomentPlot.replot();
                 });
 
                 symbolStyleMap = symbolStyleMapFactory.build(spectralMeasurements, specMeas -> specMeas.getWaveform().getStream().getStation().getStationName());

@@ -105,13 +105,13 @@
 														<Insets left="5.0" right="5.0" />
 													</padding>
 													<children>
-														<Label fx:id="messageLabel22" text="Spacing"
+														<Label fx:id="messageLabel22" text="Bandwidth"
 															textAlignment="LEFT" wrapText="true">
 															<font>
 																<Font name="System Bold" size="13.0" />
 															</font>
 														</Label>
-														<TextField fx:id="spacingField" text="0.25" />
+														<TextField fx:id="bandwidthField" text="0.25" />
 														<Label fx:id="messageLabel21" text="Spacing Type"
 															textAlignment="LEFT" wrapText="true">
 															<font>

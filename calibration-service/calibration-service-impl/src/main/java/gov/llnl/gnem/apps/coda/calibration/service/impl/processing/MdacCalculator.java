@@ -308,7 +308,7 @@ public class MdacCalculator {
     }
 
     public static double mwInDyne(double testMw) {
-        return (DYNE_CM_TO_NEWTON_M * Math.pow(10, 1.5 * testMw + 10.73)) / DYNE_CM_TO_NEWTON_M;
+        return Math.pow(10, 1.5 * testMw + 10.73);
     }
 
     public double apparentStressFromMwFc(Double mw, Double fc) {

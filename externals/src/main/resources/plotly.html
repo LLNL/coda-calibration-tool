@@ -2,9 +2,9 @@
 <html lang="en">
 
 <head>
-	<title>Plot</title>
-	<script src='plotly.min.js'></script>
-	<link rel='stylesheet' href='plotly.css' />
+<title>Plot</title>
+<script src='plotly.min.js'></script>
+<link rel='stylesheet' href='plotly.css' />
 </head>
 
 <body>
@@ -39,7 +39,7 @@
 				}
 				else if (format === 'log10_dyne_cm_to_mw') {
 					return (num) => {
-						return ((2.0 / 3.0) * Number.parseFloat(num) - 10.73).toFixed(2).toString();
+						return ((2.0 / 3.0) * (Number.parseFloat(num) + 7.0) - 10.73).toFixed(2).toString();
 					}
 				}
 				return originalFormatter(format);
@@ -77,7 +77,8 @@
 				zeroline: false
 			},
 			legend: {
-			}
+			},
+			showGroupVelocity: false
 		};
 
 		var layout = Object.assign({}, layout_template);
@@ -88,6 +89,47 @@
 			showTips: false,
 			modeBarButtonsToRemove: ['autoScale2d', 'autoScale3d', 'toImage']
 		};
+		
+		var updateGroupVelocityVisibility = function () {
+			
+			// Update the line's visibility
+			for (var i = 0; i < layout.shapes.length; i++) {
+				var curShape = layout.shapes[i];
+				if(curShape.name === 'Start' || curShape.name === 'End'){
+					curShape.visible = layout.showGroupVelocity;
+				}
+			}
+			
+			// Update the line's text visiblity
+			for (var i = 0; i < layout.annotations.length; i++) {
+				var annotation = layout.annotations[i];
+				if(annotation.text === 'Start' || annotation.text == 'End') {
+					annotation.visible = layout.showGroupVelocity;
+				}
+			}
+		}
+		
+		var moveFmarkerToX = function(x) {
+			
+			// Find f-marker and update it's position to new x value
+			for (var i = 0; i < layout.shapes.length; i++) {
+				var curShape = layout.shapes[i];
+				if(curShape.name === 'f'){
+					curShape.x0 = [x];
+					curShape.x1 = [x];
+				}				
+			}
+			
+			plotDiv._fullLayout._activeShapeIndex = undefined;
+			Plotly.react("plot", data, layout, config).then(attach);
+			plotData.fireShapeMoveEvent(curShape.name, curShape.x0, curShape.x1, curShape.y0, curShape.y1);
+		}
+		
+		var setGroupVelocityVisibility = function (show) {
+			layout.showGroupVelocity = show;
+			updateGroupVelocityVisibility();
+			Plotly.react("plot", data, layout, config).then(attach);
+		}
 
 		var plotSelection = function (type, data) {
 			let validPoints = undefined;
@@ -115,6 +157,7 @@
 			}
 			if (validPoints != undefined) {
 				plotData.fireSelectionEvent(type, JSON.stringify(validPoints));
+				moveFmarkerToX(validPoints.x[0]);	
 			}
 		};
 
@@ -259,7 +302,7 @@
 				}
 			});
 		};
-
+		
 		Plotly.newPlot("plot", data, layout, config).then(attach);
 		attachPlotDivHandlers();
 
@@ -294,6 +337,7 @@
 				var layout_new = JSON.parse(plotData.getPlotLayoutJSON());
 				if (layout_new != null) {
 					Object.assign(layout, layout_new);
+					updateGroupVelocityVisibility();
 				}
 
 				if (backgroundColor !== undefined) {
