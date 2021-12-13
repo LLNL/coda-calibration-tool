@@ -87,7 +87,7 @@
 		<geographiclib.java.version>1.51</geographiclib.java.version>
 		<eclipse.collections.version>11.0.0.M1</eclipse.collections.version>
 		<jakarta.version>2.0.0-RC1</jakarta.version>
-		<jts.version>1.18.1</jts.version>
+		<jts.version>1.18.2</jts.version>
 		<jts2geojson.version>0.14.3</jts2geojson.version>
 		<native-image-version>21.0.0.2</native-image-version>
 
