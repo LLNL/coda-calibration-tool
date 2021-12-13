@@ -10,3 +10,4 @@ updates:
     ignore:
       - dependency-name: "xml-apis:xml-apis"
         versions: ">=2, <3"    
+    open-pull-requests-limit: 1
