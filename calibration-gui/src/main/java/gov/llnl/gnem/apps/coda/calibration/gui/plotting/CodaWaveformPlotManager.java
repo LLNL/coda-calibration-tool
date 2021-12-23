@@ -54,6 +54,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -68,6 +69,10 @@ import reactor.core.scheduler.Schedulers;
 // As it currently is this class is pretty entangled.
 public class CodaWaveformPlotManager {
 
+    private static final String WINDOW_LINE_TOOLTIP = "Toggle Minimum and Maximum Window Lines";
+    private static final String GROUP_VELOCITY_TOOLTIP = "Toggle Group Velocity";
+    private static final String WINDOW_LINE_LABEL = "Window";
+    private static final String GROUP_VELOCITY_LABEL = "GV";
     private static final String TIME_SECONDS_FROM_ORIGIN = "Time (seconds from origin)";
     private static final String WAVEFORM_PREFIX = "Waveform_";
     private static final Logger log = LoggerFactory.getLogger(CodaWaveformPlotManager.class);
@@ -103,9 +108,12 @@ public class CodaWaveformPlotManager {
     final Button backButton = new Button("<");
     final Button nextButton = new Button("↑");
     final Button prevButton = new Button("↓");
-    final ToggleButton groupVelToggle1 = new ToggleButton("GV");
-    final ToggleButton groupVelToggle2 = new ToggleButton("GV");
-    final ToggleButton groupVelToggle3 = new ToggleButton("GV");
+    final ToggleButton groupVelToggle = new ToggleButton(GROUP_VELOCITY_LABEL);
+    final ToggleButton windowLineToggle = new ToggleButton(WINDOW_LINE_LABEL);
+    final ToggleButton groupVelToggle2 = new ToggleButton(GROUP_VELOCITY_LABEL);
+    final ToggleButton windowLineToggle2 = new ToggleButton(WINDOW_LINE_LABEL);
+    final ToggleButton groupVelToggle3 = new ToggleButton(GROUP_VELOCITY_LABEL);
+    final ToggleButton windowLineToggle3 = new ToggleButton(WINDOW_LINE_LABEL);
 
     private final EventHandler<InputEvent> forwardAction = event -> {
         if ((currentPage + 1) < totalPages) {
@@ -147,11 +155,11 @@ public class CodaWaveformPlotManager {
     private final EventHandler<InputEvent> groupVelToggleAction = event -> {
         ToggleButton btnClicked = (ToggleButton) event.getSource();
         if (btnClicked != null && btnClicked.isSelected()) {
-            groupVelToggle1.setSelected(true);
+            groupVelToggle.setSelected(true);
             groupVelToggle2.setSelected(true);
             groupVelToggle3.setSelected(true);
         } else {
-            groupVelToggle1.setSelected(false);
+            groupVelToggle.setSelected(false);
             groupVelToggle2.setSelected(false);
             groupVelToggle3.setSelected(false);
         }
@@ -159,6 +167,24 @@ public class CodaWaveformPlotManager {
             orderedWaveformPlots.values().forEach(CodaWaveformPlot::setGroupVelocityVisbility);
         } else {
             selectedSinglePlot.setGroupVelocityVisbility();
+        }
+    };
+
+    private final EventHandler<InputEvent> windowLineToggleAction = event -> {
+        ToggleButton btnClicked = (ToggleButton) event.getSource();
+        if (btnClicked != null && btnClicked.isSelected()) {
+            windowLineToggle.setSelected(true);
+            windowLineToggle2.setSelected(true);
+            windowLineToggle3.setSelected(true);
+        } else {
+            windowLineToggle.setSelected(false);
+            windowLineToggle2.setSelected(false);
+            windowLineToggle3.setSelected(false);
+        }
+        if (orderedWaveformPlots.size() > 0) {
+            orderedWaveformPlots.values().forEach(CodaWaveformPlot::setWindowLineVisbility);
+        } else {
+            selectedSinglePlot.setWindowLineVisbility();
         }
     };
 
@@ -184,46 +210,57 @@ public class CodaWaveformPlotManager {
         backButton.addEventHandler(MouseEvent.MOUSE_CLICKED, backwardAction::handle);
         nextButton.addEventHandler(MouseEvent.MOUSE_CLICKED, nextAction::handle);
         prevButton.addEventHandler(MouseEvent.MOUSE_CLICKED, prevAction::handle);
-        groupVelToggle1.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
+        groupVelToggle.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
+        groupVelToggle.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
         groupVelToggle2.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
+        groupVelToggle2.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
         groupVelToggle3.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
+        groupVelToggle3.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
+
+        windowLineToggle.addEventHandler(MouseEvent.MOUSE_CLICKED, windowLineToggleAction::handle);
+        windowLineToggle.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
+        windowLineToggle2.addEventHandler(MouseEvent.MOUSE_CLICKED, windowLineToggleAction::handle);
+        windowLineToggle2.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
+        windowLineToggle3.addEventHandler(MouseEvent.MOUSE_CLICKED, windowLineToggleAction::handle);
+        windowLineToggle3.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
 
         multiPageToolbar.getItems().add(backButton);
         multiPageToolbar.getItems().add(pagingLabel);
         multiPageToolbar.getItems().add(forwardButton);
-        multiPageToolbar.getItems().add(groupVelToggle1);
+        multiPageToolbar.getItems().add(groupVelToggle);
+        multiPageToolbar.getItems().add(windowLineToggle);
 
         multiFrequencyToolbar.getItems().add(freqBandLabel);
         multiFrequencyToolbar.getItems().add(prevButton);
         multiFrequencyToolbar.getItems().add(nextButton);
         multiFrequencyToolbar.getItems().add(groupVelToggle2);
+        multiFrequencyToolbar.getItems().add(windowLineToggle2);
 
         multiPlotToolbar.getItems().add(groupVelToggle3);
+        multiPlotToolbar.getItems().add(windowLineToggle3);
 
         final Font sizedFont = Font.font(forwardButton.getFont().getFamily(), 12f);
         forwardButton.setFont(sizedFont);
         backButton.setFont(sizedFont);
         nextButton.setFont(sizedFont);
         prevButton.setFont(sizedFont);
-        groupVelToggle1.setFont(sizedFont);
+        groupVelToggle.setFont(sizedFont);
         groupVelToggle2.setFont(sizedFont);
         groupVelToggle3.setFont(sizedFont);
+        windowLineToggle.setFont(sizedFont);
+        windowLineToggle2.setFont(sizedFont);
+        windowLineToggle3.setFont(sizedFont);
 
         forwardButton.setFocusTraversable(false);
         backButton.setFocusTraversable(false);
         nextButton.setFocusTraversable(false);
         prevButton.setFocusTraversable(false);
-        groupVelToggle1.setFocusTraversable(false);
+        groupVelToggle.setFocusTraversable(false);
         groupVelToggle2.setFocusTraversable(false);
         groupVelToggle3.setFocusTraversable(false);
-    }
-
-    private String getStationNetworkName(Waveform waveform) {
-        if (waveform != null && waveform.getStream() != null && waveform.getStream().getStation() != null) {
-            Station station = waveform.getStream().getStation();
-            return station.getNetworkName() + station.getStationName();
-        }
-        return "";
+        windowLineToggle.setFocusTraversable(false);
+        windowLineToggle2.setFocusTraversable(false);
+        windowLineToggle3.setFocusTraversable(false);
     }
 
     private void setFrequencyDisplayText(Waveform wave) {
@@ -324,7 +361,7 @@ public class CodaWaveformPlotManager {
             if (!plotBag.isEmpty()) {
                 plot = plotBag.pop();
             } else {
-                plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient, () -> groupVelToggle1.isSelected());
+                plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient, () -> groupVelToggle.isSelected(), () -> windowLineToggle.isSelected());
             }
         }
 

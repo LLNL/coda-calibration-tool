@@ -73,7 +73,7 @@ public class PlotlyPlot implements BasicPlot {
     protected transient WebEngine engine;
     private transient StackPane view;
     private static final String SHAPES = "shapes";
-    protected final PlotlyPlotData plotData = new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle());
+    protected final PlotlyPlotData plotData;
     private final List<PlotlyPlot> subPlots = new ArrayList<>(0);
     private Integer subplotId;
     private Integer topMargin;
@@ -91,10 +91,15 @@ public class PlotlyPlot implements BasicPlot {
     private boolean isSubPlot;
 
     public PlotlyPlot() {
-        this(false);
+        this(false, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
     }
 
-    private PlotlyPlot(boolean isSubPlot) {
+    public PlotlyPlot(boolean isSubPlot) {
+        this(isSubPlot, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
+    }
+
+    public PlotlyPlot(boolean isSubPlot, PlotlyPlotData plotData) {
+        this.plotData = plotData;
         this.isSubPlot = isSubPlot;
         //TODO: Accept other plot types
         intializePlotData();
@@ -107,6 +112,7 @@ public class PlotlyPlot implements BasicPlot {
         plotData.setMapper(new ObjectMapper());
         plotData.setShowLegend(true);
         plotData.setShowGroupVelocity(false);
+        plotData.setShowWindowLines(false);
         plotData.setAxes(new ArrayList<>(0));
         plotData.setPlotReady(new AtomicBoolean(false));
         plotData.setDefaultTypePlots(new HashMap<>());
@@ -397,6 +403,10 @@ public class PlotlyPlot implements BasicPlot {
         this.plotData.setShowGroupVelocity(showGroupVelocity);
     }
 
+    public void setShowWindowLines(final boolean showWindowLines) {
+        this.plotData.setShowWindowLines(showWindowLines);
+    }
+
     @Override
     public void showLegend(final boolean showLegend) {
         this.plotData.setShowLegend(showLegend);
@@ -493,6 +503,19 @@ public class PlotlyPlot implements BasicPlot {
                     trace.set("y", yNode);
                 }
 
+                final List<Double[]> zdata = data.getZdata();
+                if (!zdata.isEmpty()) {
+                    final ArrayNode zNode = trace.arrayNode();
+                    zdata.forEach(zdata2 -> {
+                        final ArrayNode zNode2 = trace.arrayNode();
+                        for (Double element : zdata2) {
+                            zNode2.add(element);
+                        }
+                        zNode.add(zNode2);
+                    });
+                    trace.set("z", zNode);
+                }
+
                 final List<Double> cData = data.getColorData();
                 if (!cData.isEmpty()) {
                     final ArrayNode cNode = trace.arrayNode();
@@ -531,7 +554,8 @@ public class PlotlyPlot implements BasicPlot {
     private ObjectNode getPlotLayoutNode() {
         ObjectNode layoutNode = plotData.getMapper().createObjectNode();
         layoutNode.put("hovermode", "closest");
-        layoutNode.put("showGroupVelocity", plotData.isShowGroupVelocity());
+        layoutNode.put("showGroupVelocity", plotData.shouldShowGroupVelocity());
+        layoutNode.put("showWindowLines", plotData.shouldShowWindowLine());
         if (!subPlots.isEmpty()) {
             layoutNode.with("grid").put("rows", subPlots.size()).put("columns", 1).put("pattern", "independent");
             for (int i = 0; i < subPlots.size(); i++) {
@@ -543,7 +567,7 @@ public class PlotlyPlot implements BasicPlot {
                 layoutNode.setAll(subLayout);
             }
         } else {
-            layoutNode.put("showlegend", plotData.isShowLegend());
+            layoutNode.put("showlegend", plotData.shouldShowLegend());
             for (final Axis axis : plotData.getAxes()) {
                 String axisType;
                 String axisSide = null;

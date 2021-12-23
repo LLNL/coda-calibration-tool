@@ -44,7 +44,7 @@ public class PlotlyTrace {
     private boolean isAnnotationLogX = false;
 
     public enum Style {
-        LINE("lines", "scatter", 0), SCATTER_MARKER("markers", "scatter", 1), VERTICAL_LINE("line", "shapes", 2);
+        LINE("lines", "scatter", 0), SCATTER_MARKER("markers", "scatter", 1), VERTICAL_LINE("line", "shapes", 2), HEATMAP("heatmap", "heatmap", 3);
 
         private final String type;
         private final String mode;

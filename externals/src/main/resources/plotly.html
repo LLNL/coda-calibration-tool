@@ -78,7 +78,8 @@
 			},
 			legend: {
 			},
-			showGroupVelocity: false
+			showGroupVelocity: false,
+			showWindowLines: false
 		};
 
 		var layout = Object.assign({}, layout_template);
@@ -100,7 +101,7 @@
 				}
 			}
 			
-			// Update the line's text visiblity
+			// Update the line's text visibility
 			for (var i = 0; i < layout.annotations.length; i++) {
 				var annotation = layout.annotations[i];
 				if(annotation.text === 'Start' || annotation.text == 'End') {
@@ -109,8 +110,26 @@
 			}
 		}
 		
-		var moveFmarkerToX = function(x) {
+		var updateWindowLineVisibility = function () {
 			
+			// Update the line's visibility
+			for (var i = 0; i < layout.shapes.length; i++) {
+				var curShape = layout.shapes[i];
+				if(curShape.name === 'Max' || curShape.name == 'Min'){
+					curShape.visible = layout.showWindowLines;
+				}
+			}
+			
+			// Update the line's text visibility
+			for (var i = 0; i < layout.annotations.length; i++) {
+				var annotation = layout.annotations[i];
+				if(annotation.text === 'Max' || annotation.text == 'Min') {
+					annotation.visible = layout.showWindowLines;
+				}
+			}
+		}
+		
+		var moveFmarkerToX = function(x) {
 			// Find f-marker and update it's position to new x value
 			for (var i = 0; i < layout.shapes.length; i++) {
 				var curShape = layout.shapes[i];
@@ -119,15 +138,18 @@
 					curShape.x1 = [x];
 				}				
 			}
-			
-			plotDiv._fullLayout._activeShapeIndex = undefined;
-			Plotly.react("plot", data, layout, config).then(attach);
 			plotData.fireShapeMoveEvent(curShape.name, curShape.x0, curShape.x1, curShape.y0, curShape.y1);
 		}
 		
 		var setGroupVelocityVisibility = function (show) {
 			layout.showGroupVelocity = show;
 			updateGroupVelocityVisibility();
+			Plotly.react("plot", data, layout, config).then(attach);
+		}
+		
+		var setWindowLineVisibility = function (show) {
+			layout.showWindowLines = show;
+			updateWindowLineVisibility();
 			Plotly.react("plot", data, layout, config).then(attach);
 		}
 
@@ -157,7 +179,6 @@
 			}
 			if (validPoints != undefined) {
 				plotData.fireSelectionEvent(type, JSON.stringify(validPoints));
-				moveFmarkerToX(validPoints.x[0]);	
 			}
 		};
 
@@ -174,7 +195,7 @@
 					break
 			}
 		};
-
+		
 		//For moving picks on click-drag instead of requiring the click, click-drag, click default behavior from Plotly
 		var drag = Plotly.PD3.behavior.drag();
 		drag.on("drag", function () {
@@ -301,6 +322,15 @@
 					}
 				}
 			});
+			// Register clicks to move the f-marker
+			plotDiv.addEventListener('click', event => {
+				var clickX = event.clientX;
+				var leftMargin = plotDiv._fullLayout._size.l;
+				var xaxis = plotDiv._fullLayout.xaxis;
+				var plotX = xaxis.p2c(event.clientX-leftMargin);
+				
+				moveFmarkerToX(plotX);
+			});
 		};
 		
 		Plotly.newPlot("plot", data, layout, config).then(attach);
@@ -338,6 +368,7 @@
 				if (layout_new != null) {
 					Object.assign(layout, layout_new);
 					updateGroupVelocityVisibility();
+					updateWindowLineVisibility();
 				}
 
 				if (backgroundColor !== undefined) {

@@ -65,7 +65,7 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
     @Transactional
     public void delete(Iterable<Long> ids) {
         List<ReferenceMwParameters> toDelete = referenceMwParametersRepository.findAllById(ids);
-        referenceMwParametersRepository.deleteInBatch(toDelete);
+        referenceMwParametersRepository.deleteAllInBatch(toDelete);
         referenceMwParametersRepository.flush();
     }
 
@@ -73,7 +73,7 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
     @Transactional
     public void deleteAllByEventIds(Collection<String> eventIds) {
         List<ReferenceMwParameters> toDelete = referenceMwParametersRepository.findAllByEventIds(eventIds);
-        referenceMwParametersRepository.deleteInBatch(toDelete);
+        referenceMwParametersRepository.deleteAllInBatch(toDelete);
         referenceMwParametersRepository.flush();
     }
 

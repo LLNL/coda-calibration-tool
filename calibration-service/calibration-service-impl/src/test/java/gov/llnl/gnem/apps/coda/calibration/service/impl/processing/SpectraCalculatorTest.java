@@ -45,9 +45,11 @@ import gov.llnl.gnem.apps.coda.calibration.service.api.SiteFrequencyBandParamete
 import gov.llnl.gnem.apps.coda.calibration.service.impl.ServiceConfig;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.test.annotations.IntTest;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 
+@IntTest
 public class SpectraCalculatorTest {
 
     private static final Logger log = LoggerFactory.getLogger(SpectraCalculatorTest.class);

@@ -71,6 +71,8 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -112,6 +114,9 @@ public class PathController implements MapListeningController, RefreshableContro
 
     @FXML
     private Pane sdPlotPane;
+
+    @FXML
+    private Spinner<Integer> stationCountFilterField;
 
     private BasicPlot sdPlot;
     private BasicPlot stationPlot;
@@ -213,6 +218,11 @@ public class PathController implements MapListeningController, RefreshableContro
         stationXaxis = plotFactory.axis(Axis.Type.X, "");
         stationYaxis = plotFactory.axis(Axis.Type.Y, "");
         stationPlot.addAxes(stationXaxis, stationYaxis);
+        stationCountFilterField.setTooltip(new Tooltip("Minimum number of common stations required to be included in the overall plot"));
+        stationCountFilterField.valueProperty().addListener((o, n, v) -> {
+            plotSd();
+            sdPlot.replot();
+        });
 
         stationPlot.addPlotObjectObserver(evt -> {
             Object po = evt.getNewValue();
@@ -573,71 +583,73 @@ public class PathController implements MapListeningController, RefreshableContro
                     if (Double.isNaN(beforeStatsStaPairs.get(staPair).getStandardDeviation()) || beforeStatsStaPairs.get(staPair).getStandardDeviation() == 0.0) {
                         continue;
                     }
-                    final String staPairDisplayName = staPair.getLeft().getStationName() + " " + staPair.getRight().getStationName();
-                    final Symbol plotObj = plotFactory.createSymbol(
-                            SymbolStyles.SQUARE,
-                                "Before",
-                                distanceStaPair.getValue(),
-                                beforeStatsStaPairs.get(staPair).getStandardDeviation(),
-                                Color.RED,
-                                Color.RED,
-                                Color.RED,
-                                staPairDisplayName,
-                                false);
-                    plotObj.setZindex(BEFORE_Z_INDEX);
-                    plotObj.setText(staPairDisplayName + " " + beforeStatsStaPairs.get(staPair).getN());
+                    if (beforeStatsStaPairs.get(staPair).getN() >= stationCountFilterField.getValue()) {
+                        final String staPairDisplayName = staPair.getLeft().getStationName() + " " + staPair.getRight().getStationName();
+                        final Symbol plotObj = plotFactory.createSymbol(
+                                SymbolStyles.SQUARE,
+                                    "Before",
+                                    distanceStaPair.getValue(),
+                                    beforeStatsStaPairs.get(staPair).getStandardDeviation(),
+                                    Color.RED,
+                                    Color.RED,
+                                    Color.RED,
+                                    staPairDisplayName,
+                                    false);
+                        plotObj.setZindex(BEFORE_Z_INDEX);
+                        plotObj.setText(staPairDisplayName + " " + beforeStatsStaPairs.get(staPair).getN());
 
-                    final Symbol plotObj2 = plotFactory.createSymbol(
-                            SymbolStyles.CIRCLE,
-                                "After",
-                                distanceStaPair.getValue(),
-                                afterStatsStaPairs.get(staPair).getStandardDeviation(),
-                                Color.BLUE,
-                                Color.BLUE,
-                                Color.BLUE,
-                                staPairDisplayName,
-                                false);
-                    plotObj2.setZindex(AFTER_Z_INDEX);
-                    plotObj2.setText(staPairDisplayName + " " + afterStatsStaPairs.get(staPair).getN());
+                        final Symbol plotObj2 = plotFactory.createSymbol(
+                                SymbolStyles.CIRCLE,
+                                    "After",
+                                    distanceStaPair.getValue(),
+                                    afterStatsStaPairs.get(staPair).getStandardDeviation(),
+                                    Color.BLUE,
+                                    Color.BLUE,
+                                    Color.BLUE,
+                                    staPairDisplayName,
+                                    false);
+                        plotObj2.setZindex(AFTER_Z_INDEX);
+                        plotObj2.setText(staPairDisplayName + " " + afterStatsStaPairs.get(staPair).getN());
 
-                    if (xmax == null) {
-                        xmax = plotObj.getX();
-                    }
-                    if (xmin == null) {
-                        xmin = plotObj.getX();
-                    }
-                    if (plotObj.getX() > xmax) {
-                        xmax = plotObj.getX();
-                    }
-                    if (plotObj.getY() > ymax) {
-                        ymax = plotObj.getY();
-                    }
-                    if (plotObj.getX() < xmin) {
-                        xmin = plotObj.getX();
-                    }
-                    if (plotObj.getY() < ymin) {
-                        ymin = plotObj.getY();
-                    }
-                    sdPlot.addPlotObject(plotObj);
+                        if (xmax == null) {
+                            xmax = plotObj.getX();
+                        }
+                        if (xmin == null) {
+                            xmin = plotObj.getX();
+                        }
+                        if (plotObj.getX() > xmax) {
+                            xmax = plotObj.getX();
+                        }
+                        if (plotObj.getY() > ymax) {
+                            ymax = plotObj.getY();
+                        }
+                        if (plotObj.getX() < xmin) {
+                            xmin = plotObj.getX();
+                        }
+                        if (plotObj.getY() < ymin) {
+                            ymin = plotObj.getY();
+                        }
+                        sdPlot.addPlotObject(plotObj);
 
-                    if (plotObj2.getX() > xmax) {
-                        xmax = plotObj2.getX();
-                    }
-                    if (plotObj2.getY() > ymax) {
-                        ymax = plotObj2.getY();
-                    }
-                    if (plotObj2.getX() < xmin) {
-                        xmin = plotObj2.getX();
-                    }
-                    if (plotObj2.getY() < ymin) {
-                        ymin = plotObj2.getY();
-                    }
-                    sdPlot.addPlotObject(plotObj2);
+                        if (plotObj2.getX() > xmax) {
+                            xmax = plotObj2.getX();
+                        }
+                        if (plotObj2.getY() > ymax) {
+                            ymax = plotObj2.getY();
+                        }
+                        if (plotObj2.getX() < xmin) {
+                            xmin = plotObj2.getX();
+                        }
+                        if (plotObj2.getY() < ymin) {
+                            ymin = plotObj2.getY();
+                        }
+                        sdPlot.addPlotObject(plotObj2);
 
-                    final Point2D point1 = new Point2D(plotObj.getX(), plotObj.getY());
-                    final Point2D point2 = new Point2D(plotObj2.getX(), plotObj2.getY());
-                    sdSymbolMap.put(point1, sourceMeasurements.get(staPair));
-                    sdSymbolMap.put(point2, sourceMeasurements.get(staPair));
+                        final Point2D point1 = new Point2D(plotObj.getX(), plotObj.getY());
+                        final Point2D point2 = new Point2D(plotObj2.getX(), plotObj2.getY());
+                        sdSymbolMap.put(point1, sourceMeasurements.get(staPair));
+                        sdSymbolMap.put(point2, sourceMeasurements.get(staPair));
+                    }
                 }
                 sdPlot.getTitle().setText("σ(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + "; σ(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation()));
             }

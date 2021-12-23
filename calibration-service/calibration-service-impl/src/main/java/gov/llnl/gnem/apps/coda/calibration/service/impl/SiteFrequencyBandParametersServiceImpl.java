@@ -129,7 +129,7 @@ public class SiteFrequencyBandParametersServiceImpl implements SiteFrequencyBand
     @Transactional
     public void delete(Iterable<Long> ids) {
         List<SiteFrequencyBandParameters> toDelete = siteFrequencyBandParametersRepository.findAllById(ids);
-        siteFrequencyBandParametersRepository.deleteInBatch(toDelete);
+        siteFrequencyBandParametersRepository.deleteAllInBatch(toDelete);
     }
 
     @Override

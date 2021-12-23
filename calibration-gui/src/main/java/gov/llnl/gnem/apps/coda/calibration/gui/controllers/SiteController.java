@@ -108,7 +108,7 @@ public class SiteController extends AbstractMeasurementController {
         final SpectraPlotController site = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
         plot = site.getSpectralPlot();
         plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(site::getSpectraMeasurementMap));
-        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(nm)");
+        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(N-m)");
         final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         plot.getSubplot().addAxes(rightAxis);
@@ -133,7 +133,7 @@ public class SiteController extends AbstractMeasurementController {
         siteTermsPlot = plotFactory.basicPlot();
         siteTermsPlot.getTitle().setText("Site corrections");
         siteTermsPlot.getTitle().setFontSize(16);
-        siteTermsPlot.addAxes(plotFactory.axis(Axis.Type.X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Site correction log10(nm)"));
+        siteTermsPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Site correction log10(N-m)"));
         siteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, 0.0, 10.0), new AxisLimits(Axis.Type.Y, 0.0, 2.0));
         siteTermsPlot.attachToDisplayNode(siteTermsPlotPane);
     }

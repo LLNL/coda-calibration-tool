@@ -14,8 +14,16 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.util;
 
-import java.util.Observable;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 
-abstract public class ProgressListener extends Observable {
-    abstract public double getProgress();
+abstract public class ProgressListener {
+
+    protected PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
+
+    public abstract double getProgress();
+
+    protected void addListener(PropertyChangeListener listener) {
+        changeSupport.addPropertyChangeListener(listener);
+    }
 }

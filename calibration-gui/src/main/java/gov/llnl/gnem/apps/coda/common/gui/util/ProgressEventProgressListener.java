@@ -35,8 +35,7 @@ public class ProgressEventProgressListener extends ProgressListener {
     private void listener(ProgressEvent event) {
         if (cachedEvent.getId().equals(event.getId())) {
             cachedEvent = event;
-            this.setChanged();
-            this.notifyObservers(event.getProgress());
+            changeSupport.firePropertyChange(event.getClass().getName(), null, event.getProgress());
         }
     }
 

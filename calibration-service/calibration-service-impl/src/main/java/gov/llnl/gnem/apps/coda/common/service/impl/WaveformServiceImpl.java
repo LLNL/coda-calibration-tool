@@ -83,7 +83,7 @@ public class WaveformServiceImpl implements WaveformService {
     @Override
     public void delete(Iterable<Long> ids) {
         List<Waveform> toDelete = getWaveformRepository().findAllById(ids);
-        getWaveformRepository().deleteInBatch(toDelete);
+        getWaveformRepository().deleteAllInBatch(toDelete);
         notificationService.post(new WaveformChangeEvent(getIds(toDelete)).setDelete(true));
     }
 

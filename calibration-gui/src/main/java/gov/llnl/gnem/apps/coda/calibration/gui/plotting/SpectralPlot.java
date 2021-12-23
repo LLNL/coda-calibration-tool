@@ -46,7 +46,7 @@ public class SpectralPlot extends Pane implements Serializable {
 
     private static final String AVG_MW_LEGEND_LABEL = "Avg";
 
-    private static final String CODA_MW_LABEL = "Mw_coda";
+    private static final String CODA_MW_LABEL = "Model Fit";
 
     private static final double EPSILON = 1E-14;
 
@@ -125,7 +125,8 @@ public class SpectralPlot extends Pane implements Serializable {
                 return plotFactory.createSymbol(v.getStyle(), label, v.getX(), v.getY(), v.getColor(), Color.BLACK, v.getColor(), label, true);
             }).forEach(symbol -> {
                 synchronized (symbolMapLock) {
-                    symbolMap.computeIfAbsent(new Point2D(symbol.getX(), symbol.getY()), v -> new ArrayList<>()).add(symbol);
+                    //Dyne-cm to Newton-meters
+                    symbolMap.computeIfAbsent(new Point2D(symbol.getX(), symbol.getY() - 7.0), v -> new ArrayList<>()).add(symbol);
                 }
                 plot.addPlotObject(symbol);
             });
@@ -235,19 +236,14 @@ public class SpectralPlot extends Pane implements Serializable {
             }
             if (line != null) {
                 if (SPECTRA_TYPES.UQ1 != spectra.getType() && SPECTRA_TYPES.UQ2 != spectra.getType()) {
-                    final NumberFormat df = NumberFormatFactory.oneDecimalMinimum();
                     String spectraName;
                     if (SPECTRA_TYPES.FIT == spectra.getType()) {
                         spectraName = CODA_MW_LABEL;
                     } else {
                         spectraName = spectra.getType().name();
                     }
-                    if (spectra.getApparentStress() > 0.0) {
-                        final NumberFormat df2 = NumberFormatFactory.twoDecimalOneLeadingZero();
-                        line.setName(spectraName + ' ' + df.format(spectra.getMw()) + " @ " + df2.format(spectra.getApparentStress()) + "MPa");
-                    } else {
-                        line.setName(spectraName + ' ' + df.format(spectra.getMw()));
-                    }
+
+                    line.setName(spectraName);
                 }
 
                 jsubplot.addPlotObject(line);
@@ -390,8 +386,9 @@ public class SpectralPlot extends Pane implements Serializable {
         double yMax;
 
         if (autoCalculateYaxisRange) {
-            yMin = ymin - Math.abs(ymin * .1);
-            yMax = ymax + Math.abs(ymax * .1);
+            //Dyne-cm to Newton meters
+            yMin = ymin - Math.abs(ymin * .1) - 7.0;
+            yMax = ymax + Math.abs(ymax * .1) - 7.0;
         } else {
             yMin = defaultYMin;
             yMax = defaultYMax;

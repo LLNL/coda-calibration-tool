@@ -69,7 +69,7 @@ public class MdacParametersFiServiceImpl implements MdacParametersFiService {
     @Transactional
     public void delete(Iterable<Long> ids) {
         List<MdacParametersFI> toDelete = getMdacParametersRepository().findAllById(ids);
-        getMdacParametersRepository().deleteInBatch(toDelete);
+        getMdacParametersRepository().deleteAllInBatch(toDelete);
         notificationService.post(new MdacDataChangeEvent());
     }
 

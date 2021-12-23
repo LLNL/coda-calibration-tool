@@ -69,7 +69,7 @@ public class MdacParametersPsServiceImpl implements MdacParametersPsService {
     @Transactional
     public void delete(Iterable<Long> ids) {
         List<MdacParametersPS> toDelete = getMdacParametersRepository().findAllById(ids);
-        getMdacParametersRepository().deleteInBatch(toDelete);
+        getMdacParametersRepository().deleteAllInBatch(toDelete);
         notificationService.post(new MdacDataChangeEvent());
     }
 

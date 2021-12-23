@@ -151,7 +151,7 @@ public class PlotlyWaveformPlot extends PlotlyPlot {
         } else if (xValue > endTime) {
             xValue = endTime;
         }
-        final VerticalLine vpl = new VerticalLine(xValue, 30, phase, pickColor, pickLineWidth, draggable, false);
+        final VerticalLine vpl = new VerticalLine(xValue, 90, phase, pickColor, pickLineWidth, draggable, false);
         vpl.setDraggable(draggable);
         addPlotObject(vpl);
         return vpl;

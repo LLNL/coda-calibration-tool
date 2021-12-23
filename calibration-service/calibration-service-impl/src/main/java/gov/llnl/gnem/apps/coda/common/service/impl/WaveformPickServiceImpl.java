@@ -93,7 +93,7 @@ public class WaveformPickServiceImpl implements WaveformPickService {
     @Override
     public void delete(Iterable<Long> ids) {
         List<WaveformPick> toDelete = getWaveformPickRepository().findAllById(ids);
-        getWaveformPickRepository().deleteInBatch(toDelete);
+        getWaveformPickRepository().deleteAllInBatch(toDelete);
     }
 
     /**

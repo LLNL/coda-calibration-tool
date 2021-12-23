@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -14,11 +14,11 @@
 */
 package gov.llnl.gnem.apps.coda.common.gui.util;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 
 import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
 import javafx.application.Platform;
@@ -38,7 +38,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
-public class ProgressMonitor extends VBox implements Observer {
+public class ProgressMonitor extends VBox implements PropertyChangeListener {
     private Button cancelButton = new Button();
 
     @FXML
@@ -54,7 +54,7 @@ public class ProgressMonitor extends VBox implements Observer {
     public ProgressMonitor(String displayableName, ProgressListener progressListener) {
         this.displayableName = displayableName;
         this.progressStage = "";
-        progressListener.addObserver(this);
+        progressListener.addListener(this);
 
         Platform.runLater(() -> {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/ProgressMonitor.fxml"));
@@ -77,8 +77,7 @@ public class ProgressMonitor extends VBox implements Observer {
                 cancelButton.setText("X");
                 cancelButton.setTextAlignment(TextAlignment.CENTER);
                 cancelButton.setOnAction((ActionEvent event) -> {
-                    List<Runnable> funcs = new ArrayList<>(cancelFunctions.size());
-                    funcs.addAll(cancelFunctions);
+                    List<Runnable> funcs = new ArrayList<>(cancelFunctions);
                     funcs.forEach(Runnable::run);
                 });
                 cancelButton.visibleProperty().bind(Bindings.size(cancelFunctions).greaterThan(0));
@@ -90,19 +89,17 @@ public class ProgressMonitor extends VBox implements Observer {
     }
 
     @Override
-    public void update(Observable o, Object event) {
-        if (event instanceof Progress) {
-            Progress progress = (Progress) event;
-            Platform.runLater(() -> {
-                if (progress.getTotal() >= 0.0) {
-                    label.setText(progress.getCurrent() + "/" + progress.getTotal() + getProgressStage());
-                    progressBar.setProgress(progress.getProgress());
-                } else {
-                    progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
-                    label.setText("");
-                }
-            });
-        }
+    public void propertyChange(PropertyChangeEvent event) {
+        Progress progress = (Progress) event.getNewValue();
+        Platform.runLater(() -> {
+            if (progress.getTotal() >= 0.0) {
+                label.setText(progress.getCurrent() + "/" + progress.getTotal() + getProgressStage());
+                progressBar.setProgress(progress.getProgress());
+            } else {
+                progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+                label.setText("");
+            }
+        });
     }
 
     private String getProgressStage() {

@@ -42,7 +42,6 @@ public class WebfluxConfig {
 
     @Autowired
     public WebfluxConfig(ObjectMapper objectMapper) {
-        super();
         this.objectMapper = objectMapper;
         this.objectMapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersJsonMixin.class);
         this.objectMapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersJsonMixin.class);
@@ -60,8 +59,8 @@ public class WebfluxConfig {
         return ExchangeStrategies.builder().codecs(clientCodecConfigurer -> {
             Jackson2JsonDecoder decoder = new Jackson2JsonDecoder(objectMapper);
             decoder.setMaxInMemorySize(-1);
-            clientCodecConfigurer.customCodecs().decoder(decoder);
-            clientCodecConfigurer.customCodecs().encoder(new Jackson2JsonEncoder(objectMapper));
+            clientCodecConfigurer.customCodecs().registerWithDefaultConfig(decoder);
+            clientCodecConfigurer.customCodecs().registerWithDefaultConfig(new Jackson2JsonEncoder(objectMapper));
             //Unlimited
             clientCodecConfigurer.defaultCodecs().maxInMemorySize(-1);
         }).build();
