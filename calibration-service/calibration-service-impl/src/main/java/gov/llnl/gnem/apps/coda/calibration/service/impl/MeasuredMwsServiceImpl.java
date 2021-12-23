@@ -62,7 +62,7 @@ public class MeasuredMwsServiceImpl implements MeasuredMwsService {
     @Transactional
     public void delete(Iterable<Long> ids) {
         List<MeasuredMwParameters> toDelete = measuredMwsRepository.findAllById(ids);
-        measuredMwsRepository.deleteInBatch(toDelete);
+        measuredMwsRepository.deleteAllInBatch(toDelete);
     }
 
     @Transactional

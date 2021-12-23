@@ -91,7 +91,13 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
     private VerticalLine groupVelocityLineEnd;
 
+    private VerticalLine minWindowLine;
+
+    private VerticalLine maxWindowLine;
+
     private BooleanSupplier showGroupVelocity;
+
+    private BooleanSupplier showWindowLines;
 
     private enum PLOT_ORDERING {
         BACKGROUND(0), NOISE_BOX(1), WAVEFORM(2), NOISE_LINE(3), SHAPE_FIT(4), MODEL_FIT(5), PICKS(6);
@@ -108,7 +114,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
     }
 
     public CodaWaveformPlot(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramClient, final PeakVelocityClient velocityClient,
-            BooleanSupplier showGroupVelocity, final TimeSeries... seismograms) {
+            BooleanSupplier showGroupVelocity, BooleanSupplier showWindowLines, final TimeSeries... seismograms) {
         super(seismograms);
         xAxis = new BasicAxis(Axis.Type.X, "Time (seconds from origin)");
         yAxis = new BasicAxis(Axis.Type.Y, "log10(amplitude)");
@@ -118,12 +124,27 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         this.paramClient = paramClient;
         this.velocityClient = velocityClient;
         this.showGroupVelocity = showGroupVelocity;
+        this.showWindowLines = showWindowLines;
     }
 
     public void setGroupVelocityVisbility() {
         if (groupVelocityLineStart != null && groupVelocityLineEnd != null) {
             final String script = "setGroupVelocityVisibility(" + showGroupVelocity.getAsBoolean() + ");";
             plotData.setShowGroupVelocity(showGroupVelocity.getAsBoolean());
+            Platform.runLater(() -> {
+                try {
+                    engine.executeScript(script);
+                } catch (final Exception e) {
+                    log.debug(e.getLocalizedMessage());
+                }
+            });
+        }
+    }
+
+    public void setWindowLineVisbility() {
+        if (minWindowLine != null) {
+            final String script = "setWindowLineVisibility(" + showWindowLines.getAsBoolean() + ");";
+            plotData.setShowWindowLines(showWindowLines.getAsBoolean());
             Platform.runLater(() -> {
                 try {
                     engine.executeScript(script);
@@ -151,6 +172,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             final Station station = waveform.getStream().getStation();
             final Event event = waveform.getEvent();
             final TimeT beginTime = new TimeT(waveform.getBeginTime());
+
             double originTimeZeroOffset = beginTime.subtractD(new TimeT(event.getOriginTime()));
 
             final float[] waveformSegment = doublesToFloats(waveform.getSegment());
@@ -174,7 +196,6 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             setTitle(labelText);
 
             setGroupVelocityLines(distance); // Adds group velocity lines to the appropriate location based on distance
-            setGroupVelocityVisbility();
 
             final List<WaveformPick> picks = waveform.getAssociatedPicks();
             final double beginEpochTime = new TimeT(waveform.getBeginTime()).getEpochTime();
@@ -270,6 +291,10 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
                         } else if (this.synthetic != null && synthetic.getSourceWaveform() != null && synthetic.getSourceWaveform().getId().equals(waveform.getId())) {
                             plotSynthetic(waveform, synthetic, beginTime, waveformSegment, event, distance, labelText, params);
                         }
+
+                        // Add max window line
+                        setWindowLines(params, waveform, distance, originTimeZeroOffset);
+
                         this.replot();
                     } catch (final IllegalArgumentException e) {
                         log.warn(e.getMessage(), e);
@@ -278,6 +303,34 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             });
         } else {
             plotIdentifier = "";
+        }
+    }
+
+    private double calcWindowTime(final double time, final SharedFrequencyBandParameters params, final Waveform waveform, final double distance) {
+        double windowTime = 0;
+        if (waveform.getMaxVelTime() != null) {
+            windowTime = new TimeT(waveform.getMaxVelTime()).add(time).subtractD(new TimeT(waveform.getBeginTime()));
+        } else {
+            // Calculation from getDistanceFunction in syntheticCodaModel
+            windowTime = time + distance / (params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance));
+        }
+        return windowTime;
+    }
+
+    private void setWindowLines(final SharedFrequencyBandParameters params, final Waveform waveform, final double distance, final double originTimeOffset) {
+        if (params != null) {
+            double maxWindowTime = calcWindowTime(params.getMaxLength(), params, waveform, distance);
+            double minWindowTime = calcWindowTime(params.getMinLength(), params, waveform, distance);
+            double plotLength = waveform.getData().size() / waveform.getSampleRate() + originTimeOffset;
+            if (maxWindowTime != 0 && maxWindowTime < plotLength) {
+                maxWindowLine = new VerticalLine(maxWindowTime, 90, "Max");
+                maxWindowLine.setFillColor(Color.GRAY);
+                addPlotObject(maxWindowLine, PLOT_ORDERING.PICKS.getZOrder());
+            }
+            minWindowLine = new VerticalLine(minWindowTime, 90, "Min");
+            minWindowLine.setFillColor(Color.GRAY);
+            addPlotObject(minWindowLine, PLOT_ORDERING.PICKS.getZOrder());
+            setWindowLineVisbility();
         }
     }
 
@@ -298,14 +351,16 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
                 endTime = (distance / endGV2Lt);
             }
 
-            groupVelocityLineStart = new VerticalLine(startTime, 95, "Start");
-            groupVelocityLineEnd = new VerticalLine(endTime, 95, "End");
+            groupVelocityLineStart = new VerticalLine(startTime, 90, "Start");
+            groupVelocityLineEnd = new VerticalLine(endTime, 90, "End");
 
             groupVelocityLineStart.setFillColor(Color.ORANGE);
             groupVelocityLineEnd.setFillColor(Color.ORANGE);
 
             addPlotObject(groupVelocityLineStart, PLOT_ORDERING.PICKS.getZOrder());
             addPlotObject(groupVelocityLineEnd, PLOT_ORDERING.PICKS.getZOrder());
+
+            setGroupVelocityVisbility();
         }
     }
 
@@ -352,6 +407,13 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         interpolatedSeries.interpolate(synthSeriesBeforeEndMarker.getSamprate());
 
         final TimeT startTime = new TimeT(synth.getBeginTime());
+
+        double deltaOriginEnd = new TimeT(endTime).subtractD(originTime);
+        double maxWindowTime = calcWindowTime(params.getMaxLength(), params, waveform, distance);
+        if (deltaOriginEnd > maxWindowTime) {
+            endTime = endTime.subtract(deltaOriginEnd - maxWindowTime);
+        }
+
         if (startTime.lt(endTime)) {
             interpolatedSeries.cut(startTime, endTime);
             synthSeriesBeforeEndMarker.cut(startTime, endTime);

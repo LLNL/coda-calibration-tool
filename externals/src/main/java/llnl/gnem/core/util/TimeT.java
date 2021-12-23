@@ -297,6 +297,7 @@ public strictfp class TimeT implements Comparable, Serializable {
 
     /**
      * @param v
+     *            Time in seconds
      * @return
      */
     public TimeT subtract(double v) {

@@ -19,9 +19,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css"
-	xmlns="http://javafx.com/javafx/16"
-	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
+<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
 	<children>
 		<VBox>
 			<children>
@@ -82,7 +80,20 @@
 												<Insets bottom="10.0" top="10.0" />
 											</padding>
 										</HBox>
-										<StackPane fx:id="spectraPlotPane" prefHeight="160.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
+										<SplitPane dividerPositions="0.2" VBox.vgrow="ALWAYS">
+											<items>
+												<TableView fx:id="summaryTable" prefHeight="200.0" prefWidth="200.0">
+													<columns>
+														<TableColumn fx:id="summaryNameCol" maxWidth="500.0" minWidth="75.0" prefWidth="-1.0" text="" />
+														<TableColumn fx:id="summaryValueCol" maxWidth="1000.0" minWidth="-1.0" prefWidth="-1.0" text="" />
+													</columns>
+													<columnResizePolicy>
+														<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+													</columnResizePolicy>
+												</TableView>
+												<StackPane fx:id="spectraPlotPane" prefHeight="160.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
+											</items>
+										</SplitPane>
 									</children>
 								</VBox>
 							</content>

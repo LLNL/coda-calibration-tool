@@ -48,7 +48,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "Waveform", indexes = { @Index(columnList = "beginTime", name = "btime_index"), @Index(columnList = "endTime", name = "etime_index"),
-        @Index(columnList = "event_id", name = "w_event_id_index"), @Index(columnList = "station_name", name = "w_station_name_index"),
+        @Index(columnList = "maxVelTime", name = "maxVel_index"), @Index(columnList = "event_id", name = "w_event_id_index"), @Index(columnList = "station_name", name = "w_station_name_index"),
         @Index(columnList = "network_name", name = "w_network_name_index"), @Index(columnList = "lowFrequency", name = "lowFreq_index"), @Index(columnList = "highFrequency", name = "highFreq_index"),
         @Index(columnList = "segmentType", name = "type_index"), @Index(columnList = "segmentUnits", name = "units_index"), @Index(columnList = "sampleRate", name = "rate_index"),
         @Index(columnList = "channelName", name = "channel_name_index"), @Index(columnList = "active", name = "active") })
@@ -137,7 +137,6 @@ public class Waveform {
 
     public Waveform(Long id, Integer version, Event event, Stream stream, Date beginTime, Date endTime, Date maxVelTime, String segmentType, String segmentUnits, Double lowFrequency,
             Double highFrequency, Double sampleRate, Boolean active) {
-        super();
         this.id = id;
         this.version = version;
         this.event = event;

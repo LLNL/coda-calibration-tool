@@ -133,7 +133,7 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         final SpectraPlotController spectra = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
         final SpectralPlot plot = spectra.getSpectralPlot();
         plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(spectra::getSpectraMeasurementMap));
-        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(nm)");
+        plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(N-m)");
         final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         plot.getSubplot().addAxes(rightAxis);

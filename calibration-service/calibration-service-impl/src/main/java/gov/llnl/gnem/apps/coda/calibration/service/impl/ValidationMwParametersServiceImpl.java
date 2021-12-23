@@ -65,7 +65,7 @@ public class ValidationMwParametersServiceImpl implements ValidationMwParameters
     @Transactional
     public void delete(Iterable<Long> ids) {
         List<ValidationMwParameters> toDelete = validationMwParametersRepository.findAllById(ids);
-        validationMwParametersRepository.deleteInBatch(toDelete);
+        validationMwParametersRepository.deleteAllInBatch(toDelete);
         validationMwParametersRepository.flush();
     }
 
@@ -73,7 +73,7 @@ public class ValidationMwParametersServiceImpl implements ValidationMwParameters
     @Transactional
     public void deleteAllByEventIds(Collection<String> eventIds) {
         List<ValidationMwParameters> toDelete = validationMwParametersRepository.findAllByEventIds(eventIds);
-        validationMwParametersRepository.deleteInBatch(toDelete);
+        validationMwParametersRepository.deleteAllInBatch(toDelete);
         validationMwParametersRepository.flush();
     }
 

@@ -100,14 +100,13 @@ public class EnvelopeParamsController {
 
     private EnvelopeParamsClient client;
 
-    private NumberFormat numberFormat = NumberFormatFactory.sixDecimalOneLeadingZero();
+    private NumberFormat numberFormat = NumberFormatFactory.fourDecimalOneLeadingZero();
 
     private BandGenerator linearGenerator = new LinearBandGenerator(MIN_PRECISION);
     private BandGenerator logGenerator = new LogBandGenerator(MIN_PRECISION);
 
     @Autowired
     public EnvelopeParamsController(EventBus bus, EnvelopeParamsClient client, EnvelopeJobConfiguration defaultConfig) {
-        super();
         this.bus = bus;
         this.client = client;
         this.config = defaultConfig;
@@ -207,7 +206,7 @@ public class EnvelopeParamsController {
     }
 
     private void requestData() {
-        client.getEnvelopeJobConfiguration().filter(Objects::nonNull).doFinally((s) -> bandView.sort()).subscribe(value -> {
+        client.getEnvelopeJobConfiguration().filter(Objects::nonNull).doFinally(s -> bandView.sort()).subscribe(value -> {
             if (value.getFrequencyBandConfiguration() != null) {
                 bands.clear();
                 config = value;

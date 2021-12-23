@@ -2,10 +2,10 @@
 * Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -14,15 +14,20 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.Location;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
 import org.locationtech.jts.geom.util.GeometryCombiner;
+import org.locationtech.jts.operation.buffer.BufferOp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,19 +53,21 @@ public class GeometryServiceImpl implements GeometryService {
     private WaveformRepository waveformRepository;
     private PolygonRepository polygonRepository;
     private NotificationService notificationService;
+    private final GeometryFactory geomFactory;
 
     @Autowired
     public GeometryServiceImpl(WaveformRepository waveformRepository, PolygonRepository polygonRepository, NotificationService notificationService) {
         this.waveformRepository = waveformRepository;
         this.polygonRepository = polygonRepository;
         this.notificationService = notificationService;
+        this.geomFactory = new GeometryFactory();
     }
 
     @Override
     public List<Long> setActiveFlagOutsidePolygon(boolean active) {
         return toggleActiveByPolygon(false, active);
     }
-    
+
     @Override
     public List<Long> setActiveFlagInsidePolygon(boolean active) {
         return toggleActiveByPolygon(true, active);
@@ -86,7 +93,7 @@ public class GeometryServiceImpl implements GeometryService {
     }
 
     private List<Long> findIdsByPolygonAndActiveStatus(List<GeoJsonPolygon> geoJSON, boolean inside, boolean active) {
-        List<Long> selectedWaveformIds = new ArrayList<>();
+        Set<Long> selectedWaveformIds = new HashSet<>();
         if (geoJSON != null && !geoJSON.isEmpty()) {
             try {
                 FeatureCollection featureCollection = (FeatureCollection) GeoJSONFactory.create(geoJSON.get(0).getRawGeoJson());
@@ -99,40 +106,51 @@ public class GeometryServiceImpl implements GeometryService {
                     geoms.add(reader.read(feature.getGeometry()));
                 }
 
-                Geometry geo = GeometryCombiner.combine(geoms);
+                //BufferOp here helps us repair the any self intersections, important!
+                PreparedGeometry geo = PreparedGeometryFactory.prepare(BufferOp.bufferOp(GeometryCombiner.combine(geoms), 0.0));
 
-                Geometry bounds = geo.getEnvelope();
+                Geometry bounds = geo.getGeometry().getEnvelope();
                 //minx miny, maxx miny, maxx maxy, minx maxy, minx miny
                 if (bounds.getNumPoints() == 5) {
-                    IndexedPointInAreaLocator locator = new IndexedPointInAreaLocator(geo);
                     Coordinate[] coords = bounds.getCoordinates();
 
                     //Test for polygon intersection and drop any that fail
-                    List<Waveform> possibleWaveforms;
-                    BiFunction<Integer, Integer, Boolean> test;
+                    Set<Waveform> possibleWaveforms;
+                    BiFunction<Boolean, Boolean, Boolean> test;
                     if (inside) {
-                        possibleWaveforms = waveformRepository.getMetadataInsideBounds(active,
-                                                                                       Math.min(coords[0].getY(), coords[2].getY()),
-                                                                                       Math.min(coords[0].getX(), coords[2].getX()),
-                                                                                       Math.max(coords[0].getY(), coords[2].getY()),
-                                                                                       Math.max(coords[0].getX(), coords[2].getX()));
-                        test = (resEv, resSta) -> resEv != Location.EXTERIOR || resSta != Location.EXTERIOR;
+                        possibleWaveforms = new HashSet<>(waveformRepository.getMetadataInsideBounds(
+                                active,
+                                    Math.min(coords[0].getY(), coords[2].getY()),
+                                    Math.min(coords[0].getX(), coords[2].getX()),
+                                    Math.max(coords[0].getY(), coords[2].getY()),
+                                    Math.max(coords[0].getX(), coords[2].getX())));
+
+                        Collection<Waveform> stationWaveforms = waveformRepository.findAllMetadataByIds(
+                                possibleWaveforms.parallelStream()
+                                                 .map(w -> w.getStream().getStation().getStationName())
+                                                 .distinct()
+                                                 .flatMap(stationName -> waveformRepository.findAllIdsByStationName(stationName).stream())
+                                                 .distinct()
+                                                 .collect(Collectors.toList()));
+                        possibleWaveforms.addAll(stationWaveforms);
+
+                        test = (resEv, resSta) -> resSta == true || resEv == true;
                     } else {
-                        possibleWaveforms = waveformRepository.getWaveformMetadataByActive(active);
-                        test = (resEv, resSta) -> resEv == Location.EXTERIOR && resSta == Location.EXTERIOR;
+                        possibleWaveforms = new HashSet<>(waveformRepository.getWaveformMetadataByActive(active));
+                        test = (resEv, resSta) -> resSta == false || resEv == false;
                     }
 
                     selectedWaveformIds.addAll(possibleWaveforms.stream().filter(w -> {
-                        int resEv = locator.locate(new Coordinate(w.getEvent().getLongitude(), w.getEvent().getLatitude()));
-                        int resSta = locator.locate(new Coordinate(w.getStream().getStation().getLongitude(), w.getStream().getStation().getLatitude()));
+                        boolean resEv = geo.covers(geomFactory.createPoint(new Coordinate(w.getEvent().getLongitude(), w.getEvent().getLatitude())));
+                        boolean resSta = geo.covers(geomFactory.createPoint(new Coordinate(w.getStream().getStation().getLongitude(), w.getStream().getStation().getLatitude())));
                         return test.apply(resEv, resSta);
-                    }).map(w -> w.getId()).collect(Collectors.toList()));
+                    }).map(Waveform::getId).collect(Collectors.toList()));
+
                 }
             } catch (RuntimeException ex) {
                 log.error(ex.getLocalizedMessage());
             }
-
         }
-        return selectedWaveformIds;
+        return new ArrayList<>(selectedWaveformIds);
     }
 }

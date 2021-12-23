@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -14,7 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.envelope.util;
 
-import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -32,12 +32,10 @@ public class LinearBandGenerator implements BandGenerator {
     private Function<Double, Double> minFunc = Functions.identity();
 
     public LinearBandGenerator(double minPrecision) {
-        super();
         this.minPrecision = minPrecision;
     }
 
     public LinearBandGenerator(double minPrecision, Function<Double, Double> maxFunc, Function<Double, Double> minFunc) {
-        super();
         this.minPrecision = minPrecision;
         this.maxFunc = maxFunc;
         this.minFunc = minFunc;
@@ -92,7 +90,7 @@ public class LinearBandGenerator implements BandGenerator {
             min = minFreq + delta - (spacing * overlap / 2) + step;
             max = Math.min(min + (spacing * overlap) + spacing, maxFreq + delta);
             min = Math.max(min, minFreq + delta);
-            bands.add(new EnvelopeBandParameters(Precision.round(min - delta, 4, BigDecimal.ROUND_HALF_DOWN), Precision.round(max - delta, 4, BigDecimal.ROUND_CEILING)));
+            bands.add(new EnvelopeBandParameters(Precision.round(min - delta, 4, RoundingMode.HALF_DOWN.ordinal()), Precision.round(max - delta, 4, RoundingMode.CEILING.ordinal())));
         }
         return bands;
     }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -12,14 +12,23 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.calibration.repository;
+package gov.llnl.gnem.apps.coda.calibration.gui.util;
 
-import org.springframework.transaction.annotation.Transactional;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
+import javafx.scene.control.TableCell;
+import javafx.scene.text.Text;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
-import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
+public class TextWrappingTableCell extends TableCell<Pair<String, String>, String> {
+    @Override
+    protected void updateItem(String item, boolean empty) {
+        super.updateItem(item, empty);
 
-@Transactional
-public interface MeasuredMwsRepository extends DetachableJpaRepository<MeasuredMwParameters, Long> {
-    public MeasuredMwParameters findOneByEventId(String eventId);
+        if (item == null || empty) {
+            setText(null);
+        } else {
+            Text text = new Text(item);
+            text.wrappingWidthProperty().bind(getTableColumn().widthProperty().subtract(10));
+            setGraphic(text);
+        }
+    }
 }

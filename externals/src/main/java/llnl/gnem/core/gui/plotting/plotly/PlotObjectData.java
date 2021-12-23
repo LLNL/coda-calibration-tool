@@ -20,6 +20,7 @@ import java.util.List;
 public class PlotObjectData {
     private final List<Double> xData;
     private final List<Double> yData;
+    private final List<Double[]> zData;
     private final List<Double> cData;
     private final List<String> textData;
     private PlotlyTrace traceStyle;
@@ -31,6 +32,7 @@ public class PlotObjectData {
     public PlotObjectData(final PlotlyTrace traceStyle) {
         xData = new ArrayList<>(0);
         yData = new ArrayList<>(0);
+        zData = new ArrayList<>(0);
         cData = new ArrayList<>(0);
         textData = new ArrayList<>(0);
         this.traceStyle = traceStyle;
@@ -42,6 +44,10 @@ public class PlotObjectData {
 
     public List<Double> getYdata() {
         return yData;
+    }
+
+    public List<Double[]> getZdata() {
+        return zData;
     }
 
     public List<Double> getColorData() {
@@ -59,4 +65,5 @@ public class PlotObjectData {
     public void setTraceStyle(final PlotlyTrace traceStyle) {
         this.traceStyle = traceStyle;
     }
+
 }
