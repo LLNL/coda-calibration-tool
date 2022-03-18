@@ -121,7 +121,16 @@
                         "examples": [
                             7
                         ]
-                    },               
+                    },           
+                    "likelyPoorlyConstrained": {
+                        "$id": "#/properties/reference-events/entry/properties/likelyPoorlyConstrained",
+                        "type": "boolean",
+                        "title": "Indicates when the inversion reported statistics that make this solution likely to be poorly constrained.",
+                        "default": false,
+                        "examples": [                            
+                            "true"
+                        ]
+                    },    
                     "datetime": {
                         "$id": "#/properties/reference-events/entry/properties/datetime",
                         "type": "string",

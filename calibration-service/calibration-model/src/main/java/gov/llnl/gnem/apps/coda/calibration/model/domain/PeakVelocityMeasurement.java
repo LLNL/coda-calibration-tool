@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.model.domain;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -195,29 +196,7 @@ public class PeakVelocityMeasurement implements Serializable {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        long temp;
-        temp = Double.doubleToLongBits(amplitude);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(distance);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
-        temp = Double.doubleToLongBits(noiseEndSecondsFromOrigin);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(noiseLevel);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(noiseStartSecondsFromOrigin);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(snr);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(timeSecFromOrigin);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(velocity);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((version == null) ? 0 : version.hashCode());
-        result = prime * result + ((waveform == null) ? 0 : waveform.hashCode());
-        return result;
+        return Objects.hash(amplitude, distance, id, noiseEndSecondsFromOrigin, noiseLevel, noiseStartSecondsFromOrigin, snr, timeSecFromOrigin, velocity, version, waveform);
     }
 
     @Override
@@ -238,11 +217,7 @@ public class PeakVelocityMeasurement implements Serializable {
         if (Double.doubleToLongBits(distance) != Double.doubleToLongBits(other.distance)) {
             return false;
         }
-        if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.id)) {
+        if (!Objects.equals(id, other.id)) {
             return false;
         }
         if (Double.doubleToLongBits(noiseEndSecondsFromOrigin) != Double.doubleToLongBits(other.noiseEndSecondsFromOrigin)) {
@@ -263,18 +238,10 @@ public class PeakVelocityMeasurement implements Serializable {
         if (Double.doubleToLongBits(velocity) != Double.doubleToLongBits(other.velocity)) {
             return false;
         }
-        if (version == null) {
-            if (other.version != null) {
-                return false;
-            }
-        } else if (!version.equals(other.version)) {
+        if (!Objects.equals(version, other.version)) {
             return false;
         }
-        if (waveform == null) {
-            if (other.waveform != null) {
-                return false;
-            }
-        } else if (!waveform.equals(other.waveform)) {
+        if (!Objects.equals(waveform, other.waveform)) {
             return false;
         }
         return true;

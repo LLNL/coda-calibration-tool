@@ -41,7 +41,7 @@
                   <Pane prefWidth="30.0" />
                   <VBox>
                      <children>
-                        <Label text="Station Count Filter" />
+                        <Label text="Min Event Count" />
                         <Spinner fx:id="stationCountFilterField" editable="true" prefWidth="60.0">
                           <valueFactory>
 					        <SpinnerValueFactory.IntegerSpinnerValueFactory initialValue="3" max="100" min="0" />

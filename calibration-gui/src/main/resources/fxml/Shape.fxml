@@ -15,37 +15,38 @@
 	<children>
 		<VBox>
 			<children>
-				<HBox prefWidth="200.0">
-					<children>
-						<Pane prefWidth="30.0" />
-						<VBox>
-							<children>
-								<Label text="Frequency Band" />
-								<ComboBox fx:id="frequencyBandCombo" prefWidth="150.0" />
-							</children>
-						</VBox>
-						<Pane minWidth="15.0" />
-						<VBox>
-							<children>
-								<Label />
-	                			<Button fx:id="yAxisShrink" minWidth="20.0" mnemonicParsing="false">
-	                               <tooltip>
-	                                  <Tooltip text="Toggle Y-Axis shrink-to-data" />
-	                               </tooltip>
-	                   			</Button>
-							</children>
-						</VBox>										
-					</children>
-					<VBox.margin>
-						<Insets />
-					</VBox.margin>
-					<padding>
-						<Insets bottom="10.0" top="10.0" />
-					</padding>
-				</HBox>
 				<ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
 					<content>
-								<StackPane fx:id="plotContainer" minHeight="50.0" minWidth="50.0" />
+                  <StackPane pickOnBounds="false">
+                     <children>
+      								<StackPane fx:id="plotContainer" minHeight="50.0" minWidth="50.0" pickOnBounds="false" />
+            				<HBox pickOnBounds="false" prefWidth="200.0">
+            					<children>
+            						<Pane prefWidth="30.0" />
+            						<VBox>
+            							<children>
+            								<Label text="Frequency Band" />
+            								<ComboBox fx:id="frequencyBandCombo" prefWidth="150.0" />
+            							</children>
+            						</VBox>
+            						<Pane minWidth="15.0" />
+            						<VBox>
+            							<children>
+            								<Label />
+            	                			<Button fx:id="yAxisShrink" minWidth="20.0" mnemonicParsing="false">
+            	                               <tooltip>
+            	                                  <Tooltip text="Toggle Y-Axis shrink-to-data" />
+            	                               </tooltip>
+            	                   			</Button>
+            							</children>
+            						</VBox>										
+            					</children>
+            					<padding>
+            						<Insets bottom="10.0" top="10.0" />
+            					</padding>
+            				</HBox>
+                     </children>
+                  </StackPane>
 					</content>
 				</ScrollPane>
 			</children>

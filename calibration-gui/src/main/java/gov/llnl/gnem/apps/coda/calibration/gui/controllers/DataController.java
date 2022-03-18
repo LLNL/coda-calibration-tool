@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.annotation.PreDestroy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContextMenu;
@@ -72,374 +72,363 @@ import javafx.scene.input.MouseEvent;
 @Component
 public class DataController implements MapListeningController, RefreshableController {
 
-	private static final Logger log = LoggerFactory.getLogger(DataController.class);
+    private static final Logger log = LoggerFactory.getLogger(DataController.class);
 
-	@FXML
-	private MenuItem importWaveforms;
+    @FXML
+    private MenuItem importWaveforms;
 
-	@FXML
-	private ScrollPane scrollPane;
+    @FXML
+    private ScrollPane scrollPane;
 
-	@FXML
-	private TableView<Waveform> tableView;
+    @FXML
+    private TableView<Waveform> tableView;
 
-	@FXML
-	private CheckBox selectAllCheckbox;
+    @FXML
+    private CheckBox selectAllCheckbox;
 
-	@FXML
-	private TableColumn<Waveform, CheckBox> usedCol;
+    @FXML
+    private TableColumn<Waveform, CheckBox> usedCol;
 
-	@FXML
-	private TableColumn<Waveform, String> stationCol;
+    @FXML
+    private TableColumn<Waveform, String> stationCol;
 
-	@FXML
-	private TableColumn<Waveform, String> networkCol;
+    @FXML
+    private TableColumn<Waveform, String> networkCol;
 
-	@FXML
-	private TableColumn<Waveform, String> eventCol;
+    @FXML
+    private TableColumn<Waveform, String> eventCol;
 
-	@FXML
-	private TableColumn<Waveform, String> lowFreqCol;
+    @FXML
+    private TableColumn<Waveform, String> lowFreqCol;
 
-	@FXML
-	private TableColumn<Waveform, String> highFreqCol;
+    @FXML
+    private TableColumn<Waveform, String> highFreqCol;
 
-	@FXML
-	private TableColumn<Waveform, String> depthCol;
+    @FXML
+    private TableColumn<Waveform, String> depthCol;
 
-	private ObservableList<Waveform> listData = FXCollections
-			.synchronizedObservableList(FXCollections.observableArrayList());
+    private ObservableList<Waveform> listData = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
 
-	private GeoMap mapImpl;
+    private GeoMap mapImpl;
 
-	private MapPlottingUtilities iconFactory;
+    private MapPlottingUtilities iconFactory;
 
-	private WaveformClient client;
+    private WaveformClient client;
 
-	private EventBus bus;
+    private EventBus bus;
 
-	private NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
+    private NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
 
-	private EventStaFreqStringComparator eventStaFreqComparator = new EventStaFreqStringComparator();
+    private EventStaFreqStringComparator eventStaFreqComparator = new EventStaFreqStringComparator();
 
-	private ListChangeListener<? super Waveform> tableChangeListener;
+    private ListChangeListener<? super Waveform> tableChangeListener;
 
-	private final BiConsumer<Boolean, String> eventSelectionCallback;
-	private final BiConsumer<Boolean, String> stationSelectionCallback;
-	private ScheduledExecutorService scheduled = Executors.newSingleThreadScheduledExecutor(r -> {
-		Thread thread = new Thread(r);
-		thread.setName("Data-Scheduled");
-		thread.setDaemon(true);
-		return thread;
-	});
+    private final BiConsumer<Boolean, String> eventSelectionCallback;
+    private final BiConsumer<Boolean, String> stationSelectionCallback;
+    private ScheduledExecutorService scheduled = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r);
+        thread.setName("Data-Scheduled");
+        thread.setDaemon(true);
+        return thread;
+    });
 
-	private List<Long> dataUpdateList = Collections.synchronizedList(new ArrayList<>());
-	private List<Long> dataDeleteList = Collections.synchronizedList(new ArrayList<>());
-	private List<Waveform> updatedData = Collections.synchronizedList(new ArrayList<>());
+    private List<Long> dataUpdateList = Collections.synchronizedList(new ArrayList<>());
+    private List<Long> dataDeleteList = Collections.synchronizedList(new ArrayList<>());
+    private List<Waveform> updatedData = Collections.synchronizedList(new ArrayList<>());
 
-	private boolean isVisible = false;
+    private boolean isVisible = false;
 
-	@Autowired
-	public DataController(WaveformClient client, GeoMap mapImpl, MapPlottingUtilities iconFactory, EventBus bus) {
-		super();
-		this.client = client;
-		this.mapImpl = mapImpl;
-		this.iconFactory = iconFactory;
-		this.bus = bus;
-		bus.register(this);
-		tableChangeListener = buildTableListener();
-		scheduled.scheduleWithFixedDelay(() -> updateData(), 1000l, 1000l, TimeUnit.MILLISECONDS);
+    @Autowired
+    public DataController(WaveformClient client, GeoMap mapImpl, MapPlottingUtilities iconFactory, EventBus bus) {
+        this.client = client;
+        this.mapImpl = mapImpl;
+        this.iconFactory = iconFactory;
+        this.bus = bus;
+        bus.register(this);
+        tableChangeListener = buildTableListener();
+        scheduled.scheduleWithFixedDelay(this::updateData, 1000l, 1000l, TimeUnit.MILLISECONDS);
 
-		eventSelectionCallback = (selected, eventId) -> {
-			selectDataByCriteria(bus, selected,
-					(w) -> w.getEvent() != null && w.getEvent().getEventId().equalsIgnoreCase(eventId));
-		};
+        eventSelectionCallback = (selected, eventId) -> {
+            selectDataByCriteria(bus, selected, w -> w.getEvent() != null && w.getEvent().getEventId().equalsIgnoreCase(eventId));
+        };
 
-		stationSelectionCallback = (selected, stationId) -> {
-			selectDataByCriteria(bus, selected, (w) -> w.getStream() != null && w.getStream().getStation() != null
-					&& w.getStream().getStation().getStationName().equalsIgnoreCase(stationId));
-		};
-	}
+        stationSelectionCallback = (selected, stationId) -> {
+            selectDataByCriteria(bus, selected, w -> w.getStream() != null && w.getStream().getStation() != null && w.getStream().getStation().getStationName().equalsIgnoreCase(stationId));
+        };
+    }
 
-	private void selectDataByCriteria(EventBus bus, Boolean selected, Function<Waveform, Boolean> matchCriteria) {
-		List<Waveform> selection = new ArrayList<>();
-		List<Integer> selectionIndices = new ArrayList<>();
-		tableView.getSelectionModel().clearSelection();
-		if (selected) {
-			tableView.getSelectionModel().getSelectedItems().removeListener(tableChangeListener);
-			synchronized (listData) {
-				for (int i = 0; i < listData.size(); i++) {
-					Waveform w = listData.get(i);
-					if (matchCriteria.apply(w)) {
-						selection.add(w);
-						tableView.getSelectionModel().select(i);
-					}
-				}
-			}
-			tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
-			if (!selection.isEmpty()) {
-				selection.sort(eventStaFreqComparator);
-				Long[] ids = selection.stream().sequential().map(w -> w.getId()).collect(Collectors.toList())
-						.toArray(new Long[0]);
-				bus.post(new WaveformSelectionEvent(ids));
-			}
-		} else {
-			selection.addAll(tableView.getSelectionModel().getSelectedItems());
-			selectionIndices.addAll(tableView.getSelectionModel().getSelectedIndices());
-			for (int i = 0; i < selection.size(); i++) {
-				if (matchCriteria.apply(selection.get(i))) {
-					tableView.getSelectionModel().clearSelection(selectionIndices.get(i));
-				}
-			}
-		}
-	}
+    private void selectDataByCriteria(EventBus bus, Boolean selected, Function<Waveform, Boolean> matchCriteria) {
+        List<Waveform> selection = new ArrayList<>();
+        List<Integer> selectionIndices = new ArrayList<>();
+        tableView.getSelectionModel().clearSelection();
+        if (selected) {
+            tableView.getSelectionModel().getSelectedItems().removeListener(tableChangeListener);
+            synchronized (listData) {
+                for (int i = 0; i < listData.size(); i++) {
+                    Waveform w = listData.get(i);
+                    if (matchCriteria.apply(w)) {
+                        selection.add(w);
+                        tableView.getSelectionModel().select(i);
+                    }
+                }
+            }
+            tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
+            if (!selection.isEmpty()) {
+                if (tableView.getSortOrder().isEmpty()) {
+                    selection.sort(eventStaFreqComparator);
+                }
+                Long[] ids = selection.stream().sequential().map(Waveform::getId).collect(Collectors.toList()).toArray(new Long[0]);
+                bus.post(new WaveformSelectionEvent(ids));
+            }
+        } else {
+            selection.addAll(tableView.getSelectionModel().getSelectedItems());
+            selectionIndices.addAll(tableView.getSelectionModel().getSelectedIndices());
+            for (int i = 0; i < selection.size(); i++) {
+                if (matchCriteria.apply(selection.get(i))) {
+                    tableView.getSelectionModel().clearSelection(selectionIndices.get(i));
+                }
+            }
+        }
+    }
 
-	private ListChangeListener<? super Waveform> buildTableListener() {
-		return (ListChangeListener<Waveform>) change -> {
-			List<Waveform> selection = new ArrayList<>();
-			selection.addAll(tableView.getSelectionModel().getSelectedItems());
-			selection.sort(eventStaFreqComparator);
-			Long[] ids = getIds(selection).toArray(new Long[0]);
-			bus.post(new WaveformSelectionEvent(ids));
-		};
-	}
+    private ListChangeListener<? super Waveform> buildTableListener() {
+        return (ListChangeListener<Waveform>) change -> {
+            if (!change.getList().isEmpty()) {
+                List<Waveform> selection = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
+                if (tableView.getSortOrder().isEmpty()) {
+                    selection.sort(eventStaFreqComparator);
+                }
+                Long[] ids = getIds(selection).toArray(new Long[0]);
+                bus.post(new WaveformSelectionEvent(ids));
+            }
+        };
+    }
 
-	private List<Long> getIds(List<Waveform> selection) {
-		return selection.stream().sequential().map(w -> w.getId()).collect(Collectors.toList());
-	}
+    private List<Long> getIds(List<Waveform> selection) {
+        return selection.stream().sequential().map(Waveform::getId).collect(Collectors.toList());
+    }
 
-	@FXML
-	private void reloadTable(ActionEvent e) {
-		CompletableFuture.runAsync(getRefreshFunction());
-	}
+    @FXML
+    private void reloadTable(ActionEvent e) {
+        CompletableFuture.runAsync(getRefreshFunction());
+    }
 
-	@FXML
-	public void initialize() {
-		tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-		eventCol.setCellValueFactory(
-				x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue)
-						.map(Waveform::getEvent).map(Event::getEventId).orElseGet(String::new)));
-		eventCol.comparatorProperty().set(new MaybeNumericStringComparator());
+    @FXML
+    public void initialize() {
+        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        eventCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getEvent).map(Event::getEventId).orElseGet(String::new)));
+        eventCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
-		CellBindingUtils.attachTextCellFactories(lowFreqCol, Waveform::getLowFrequency, dfmt2);
-		CellBindingUtils.attachTextCellFactories(highFreqCol, Waveform::getHighFrequency, dfmt2);
+        CellBindingUtils.attachTextCellFactories(lowFreqCol, Waveform::getLowFrequency, dfmt2);
+        CellBindingUtils.attachTextCellFactories(highFreqCol, Waveform::getHighFrequency, dfmt2);
 
-		depthCol.setCellValueFactory(
-				x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue)
-						.map(Waveform::getEvent).map(ev -> dfmt2.format(ev.getDepth())).orElseGet(String::new)));
-		depthCol.comparatorProperty().set(new MaybeNumericStringComparator());
+        depthCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getEvent).map(ev -> dfmt2.format(ev.getDepth())).orElseGet(String::new)));
+        depthCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
-		usedCol.setCellValueFactory(x -> Bindings
-				.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(waveform -> {
-					CheckBox box = new CheckBox();
-					box.setSelected(waveform.isActive());
-					if (!waveform.isActive()) {
-						box.setStyle("-fx-background-color: red");
-					} else {
-						box.setStyle("");
-					}
-					box.selectedProperty().addListener((obs, o, n) -> {
-						if (n != null && !o.equals(n)) {
-							client.setWaveformsActiveByIds(Collections.singletonList(waveform.getId()), n).subscribe();
-						}
-					});
-					return box;
-				}).orElseGet(CheckBox::new)));
-		usedCol.comparatorProperty().set((c1, c2) -> Boolean.compare(c1.isSelected(), c2.isSelected()));
+        usedCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(waveform -> {
+            CheckBox box = new CheckBox();
+            box.setSelected(waveform.isActive());
+            if (!waveform.isActive()) {
+                box.setStyle("-fx-background-color: red");
+            } else {
+                box.setStyle("");
+            }
+            box.selectedProperty().addListener((obs, o, n) -> {
+                if (n != null && !o.equals(n)) {
+                    client.setWaveformsActiveByIds(Collections.singletonList(waveform.getId()), n).subscribe();
+                }
+            });
+            return box;
+        }).orElseGet(CheckBox::new)));
+        usedCol.comparatorProperty().set((c1, c2) -> Boolean.compare(c1.isSelected(), c2.isSelected()));
 
-		stationCol.setCellValueFactory(x -> Bindings.createStringBinding(
-				() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getStream)
-						.map(Stream::getStation).map(Station::getStationName).orElseGet(String::new)));
+        stationCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(
+                        () -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getStream).map(Stream::getStation).map(Station::getStationName).orElseGet(String::new)));
 
-		networkCol.setCellValueFactory(x -> Bindings.createStringBinding(
-				() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getStream)
-						.map(Stream::getStation).map(Station::getNetworkName).orElseGet(String::new)));
+        networkCol.setCellValueFactory(
+                x -> Bindings.createStringBinding(
+                        () -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(Waveform::getStream).map(Stream::getStation).map(Station::getNetworkName).orElseGet(String::new)));
 
-		tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
-		// Workaround for https://bugs.openjdk.java.net/browse/JDK-8095943, for now we
-		// just clear the selection to avoid dumping a stack trace in the logs and
-		// mucking up event bubbling
-		tableView.setOnSort(event -> {
-			if (tableView.getSelectionModel().getSelectedIndices().size() > 1) {
-				tableView.getSelectionModel().clearSelection();
-			}
-		});
+        tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
+        // Workaround for https://bugs.openjdk.java.net/browse/JDK-8095943, for now we
+        // just clear the selection to avoid dumping a stack trace in the logs and
+        // mucking up event bubbling
+        tableView.setOnSort(event -> {
+            if (tableView.getSelectionModel().getSelectedIndices().size() > 1) {
+                tableView.getSelectionModel().clearSelection();
+            }
+        });
 
-		ContextMenu menu = new ContextMenu();
-		MenuItem include = new MenuItem("Include Selected");
-		include.setOnAction(evt -> includeWaveforms());
-		menu.getItems().add(include);
-		MenuItem exclude = new MenuItem("Exclude Selected");
-		exclude.setOnAction(evt -> excludeWaveforms());
-		menu.getItems().add(exclude);
+        ContextMenu menu = new ContextMenu();
+        MenuItem include = new MenuItem("Include Selected");
+        include.setOnAction(evt -> includeWaveforms());
+        menu.getItems().add(include);
+        MenuItem exclude = new MenuItem("Exclude Selected");
+        exclude.setOnAction(evt -> excludeWaveforms());
+        menu.getItems().add(exclude);
 
-		tableView.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-			@Override
-			public void handle(MouseEvent t) {
+        tableView.addEventHandler(MouseEvent.MOUSE_CLICKED, t -> {
 
-				if (MouseButton.SECONDARY == t.getButton()) {
-					menu.show(tableView, t.getScreenX(), t.getScreenY());
-				} else {
-					menu.hide();
-				}
-			}
-		});
-		tableView.setItems(listData);
+            if (MouseButton.SECONDARY == t.getButton()) {
+                menu.show(tableView, t.getScreenX(), t.getScreenY());
+            } else {
+                menu.hide();
+            }
+        });
 
-		DataFilterController<Waveform> filterController = new DataFilterController<>(tableView);
+        //The filter controller will manage the list so don't add the listData directly
+        //to the table, otherwise the event handlers will trip over themselves
+        DataFilterController<Waveform> filterController = new DataFilterController<>(tableView, listData);
 
-		filterController.addFilterToColumn(eventCol, (data, item) -> data.getEvent().getEventId().equals(item));
-		filterController.addFilterToColumn(depthCol,
-				(data, item) -> dfmt2.format(data.getEvent().getDepth()).equals(item));
-		filterController.addFilterToColumn(lowFreqCol, (data, item) -> data.getLowFrequency().toString().equals(item));
-		filterController.addFilterToColumn(highFreqCol,
-				(data, item) -> data.getHighFrequency().toString().equals(item));
-		filterController.addFilterToColumn(stationCol,
-				(data, item) -> data.getStream().getStation().getStationName().equals(item));
-		filterController.addFilterToColumn(networkCol,
-				(data, item) -> data.getStream().getStation().getNetworkName().equals(item));
-	}
+        filterController.addFilterToColumn(eventCol, (data, item) -> data.getEvent().getEventId().equals(item));
+        filterController.addFilterToColumn(depthCol, (data, item) -> dfmt2.format(data.getEvent().getDepth()).equals(item));
+        filterController.addFilterToColumn(lowFreqCol, (data, item) -> data.getLowFrequency().toString().equals(item));
+        filterController.addFilterToColumn(highFreqCol, (data, item) -> data.getHighFrequency().toString().equals(item));
+        filterController.addFilterToColumn(stationCol, (data, item) -> data.getStream().getStation().getStationName().equals(item));
+        filterController.addFilterToColumn(networkCol, (data, item) -> data.getStream().getStation().getNetworkName().equals(item));
+    }
 
-	@Override
-	public void refreshView() {
-		CompletableFuture.runAsync(() -> {
-			synchronized (listData) {
-				if (!listData.isEmpty()) {
-					refreshMap();
-				}
-			}
-			Platform.runLater(() -> {
-				if (tableView != null) {
-					tableView.refresh();
-				}
-			});
-		});
-	}
+    @Override
+    public void refreshView() {
+        CompletableFuture.runAsync(() -> {
+            synchronized (listData) {
+                if (!listData.isEmpty()) {
+                    refreshMap();
+                }
+            }
+            Platform.runLater(() -> {
+                if (tableView != null) {
+                    tableView.refresh();
+                }
+            });
+        });
+    }
 
-	private void refreshMap() {
-		if (isVisible) {
-			mapImpl.clearIcons();
-			synchronized (listData) {
-				mapImpl.addIcons(
-						iconFactory.genIconsFromWaveforms(eventSelectionCallback, stationSelectionCallback, listData));
-			}
-		}
-	}
+    private void refreshMap() {
+        if (isVisible) {
+            mapImpl.clearIcons();
+            synchronized (listData) {
+                mapImpl.addIcons(iconFactory.genIconsFromWaveforms(eventSelectionCallback, stationSelectionCallback, listData));
+            }
+        }
+    }
 
-	@Override
-	public Runnable getRefreshFunction() {
-		return () -> requestData();
-	}
+    @Override
+    public Runnable getRefreshFunction() {
+        return this::requestData;
+    }
 
-	private void requestData() {
-		synchronized (listData) {
-			listData.clear();
-		}
-		mapImpl.clearIcons();
-		client.getUniqueEventStationMetadataForStacks().filter(Objects::nonNull).doOnComplete(() -> {
-			tableView.sort();
-			refreshView();
-		}).subscribe(waveform -> {
-			synchronized (listData) {
-				listData.add(waveform);
-			}
-		}, err -> log.error(err.getMessage(), err));
-	}
+    private void requestData() {
+        synchronized (listData) {
+            listData.clear();
+        }
+        mapImpl.clearIcons();
+        client.getUniqueEventStationMetadataForStacks().filter(Objects::nonNull).doOnComplete(() -> {
+            tableView.sort();
+            refreshView();
+        }).subscribe(waveform -> {
+            synchronized (listData) {
+                listData.add(waveform);
+            }
+        }, err -> log.error(err.getMessage(), err));
+    }
 
-	private void requestUpdates() {
-		List<Long> updates = new ArrayList<>();
-		List<Long> deletes = new ArrayList<>();
-		synchronized (dataUpdateList) {
-			updates.addAll(dataUpdateList);
-			dataUpdateList.clear();
-			deletes.addAll(dataDeleteList);
-			dataDeleteList.clear();
-		}
+    private void requestUpdates() {
+        List<Long> updates = new ArrayList<>();
+        List<Long> deletes = new ArrayList<>();
+        synchronized (dataUpdateList) {
+            updates.addAll(dataUpdateList);
+            dataUpdateList.clear();
+            deletes.addAll(dataDeleteList);
+            dataDeleteList.clear();
+        }
 
-		if (!deletes.isEmpty()) {
-			synchronized (listData) {
-				deletes.forEach(id -> {
-					synchronized (listData) {
-						int idx = -1;
-						for (int i = 0; i < listData.size(); i++) {
-							if (listData.get(i).getId().equals(id)) {
-								idx = i;
-								break;
-							}
-						}
-						if (idx >= 0) {
-							listData.remove(idx);
-						}
-					}
-				});
-			}
-		}
+        if (!deletes.isEmpty()) {
+            synchronized (listData) {
+                deletes.forEach(id -> {
+                    synchronized (listData) {
+                        int idx = -1;
+                        for (int i = 0; i < listData.size(); i++) {
+                            if (listData.get(i).getId().equals(id)) {
+                                idx = i;
+                                break;
+                            }
+                        }
+                        if (idx >= 0) {
+                            listData.remove(idx);
+                        }
+                    }
+                });
+            }
+        }
 
-		client.getWaveformMetadataFromIds(updates).filter(Objects::nonNull)
-				.subscribe(waveform -> updatedData.add(waveform), err -> log.error(err.getMessage(), err));
-	}
+        client.getWaveformMetadataFromIds(updates).filter(Objects::nonNull).subscribe(waveform -> updatedData.add(waveform), err -> log.error(err.getMessage(), err));
+    }
 
-	private void updateData() {
-		List<Waveform> updates = new ArrayList<>();
-		synchronized (updatedData) {
-			updates.addAll(updatedData);
-			updatedData.clear();
-		}
-		if (!updates.isEmpty()) {
-			synchronized (listData) {
-				tableView.getSelectionModel().getSelectedItems().removeListener(tableChangeListener);
-				updates.forEach(waveform -> {
-					int idx = -1;
-					for (int i = 0; i < listData.size(); i++) {
-						if (listData.get(i).getId().equals(waveform.getId())) {
-							idx = i;
-							break;
-						}
-					}
-					if (idx >= 0) {
-						listData.set(idx, waveform);
-					} else {
-						listData.add(waveform);
-					}
-				});
-				tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
-			}
-			refreshMap();
-		}
-	}
+    private void updateData() {
+        List<Waveform> updates = new ArrayList<>();
+        synchronized (updatedData) {
+            updates.addAll(updatedData);
+            updatedData.clear();
+        }
+        if (!updates.isEmpty()) {
+            synchronized (listData) {
+                tableView.getSelectionModel().getSelectedItems().removeListener(tableChangeListener);
+                updates.forEach(waveform -> {
+                    int idx = -1;
+                    for (int i = 0; i < listData.size(); i++) {
+                        if (listData.get(i).getId().equals(waveform.getId())) {
+                            idx = i;
+                            break;
+                        }
+                    }
+                    if (idx >= 0) {
+                        listData.set(idx, waveform);
+                    } else {
+                        listData.add(waveform);
+                    }
+                });
+                tableView.getSelectionModel().getSelectedItems().addListener(tableChangeListener);
+            }
+            refreshMap();
+        }
+    }
 
-	private void excludeWaveforms() {
-		client.setWaveformsActiveByIds(getSelectedWaveforms(), false).subscribe();
-	}
+    private void excludeWaveforms() {
+        client.setWaveformsActiveByIds(getSelectedWaveforms(), false).subscribe();
+    }
 
-	private void includeWaveforms() {
-		client.setWaveformsActiveByIds(getSelectedWaveforms(), true).subscribe();
-	}
+    private void includeWaveforms() {
+        client.setWaveformsActiveByIds(getSelectedWaveforms(), true).subscribe();
+    }
 
-	private List<Long> getSelectedWaveforms() {
-		return getIds(tableView.getSelectionModel().getSelectedItems());
-	}
+    private List<Long> getSelectedWaveforms() {
+        return getIds(tableView.getSelectionModel().getSelectedItems());
+    }
 
-	@Subscribe
-	private void listener(WaveformChangeEvent wce) {
-		List<Long> nonNull = wce.getIds().stream().filter(Objects::nonNull).collect(Collectors.toList());
-		synchronized (dataUpdateList) {
-			if (wce.isAddOrUpdate()) {
-				dataUpdateList.addAll(nonNull);
-			} else if (wce.isDelete()) {
-				dataDeleteList.addAll(nonNull);
-			}
-		}
-		requestUpdates();
-	}
+    @Subscribe
+    private void listener(WaveformChangeEvent wce) {
+        List<Long> nonNull = wce.getIds().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        synchronized (dataUpdateList) {
+            if (wce.isAddOrUpdate()) {
+                dataUpdateList.addAll(nonNull);
+            } else if (wce.isDelete()) {
+                dataDeleteList.addAll(nonNull);
+            }
+        }
+        requestUpdates();
+    }
 
-	@PreDestroy
-	private void cleanup() {
-		scheduled.shutdownNow();
-	}
+    @PreDestroy
+    private void cleanup() {
+        scheduled.shutdownNow();
+    }
 
-	@Override
-	public void setVisible(boolean visible) {
-		isVisible = visible;
-	}
+    @Override
+    public void setVisible(boolean visible) {
+        isVisible = visible;
+    }
 }

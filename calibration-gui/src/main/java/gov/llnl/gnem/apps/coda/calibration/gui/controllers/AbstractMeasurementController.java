@@ -65,6 +65,7 @@ import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
+import gov.llnl.gnem.apps.coda.common.gui.util.HiddenHeaderTableView;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
@@ -90,6 +91,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
@@ -219,10 +221,13 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     protected TableColumn<MeasuredMwDetails, String> bandCoverageCol;
 
     @FXML
+    protected TableColumn<MeasuredMwDetails, String> likelyPoorlyConstrainedCol;
+
+    @FXML
     protected TableColumn<LabeledPlotPoint, String> stationCol;
 
     @FXML
-    protected TableView<Pair<String, String>> summaryTable;
+    protected HiddenHeaderTableView<Pair<String, String>> summaryTable;
 
     @FXML
     protected TableColumn<Pair<String, String>, String> summaryNameCol;
@@ -317,6 +322,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
     public void initialize() {
         evidCombo.setItems(evids);
+        evidCombo.setVisibleRowCount(5);
 
         configureAxisShrink(xAxisShrink, () -> {
             shouldXAxisShrink = !shouldXAxisShrink;
@@ -335,6 +341,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         final AxisLimits mwXaxis = new AxisLimits(Axis.Type.X, 0.0, 10.0);
         final AxisLimits mwYaxis = new AxisLimits(Axis.Type.Y, 0.0, 10.0);
         mwPlot.setAxisLimits(mwXaxis, mwYaxis);
+        mwPlot.setMargin(30, 40, 50, 50);
         mwPlot.attachToDisplayNode(mwPlotPane);
 
         stressPlot = plotFactory.basicPlot();
@@ -344,14 +351,16 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         final AxisLimits stressXaxis = new AxisLimits(Axis.Type.X, 1.0, 1.0);
         final AxisLimits stressYaxis = new AxisLimits(Axis.Type.Y, 1.0, 1.0);
         stressPlot.setAxisLimits(stressXaxis, stressYaxis);
+        stressPlot.setMargin(30, 40, 70, 50);
         stressPlot.attachToDisplayNode(stressPlotPane);
 
         sdPlot = plotFactory.basicPlot();
-        sdPlot.getTitle().setText("Site correction overview");
+        sdPlot.getTitle().setText("Site correction overview (# stations)");
         sdPlot.getTitle().setFontSize(16);
         sdPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Standard Deviation"));
         sdPlot.setAxisLimits(new AxisLimits(Axis.Type.LOG_X, 0.0, 1.0), new AxisLimits(Axis.Type.Y, 0.0, 2.0));
         sdPlot.showLegend(false);
+        sdPlot.setMargin(30, 40, 50, null);
         sdPlot.attachToDisplayNode(sdPlotPane);
 
         energyVsMomentPlot = plotFactory.basicPlot();
@@ -362,6 +371,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         energyVsMomentPlot.addAxes(rightAxis);
         energyVsMomentPlot.showLegend(false);
+        energyVsMomentPlot.setMargin(30, 40, 50, 50);
         energyVsMomentPlot.attachToDisplayNode(energyVsMomentPane);
 
         apparentStressVsMomentPlot = plotFactory.basicPlot();
@@ -372,6 +382,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         apparentStressVsMomentPlot.addAxes(rightAxis);
         apparentStressVsMomentPlot.showLegend(false);
+        apparentStressVsMomentPlot.setMargin(30, 40, 50, 50);
         apparentStressVsMomentPlot.attachToDisplayNode(apparentStressVsMomentPane);
 
         cornerFreqVsMomentPlot = plotFactory.basicPlot();
@@ -382,6 +393,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         cornerFreqVsMomentPlot.addAxes(rightAxis);
         cornerFreqVsMomentPlot.showLegend(false);
+        cornerFreqVsMomentPlot.setMargin(30, 40, 50, 50);
         cornerFreqVsMomentPlot.attachToDisplayNode(cornerFreqVsMomentPane);
 
         evidCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -417,6 +429,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         CellBindingUtils.attachTextCellFactories(measuredMwUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredMwUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
         CellBindingUtils.attachTextCellFactories(bandCoverageCol, MeasuredMwDetails::getBandCoverage, dfmt4);
+        CellBindingUtils.attachTextCellFactoriesString(likelyPoorlyConstrainedCol, mw -> mw.isLikelyPoorlyConstrained().toString());
 
         stationCountCol.setCellValueFactory(
                 x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getStationCount).orElseGet(() -> 0)).asObject());
@@ -436,6 +449,16 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         menu.getItems().add(exclude);
 
         summaryTable.setItems(summaryValues);
+        summaryTable.setRowFactory(table -> new TableRow<Pair<String, String>>() {
+            @Override
+            protected void updateItem(Pair<String, String> entry, boolean b) {
+                super.updateItem(entry, b);
+                if (entry != null && entry.getLeft() != null && entry.getLeft().contains("(Model Fit)")) {
+                    setStyle("-fx-font-weight:bold;");
+                }
+            }
+        });
+
         CellBindingUtils.attachTextCellFactoriesString(summaryNameCol, Pair::getLeft);
         CellBindingUtils.attachTextCellFactoriesString(summaryValueCol, Pair::getRight);
         summaryNameCol.setCellFactory(param -> new TextWrappingTableCell());
@@ -469,6 +492,9 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         });
 
         final List<Spectra> fittingSpectra;
+        boolean likelyPoorlyConstrained = false;
+        MeasuredMwDetails mwDetails = null;
+
         if (evidCombo != null && evidCombo.getSelectionModel().getSelectedIndex() > 0) {
             filteredMeasurements = filterToEvent(evidCombo.getSelectionModel().getSelectedItem(), spectralMeasurements);
             fittingSpectra = getFitSpectra();
@@ -476,51 +502,67 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             fittingSpectra.add(referenceSpectra);
             final Spectra validationSpectra = spectraClient.getValidationSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
             fittingSpectra.add(validationSpectra);
+
             if (filteredMeasurements != null && !filteredMeasurements.isEmpty() && filteredMeasurements.get(0).getWaveform() != null) {
                 final Event event = filteredMeasurements.get(0).getWaveform().getEvent();
-                summaryValues.add(new Pair<>("Date", DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant())));
-                summaryValues.add(new Pair<>("JDay", Integer.toString(new TimeT(event.getOriginTime().toInstant().getEpochSecond()).getJDay())));
+                String date = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant());
+                String jDay = Integer.toString(new TimeT(event.getOriginTime()).getJdate()).substring(4);
+                summaryValues.add(new Pair<>("Date", String.format("%s (%s)", date, jDay)));
                 summaryValues.add(new Pair<>("Origin Time", DateTimeFormatter.ISO_TIME.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant())));
-
                 summaryValues.add(new Pair<>("Latitude", dfmt4.format(event.getLatitude())));
                 summaryValues.add(new Pair<>("Longitude", dfmt4.format(event.getLongitude())));
-                summaryValues.add(new Pair<>("Depth", dfmt2.format(event.getDepth())));
+                summaryValues.add(new Pair<>("Depth (km)", dfmt2.format(event.getDepth())));
+                summaryValues.add(null); // Adds space between sections
 
+                if (mwParameters != null && !mwParameters.isEmpty()) {
+                    mwDetails = mwParameters.stream().filter(mwDetail -> event.getEventId().equalsIgnoreCase(mwDetail.getEventId())).findAny().orElseGet(MeasuredMwDetails::new);
+                    likelyPoorlyConstrained = mwDetails.isLikelyPoorlyConstrained();
+                }
             } else {
                 filteredMeasurements = Collections.emptyList();
             }
 
             final Spectra fitSpectra = fittingSpectra.get(0);
+            summaryValues.add(new Pair<>("Mw (Model Fit)", dfmt2.format(fitSpectra.getMw())));
+
+            if (fitSpectra.getApparentStress() > 0.0) {
+                summaryValues.add(new Pair<>("Apparent Stress (Model Fit)", dfmt2.format(fitSpectra.getApparentStress()) + " MPa"));
+            }
+            summaryValues.add(new Pair<>("Energy (Model Fit)", dfmt2.format(fitSpectra.getlogTotalEnergyMDAC()) + " J"));
+
             summaryValues.add(new Pair<>("Observed Total Energy", dfmt2.format(fitSpectra.getLogTotalEnergy()) + " J"));
             summaryValues.add(new Pair<>("Observed Apparent Stress", dfmt2.format(fitSpectra.getObsAppStress()) + " MPa"));
-            summaryValues.add(new Pair<>("Observed to Extrapolated energy", dfmt2.format(100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy())))));
-
-            summaryValues.add(new Pair<>("Model Fit Mw", dfmt2.format(fitSpectra.getMw())));
-            if (fitSpectra.getApparentStress() != 0.0) {
-                summaryValues.add(new Pair<>("Model Fit Apparent Stress", dfmt2.format(fitSpectra.getApparentStress()) + " MPa"));
-            }
-            summaryValues.add(new Pair<>("Model Fit Energy", dfmt2.format(fitSpectra.getlogTotalEnergyMDAC()) + " J"));
+            summaryValues.add(new Pair<>("Observed / Total Energy", dfmt2.format(100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy()))) + " %"));
+            summaryValues.add(
+                    new Pair<>("Extrapolated / Total Energy", dfmt2.format(100.0 - (100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy())))) + " %"));
 
             if (referenceSpectra != null && SPECTRA_TYPES.REF.equals(referenceSpectra.getType())) {
                 summaryValues.add(new Pair<>("Reference Mw", dfmt2.format(referenceSpectra.getMw())));
-                if (referenceSpectra.getApparentStress() != 0.0) {
+                if (referenceSpectra.getApparentStress() > 0.0) {
                     summaryValues.add(new Pair<>("Reference Apparent Stress", dfmt2.format(referenceSpectra.getApparentStress()) + " MPa"));
                 }
             }
 
-            if (validationSpectra != null && SPECTRA_TYPES.REF.equals(validationSpectra.getType())) {
+            if (validationSpectra != null && SPECTRA_TYPES.VAL.equals(validationSpectra.getType())) {
                 summaryValues.add(new Pair<>("Validation Mw", dfmt2.format(validationSpectra.getMw())));
-                if (validationSpectra.getApparentStress() != 0.0) {
+                if (validationSpectra.getApparentStress() > 0.0) {
                     summaryValues.add(new Pair<>("Validation Apparent Stress", dfmt2.format(validationSpectra.getApparentStress()) + " MPa"));
                 }
             }
 
+            if (mwDetails != null) {
+                summaryValues.add(null);
+                summaryValues.add(new Pair<>("Iterations", Integer.toString(mwDetails.getIterations())));
+                summaryValues.add(new Pair<>("Data Count", Integer.toString(mwDetails.getDataCount())));
+            }
         } else {
             filteredMeasurements = spectralMeasurements;
             fittingSpectra = null;
         }
 
         final List<SpectraMeasurement> selectedEventMeasurements = filteredMeasurements;
+
+        final boolean showPoorlyConstrainedBanner = likelyPoorlyConstrained;
 
         spectraControllers.forEach(spc -> {
             if (fittingSpectra != null && spc.shouldShowFits()) {
@@ -529,6 +571,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), null);
             }
             spc.getSpectraMeasurementMap().putAll(mapSpectraToPoint(selectedEventMeasurements, spc.getDataFunc()));
+
+            spc.showConstraintWarningBanner(showPoorlyConstrainedBanner);
         });
         mapMeasurements(selectedEventMeasurements);
 
@@ -669,8 +713,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                     double maxMw = 0.0;
                     double minEnergy = 10.0;
                     double maxEnergy = 0.0;
-                    double minStress = 1.0;
-                    double maxStress = 0.0;
+                    double minStress = 0.01;
+                    double maxStress = 100.0;
                     for (final MeasuredMwDetails ev : evs) {
                         mwParameters.add(ev);
 
@@ -712,7 +756,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                     maxMw = ref;
                                 }
 
-                                final Symbol mwSym = plotFactory.createSymbol(SymbolStyles.CIRCLE, "Reference", mw, ref, Color.RED, Color.RED, Color.RED, ev.getEventId(), false);
+                                final Symbol mwSym = plotFactory.createSymbol(SymbolStyles.CIRCLE, "Ref.", mw, ref, Color.RED, Color.RED, Color.RED, ev.getEventId(), false);
                                 mwPlotSymbols.add(mwSym);
                             }
 
@@ -725,7 +769,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                     maxMw = valMw;
                                 }
 
-                                final Symbol valSym = plotFactory.createSymbol(SymbolStyles.SQUARE, "Validation", mw, valMw, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false);
+                                final Symbol valSym = plotFactory.createSymbol(SymbolStyles.SQUARE, "Val.", mw, valMw, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false);
                                 valSym.setZindex(VALIDATION_Z_ORDER);
                                 mwPlotSymbols.add(valSym);
                             }
@@ -753,7 +797,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                         maxStress = refStress;
                                     }
 
-                                    final Symbol stressSym = plotFactory.createSymbol(SymbolStyles.CIRCLE, "Reference", stress, refStress, Color.RED, Color.RED, Color.RED, ev.getEventId(), false);
+                                    final Symbol stressSym = plotFactory.createSymbol(SymbolStyles.CIRCLE, "Ref.", stress, refStress, Color.RED, Color.RED, Color.RED, ev.getEventId(), false);
                                     stressPlotSymbols.add(stressSym);
                                 }
 
@@ -766,7 +810,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                         maxStress = valStress;
                                     }
 
-                                    final Symbol valSym = plotFactory.createSymbol(SymbolStyles.SQUARE, "Validation", stress, valStress, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false);
+                                    final Symbol valSym = plotFactory.createSymbol(SymbolStyles.SQUARE, "Val.", stress, valStress, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false);
                                     valSym.setZindex(VALIDATION_Z_ORDER);
                                     stressPlotSymbols.add(valSym);
                                 }
@@ -1067,38 +1111,47 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     protected void handlePlotObjectClicked(final PlotObjectClick poc, final Function<Point2D, SpectraMeasurement> measurementFunc) {
         List<Point2D> points = poc.getPlotPoints();
         Set<Waveform> waveforms = new HashSet<>();
+        List<Waveform> selectedData = spectraControllers.stream()
+                                                        .flatMap(spc -> spc.getSpectralPlot().getSelectedPoints().stream())
+                                                        .map(measurementFunc::apply)
+                                                        .map(SpectraMeasurement::getWaveform)
+                                                        .collect(Collectors.toList());
 
-        // FIXME: This entire scheme is tremendously inefficient and needs a rework at
-        // some point.
-        for (SpectraPlotController spc : spectraControllers) {
-            spc.getSpectralPlot().deselectAllPoints();
-        }
+        if (poc.getMouseEvent().isPrimaryButtonDown() || selectedData.isEmpty()) {
+            // FIXME: This entire scheme is tremendously inefficient and needs a rework at
+            // some point.
+            for (SpectraPlotController spc : spectraControllers) {
+                spc.getSpectralPlot().deselectAllPoints();
+            }
 
-        for (Point2D point : points) {
-            SpectraMeasurement spectra = measurementFunc.apply(point);
-            if (spectra != null && spectra.getWaveform() != null) {
-                waveforms.add(spectra.getWaveform());
-                for (SpectraPlotController spc : spectraControllers) {
-                    if (poc.getMouseEvent().isPrimaryButtonDown()) {
-                        final Map<Point2D, List<Symbol>> symbolMap = spc.getSymbolMap();
-                        final SpectralPlot plot = spc.getSpectralPlot();
-                        //Dyne-cm to Newton-meter
-                        Point2D testPoint = new Point2D(point.getX(), point.getY() - 7.0);
-                        final boolean existsInPlot = symbolMap.containsKey(testPoint);
-                        if (existsInPlot) {
-                            plot.selectPoint(testPoint);
+            for (Point2D point : points) {
+                SpectraMeasurement spectra = measurementFunc.apply(point);
+                if (spectra != null && spectra.getWaveform() != null) {
+                    waveforms.add(spectra.getWaveform());
+                    for (SpectraPlotController spc : spectraControllers) {
+                        if (poc.getMouseEvent().isPrimaryButtonDown()) {
+                            final Map<Point2D, List<Symbol>> symbolMap = spc.getSymbolMap();
+                            final SpectralPlot plot = spc.getSpectralPlot();
+                            //Dyne-cm to Newton-meter
+                            Point2D testPoint = new Point2D(point.getX(), point.getY() - 7.0);
+                            final boolean existsInPlot = symbolMap.containsKey(testPoint);
+                            if (existsInPlot) {
+                                plot.selectPoint(testPoint);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        spectraControllers.forEach(spc -> spc.getSpectralPlot().getSubplot().replot());
-
-        if (poc.getMouseEvent().isPrimaryButtonDown()) {
-            showWaveformPopup(waveforms.stream().map(Waveform::getId).collect(Collectors.toSet()).toArray(new Long[0]));
-            Platform.runLater(() -> menu.hide());
+            spectraControllers.forEach(spc -> spc.getSpectralPlot().getSubplot().replot());
+            if (poc.getMouseEvent().isPrimaryButtonDown()) {
+                showWaveformPopup(waveforms.stream().map(Waveform::getId).collect(Collectors.toSet()).toArray(new Long[0]));
+                Platform.runLater(() -> menu.hide());
+            } else {
+                showContextMenu(waveforms, points, poc.getMouseEvent(), this::setSymbolsActive);
+            }
         } else if (poc.getMouseEvent().isSecondaryButtonDown()) {
+            waveforms.addAll(selectedData);
             showContextMenu(waveforms, points, poc.getMouseEvent(), this::setSymbolsActive);
         }
     }

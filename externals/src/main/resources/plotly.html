@@ -57,23 +57,26 @@
 			title: {
 				text: '',
 				font: {
-					size: 16
+					size: 20
 				},
 				yanchor: 'bottom'
 			},
 			xaxis: {
+				automargin: true,
 				zeroline: false,
 				linecolor: 'black',
 				linewidth: 2,
 				mirror: true
 			},
 			yaxis: {
+				automargin: true,
 				zeroline: false,
 				linecolor: 'black',
 				linewidth: 2,
 				mirror: true
 			},
 			zaxis: {
+				automargin: true,
 				zeroline: false
 			},
 			legend: {
@@ -290,6 +293,18 @@
 		});
 
 		var attachPlotDivHandlers = function () {
+			// Register clicks to move the f-marker
+			plotDiv.addEventListener('click', event => {
+				if (plotData.isClickToPickEnabled()) {
+					var clickX = event.clientX;
+					var leftMargin = plotDiv._fullLayout._size.l;
+					var xaxis = plotDiv._fullLayout.xaxis;
+					var plotX = xaxis.p2c(event.clientX-leftMargin);
+					
+					moveFmarkerToX(plotX);
+				}
+			});
+
 			plotDiv.on('plotly_click', plotClick);
 			plotDiv.on('plotly_selected', function (data) {
 				plotSelection("selection", data)
@@ -321,16 +336,7 @@
 						//nop
 					}
 				}
-			});
-			// Register clicks to move the f-marker
-			plotDiv.addEventListener('click', event => {
-				var clickX = event.clientX;
-				var leftMargin = plotDiv._fullLayout._size.l;
-				var xaxis = plotDiv._fullLayout.xaxis;
-				var plotX = xaxis.p2c(event.clientX-leftMargin);
-				
-				moveFmarkerToX(plotX);
-			});
+			});			
 		};
 		
 		Plotly.newPlot("plot", data, layout, config).then(attach);

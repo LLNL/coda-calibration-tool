@@ -76,4 +76,8 @@ public class SpectraPlotController {
     public void setShouldShowFits(final boolean shouldShowFits) {
         this.shouldShowFits = shouldShowFits;
     }
+
+    public void showConstraintWarningBanner(boolean visible) {
+        spectraPlot.showConstraintWarningBanner(visible);
+    }
 }

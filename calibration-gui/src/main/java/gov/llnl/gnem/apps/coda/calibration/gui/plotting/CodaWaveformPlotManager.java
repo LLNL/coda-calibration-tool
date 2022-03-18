@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -50,17 +51,21 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.event.EventHandler;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import reactor.core.scheduler.Schedulers;
@@ -75,6 +80,10 @@ public class CodaWaveformPlotManager {
     private static final String GROUP_VELOCITY_LABEL = "GV";
     private static final String TIME_SECONDS_FROM_ORIGIN = "Time (seconds from origin)";
     private static final String WAVEFORM_PREFIX = "Waveform_";
+    private static final String CLICK_TO_PICK_TOOLTIP = "Toggle click-to-pick mode";
+    private static final String CLICK_TO_PICK_ICON = "/click_picking_mode_icon.png";
+    private static final String CLICK_TO_PICK_LABEL = "Picking";
+
     private static final Logger log = LoggerFactory.getLogger(CodaWaveformPlotManager.class);
     private final WaveformClient waveformClient;
     private final ShapeMeasurementClient shapeClient;
@@ -114,6 +123,11 @@ public class CodaWaveformPlotManager {
     final ToggleButton windowLineToggle2 = new ToggleButton(WINDOW_LINE_LABEL);
     final ToggleButton groupVelToggle3 = new ToggleButton(GROUP_VELOCITY_LABEL);
     final ToggleButton windowLineToggle3 = new ToggleButton(WINDOW_LINE_LABEL);
+
+    final ToggleButton clickToPickMode = new ToggleButton();
+    final ToggleButton clickToPickMode2 = new ToggleButton();
+    final ToggleButton clickToPickMode3 = new ToggleButton();
+    private boolean clickToPickModeBoolean = false;
 
     private final EventHandler<InputEvent> forwardAction = event -> {
         if ((currentPage + 1) < totalPages) {
@@ -188,6 +202,28 @@ public class CodaWaveformPlotManager {
         }
     };
 
+    private final EventHandler<InputEvent> clickPickToggleAction = event -> {
+        clickToPickModeBoolean = !clickToPickModeBoolean;
+        clickToPickMode.setSelected(clickToPickModeBoolean);
+        clickToPickMode2.setSelected(clickToPickModeBoolean);
+        clickToPickMode3.setSelected(clickToPickModeBoolean);
+        if (clickToPickModeBoolean) {
+            clickToPickMode.setStyle("-fx-background-color: DarkSeaGreen");
+            clickToPickMode2.setStyle("-fx-background-color: DarkSeaGreen");
+            clickToPickMode3.setStyle("-fx-background-color: DarkSeaGreen");
+        } else {
+            clickToPickMode.setStyle(null);
+            clickToPickMode2.setStyle(null);
+            clickToPickMode3.setStyle(null);
+        }
+        if (orderedWaveformPlots.size() > 0) {
+            orderedWaveformPlots.values().forEach(plot -> plot.setClickPickingModeEnabled(clickToPickModeBoolean));
+        }
+        if (selectedSinglePlot != null) {
+            selectedSinglePlot.setClickPickingModeEnabled(clickToPickModeBoolean);
+        }
+    };
+
     public CodaWaveformPlotManager(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
             final GeoMap map, final MapPlottingUtilities mapPlotUtils) {
         this.waveformClient = waveformClient;
@@ -224,20 +260,42 @@ public class CodaWaveformPlotManager {
         windowLineToggle3.addEventHandler(MouseEvent.MOUSE_CLICKED, windowLineToggleAction::handle);
         windowLineToggle3.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
 
+        clickToPickMode.addEventHandler(MouseEvent.MOUSE_CLICKED, clickPickToggleAction::handle);
+        clickToPickMode2.addEventHandler(MouseEvent.MOUSE_CLICKED, clickPickToggleAction::handle);
+        clickToPickMode3.addEventHandler(MouseEvent.MOUSE_CLICKED, clickPickToggleAction::handle);
+
+        try (InputStream is = this.getClass().getResourceAsStream(CLICK_TO_PICK_ICON)) {
+            Image clickPickingIcon = new Image(is);
+            createPickingIcon(clickToPickMode, clickPickingIcon, windowLineToggle);
+            createPickingIcon(clickToPickMode2, clickPickingIcon, windowLineToggle2);
+            createPickingIcon(clickToPickMode3, clickPickingIcon, windowLineToggle3);
+        } catch (IOException | NullPointerException ex) {
+            clickToPickMode.setText(CLICK_TO_PICK_LABEL);
+            clickToPickMode2.setText(CLICK_TO_PICK_LABEL);
+            clickToPickMode3.setText(CLICK_TO_PICK_LABEL);
+        }
+
+        clickToPickMode.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
+        clickToPickMode2.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
+        clickToPickMode3.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
+
         multiPageToolbar.getItems().add(backButton);
         multiPageToolbar.getItems().add(pagingLabel);
         multiPageToolbar.getItems().add(forwardButton);
         multiPageToolbar.getItems().add(groupVelToggle);
         multiPageToolbar.getItems().add(windowLineToggle);
+        multiPageToolbar.getItems().add(clickToPickMode);
 
         multiFrequencyToolbar.getItems().add(freqBandLabel);
         multiFrequencyToolbar.getItems().add(prevButton);
         multiFrequencyToolbar.getItems().add(nextButton);
         multiFrequencyToolbar.getItems().add(groupVelToggle2);
         multiFrequencyToolbar.getItems().add(windowLineToggle2);
+        multiFrequencyToolbar.getItems().add(clickToPickMode2);
 
         multiPlotToolbar.getItems().add(groupVelToggle3);
         multiPlotToolbar.getItems().add(windowLineToggle3);
+        multiPlotToolbar.getItems().add(clickToPickMode3);
 
         final Font sizedFont = Font.font(forwardButton.getFont().getFamily(), 12f);
         forwardButton.setFont(sizedFont);
@@ -250,6 +308,9 @@ public class CodaWaveformPlotManager {
         windowLineToggle.setFont(sizedFont);
         windowLineToggle2.setFont(sizedFont);
         windowLineToggle3.setFont(sizedFont);
+        clickToPickMode.setFont(sizedFont);
+        clickToPickMode2.setFont(sizedFont);
+        clickToPickMode3.setFont(sizedFont);
 
         forwardButton.setFocusTraversable(false);
         backButton.setFocusTraversable(false);
@@ -261,6 +322,24 @@ public class CodaWaveformPlotManager {
         windowLineToggle.setFocusTraversable(false);
         windowLineToggle2.setFocusTraversable(false);
         windowLineToggle3.setFocusTraversable(false);
+        clickToPickMode.setFocusTraversable(false);
+        clickToPickMode2.setFocusTraversable(false);
+        clickToPickMode3.setFocusTraversable(false);
+    }
+
+    private void createPickingIcon(ToggleButton clickToPickButton, Image img, Region layoungBindingNode) {
+        ImageView imgView = new ImageView(img);
+        imgView.setPreserveRatio(true);
+        imgView.fitHeightProperty().bind(layoungBindingNode.heightProperty());
+        imgView.fitWidthProperty().bind(layoungBindingNode.heightProperty());
+        clickToPickButton.prefHeightProperty().bind(layoungBindingNode.heightProperty());
+        clickToPickButton.minHeightProperty().bind(layoungBindingNode.heightProperty());
+        clickToPickButton.maxHeightProperty().bind(layoungBindingNode.heightProperty());
+        clickToPickButton.prefWidthProperty().bind(layoungBindingNode.heightProperty());
+        clickToPickButton.minWidthProperty().bind(layoungBindingNode.heightProperty());
+        clickToPickButton.maxWidthProperty().bind(layoungBindingNode.heightProperty());
+        clickToPickButton.setGraphic(imgView);
+        clickToPickButton.setAlignment(Pos.CENTER);
     }
 
     private void setFrequencyDisplayText(Waveform wave) {
@@ -288,7 +367,6 @@ public class CodaWaveformPlotManager {
         final CodaWaveformPlot plot = plotPair.getRight();
 
         if (waveform != null) {
-
             final Collection<Icon> icons = mapWaveform(waveform);
             mappedIcons.addAll(icons);
             map.addIcons(icons);
@@ -298,6 +376,10 @@ public class CodaWaveformPlotManager {
                 plot.attachToDisplayNode(waveformPanel);
                 selectedSinglePlot = plot;
             }
+        }
+
+        if (plot != null) {
+            plot.setClickPickingModeEnabled(clickToPickModeBoolean);
         }
     }
 
@@ -364,7 +446,6 @@ public class CodaWaveformPlotManager {
                 plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient, () -> groupVelToggle.isSelected(), () -> windowLineToggle.isSelected());
             }
         }
-
         return plot;
     }
 
@@ -491,6 +572,7 @@ public class CodaWaveformPlotManager {
                         plot.setMargin(null, null, null, null);
                         plot.getxAxis().setText(TIME_SECONDS_FROM_ORIGIN);
                     }
+                    plot.setClickPickingModeEnabled(clickToPickModeBoolean);
                     plot.attachToDisplayNode(waveformPanel);
                     plot.replot();
                 }

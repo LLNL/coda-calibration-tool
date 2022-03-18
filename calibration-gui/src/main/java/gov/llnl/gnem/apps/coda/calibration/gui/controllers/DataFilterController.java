@@ -13,7 +13,6 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,16 +23,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 
 class DataFilterController<T> {
-    TableView<T> tableView;
     // The list of unfiltered table items
     ObservableList<T> items;
     FilterDialogController filterDialog;
@@ -41,38 +39,41 @@ class DataFilterController<T> {
     // The filter buttons attached to columns
     private List<Button> buttons;
     private HashMap<TableColumn<T, ?>, ObservableList<Object>> columnFilterLists;
-    private Image filterIcon;
+    private FilteredList<T> filteredItems;
 
-    DataFilterController(final TableView<T> tableView) {
-        this.tableView = tableView;
-        this.items = tableView.getItems();
+    DataFilterController(final TableView<T> tableView, final ObservableList<T> items) {
+        this.items = items;
         this.buttons = new ArrayList<>();
         this.columnFilterLists = new HashMap<>();
         this.filterDialog = new FilterDialogController();
         this.predicateBuilder = new PredicateBuilder<>();
 
+        filteredItems = items.filtered(null);
+        //Unfortunately filtered/sorted lists are immutable so some
+        //extra legwork needed to bind it correctly to the tableview
+        SortedList<T> sortedItems = new SortedList<>(filteredItems);
+        sortedItems.comparatorProperty().bind(tableView.comparatorProperty());
+        tableView.setItems(sortedItems);
+
         // Disable filter button if no items to filter
         this.items.addListener((ListChangeListener<? super T>) change -> {
             if (change.getList().isEmpty()) {
                 setFiltersDisabled(true);
-                tableView.setItems(items);
                 filterDialog.clearComboSelections();
             } else {
                 setFiltersDisabled(false);
                 updateFilterLists(change);
             }
         });
-        InputStream icon2 = this.getClass().getResourceAsStream("/filter_icon.png");
-        this.filterIcon = new Image(icon2, 16, 16, true, true);
 
         filterDialog.setFilterAction(e -> {
             filterTableViewResults();
             filterDialog.hide();
         });
         filterDialog.setClearFiltersAction(e -> {
-            tableView.setItems(items);
             filterDialog.clearComboSelections();
             filterDialog.hide();
+            filteredItems.setPredicate(null);
         });
     }
 
@@ -80,9 +81,12 @@ class DataFilterController<T> {
 
         // Create the checkbox that opens the filter panel/dialog
         Button filterBtn = new Button();
-        final ImageView icon = new ImageView(filterIcon);
         filterBtn.setDisable(true);
-        filterBtn.setGraphic(icon);
+        Label label = new Label("\uEF4F");
+        label.getStyleClass().add("material-icons-medium");
+        label.setMaxHeight(16);
+        label.setMinWidth(16);
+        filterBtn.setGraphic(label);
         filterBtn.setOnMouseClicked(e -> filterDialog.show());
         buttons.add(filterBtn);
 
@@ -142,12 +146,12 @@ class DataFilterController<T> {
     }
 
     public void filterTableViewResults() {
+        Predicate<T> predicate;
         if (filterDialog.useAndPredicate()) {
-            Predicate<T> predicate = predicateBuilder.getAndPredicate();
-            tableView.setItems(items.filtered(predicate));
+            predicate = predicateBuilder.getAndPredicate();
         } else {
-            Predicate<T> predicate = predicateBuilder.getOrPredicate();
-            tableView.setItems(items.filtered(predicate));
+            predicate = predicateBuilder.getOrPredicate();
         }
+        filteredItems.setPredicate(predicate);
     }
 }

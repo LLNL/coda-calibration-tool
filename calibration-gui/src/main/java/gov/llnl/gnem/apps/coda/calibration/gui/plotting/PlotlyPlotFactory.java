@@ -28,7 +28,10 @@ import llnl.gnem.core.gui.plotting.api.VerticalLine;
 import llnl.gnem.core.gui.plotting.plotly.BasicAxis;
 import llnl.gnem.core.gui.plotting.plotly.BasicLine;
 import llnl.gnem.core.gui.plotting.plotly.BasicSymbol;
+import llnl.gnem.core.gui.plotting.plotly.BasicTitle;
 import llnl.gnem.core.gui.plotting.plotly.PlotlyPlot;
+import llnl.gnem.core.gui.plotting.plotly.PlotlyPlotData;
+import llnl.gnem.core.gui.plotting.plotly.PlotlyTrace;
 
 @Service
 public class PlotlyPlotFactory implements PlotFactory {
@@ -36,6 +39,11 @@ public class PlotlyPlotFactory implements PlotFactory {
     @Override
     public BasicPlot basicPlot() {
         return new PlotlyPlot();
+    }
+
+    @Override
+    public BasicPlot lineAndMarkerScatterPlot() {
+        return new PlotlyPlot(false, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER_AND_LINE), Color.WHITE, new BasicTitle()));
     }
 
     @Override

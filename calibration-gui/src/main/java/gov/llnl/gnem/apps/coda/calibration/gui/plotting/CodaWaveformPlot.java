@@ -16,7 +16,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.text.NumberFormat;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
-import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -219,7 +217,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
                         pickTime = endEpochTime;
                     }
                     pickTime = pickTime + originTimeZeroOffset;
-                    final Collection<VerticalLine> pickLines = addPickToAll(pick.getPickName(), pickTime);
+                    addPickToAll(pick.getPickName(), pickTime);
                     pickLineMap.put(pick.getPickName(), pick);
                     this.replot();
                 }
@@ -304,6 +302,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         } else {
             plotIdentifier = "";
         }
+        this.replot();
     }
 
     private double calcWindowTime(final double time, final SharedFrequencyBandParameters params, final Waveform waveform, final double distance) {
@@ -324,44 +323,44 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             double plotLength = waveform.getData().size() / waveform.getSampleRate() + originTimeOffset;
             if (maxWindowTime != 0 && maxWindowTime < plotLength) {
                 maxWindowLine = new VerticalLine(maxWindowTime, 90, "Max");
-                maxWindowLine.setFillColor(Color.GRAY);
+                maxWindowLine.setFillColor(Color.rgb(128, 128, 128, 0.7)); // Dark grey
                 addPlotObject(maxWindowLine, PLOT_ORDERING.PICKS.getZOrder());
             }
             minWindowLine = new VerticalLine(minWindowTime, 90, "Min");
-            minWindowLine.setFillColor(Color.GRAY);
+            minWindowLine.setFillColor(Color.rgb(128, 128, 128, 0.7)); // Dark grey
             addPlotObject(minWindowLine, PLOT_ORDERING.PICKS.getZOrder());
             setWindowLineVisbility();
         }
     }
 
     private void setGroupVelocityLines(double distance) {
-        VelocityConfiguration veloConfig = paramClient.getVelocityConfiguration().block();
+        paramClient.getVelocityConfiguration().doOnSuccess(veloConfig -> {
+            if (veloConfig != null) {
+                double critDistance = veloConfig.getDistanceThresholdInKm();
+                double startGV1Lt = veloConfig.getGroupVelocity1InKmsLtDistance();
+                double endGV2Lt = veloConfig.getGroupVelocity2InKmsLtDistance();
+                double startGV1Gt = veloConfig.getGroupVelocity1InKmsGtDistance();
+                double endGV2Gt = veloConfig.getGroupVelocity2InKmsGtDistance();
 
-        if (veloConfig != null) {
-            double critDistance = veloConfig.getDistanceThresholdInKm();
-            double startGV1Lt = veloConfig.getGroupVelocity1InKmsLtDistance();
-            double endGV2Lt = veloConfig.getGroupVelocity2InKmsLtDistance();
-            double startGV1Gt = veloConfig.getGroupVelocity1InKmsGtDistance();
-            double endGV2Gt = veloConfig.getGroupVelocity2InKmsGtDistance();
+                double startTime = (distance / startGV1Gt);
+                double endTime = (distance / endGV2Gt);
+                if (distance < critDistance) {
+                    startTime = (distance / startGV1Lt);
+                    endTime = (distance / endGV2Lt);
+                }
 
-            double startTime = (distance / startGV1Gt);
-            double endTime = (distance / endGV2Gt);
-            if (distance < critDistance) {
-                startTime = (distance / startGV1Lt);
-                endTime = (distance / endGV2Lt);
+                groupVelocityLineStart = new VerticalLine(startTime, 90, "Start");
+                groupVelocityLineEnd = new VerticalLine(endTime, 90, "End");
+
+                groupVelocityLineStart.setFillColor(Color.rgb(255, 165, 0, 0.7)); // Orange
+                groupVelocityLineEnd.setFillColor(Color.rgb(255, 165, 0, 0.7)); // Orange
+
+                addPlotObject(groupVelocityLineStart, PLOT_ORDERING.PICKS.getZOrder());
+                addPlotObject(groupVelocityLineEnd, PLOT_ORDERING.PICKS.getZOrder());
+
+                setGroupVelocityVisbility();
             }
-
-            groupVelocityLineStart = new VerticalLine(startTime, 90, "Start");
-            groupVelocityLineEnd = new VerticalLine(endTime, 90, "End");
-
-            groupVelocityLineStart.setFillColor(Color.ORANGE);
-            groupVelocityLineEnd.setFillColor(Color.ORANGE);
-
-            addPlotObject(groupVelocityLineStart, PLOT_ORDERING.PICKS.getZOrder());
-            addPlotObject(groupVelocityLineEnd, PLOT_ORDERING.PICKS.getZOrder());
-
-            setGroupVelocityVisbility();
-        }
+        }).subscribe();
     }
 
     private void plotSynthetic(final Waveform waveform, final SyntheticCoda synth, final TimeT beginTime, final float[] waveformSegment, final Event event, final double distance,

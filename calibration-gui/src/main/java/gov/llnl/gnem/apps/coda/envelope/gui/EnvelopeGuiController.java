@@ -23,8 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import javax.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +33,7 @@ import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.envelope.gui.controllers.WaveformLoadingController;
+import javax.annotation.PreDestroy;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -77,8 +76,8 @@ public class EnvelopeGuiController {
     private Stage stage;
 
     @Autowired
-    public EnvelopeGuiController(WaveformLoadingController waveformLoadingController, EventBus bus, EnvelopeParamsPorter envelopeParamsPorter, ConfigurableApplicationContext springContext) throws IOException {
-        super();
+    public EnvelopeGuiController(WaveformLoadingController waveformLoadingController, EventBus bus, EnvelopeParamsPorter envelopeParamsPorter, ConfigurableApplicationContext springContext)
+            throws IOException {
         this.waveformLoadingController = waveformLoadingController;
         this.bus = bus;
         this.envelopeParamsPorter = envelopeParamsPorter;

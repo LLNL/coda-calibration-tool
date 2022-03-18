@@ -13,6 +13,21 @@
     -fx-direction: ltr;
 }
 
+.material-icons-large {
+    -fx-font-family: 'Material Icons';
+    -fx-font-weight: normal;
+    -fx-font-style: normal;
+    -fx-font-size: 32px;
+    /* Preferred icon size */
+    -fx-display: inline-block;
+    -fx-line-height: 1;
+    -fx-text-transform: none;
+    -fx-letter-spacing: normal;
+    -fx-word-wrap: normal;
+    -fx-white-space: nowrap;
+    -fx-direction: ltr;
+}
+
 .material-icons-medium {
     -fx-font-family: 'Material Icons';
     -fx-font-weight: normal;

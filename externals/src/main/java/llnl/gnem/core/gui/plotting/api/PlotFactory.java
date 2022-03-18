@@ -20,6 +20,8 @@ public interface PlotFactory {
 
     public BasicPlot basicPlot();
 
+    public BasicPlot lineAndMarkerScatterPlot();
+
     public Axis axis(Type axisType, String label);
 
     public Line line(double[] xVals, double[] yVals, Color color, LineStyles style, int pxThickness);

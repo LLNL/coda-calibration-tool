@@ -457,6 +457,11 @@ public class SpectraCalculator {
 
             EnergyInfo info = calcTotalEnergyInfo(measurements, MoMw[MW_FIT], MoMw[APP_STRESS], mdacFi);
 
+            boolean isLikelyPoorlyConstrained = (MoMw[ITR_COUNT] > 50
+                    || MoMw[CORNER_FREQ] < measurements.firstKey().getLowFrequency() + (measurements.firstKey().getHighFrequency() - measurements.firstKey().getLowFrequency()) / 2.
+                    || MoMw[CORNER_FREQ] > measurements.lastKey().getLowFrequency() + (measurements.lastKey().getHighFrequency() - measurements.lastKey().getLowFrequency()) / 2.
+                    || Math.abs(MoMw[MW_2_MIN] - MoMw[MW_2_MAX]) >= 1.5);
+
             return new MeasuredMwParameters().setEventId(entry.getKey().getEventId())
                                              .setDataCount((int) MoMw[DATA_COUNT])
                                              .setStationCount(inputData.getStationCount().get(entry.getKey().getEventId()))
@@ -485,7 +490,8 @@ public class SpectraCalculator {
                                              .setMisfitSd(MoMw[FIT_SD])
                                              .setCornerFrequency(MoMw[CORNER_FREQ])
                                              .setCornerFrequencySd(MoMw[CORNER_FREQ_SD])
-                                             .setIterations((int) MoMw[ITR_COUNT]);
+                                             .setIterations((int) MoMw[ITR_COUNT])
+                                             .setLikelyPoorlyConstrained(isLikelyPoorlyConstrained);
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
@@ -552,7 +558,6 @@ public class SpectraCalculator {
          * values
          */
         double logMoment = 0.0;
-        double mw = 0.0;
 
         /**
          * A moment magnitude scale ISSN: 0148-0227 , 2156-2202; DOI:
@@ -563,7 +568,6 @@ public class SpectraCalculator {
         for (int i = 0; i < measCount - 1; i++) {
             if (logAmplitudes[i] > 0.0 && logAmplitudes[i + 1] > 0.0) {
                 logMoment = (logAmplitudes[i] + logAmplitudes[i + 1]) / 2.0;
-                mw = ((2.0 / 3.0) * logMoment - energyConstMKS);
                 break;
             }
         }

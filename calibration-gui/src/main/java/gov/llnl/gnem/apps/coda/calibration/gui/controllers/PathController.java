@@ -78,6 +78,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
+import llnl.gnem.core.gui.plotting.api.AxisLimits;
 import llnl.gnem.core.gui.plotting.api.BasicPlot;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
@@ -256,7 +257,12 @@ public class PathController implements MapListeningController, RefreshableContro
         sdPlot.addAxes(plotFactory.axis(Axis.Type.X, "Inter-Station Distance (km)"), plotFactory.axis(Axis.Type.Y, "σ(|deviation|)"));
 
         sdPlot.setSymbolSize(8);
+        sdPlot.getTitle().setFontSize(16);
+        sdPlot.setMargin(30, 40, 50, null);
+
         stationPlot.setSymbolSize(10);
+        stationPlot.getTitle().setFontSize(16);
+        stationPlot.setMargin(30, 40, 50, null);
 
         stationPlot.attachToDisplayNode(stationPlotPane);
         sdPlot.attachToDisplayNode(sdPlotPane);
@@ -513,8 +519,8 @@ public class PathController implements MapListeningController, RefreshableContro
             sdPlot.clear();
             Double xmin = null;
             Double xmax = null;
-            Double ymin = 0.0;
-            Double ymax = 2.0;
+            Double ymin = null;
+            Double ymax = null;
 
             final Map<Pair<Station, Station>, DescriptiveStatistics> beforeStatsStaPairs = new HashMap<>();
             final Map<Pair<Station, Station>, DescriptiveStatistics> afterStatsStaPairs = new HashMap<>();
@@ -617,6 +623,12 @@ public class PathController implements MapListeningController, RefreshableContro
                         if (xmin == null) {
                             xmin = plotObj.getX();
                         }
+                        if (ymax == null) {
+                            ymax = plotObj.getY();
+                        }
+                        if (ymin == null) {
+                            ymin = plotObj.getY();
+                        }
                         if (plotObj.getX() > xmax) {
                             xmax = plotObj.getX();
                         }
@@ -652,6 +664,12 @@ public class PathController implements MapListeningController, RefreshableContro
                     }
                 }
                 sdPlot.getTitle().setText("σ(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + "; σ(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation()));
+                Double xAxisPaddingPercent = 0.1;
+                Double yAxisPaddingPercent = 0.3;
+
+                sdPlot.setAxisLimits(
+                        new AxisLimits(Axis.Type.X, xmin - ((xmax - xmin) * xAxisPaddingPercent), xmax + ((xmax - xmin) * xAxisPaddingPercent)),
+                            new AxisLimits(Axis.Type.Y, ymin - ((ymax - ymin) * yAxisPaddingPercent), ymax + ((ymax - ymin) * yAxisPaddingPercent)));
             }
         }
     }

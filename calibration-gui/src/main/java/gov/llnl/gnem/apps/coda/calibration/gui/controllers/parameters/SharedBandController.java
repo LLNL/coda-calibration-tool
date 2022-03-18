@@ -175,6 +175,8 @@ public class SharedBandController {
         CellBindingUtils.attachEditableTextCellFactories(measureTimeCol, SharedFrequencyBandParameters::getMeasurementTime, SharedFrequencyBandParameters::setMeasurementTime);
 
         codaSharedTableView.setItems(sharedFbData);
+        lowFreqCol.setSortType(TableColumn.SortType.ASCENDING); // Default sort is low_freq ASC
+        codaSharedTableView.getSortOrder().add(lowFreqCol);
         codaSharedTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 

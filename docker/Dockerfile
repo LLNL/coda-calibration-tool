@@ -1,12 +1,16 @@
 FROM registry1.dso.mil/ironbank/redhat/ubi/ubi8:8.4
 ARG USER=1001
+ARG JAVA_OPTS="-XX:MaxRAMPercentage=80"
+ENV JAVA_OPTS=${JAVA_OPTS}
+
 USER root
 
-#The UBI appstream repo only has the headless java so we manually install the full package
-RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm && \
-    rpm -ivh http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm http://mirror.centos.org/centos/8/extras/x86_64/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm && \
+RUN dnf upgrade -y && \
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm && \
+    rpm -ivh http://mirrors.ocf.berkeley.edu/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-4.el8.noarch.rpm http://mirrors.ocf.berkeley.edu/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-4.el8.noarch.rpm && \
     dnf install --nodocs -y glibc-langpack-en && \
     dnf install --disablerepo=ubi-8-appstream --nodocs -y \
+    java-17-openjdk \
     tigervnc-server \
     xrdp \
     xorgxrdp \
@@ -17,13 +21,11 @@ RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.
     python3-numpy \
     nodejs \
     nodejs-full-i18n \
-    xfce4-panel xfwm4 xfce4-settings xfce4-session xfdesktop && \
-    dnf install -y --nogpgcheck http://mirror.centos.org/centos/8/AppStream/x86_64/os/Packages/java-11-openjdk-11.0.12.0.7-0.el8_4.x86_64.rpm && \
-    wget --no-check-certificate https://cbs.centos.org/kojifiles/packages/novnc/1.2.0/2.el8/noarch/novnc-1.2.0-2.el8.noarch.rpm -O /tmp/novnc.rpm && \
-    wget --no-check-certificate https://cbs.centos.org/kojifiles/packages/python-websockify/0.9.0/1.el8/noarch/python3-websockify-0.9.0-1.el8.noarch.rpm -O /tmp/sockify.rpm && \    
-    rpm -ivh /tmp/*rpm && \
-    rm -f /tmp/*rpm && \
+    xfce4-panel xfwm4 xfce4-settings xfce4-session xfdesktop xfce4-terminal && \
     dnf clean all
+
+RUN rpm -ivh http://mirrors.ocf.berkeley.edu/centos/8-stream/cloud/x86_64/openstack-xena/Packages/p/python3-websockify-0.9.0-1.el8.noarch.rpm
+RUN dnf install -y novnc    
 
 # Fix to be allowed to start X for xrdp when not running on a physical TTY.
 RUN echo "allowed_users = anybody" >> /etc/X11/Xwrapper.config
@@ -44,7 +46,8 @@ RUN useradd -u ${USER} cct && groupadd logging && usermod -aG logging cct && \
     chown root:logging /var/log && chmod 770 /var/log && \
     mkdir -p /opt/cct && chmod 777 /opt/cct && \
     mkdir -p /opt/cct/.vnc && chmod 777 /opt/cct/.vnc && \
-    chmod -R 755 /etc/pki/tls/certs/novnc.pem
+    chmod -R 755 /etc/pki/tls/certs/novnc.pem && \
+    touch /opt/cct/.bashrc && echo 'cd ${HOME}' >> /opt/cct/.bashrc
 
 COPY xclients /opt/cct/.Xclients
 

@@ -89,6 +89,7 @@ public class PlotlyPlot implements BasicPlot {
 
     private transient Comparator<Integer> nullsLastIntComparator = Comparator.nullsLast(Integer::compare);
     private boolean isSubPlot;
+    private boolean clickToPickEnabled = false;
 
     public PlotlyPlot() {
         this(false, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
@@ -156,6 +157,14 @@ public class PlotlyPlot implements BasicPlot {
 
     public boolean hasPersistentChanges() {
         return hasPersistentChanges.get();
+    }
+
+    public void setClickPickingModeEnabled(boolean clickToPickEnabled) {
+        this.clickToPickEnabled = clickToPickEnabled;
+    }
+
+    public boolean isClickToPickEnabled() {
+        return clickToPickEnabled;
     }
 
     public void fireShapeMoveEvent(final String name, final double x0, final double x1, final double y0, final double y1) {
@@ -270,6 +279,13 @@ public class PlotlyPlot implements BasicPlot {
 
     @Override
     public void addPlotObjectObserver(final PropertyChangeListener observer) {
+        //We want these listeners to be singletons since we are using them as
+        // A) Only using them for one listener (pick moves)
+        // B) Re-using the plot by swapping around data
+        PropertyChangeListener[] propertyChangeListeners = propertyChange.getPropertyChangeListeners();
+        for (PropertyChangeListener listener : propertyChangeListeners) {
+            propertyChange.removePropertyChangeListener(listener);
+        }
         propertyChange.addPropertyChangeListener(observer);
     }
 
@@ -348,7 +364,7 @@ public class PlotlyPlot implements BasicPlot {
                 data.getColorData().add(symbol.getColorationValue());
             }
             if (data.getTraceStyle() == null) {
-                final PlotlyTrace traceStyle = populateStyle(symbol, Style.SCATTER_MARKER, plot);
+                final PlotlyTrace traceStyle = populateStyle(symbol, plot.getDefaultTraceStyle().getType(), plot);
                 traceStyle.setPxSize(plot.getDefaultTraceStyle().getPxSize());
                 traceStyle.setStyleName(symbol.getStyle().getStyleName());
                 traceStyle.setColorMap(symbol.getColorMap());
@@ -726,6 +742,7 @@ public class PlotlyPlot implements BasicPlot {
      * @param left
      * @param right
      */
+    @Override
     public void setMargin(Integer top, Integer bottom, Integer left, Integer right) {
         this.topMargin = top;
         this.bottomMargin = bottom;

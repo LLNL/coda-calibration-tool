@@ -6,4 +6,4 @@ HOME="/opt/cct" USER="cct" LANG="en_US.UTF-8" /usr/sbin/xrdp --nodaemon &
 export DISPLAY=:1.0
 
 sleep 10
-java -Djava.security.disableSystemPropertiesFile=true -jar /opt/cct/coda-calibration-standalone.jar
+java ${JAVA_OPTS} -Djava.security.disableSystemPropertiesFile=true -jar /opt/cct/coda-calibration-standalone.jar

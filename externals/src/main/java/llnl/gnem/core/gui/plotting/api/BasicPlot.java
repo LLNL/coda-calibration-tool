@@ -54,4 +54,6 @@ public interface BasicPlot extends Serializable {
 
     public void clearAxes();
 
+    public void setMargin(Integer top, Integer bottom, Integer left, Integer right);
+
 }

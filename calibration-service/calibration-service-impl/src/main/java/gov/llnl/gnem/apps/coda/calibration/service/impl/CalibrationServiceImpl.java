@@ -256,6 +256,13 @@ public class CalibrationServiceImpl implements CalibrationService {
         log.info("Starting measurement at {}", LocalDateTime.now());
         MeasuredMwReportByEvent details = new MeasuredMwReportByEvent();
         if (stacks != null) {
+            if (persistResults) {
+                //Handle the case where this is called from the REST service, otherwise
+                // the later measurements will bomb out with transient complaints
+                //Could be handled by changing Cascade settings but that's a bit of
+                // a can of worms
+                stacks = waveformService.save(stacks);
+            }
             List<Event> eventsInStacks = stacks.stream().map(Waveform::getEvent).filter(Objects::nonNull).distinct().collect(Collectors.toList());
             VelocityConfiguration velocityConfig = configService.getVelocityConfiguration();
             Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandMap = mapParamsToFrequencyBands(siteParamsService.findAll());

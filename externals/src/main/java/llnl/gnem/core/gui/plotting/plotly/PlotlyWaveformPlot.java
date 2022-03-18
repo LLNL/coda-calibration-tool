@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
@@ -32,8 +35,11 @@ import llnl.gnem.core.waveform.seismogram.SeismicSignal;
 public class PlotlyWaveformPlot extends PlotlyPlot {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger log = LoggerFactory.getLogger(PlotlyWaveformPlot.class);
+
     private final transient List<SeismicSignal> seismograms;
     private final Map<String, Double> sharedPicks;
+    private int lastEventId = -1;
 
     public PlotlyWaveformPlot() {
         seismograms = new ArrayList<>();
@@ -125,7 +131,7 @@ public class PlotlyWaveformPlot extends PlotlyPlot {
     }
 
     private VerticalLine plotPick(final SeismicSignal seismogram, final String phase, double time) {
-        int pickLineWidth = 4;
+        int pickLineWidth = 3;
         boolean draggable = false;
         //Weed out NaNs and +-Inf and mark as "bad"
         if (!Double.isFinite(time)) {
@@ -134,11 +140,10 @@ public class PlotlyWaveformPlot extends PlotlyPlot {
 
         final Color pickColor;
         if ("f".equalsIgnoreCase(phase)) {
-            pickColor = Color.RED;
+            pickColor = Color.rgb(255, 0, 0, 0.7);
             draggable = true;
-            pickLineWidth = 6;
         } else {
-            pickColor = Color.LIGHTGRAY;
+            pickColor = Color.rgb(165, 165, 165, 0.7); // Light grey with transparency
         }
         final double startTime = getTime(seismogram);
         final double endTime = seismogram.getEndtime().subtractD(seismogram.getTime());
@@ -167,7 +172,15 @@ public class PlotlyWaveformPlot extends PlotlyPlot {
     public void update(final PropertyChangeEvent observable) {
         if (observable.getNewValue() instanceof PlotShapeMove) {
             PlotShapeMove move = (PlotShapeMove) observable.getNewValue();
-            handlePickMovedState(move);
+            //We check this just to screen out stray extra events causing extra
+            //work.
+            int curEventId = move.hashCode();
+            synchronized (this) {
+                if (lastEventId != curEventId) {
+                    lastEventId = curEventId;
+                    handlePickMovedState(move);
+                }
+            }
         }
     }
 

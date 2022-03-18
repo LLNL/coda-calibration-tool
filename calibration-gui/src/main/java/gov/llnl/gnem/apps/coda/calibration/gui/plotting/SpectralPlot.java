@@ -27,8 +27,17 @@ import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.AxisLimits;
@@ -42,6 +51,10 @@ import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.SymbolStyles;
 
 public class SpectralPlot extends Pane implements Serializable {
+
+    private static final String MATERIAL_ICONS_LARGE = "material-icons-large";
+    private static final String LIKELY_POORLY_CONSTRAINED = "Likely poorly constrained!";
+
     private static final long serialVersionUID = 1L;
 
     private static final String AVG_MW_LEGEND_LABEL = "Avg";
@@ -53,7 +66,7 @@ public class SpectralPlot extends Pane implements Serializable {
     private double xmin = 1.0;
     private double xmax = -xmin;
     private double ymin = xmin;
-    private double ymax = xmax;
+    private double ymax = -xmax;
 
     private double defaultXMin = 1.0;
     private double defaultXMax = 1.0;
@@ -78,7 +91,14 @@ public class SpectralPlot extends Pane implements Serializable {
     private final transient List<Symbol> selectedData = new ArrayList<>();
     private final transient Object selectedDataLock = new Object();
 
+    private BorderPane plotContainerPane;
+    private HBox warningPane;
+
     public SpectralPlot() {
+        plotContainerPane = new BorderPane();
+        plotContainerPane.prefHeightProperty().bind(this.heightProperty());
+        plotContainerPane.prefWidthProperty().bind(this.widthProperty());
+        this.getChildren().add(plotContainerPane);
         plotFactory = new PlotlyPlotFactory();
         setupPlot();
     }
@@ -91,9 +111,30 @@ public class SpectralPlot extends Pane implements Serializable {
         plot.addAxes(yAxis, xAxis);
 
         plot.getTitle().setText("Title String");
-        plot.getTitle().setFontSize(14);
-        plot.setSymbolSize(8);
-        plot.attachToDisplayNode(this);
+        plot.getTitle().setFontSize(16);
+        plot.setSymbolSize(12);
+
+        StackPane wrapper = new StackPane();
+        wrapper.prefWidth(Double.MAX_VALUE);
+        wrapper.prefHeight(Double.MAX_VALUE);
+        plot.attachToDisplayNode(wrapper);
+        plot.setMargin(30, 40, 50, null);
+
+        plotContainerPane.setCenter(wrapper);
+        plotContainerPane.setPickOnBounds(false);
+
+        warningPane = new HBox();
+        warningPane.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));
+        Label warningIcon = new Label("\uE000");
+        warningIcon.getStyleClass().add(MATERIAL_ICONS_LARGE);
+        warningIcon.setPrefSize(32.0, 32.0);
+        warningIcon.setAlignment(Pos.CENTER);
+
+        Label warningText = new Label(LIKELY_POORLY_CONSTRAINED);
+        warningText.setStyle("-fx-font-weight:bold; -fx-font-size: 28px;");
+
+        warningPane.getChildren().add(warningIcon);
+        warningPane.getChildren().add(warningText);
     }
 
     public void clearPlot() {
@@ -386,9 +427,8 @@ public class SpectralPlot extends Pane implements Serializable {
         double yMax;
 
         if (autoCalculateYaxisRange) {
-            //Dyne-cm to Newton meters
-            yMin = ymin - Math.abs(ymin * .1) - 7.0;
-            yMax = ymax + Math.abs(ymax * .1) - 7.0;
+            yMin = ymin - Math.abs(ymin * .3);
+            yMax = ymax + Math.abs(ymax * .3);
         } else {
             yMin = defaultYMin;
             yMax = defaultYMax;
@@ -491,6 +531,10 @@ public class SpectralPlot extends Pane implements Serializable {
         }
     }
 
+    public List<Point2D> getSelectedPoints() {
+        return selectedData.stream().map(sym -> new Point2D(sym.getX(), sym.getY())).collect(Collectors.toList());
+    }
+
     public void deselectAllPoints() {
         synchronized (selectedDataLock) {
             selectedData.forEach(this::setStandardSymbolStyle);
@@ -533,4 +577,13 @@ public class SpectralPlot extends Pane implements Serializable {
     public String getTitle() {
         return plot.getTitle().getText();
     }
+
+    public void showConstraintWarningBanner(boolean visible) {
+        if (visible) {
+            plotContainerPane.setBottom(warningPane);
+        } else {
+            plotContainerPane.setBottom(null);
+        }
+    }
+
 }

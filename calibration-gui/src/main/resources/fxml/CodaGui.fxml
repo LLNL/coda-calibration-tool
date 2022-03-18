@@ -33,21 +33,21 @@
 					<menus>
 						<Menu mnemonicParsing="false" text="File">
 							<items>
-								<MenuItem fx:id="importWaveforms" mnemonicParsing="false" onAction="#openWaveformLoadingWindow" text="Import Stack Files..." />
-								<MenuItem fx:id="importWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectoryLoadingWindow" text="Import Stack Directory..." />
-								<MenuItem mnemonicParsing="false" onAction="#openCodaJsonParamWindow" text="Import Coda Param..." />
-								<Menu mnemonicParsing="false" text="Import Legacy Param Formats">
+								<MenuItem fx:id="importWaveforms" mnemonicParsing="false" onAction="#openWaveformLoadingWindow" text="Load Stack Files..." />
+								<MenuItem fx:id="importWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectoryLoadingWindow" text="Load Stack Directory..." />
+								<MenuItem mnemonicParsing="false" onAction="#openCodaJsonParamWindow" text="Load Calibration..." />
+								<Menu mnemonicParsing="false" text="Load Legacy Param Formats">
 									<items>
-										<MenuItem fx:id="importRefEvents" mnemonicParsing="false" onAction="#openReferenceEventLoadingWindow" text="Import Reference Events..." />
-										<MenuItem mnemonicParsing="false" onAction="#openCodaParamWindow" text="Import Coda Param..." />
-										<MenuItem mnemonicParsing="false" onAction="#openMdacPsWindow" text="Import MDAC Ps File..." />
-										<MenuItem mnemonicParsing="false" onAction="#openMdacFiWindow" text="Import MDAC Fi File..." />
+										<MenuItem fx:id="importRefEvents" mnemonicParsing="false" onAction="#openReferenceEventLoadingWindow" text="Load Reference Events..." />
+										<MenuItem mnemonicParsing="false" onAction="#openCodaParamWindow" text="Load Calibration..." />
+										<MenuItem mnemonicParsing="false" onAction="#openMdacPsWindow" text="Load MDAC Ps File..." />
+										<MenuItem mnemonicParsing="false" onAction="#openMdacFiWindow" text="Load MDAC Fi File..." />
 									</items>
 								</Menu>
 								<SeparatorMenuItem mnemonicParsing="false" />
-								<MenuItem mnemonicParsing="false" onAction="#openCalibrationDataSavingWindow" text="Export Calibration..." />
-								<MenuItem fx:id="exportWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectorySavingWindow" text="Export Waveforms..." />
-								<MenuItem fx:id="exportMeasuredMws" mnemonicParsing="false" onAction="#openMeasuredMwDirectorySavingWindow" text="Export Measured Mws..." />
+								<MenuItem mnemonicParsing="false" onAction="#openCalibrationDataSavingWindow" text="Save Calibration..." />
+								<MenuItem fx:id="exportWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectorySavingWindow" text="Save Waveforms..." />
+								<MenuItem fx:id="exportMeasuredMws" mnemonicParsing="false" onAction="#openMeasuredMwDirectorySavingWindow" text="Save Measured Mws..." />
 							</items>
 						</Menu>
 						<Menu mnemonicParsing="false" text="Calibration">

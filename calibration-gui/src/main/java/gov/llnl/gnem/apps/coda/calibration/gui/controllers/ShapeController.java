@@ -292,6 +292,9 @@ public class ShapeController implements MapListeningController, RefreshableContr
 
         fitPlot = plotFactory.basicPlot();
         fitPlot.getTitle().setText("Shape Parameters");
+        fitPlot.getTitle().setFontSize(16);
+        fitPlot.setMargin(30, 40, 50, 50);
+        fitPlot.showLegend(false);
 
         Axis xAxis = plotFactory.axis(Type.X, null);
         xAxis.setMin(minX.get());
@@ -302,23 +305,26 @@ public class ShapeController implements MapListeningController, RefreshableContr
         axis.setMin(VEL_Y_MIN);
         axis.setMax(VEL_Y_MAX);
         velFitPlot.addAxes(axis, xAxis);
+        velFitPlot.showLegend(false);
 
         betaFitPlot = fitPlot.createSubPlot();
-        axis = plotFactory.axis(Type.Y, "Beta");
+        axis = plotFactory.axis(Type.Y, "b");
         axis.setMin(BETA_Y_MIN);
         axis.setMax(BETA_Y_MAX);
         betaFitPlot.addAxes(axis, xAxis);
+        betaFitPlot.showLegend(false);
 
         gammaFitPlot = fitPlot.createSubPlot();
-        axis = plotFactory.axis(Type.Y, "Gamma");
+        axis = plotFactory.axis(Type.Y, "γ");
         axis.setMin(GAMMA_Y_MIN);
         axis.setMax(GAMMA_Y_MAX);
         gammaFitPlot.addAxes(axis);
 
-        xAxis = plotFactory.axis(Type.X, "Distance");
+        xAxis = plotFactory.axis(Type.X, "Distance (km)");
         xAxis.setMin(minX.get());
         xAxis.setMax(maxX.get());
         gammaFitPlot.addAxes(xAxis);
+        gammaFitPlot.showLegend(false);
 
         fitPlot.attachToDisplayNode(plotContainer);
 

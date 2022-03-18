@@ -44,10 +44,11 @@ public class PlotlyTrace {
     private boolean isAnnotationLogX = false;
 
     public enum Style {
-        LINE("lines", "scatter", 0), SCATTER_MARKER("markers", "scatter", 1), VERTICAL_LINE("line", "shapes", 2), HEATMAP("heatmap", "heatmap", 3);
+        LINE("lines", "scatter", 0), SCATTER_MARKER_AND_LINE("lines+markers", "scatter", 1), SCATTER_MARKER("markers", "scatter", 2), VERTICAL_LINE("line", "shapes", 3), HEATMAP("heatmap", "heatmap",
+                4);
 
-        private final String type;
         private final String mode;
+        private final String type;
         private final int order;
 
         private Style(final String mode, final String type, final int order) {
@@ -56,12 +57,12 @@ public class PlotlyTrace {
             this.order = order;
         }
 
-        public String getType() {
-            return type;
-        }
-
         public String getMode() {
             return mode;
+        }
+
+        public String getType() {
+            return type;
         }
 
         public int getOrder() {
@@ -201,6 +202,11 @@ public class PlotlyTrace {
 
         if (colorMap != null) {
             switch (type) {
+            case SCATTER_MARKER_AND_LINE:
+                node.with(MARKER).put("colorscale", colorMap);
+                node.with(MARKER).put("showscale", true);
+                node.with(MARKER).put("reversescale", true);
+                break;
             case SCATTER_MARKER:
                 node.with(MARKER).put("colorscale", colorMap);
                 node.with(MARKER).put("showscale", true);
@@ -233,6 +239,10 @@ public class PlotlyTrace {
         }
         if (pxSize != null) {
             switch (type) {
+            case SCATTER_MARKER_AND_LINE:
+                node.with(MARKER).put("size", pxSize);
+                node.with(LINE).put(WIDTH, 3);
+                break;
             case SCATTER_MARKER:
                 node.with(MARKER).put("size", pxSize);
                 break;
@@ -246,6 +256,10 @@ public class PlotlyTrace {
         }
         if (styleName != null) {
             switch (type) {
+            case SCATTER_MARKER_AND_LINE:
+                node.with(LINE).put("dash", "solid");
+                node.with(MARKER).put("symbol", styleName);
+                break;
             case SCATTER_MARKER:
                 node.with(MARKER).put("symbol", styleName);
                 break;
