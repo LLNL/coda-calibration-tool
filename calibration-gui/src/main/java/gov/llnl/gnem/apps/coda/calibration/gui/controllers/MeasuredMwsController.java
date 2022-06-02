@@ -107,7 +107,7 @@ public class MeasuredMwsController extends AbstractMeasurementController {
     private MeasuredMwsController(final SpectraClient spectraClient, final ParameterClient paramClient, final WaveformClient waveformClient, final SymbolStyleMapFactory styleFactory, final GeoMap map,
             final MapPlottingUtilities iconFactory, final EventBus bus, final ParamExporter paramExporter, final CalibrationClient calibrationClient, final EventClient referenceEventClient,
             final PlotFactory plotFactory) {
-        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, plotFactory, bus);
+        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, paramExporter, plotFactory, bus);
         this.calibrationClient = calibrationClient;
         this.paramExporter = paramExporter;
     }
@@ -137,6 +137,7 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         plot.getSubplot().setMargin(65, 40, 50, null);
         final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
+        
         plot.getSubplot().addAxes(rightAxis);
         spectra.setShowCornerFrequencies(true);
         spectra.setYAxisResizable(true);

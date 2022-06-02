@@ -27,9 +27,11 @@ public class CalibrationJsonConstants {
     public static final String VALIDATION_EVENTS_FIELD = "validation-events";
     public static final String MEASURED_EVENTS_FIELD = "measured-events";
     public static final String VELOCITY_CONFIGURATION = "velocity-configuration";
-    public static final String SHAPE_CONSTRAINTS = "shape-constraints";    
+    public static final String SHAPE_CONSTRAINTS = "shape-constraints";
     public static final String POLYGON_FIELD = "polygons";
-    
+    public static final String SPECTRA = "spectra";
+
     //For compatibility with stand-alone envelope tool.
     public static final String ENVELOPE_JOB_NODE = "frequencyBandConfiguration";
+
 }

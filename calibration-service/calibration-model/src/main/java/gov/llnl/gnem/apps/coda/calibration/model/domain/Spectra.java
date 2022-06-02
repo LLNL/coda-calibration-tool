@@ -103,7 +103,7 @@ public class Spectra {
 		return logTotalEnergy;
 	}
 
-	public Double getlogTotalEnergyMDAC() {
+	public Double getLogTotalEnergyMDAC() {
 		return logTotalEnergyMDAC;
 	}
 

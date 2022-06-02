@@ -53,8 +53,12 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
@@ -62,6 +66,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -107,21 +112,35 @@ public class CodaWaveformPlotManager {
     private final Label pagingLabel;
     private Label freqBandLabel = new Label();
     private List<Waveform> curEventStationWaveforms;
+    private Map<Integer, Long> plottedWaveformIds;
     private int curFreqIndex = -1;
+    private Waveform selectedWaveform = null; // Used for including /excluding from waveform plots
     private EventStaFreqStringComparator eventStaFreqComparator = new EventStaFreqStringComparator();
 
     private final BorderPane borderPane;
     private final VBox waveformPanel;
 
+    private final ContextMenu contextMenu;
+    private final ToggleGroup includeToggleGroup = new ToggleGroup();
+    private final RadioMenuItem radioIncludeBtn = new RadioMenuItem("Include");
+    private final RadioMenuItem radioExcludeBtn = new RadioMenuItem("Exclude");
+
+    private final MenuItem addByWaveformId = new MenuItem("WaveformId");
+    private final MenuItem addByStation = new MenuItem("Station");
+    private final MenuItem addByEvent = new MenuItem("Event");
+    private final MenuItem addByEventAndStation = new MenuItem("Event & Station");
+
     final Button forwardButton = new Button(">");
-    final Button backButton = new Button("<");
+    final Button backwardButton = new Button("<");
     final Button nextButton = new Button("↑");
     final Button prevButton = new Button("↓");
+
     final ToggleButton groupVelToggle = new ToggleButton(GROUP_VELOCITY_LABEL);
-    final ToggleButton windowLineToggle = new ToggleButton(WINDOW_LINE_LABEL);
     final ToggleButton groupVelToggle2 = new ToggleButton(GROUP_VELOCITY_LABEL);
-    final ToggleButton windowLineToggle2 = new ToggleButton(WINDOW_LINE_LABEL);
     final ToggleButton groupVelToggle3 = new ToggleButton(GROUP_VELOCITY_LABEL);
+
+    final ToggleButton windowLineToggle = new ToggleButton(WINDOW_LINE_LABEL);
+    final ToggleButton windowLineToggle2 = new ToggleButton(WINDOW_LINE_LABEL);
     final ToggleButton windowLineToggle3 = new ToggleButton(WINDOW_LINE_LABEL);
 
     final ToggleButton clickToPickMode = new ToggleButton();
@@ -234,37 +253,81 @@ public class CodaWaveformPlotManager {
         this.mapPlotUtils = mapPlotUtils;
         this.borderPane = new BorderPane();
         this.waveformPanel = new VBox();
+        this.plottedWaveformIds = new TreeMap<>();
         borderPane.setCenter(waveformPanel);
         multiPageToolbar = new ToolBar();
         multiFrequencyToolbar = new ToolBar();
         multiPlotToolbar = new ToolBar();
-
         pagingLabel = new Label("0/0");
         freqBandLabel = new Label("Frequency Band");
 
+        contextMenu = new ContextMenu();
+        radioIncludeBtn.setToggleGroup(includeToggleGroup);
+        radioExcludeBtn.setToggleGroup(includeToggleGroup);
+        radioExcludeBtn.selectedProperty().set(true);
+        contextMenu.getItems().add(radioIncludeBtn);
+        contextMenu.getItems().add(radioExcludeBtn);
+        contextMenu.getItems().add(addByWaveformId);
+        contextMenu.getItems().add(addByStation);
+        contextMenu.getItems().add(addByEvent);
+        contextMenu.getItems().add(addByEventAndStation);
+
+        addByWaveformId.setOnAction(evt -> {
+            setUsedForWaveformById(selectedWaveform, radioIncludeBtn.isSelected());
+            log.info(addByWaveformId.getText());
+        });
+        addByStation.setOnAction(evt -> {
+            setUsedForStation(selectedWaveform, radioIncludeBtn.isSelected());
+            log.info(addByStation.getText());
+        });
+        addByEvent.setOnAction(evt -> {
+            setUsedForEvent(selectedWaveform, radioIncludeBtn.isSelected());
+            log.info(addByEvent.getText());
+        });
+        addByEventAndStation.setOnAction(evt -> {
+            setUsedForEventAndStation(selectedWaveform, radioIncludeBtn.isSelected());
+            log.info(addByEventAndStation.getText());
+        });
+
+        waveformPanel.addEventFilter(MouseEvent.MOUSE_CLICKED, t -> {
+            if (MouseButton.SECONDARY == t.getButton()) {
+                selectedWaveform = getWaveformFromPosition(t.getSceneY());
+                generateContextMenu(selectedWaveform);
+                contextMenu.show(waveformPanel, t.getScreenX(), t.getScreenY());
+            } else {
+                contextMenu.hide();
+            }
+        });
+
         forwardButton.addEventHandler(MouseEvent.MOUSE_CLICKED, forwardAction::handle);
-        backButton.addEventHandler(MouseEvent.MOUSE_CLICKED, backwardAction::handle);
+        backwardButton.addEventHandler(MouseEvent.MOUSE_CLICKED, backwardAction::handle);
         nextButton.addEventHandler(MouseEvent.MOUSE_CLICKED, nextAction::handle);
         prevButton.addEventHandler(MouseEvent.MOUSE_CLICKED, prevAction::handle);
+
         groupVelToggle.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
-        groupVelToggle.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
         groupVelToggle2.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
-        groupVelToggle2.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
         groupVelToggle3.addEventHandler(MouseEvent.MOUSE_CLICKED, groupVelToggleAction::handle);
+        groupVelToggle.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
+        groupVelToggle2.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
         groupVelToggle3.setTooltip(new Tooltip(GROUP_VELOCITY_TOOLTIP));
 
         windowLineToggle.addEventHandler(MouseEvent.MOUSE_CLICKED, windowLineToggleAction::handle);
-        windowLineToggle.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
         windowLineToggle2.addEventHandler(MouseEvent.MOUSE_CLICKED, windowLineToggleAction::handle);
-        windowLineToggle2.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
         windowLineToggle3.addEventHandler(MouseEvent.MOUSE_CLICKED, windowLineToggleAction::handle);
+        windowLineToggle.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
+        windowLineToggle2.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
         windowLineToggle3.setTooltip(new Tooltip(WINDOW_LINE_TOOLTIP));
 
         clickToPickMode.addEventHandler(MouseEvent.MOUSE_CLICKED, clickPickToggleAction::handle);
         clickToPickMode2.addEventHandler(MouseEvent.MOUSE_CLICKED, clickPickToggleAction::handle);
         clickToPickMode3.addEventHandler(MouseEvent.MOUSE_CLICKED, clickPickToggleAction::handle);
+        clickToPickMode.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
+        clickToPickMode2.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
+        clickToPickMode3.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
 
-        try (InputStream is = this.getClass().getResourceAsStream(CLICK_TO_PICK_ICON)) {
+        try (
+
+                InputStream is = this.getClass().getResourceAsStream(CLICK_TO_PICK_ICON)) {
             Image clickPickingIcon = new Image(is);
             createPickingIcon(clickToPickMode, clickPickingIcon, windowLineToggle);
             createPickingIcon(clickToPickMode2, clickPickingIcon, windowLineToggle2);
@@ -275,11 +338,7 @@ public class CodaWaveformPlotManager {
             clickToPickMode3.setText(CLICK_TO_PICK_LABEL);
         }
 
-        clickToPickMode.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
-        clickToPickMode2.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
-        clickToPickMode3.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
-
-        multiPageToolbar.getItems().add(backButton);
+        multiPageToolbar.getItems().add(backwardButton);
         multiPageToolbar.getItems().add(pagingLabel);
         multiPageToolbar.getItems().add(forwardButton);
         multiPageToolbar.getItems().add(groupVelToggle);
@@ -299,7 +358,7 @@ public class CodaWaveformPlotManager {
 
         final Font sizedFont = Font.font(forwardButton.getFont().getFamily(), 12f);
         forwardButton.setFont(sizedFont);
-        backButton.setFont(sizedFont);
+        backwardButton.setFont(sizedFont);
         nextButton.setFont(sizedFont);
         prevButton.setFont(sizedFont);
         groupVelToggle.setFont(sizedFont);
@@ -313,7 +372,7 @@ public class CodaWaveformPlotManager {
         clickToPickMode3.setFont(sizedFont);
 
         forwardButton.setFocusTraversable(false);
-        backButton.setFocusTraversable(false);
+        backwardButton.setFocusTraversable(false);
         nextButton.setFocusTraversable(false);
         prevButton.setFocusTraversable(false);
         groupVelToggle.setFocusTraversable(false);
@@ -344,7 +403,11 @@ public class CodaWaveformPlotManager {
 
     private void setFrequencyDisplayText(Waveform wave) {
         if (wave != null && curEventStationWaveforms != null) {
-            freqBandLabel.setText("Frequency Band (" + (curFreqIndex + 1) + "/" + curEventStationWaveforms.size() + ") - Low: " + wave.getLowFrequency() + " High: " + wave.getHighFrequency());
+            if (wave.isActive()) {
+                freqBandLabel.setText("Frequency Band (" + (curFreqIndex + 1) + "/" + curEventStationWaveforms.size() + ") - Low: " + wave.getLowFrequency() + " High: " + wave.getHighFrequency());
+            } else {
+                freqBandLabel.setText("(Unused) Frequency Band Low: " + wave.getLowFrequency() + " High: " + wave.getHighFrequency());
+            }
         } else {
             freqBandLabel.setText("No frequency bands to select");
         }
@@ -363,8 +426,8 @@ public class CodaWaveformPlotManager {
         waveformPanel.getChildren().clear();
 
         final Pair<Waveform, CodaWaveformPlot> plotPair = results.get(0);
-        final Waveform waveform = plotPair.getLeft();
-        final CodaWaveformPlot plot = plotPair.getRight();
+        final Waveform waveform = plotPair.getX();
+        final CodaWaveformPlot plot = plotPair.getY();
 
         if (waveform != null) {
             final Collection<Icon> icons = mapWaveform(waveform);
@@ -384,12 +447,14 @@ public class CodaWaveformPlotManager {
     }
 
     private void setWaveformsByEventStation(long waveformId) {
-        final List<Waveform> eventWaveforms = waveformClient.getActiveSharedEventStationWaveformsById(waveformId).sort(eventStaFreqComparator).collectList().block(Duration.ofSeconds(10));
+        final List<Waveform> eventWaveforms = waveformClient.getSharedEventStationWaveformsById(waveformId).sort(eventStaFreqComparator).collectList().block(Duration.ofSeconds(10));
+
         if (eventWaveforms != null && !eventWaveforms.isEmpty() && eventWaveforms.get(0).getId() != null) {
-            Waveform waveform = eventWaveforms.parallelStream().filter(w -> w.getId() != null && w.getId() == waveformId).findAny().orElseGet(Waveform::new);
+            Waveform wave = eventWaveforms.parallelStream().filter(w -> w.getId() != null && w.getId() == waveformId).findAny().orElseGet(Waveform::new);
             curEventStationWaveforms = eventWaveforms;
-            curFreqIndex = curEventStationWaveforms.indexOf(waveform);
-            setFrequencyDisplayText(waveform);
+            curFreqIndex = curEventStationWaveforms.indexOf(wave);
+
+            setFrequencyDisplayText(wave);
             borderPane.setTop(multiFrequencyToolbar);
         }
     }
@@ -405,6 +470,77 @@ public class CodaWaveformPlotManager {
             }).collect(Collectors.toList()));
         }
         orderedWaveformPlots.clear();
+    }
+
+    /**
+     * This will provide the waveform id given the y coordinate within the
+     * waveform panel. Since the waveform panel is a VBox, all plots are
+     * positioned vertically and their id can be derived using the vertical
+     * position to determine which plot was clicked over.
+     *
+     * @return
+     */
+    private Waveform getWaveformFromPosition(double yPos) {
+
+        // Case where there's only one plot in the waveform panel
+        if (curFreqIndex >= 0) {
+            Waveform wave = curEventStationWaveforms.get(curFreqIndex);
+            if (wave != null) {
+                return wave;
+            }
+        }
+        // Case where there are 2 or more plots in waveform panel
+        if (waveformPanel != null && plottedWaveformIds.size() > 1 && waveformClient != null) {
+            double totalHeight = borderPane.getHeight();
+            double plotHeight = totalHeight / plottedWaveformIds.size();
+            int plotIndex = (int) Math.floor(yPos / plotHeight);
+            Long waveId = plottedWaveformIds.get(plotIndex);
+
+            return waveformClient.getWaveformFromId(waveId).block(Duration.ofSeconds(5));
+        }
+
+        return null;
+    }
+
+    private void generateContextMenu(Waveform waveform) {
+        if (waveform != null) {
+            String eventId = waveform.getEvent().getEventId();
+            String station = waveform.getStream().getStation().getStationName();
+            String action = radioIncludeBtn.isSelected() ? "Include " : "Exclude ";
+
+            addByWaveformId.setText(String.format("%s_%s_%s_%s_%s_", action, eventId, station, waveform.getLowFrequency(), waveform.getHighFrequency()));
+            addByStation.setText(String.format("%s_station: %s", action, station));
+            addByEvent.setText(String.format("%s_event: %s", action, eventId));
+            addByEventAndStation.setText(String.format("%s_station: %s in event: %s", action, station, eventId));
+        }
+    }
+
+    private void setUsedForWaveformById(final Waveform waveform, final boolean use) {
+        if (waveform != null) {
+            List<Long> waveId = new ArrayList<>();
+            waveId.add(waveform.getId());
+            waveform.setActive(use);
+            setFrequencyDisplayText(waveform);
+            waveformClient.setWaveformsActiveByIds(waveId, use);
+        }
+    }
+
+    private void setUsedForEvent(final Waveform waveform, final boolean use) {
+        if (waveform != null) {
+            waveformClient.setWaveformsActiveByEventId(waveform.getEvent().getEventId(), use);
+        }
+    }
+
+    private void setUsedForStation(final Waveform waveform, final boolean use) {
+        if (waveform != null) {
+            waveformClient.setWaveformsActiveByStationName(waveform.getStream().getStation().getStationName(), use);
+        }
+    }
+
+    private void setUsedForEventAndStation(final Waveform waveform, final boolean use) {
+        if (waveform != null) {
+            waveformClient.setWaveformsActiveByStationNameAndEventId(waveform.getStream().getStation().getStationName(), waveform.getEvent().getEventId(), use);
+        }
     }
 
     private List<Pair<Waveform, CodaWaveformPlot>> createSyntheticPlots(final List<SyntheticCoda> synthetics) {
@@ -549,13 +685,15 @@ public class CodaWaveformPlotManager {
 
     private void setPlots(final List<Pair<Waveform, CodaWaveformPlot>> plotPairs) {
         waveformPanel.getChildren().clear();
+        plottedWaveformIds.clear();
         for (int i = 0; i < plotPairs.size(); i++) {
             final Pair<Waveform, CodaWaveformPlot> plotPair = plotPairs.get(i);
-            final Waveform waveform = plotPair.getLeft();
-            final CodaWaveformPlot plot = plotPair.getRight();
+            final Waveform waveform = plotPair.getX();
+            final CodaWaveformPlot plot = plotPair.getY();
+            plottedWaveformIds.put(i, waveform.getId());
             if (waveform != null) {
                 final Integer index = orderedWaveformIDs.get(waveform.getId());
-                orderedWaveformPlots.put(index, plotPair.getRight());
+                orderedWaveformPlots.put(index, plotPair.getY());
                 final Collection<Icon> icons = mapWaveform(waveform);
                 mappedIcons.addAll(icons);
                 map.addIcons(icons);
@@ -582,7 +720,7 @@ public class CodaWaveformPlotManager {
 
     public void triggerKeyEvent(final KeyEvent event) {
         if (event.getCode() == KeyCode.LEFT) {
-            backButton.requestFocus();
+            backwardButton.requestFocus();
             backwardAction.handle(event);
         } else if (event.getCode() == KeyCode.RIGHT) {
             forwardButton.requestFocus();

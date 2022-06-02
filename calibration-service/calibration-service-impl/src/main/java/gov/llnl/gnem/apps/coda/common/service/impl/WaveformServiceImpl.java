@@ -215,6 +215,11 @@ public class WaveformServiceImpl implements WaveformService {
     }
 
     @Override
+    public List<Waveform> getSharedEventStationStacksById(Long id) {
+        return waveformRepository.findAllSharedEventStationStacksById(id);
+    }
+
+    @Override
     public List<Waveform> getActiveSharedEventStationStacksById(Long id) {
         return waveformRepository.findAllActiveSharedEventStationStacksById(id);
     }
@@ -269,4 +274,13 @@ public class WaveformServiceImpl implements WaveformService {
         return ids;
     }
 
+    @Override
+    public List<Long> setActiveFlagByStationNameAndEventId(String stationName, String eventId, boolean active) {
+        List<Long> ids = new ArrayList<>();
+        if (waveformRepository.setActiveByStationNameAndEventId(stationName, eventId, active) > 0) {
+            ids.addAll(waveformRepository.findAllIdsByStationNameAndEventId(stationName, eventId));
+            notificationService.post(new WaveformChangeEvent(ids).setAddOrUpdate(true));
+        }
+        return ids;
+    }
 }

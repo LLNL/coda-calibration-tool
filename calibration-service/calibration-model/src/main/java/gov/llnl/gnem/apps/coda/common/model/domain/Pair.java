@@ -14,31 +14,31 @@
 */
 package gov.llnl.gnem.apps.coda.common.model.domain;
 
-public class Pair<L, R> {
+public class Pair<X, Y> {
 
-    private L left;
-    private R right;
+    private X x;
+    private Y y;
 
-    public Pair(L left, R right) {
+    public Pair(X x, Y y) {
         super();
-        this.left = left;
-        this.right = right;
+        this.x = x;
+        this.y = y;
     }
 
-    public L getLeft() {
-        return left;
+    public X getX() {
+        return x;
     }
 
-    public R getRight() {
-        return right;
+    public Y getY() {
+        return y;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((left == null) ? 0 : left.hashCode());
-        result = prime * result + ((right == null) ? 0 : right.hashCode());
+        result = prime * result + ((x == null) ? 0 : x.hashCode());
+        result = prime * result + ((y == null) ? 0 : y.hashCode());
         return result;
     }
 
@@ -53,19 +53,19 @@ public class Pair<L, R> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        Pair<L, R> other = (Pair<L, R>) obj;
-        if (left == null) {
-            if (other.left != null) {
+        Pair<X, Y> other = (Pair<X, Y>) obj;
+        if (x == null) {
+            if (other.x != null) {
                 return false;
             }
-        } else if (!left.equals(other.left)) {
+        } else if (!x.equals(other.x)) {
             return false;
         }
-        if (right == null) {
-            if (other.right != null) {
+        if (y == null) {
+            if (other.y != null) {
                 return false;
             }
-        } else if (!right.equals(other.right)) {
+        } else if (!y.equals(other.y)) {
             return false;
         }
         return true;
@@ -74,11 +74,11 @@ public class Pair<L, R> {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("\"").append(left).append("\", \"").append(right).append('\"');
+        builder.append("\"").append(x).append("\", \"").append(y).append('\"');
         return builder.toString();
     }
 
-    public static <L, R> Pair<L, R> create(L l, R r) {
-        return new Pair<L, R>(l, r);
+    public static <X, Y> Pair<X, Y> create(X x, Y y) {
+        return new Pair<X, Y>(x, y);
     }
 }

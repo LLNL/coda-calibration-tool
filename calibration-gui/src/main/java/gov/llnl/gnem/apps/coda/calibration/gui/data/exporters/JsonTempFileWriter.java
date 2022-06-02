@@ -40,7 +40,9 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonCo
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ValidationMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.EventSpectraReport;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
@@ -61,7 +63,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 
 @Component
-public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter, ValidationMwTempFileWriter {
+public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter, ValidationMwTempFileWriter {
 
     private static final Logger log = LoggerFactory.getLogger(JsonTempFileWriter.class);
 
@@ -136,6 +138,20 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         }
     }
 
+    @Override
+    public void writeSpectraValues(Path folder, String filename, List<EventSpectraReport> measurements) {
+        try {
+            JsonNode document = createOrGetDocument(folder, filename);
+            writeEventSpectraReports(createOrGetFile(folder, filename), document, measurements);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private void writeEventSpectraReports(File file, JsonNode document, List<EventSpectraReport> measurements) throws IOException {
+        writeArrayNodeToFile(file, document, measurements, CalibrationJsonConstants.SPECTRA);
+    }
+
     private void writeParams(File file, JsonNode document, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand,
             Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters, List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig,
             ShapeFitterConstraints shapeConstraints, String polygonGeoJSON) throws IOException {
@@ -143,12 +159,12 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         if (siteParameters != null && !siteParameters.isEmpty()) {
             Map<String, Map<String, List<SiteFrequencyBandParameters>>> siteBands = siteParameters.entrySet()
                                                                                                   .stream()
-                                                                                                  .collect(Collectors.groupingBy(e -> e.getKey().getNetworkName(),
-                                                                                                                                 Collectors.toMap(e -> e.getKey().getStationName(),
-                                                                                                                                                  e -> e.getValue()
-                                                                                                                                                        .values()
-                                                                                                                                                        .stream()
-                                                                                                                                                        .collect(Collectors.toList()))));
+                                                                                                  .collect(
+                                                                                                          Collectors.groupingBy(
+                                                                                                                  e -> e.getKey().getNetworkName(),
+                                                                                                                      Collectors.toMap(
+                                                                                                                              e -> e.getKey().getStationName(),
+                                                                                                                                  e -> e.getValue().values().stream().collect(Collectors.toList()))));
 
             writeArrayNodeToFile(file, document, siteBands.entrySet(), CalibrationJsonConstants.SITE_CORRECTION_FIELD);
         }
@@ -163,7 +179,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
         }
         if (shapeConstraints != null) {
             writeFieldNodeToFile(file, document, CalibrationJsonConstants.SHAPE_CONSTRAINTS, mapper.valueToTree(shapeConstraints));
-        }       
+        }
         if (polygonGeoJSON != null && !polygonGeoJSON.isEmpty()) {
             writeFieldNodeToFile(file, document, CalibrationJsonConstants.POLYGON_FIELD, mapper.readTree(polygonGeoJSON));
         }
@@ -176,7 +192,7 @@ public class JsonTempFileWriter implements ParamTempFileWriter, MeasuredMwTempFi
     private void writeValidationEvents(File file, JsonNode document, List<ValidationMwParameters> validationMws) throws IOException {
         writeArrayNodeToFile(file, document, validationMws, CalibrationJsonConstants.VALIDATION_EVENTS_FIELD);
     }
-    
+
     private void writeMeasuredEvents(File file, JsonNode document, List<MeasuredMwDetails> measuredMwsDetails) throws IOException {
         writeArrayNodeToFile(file, document, measuredMwsDetails, CalibrationJsonConstants.MEASURED_EVENTS_FIELD);
     }

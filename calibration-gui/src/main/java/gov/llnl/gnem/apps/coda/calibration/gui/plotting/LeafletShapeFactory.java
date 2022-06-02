@@ -12,10 +12,12 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.common.mapping;
+package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import org.springframework.stereotype.Service;
 
+import gov.llnl.gnem.apps.coda.common.mapping.LeafletIcon;
+import gov.llnl.gnem.apps.coda.common.mapping.LeafletLine;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShapeFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;

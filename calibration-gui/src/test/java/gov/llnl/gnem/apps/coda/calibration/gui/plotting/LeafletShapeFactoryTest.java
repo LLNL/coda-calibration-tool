@@ -12,7 +12,7 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.common.mapping;
+package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -25,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.LeafletShapeFactory;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Line;

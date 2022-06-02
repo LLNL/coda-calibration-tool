@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,6 +57,11 @@ public class MeasurementJsonController {
         return measureMw(job.getAutopickingEnabled(), job.getPersistResults(), job.getEventIds(), job.getStacks());
     }
 
+    @GetMapping(value = "/measure-mws", name = "measureMws")
+    public ResponseEntity<?> measureMws() {
+        return measureMw(true, false, null, null);
+    }
+
     private ResponseEntity<?> measureMw(Boolean autoPickingEnabled, Boolean persistResults, List<String> evids, List<Waveform> stacks) {
         if (autoPickingEnabled == null) {
             autoPickingEnabled = Boolean.FALSE;
@@ -76,7 +82,7 @@ public class MeasurementJsonController {
             }
             if (measuredMws != null) {
                 if (measuredMws.isSuccess()) {
-                    resp = ResponseEntity.ok().body(measuredMws.getResultPayload().orElseGet(() -> new MeasuredMwReportByEvent()));
+                    resp = ResponseEntity.ok().body(measuredMws.getResultPayload().orElseGet(MeasuredMwReportByEvent::new));
                 } else {
                     String errorMessage = "";
                     if (measuredMws.getErrors() != null && !measuredMws.getErrors().isEmpty()) {

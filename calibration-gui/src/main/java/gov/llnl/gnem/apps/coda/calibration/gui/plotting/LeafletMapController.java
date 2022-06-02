@@ -2,17 +2,17 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.common.mapping;
+package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -31,9 +32,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+import gov.llnl.gnem.apps.coda.common.mapping.MapCallbackEvent;
+import gov.llnl.gnem.apps.coda.common.mapping.MapProperties;
+import gov.llnl.gnem.apps.coda.common.mapping.WMSLayerDescriptor;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
@@ -59,6 +64,7 @@ import javafx.stage.StageStyle;
 
 @Service
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_SINGLETON)
+@Primary
 public class LeafletMapController implements GeoMap {
 
     private static final Logger log = LoggerFactory.getLogger(LeafletMapController.class);
@@ -193,11 +199,7 @@ public class LeafletMapController implements GeoMap {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((mapImpl == null) ? 0 : mapImpl.hashCode());
-        result = prime * result + ((view == null) ? 0 : view.hashCode());
-        return result;
+        return Objects.hash(mapImpl, view);
     }
 
     @Override
@@ -212,18 +214,10 @@ public class LeafletMapController implements GeoMap {
             return false;
         }
         LeafletMapController other = (LeafletMapController) obj;
-        if (mapImpl == null) {
-            if (other.mapImpl != null) {
-                return false;
-            }
-        } else if (!mapImpl.equals(other.mapImpl)) {
+        if (!Objects.equals(mapImpl, other.mapImpl)) {
             return false;
         }
-        if (view == null) {
-            if (other.view != null) {
-                return false;
-            }
-        } else if (!view.equals(other.view)) {
+        if (!Objects.equals(view, other.view)) {
             return false;
         }
         return true;
@@ -283,7 +277,7 @@ public class LeafletMapController implements GeoMap {
     private void writePng(String filename) {
         mapImpl.setShowOverlay(false);
         CompletableFuture.runAsync(() -> {
-            //This is really dumb and subject to nasty race conditions but, as of writing (Jan 2020), I can find no good way to get a notification from the JavaFX renderer that it actually executed a render pass. 
+            //This is really dumb and subject to nasty race conditions but, as of writing (Jan 2020), I can find no good way to get a notification from the JavaFX renderer that it actually executed a render pass.
             //There is a pre/post pulse callback on Scene proposed but is not available in Java 8 and we need to maintain compatibility for the moment.
             //Thus we have to do this song and dance to have a reasonable assumption a pulse has happened on the FX thread.
             //We could try to register and start/stop an AnimationTimer to know for sure but that's considerably more complicated and the fail state for this is "has visible buttons in the screenshot" so eh.

@@ -493,8 +493,8 @@ public class ShapeController implements MapListeningController, RefreshableContr
                 for (Waveform waveform : waveforms) {
                     final Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>> pair = waveformIdMapping.get(waveform.getId());
                     if (pair != null) {
-                        pair.getLeft().forEach(v -> v.getWaveform().setActive(active));
-                        pair.getRight().forEach(v -> v.getWaveform().setActive(active));
+                        pair.getX().forEach(v -> v.getWaveform().setActive(active));
+                        pair.getY().forEach(v -> v.getWaveform().setActive(active));
                     }
                 }
                 Platform.runLater(this::refreshView);
@@ -512,8 +512,8 @@ public class ShapeController implements MapListeningController, RefreshableContr
                     results.forEach(md -> {
                         final Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>> pair = waveformIdMapping.get(md.getId());
                         if (pair != null) {
-                            pair.getLeft().forEach(v -> v.getWaveform().setActive(md.isActive()));
-                            pair.getRight().forEach(v -> v.getWaveform().setActive(md.isActive()));
+                            pair.getX().forEach(v -> v.getWaveform().setActive(md.isActive()));
+                            pair.getY().forEach(v -> v.getWaveform().setActive(md.isActive()));
                         }
                     });
                 }
@@ -721,7 +721,7 @@ public class ShapeController implements MapListeningController, RefreshableContr
                                       .toStream()
                                       .filter(Objects::nonNull)
                                       .filter(pvm -> pvm.getWaveform() != null)
-                                      .filter(pvm -> waveformIdMapping.computeIfAbsent(pvm.getWaveform().getId(), this::getMapping).getLeft().add(pvm))
+                                      .filter(pvm -> waveformIdMapping.computeIfAbsent(pvm.getWaveform().getId(), this::getMapping).getX().add(pvm))
                                       .collect(Collectors.groupingBy(pvm -> new FrequencyBand(pvm.getWaveform().getLowFrequency(), pvm.getWaveform().getHighFrequency())))));
 
         final CompletableFuture<Void> f3 = CompletableFuture.runAsync(
@@ -730,14 +730,14 @@ public class ShapeController implements MapListeningController, RefreshableContr
                                    .toStream()
                                    .filter(Objects::nonNull)
                                    .filter(meas -> meas.getWaveform() != null)
-                                   .filter(pvm -> shapeWaveformMapping.computeIfAbsent(pvm.getWaveform().getId(), this::getMapping).getRight().add(pvm))
+                                   .filter(pvm -> shapeWaveformMapping.computeIfAbsent(pvm.getWaveform().getId(), this::getMapping).getY().add(pvm))
                                    .collect(Collectors.groupingBy(meas -> new FrequencyBand(meas.getWaveform().getLowFrequency(), meas.getWaveform().getHighFrequency())))));
 
         try {
             //Blocking here as a poor-mans progress bar so the user doesn't spam the refresh button (as much anyway)
             CompletableFuture.allOf(f1, f2, f3).get(100l, TimeUnit.SECONDS);
             for (final Entry<Long, Pair<List<PeakVelocityMeasurement>, List<ShapeMeasurement>>> e : shapeWaveformMapping.entrySet()) {
-                waveformIdMapping.computeIfAbsent(e.getKey(), this::getMapping).getRight().addAll(e.getValue().getRight());
+                waveformIdMapping.computeIfAbsent(e.getKey(), this::getMapping).getY().addAll(e.getValue().getY());
             }
             frequencyBandCombo.getItems().addAll(modelCurveMap.keySet());
             frequencyBandCombo.getSelectionModel().selectFirst();

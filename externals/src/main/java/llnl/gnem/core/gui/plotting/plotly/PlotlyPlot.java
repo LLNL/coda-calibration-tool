@@ -17,6 +17,7 @@ package llnl.gnem.core.gui.plotting.plotly;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.concurrent.Worker;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -48,6 +51,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.AxisLimits;
 import llnl.gnem.core.gui.plotting.api.BasicPlot;
@@ -91,6 +95,10 @@ public class PlotlyPlot implements BasicPlot {
     private boolean isSubPlot;
     private boolean clickToPickEnabled = false;
 
+    private static FileChooser chooser = null;
+    private static final SimpleObjectProperty<File> lastKnownDirectoryProperty = new SimpleObjectProperty<>();
+    private static final Object fileChooserLock = new Object();
+
     public PlotlyPlot() {
         this(false, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
     }
@@ -106,6 +114,13 @@ public class PlotlyPlot implements BasicPlot {
         intializePlotData();
         if (!isSubPlot) {
             initializeView();
+        }
+
+        synchronized (fileChooserLock) {
+            if (chooser == null) {
+                chooser = new FileChooser();
+                chooser.initialDirectoryProperty().bindBidirectional(lastKnownDirectoryProperty);
+            }
         }
     }
 
@@ -136,6 +151,7 @@ public class PlotlyPlot implements BasicPlot {
                     wind.setMember("plotTitle", getTitle());
                     wind.setMember("backgroundColor", getBackgroundColor());
                     wind.setMember("plotData", this);
+                    wind.setMember("dataExporter", this);
                     wind.setMember("logBridge", this);
                     engine.executeScript("console.log = function(message)\n" + "{\n" + " logBridge.log(message);\n" + "};");
                     plotData.getPlotReady().set(true);
@@ -145,6 +161,24 @@ public class PlotlyPlot implements BasicPlot {
 
             engine.load(getClass().getResource("/plotly.html").toExternalForm());
         });
+    }
+
+    public String exportData() {
+        if (plotData.getPlotReady().get()) {
+            try {
+                chooser.setInitialFileName("raw-data.json");
+                File saveTarget = chooser.showSaveDialog(null);
+                if (saveTarget != null) {
+                    FileUtils.writeStringToFile(saveTarget, getPlotDataJSON());
+                    synchronized (fileChooserLock) {
+                        lastKnownDirectoryProperty.set(saveTarget.getParentFile());
+                    }
+                }
+            } catch (Exception e) {
+                log.trace(e.getLocalizedMessage(), e);
+            }
+        }
+        return "";
     }
 
     public void log(final String text) {

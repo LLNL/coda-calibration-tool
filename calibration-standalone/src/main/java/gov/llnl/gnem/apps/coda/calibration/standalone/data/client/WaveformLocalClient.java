@@ -82,6 +82,11 @@ public class WaveformLocalClient implements WaveformClient {
     }
 
     @Override
+    public Flux<Waveform> getSharedEventStationWaveformsById(Long id) {
+        return Flux.fromIterable(service.getSharedEventStationStacksById(id));
+    }
+
+    @Override
     public Flux<Waveform> getActiveSharedEventStationWaveformsById(Long id) {
         return Flux.fromIterable(service.getActiveSharedEventStationStacksById(id));
     }
@@ -117,8 +122,13 @@ public class WaveformLocalClient implements WaveformClient {
     }
 
     @Override
-    public Flux<String> setWaveformsActiveByStationName(String id, boolean active) {
-        return Flux.just(service.setActiveFlagByStationName(id, active).toString());
+    public Flux<String> setWaveformsActiveByStationName(String name, boolean active) {
+        return Flux.just(service.setActiveFlagByStationName(name, active).toString());
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByStationNameAndEventId(String name, String id, boolean active) {
+        return Flux.just(service.setActiveFlagByStationNameAndEventId(name, id, active).toString());
     }
 
     @Override

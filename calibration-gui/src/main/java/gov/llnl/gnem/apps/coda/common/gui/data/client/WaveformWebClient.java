@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -88,9 +89,20 @@ public class WaveformWebClient implements WaveformClient {
     }
 
     @Override
-    public Flux<Waveform> getActiveSharedEventStationWaveformsById(Long id) {
+    public Flux<Waveform> getSharedEventStationWaveformsById(Long id) {
         return client.get()
                      .uri("/waveforms/query/shared-event-station-by-id/{id}", id)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .retrieve()
+                     .bodyToFlux(Waveform.class)
+                     .filter(Objects::nonNull)
+                     .onErrorReturn(new Waveform());
+    }
+
+    @Override
+    public Flux<Waveform> getActiveSharedEventStationWaveformsById(Long id) {
+        return client.get()
+                     .uri("/waveforms/query/active-shared-event-station-by-id/{id}", id)
                      .accept(MediaType.APPLICATION_JSON)
                      .retrieve()
                      .bodyToFlux(Waveform.class)
@@ -165,12 +177,28 @@ public class WaveformWebClient implements WaveformClient {
     }
 
     @Override
-    public Flux<String> setWaveformsActiveByStationName(String id, boolean active) {
+    public Flux<String> setWaveformsActiveByStationName(String name, boolean active) {
         return client.post()
                      .uri("/waveforms/set-active/by-station-name/" + active)
                      .contentType(MediaType.APPLICATION_JSON)
                      .accept(MediaType.APPLICATION_JSON)
-                     .bodyValue(id)
+                     .bodyValue(name)
+                     .retrieve()
+                     .bodyToFlux(String.class);
+    }
+
+    @Override
+    public Flux<String> setWaveformsActiveByStationNameAndEventId(String name, String id, boolean active) {
+
+        MultipartBodyBuilder mbb = new MultipartBodyBuilder();
+        mbb.part("stationName", name, MediaType.APPLICATION_JSON);
+        mbb.part("eventId", id, MediaType.APPLICATION_JSON);
+
+        return client.post()
+                     .uri("/waveforms/set-active/by-station-name-and-event-id/" + active)
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(mbb.build())
                      .retrieve()
                      .bodyToFlux(String.class);
     }

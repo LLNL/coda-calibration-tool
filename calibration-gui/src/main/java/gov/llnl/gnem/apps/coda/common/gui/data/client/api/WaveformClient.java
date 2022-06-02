@@ -46,13 +46,17 @@ public interface WaveformClient {
 
     public Flux<Waveform> getUniqueEventStationMetadataForStacks();
 
+    public Flux<Waveform> getSharedEventStationWaveformsById(Long id);
+
     public Flux<Waveform> getActiveSharedEventStationWaveformsById(Long id);
 
     public Flux<String> setWaveformsActiveByIds(List<Long> selectedWaveforms, boolean active);
 
     public Flux<String> setWaveformsActiveByEventId(String id, boolean active);
 
-    public Flux<String> setWaveformsActiveByStationName(String id, boolean active);
+    public Flux<String> setWaveformsActiveByStationName(String name, boolean active);
+
+    public Flux<String> setWaveformsActiveByStationNameAndEventId(String name, String id, boolean active);
 
     public Flux<String> setWaveformsActiveOutsidePolygon(boolean active);
 

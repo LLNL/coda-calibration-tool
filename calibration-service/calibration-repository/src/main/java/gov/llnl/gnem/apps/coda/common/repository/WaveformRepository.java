@@ -67,6 +67,10 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     public int setActiveByStationName(@Param("stationName") String stationName, @Param("active") boolean active);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Waveform w SET w.active = :active where w.stream.station.stationName = :stationName and  w.event.eventId = :eventId")
+    public int setActiveByStationNameAndEventId(@Param("stationName") String stationName, @Param("eventId") String eventId, @Param("active") boolean active);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Waveform w SET w.active = :active")
     public void setAllActive(boolean active);
 
@@ -92,6 +96,9 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     @Query("select w.id from Waveform w where w.stream.station.stationName = :stationName")
     public List<Long> findAllIdsByStationName(@Param("stationName") String stationName);
 
+    @Query("select w.id from Waveform w where w.stream.station.stationName = :stationName and w.event.eventId = :eventId")
+    public List<Long> findAllIdsByStationNameAndEventId(@Param("stationName") String stationName, @Param("eventId") String eventId);
+
     @Query("select w from Waveform w where w.active = true and w.stream.channelName = 'STACK' and w.stream.station.stationName in :stationNames")
     public List<Waveform> findAllActiveStacksByStationNames(@Param("stationNames") List<String> stationNames);
 
@@ -108,4 +115,9 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
             + "and w.event.eventId in (select ev.event.eventId from Waveform ev where ev.id = :id) "
             + "and w.stream.station.stationName in (select sta.stream.station.stationName from Waveform sta where sta.id = :id)")
     public List<Waveform> findAllActiveSharedEventStationStacksById(@Param("id") Long id);
+
+    @Query("select w from Waveform w where w.stream.channelName = 'STACK' "
+            + "and w.event.eventId in (select ev.event.eventId from Waveform ev where ev.id = :id) "
+            + "and w.stream.station.stationName in (select sta.stream.station.stationName from Waveform sta where sta.id = :id)")
+    public List<Waveform> findAllSharedEventStationStacksById(@Param("id") Long id);
 }

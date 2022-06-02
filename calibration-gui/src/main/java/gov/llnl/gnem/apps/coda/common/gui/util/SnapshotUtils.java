@@ -75,7 +75,7 @@ public class SnapshotUtils {
             timestamp = getTimestampWithLeadingSeparator();
         }
         if (folder != null && namesAndNodes != null && !namesAndNodes.isEmpty()) {
-            namesAndNodes.stream().forEach(nameAndNode -> writePng(nameAndNode.getRight(), folder.getAbsolutePath() + File.separator + nameAndNode.getLeft() + timestamp + ".png"));
+            namesAndNodes.stream().forEach(nameAndNode -> writePng(nameAndNode.getY(), folder.getAbsolutePath() + File.separator + nameAndNode.getX() + timestamp + ".png"));
         }
     }
 

@@ -14,6 +14,7 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
@@ -25,9 +26,11 @@ class PredicateBuilder<T> {
     }
 
     private HashMap<String, Predicate<T>> predicates;
+    private HashMap<String, Predicate<T>> activePredicates;
 
     PredicateBuilder() {
         this.predicates = new HashMap<>();
+        this.activePredicates = new HashMap<>();
     }
 
     public void setPredicate(String name, ValueComparer<T> comparer, Object item) {
@@ -39,12 +42,29 @@ class PredicateBuilder<T> {
         }
     }
 
+    public void setPredicateActiveState(String name, Boolean active) {
+        Predicate<T> predicate = predicates.get(name);
+        if (predicate != null) {
+            if (active) {
+                activePredicates.put(name, predicate);
+            } else {
+                activePredicates.remove(name);
+            }
+        }
+    }
+
+    public void deactivateGroup(List<String> groupNames) {
+        groupNames.forEach(name -> {
+            setPredicateActiveState(name, false);
+        });
+    }
+
     public Predicate<T> getAndPredicate() {
-        return predicates.values().stream().reduce(Predicate::and).orElse(x -> true);
+        return activePredicates.values().stream().reduce(Predicate::and).orElse(x -> true);
     }
 
     public Predicate<T> getOrPredicate() {
-        return predicates.values().stream().reduce(Predicate::or).orElse(x -> false);
+        return activePredicates.values().stream().reduce(Predicate::or).orElse(x -> false);
     }
 
     private Predicate<T> createPredicate(ValueComparer<T> comparer, String item) {

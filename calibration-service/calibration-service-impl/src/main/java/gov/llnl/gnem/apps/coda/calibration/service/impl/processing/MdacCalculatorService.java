@@ -124,10 +124,6 @@ public class MdacCalculatorService {
         return MdacCalculator.mwToM0(Mw);
     }
 
-    public double getMwInDyne(final double testMw) {
-        return MdacCalculator.mwInDyne(testMw);
-    }
-
     public double getCornerFrequency(final DoubleFunction<double[]> mdacFunc) {
         return mdacFunc.apply(1.0)[MdacCalculator.ANGULAR_CORNER_FREQ_IDX] / (Math.PI * 2.0);
     }

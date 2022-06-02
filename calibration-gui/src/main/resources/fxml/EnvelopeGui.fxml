@@ -19,8 +19,8 @@
       					<menus>
       						<Menu mnemonicParsing="false" text="File">
       							<items>
-      								<MenuItem fx:id="importWaveforms" mnemonicParsing="false" onAction="#openWaveformLoadingWindow" text="Envelopes from Files..." />
-      								<MenuItem fx:id="importWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectoryLoadingWindow" text="Envelopes from Directory..." />
+      								<MenuItem fx:id="importWaveforms" mnemonicParsing="false" onAction="#openWaveformLoadingWindow" text="Load Source Waveform Files..." />
+      								<MenuItem fx:id="importWaveformDir" mnemonicParsing="false" onAction="#openWaveformDirectoryLoadingWindow" text="Load Source Waveforms Directory..." />
       								<MenuItem fx:id="importJobConfig" mnemonicParsing="false" onAction="#openJobLoadingWindow" text="Import Job Config..." />
       								<MenuItem fx:id="exportJobConfig" mnemonicParsing="false" onAction="#openJobSavingWindow" text="Export Job Config..." />
       							</items>

@@ -14,6 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.impl.processing;
 
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
@@ -270,7 +273,14 @@ public class SpectraCalculatorTest {
                     data[data.length - 1][0],
                     testInput.getEnergy());
 
-        EnergyInfo testResult = spectraCalc.calcTotalEnergyInfo(testInput.testMeasurements, testInput.mwMDAC, testInput.apparentStress, mdacFi);
+        EnergyInfo testResult = spectraCalc.calcTotalEnergyInfo(
+                new TreeMap<FrequencyBand, Double>(testInput.testMeasurements.entrySet()
+                                                                             .stream()
+                                                                             .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue().getMean()))
+                                                                             .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue))),
+                    testInput.mwMDAC,
+                    testInput.apparentStress,
+                    mdacFi);
         double energyRatio = testResult.getLogTotalEnergy() / testInput.getEnergy();
         double errorPercent = Math.abs(energyRatio - 1) * 100;
 
@@ -304,7 +314,7 @@ public class SpectraCalculatorTest {
         testInput.add(new TestInput(mw, appStress, startFreq, endFreq, 10));
         testInput.add(new TestInput(mw, appStress, startFreq, endFreq, 100));
         testInput.add(new TestInput(mw, appStress, startFreq, endFreq, 1000));
-        testInput.add(new TestInput(mw, appStress, startFreq, endFreq, 10000000));
+        testInput.add(new TestInput(mw, appStress, startFreq, endFreq, 100000));
 
         log.info("CalcTotalEnergy Results:\nMw: {}, apparent stress: {}, frequency range: {} to {}, expected energy: {}", mw, appStress, startFreq, endFreq, testInput.get(0).getEnergy());
 
@@ -314,7 +324,14 @@ public class SpectraCalculatorTest {
         double maxDiff = 0.0;
 
         for (TestInput input : testInput) {
-            EnergyInfo testResult = spectraCalc.calcTotalEnergyInfo(input.testMeasurements, input.mwMDAC, input.apparentStress, mdacFi);
+            EnergyInfo testResult = spectraCalc.calcTotalEnergyInfo(
+                    new TreeMap<FrequencyBand, Double>(input.testMeasurements.entrySet()
+                                                                             .stream()
+                                                                             .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue().getMean()))
+                                                                             .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue))),
+                        input.mwMDAC,
+                        input.apparentStress,
+                        mdacFi);
             double energyRatio = testResult.getLogTotalEnergy() / input.getEnergy();
             double errorPercent = Math.abs(energyRatio - 1) * 100;
             if (errorPercent > maxDiff) {

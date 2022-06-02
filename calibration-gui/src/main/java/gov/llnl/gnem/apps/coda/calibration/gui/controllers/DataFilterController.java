@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Predicate;
 
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
@@ -30,6 +31,7 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.ToggleGroup;
 
 class DataFilterController<T> {
     // The list of unfiltered table items
@@ -39,12 +41,14 @@ class DataFilterController<T> {
     // The filter buttons attached to columns
     private List<Button> buttons;
     private HashMap<TableColumn<T, ?>, ObservableList<Object>> columnFilterLists;
+    private List<ObservableList<Object>> sliderValues;
     private FilteredList<T> filteredItems;
 
     DataFilterController(final TableView<T> tableView, final ObservableList<T> items) {
         this.items = items;
         this.buttons = new ArrayList<>();
         this.columnFilterLists = new HashMap<>();
+        this.sliderValues = new ArrayList<>();
         this.filterDialog = new FilterDialogController();
         this.predicateBuilder = new PredicateBuilder<>();
 
@@ -59,7 +63,7 @@ class DataFilterController<T> {
         this.items.addListener((ListChangeListener<? super T>) change -> {
             if (change.getList().isEmpty()) {
                 setFiltersDisabled(true);
-                filterDialog.clearComboSelections();
+                filterDialog.clearControlSelections();
             } else {
                 setFiltersDisabled(false);
                 updateFilterLists(change);
@@ -71,13 +75,13 @@ class DataFilterController<T> {
             filterDialog.hide();
         });
         filterDialog.setClearFiltersAction(e -> {
-            filterDialog.clearComboSelections();
+            filterDialog.clearControlSelections();
             filterDialog.hide();
             filteredItems.setPredicate(null);
         });
     }
 
-    public void addFilterToColumn(TableColumn<T, ?> column, PredicateBuilder.ValueComparer<T> converter) {
+    public void addFilterToColumn(boolean slider, ToggleGroup toggleGroup, TableColumn<T, ?> column, PredicateBuilder.ValueComparer<T> converter) {
 
         // Create the checkbox that opens the filter panel/dialog
         Button filterBtn = new Button();
@@ -91,9 +95,8 @@ class DataFilterController<T> {
         buttons.add(filterBtn);
 
         String columnName = column.getText();
-        ObservableList<Object> filterOptions = FXCollections.observableList(new ArrayList<>());
-        filterOptions.add(null);
-        columnFilterLists.put(column, filterOptions);
+        ObservableList<Object> filterItemsList = FXCollections.observableList(new ArrayList<>());
+        columnFilterLists.put(column, filterItemsList);
 
         // Create a label that wraps the checkbox so that the column text
         // is displayed to the left of the checkbox
@@ -103,11 +106,30 @@ class DataFilterController<T> {
         column.setGraphic(buttonWrapper);
         column.setText("");
 
-        // Update the filter dialog to include new filter options
-        filterDialog.addFilterOption(columnName, filterOptions, (options, oldValue, newValue) -> {
+        // Create handler for when active state changes
+        ChangeListener<? super Boolean> updateActive = (options, oldValue, newValue) -> {
+            if (oldValue != newValue) {
+                predicateBuilder.setPredicateActiveState(columnName, newValue);
+            }
+        };
+
+        // Create handler for when field control updates value
+        ChangeListener<? super Object> updateValue = (options, oldValue, newValue) -> {
             String txtValue = newValue != null ? newValue.toString() : "";
-            predicateBuilder.setPredicate(columnName, converter, txtValue);
-        });
+            if (!txtValue.equals("")) {
+                predicateBuilder.setPredicate(columnName, converter, txtValue);
+                predicateBuilder.setPredicateActiveState(columnName, true);
+                filterDialog.setFieldActiveState(columnName, true);
+            }
+        };
+
+        // Update the filter dialog to include new filter options
+        if (slider) {
+            sliderValues.add(filterItemsList);
+            filterDialog.addFilterSlider(columnName, filterItemsList, toggleGroup, updateActive, updateValue);
+        } else {
+            filterDialog.addFilterOption(columnName, filterItemsList, toggleGroup, updateActive, updateValue);
+        }
     }
 
     public void setFiltersDisabled(Boolean disabled) {
@@ -123,9 +145,6 @@ class DataFilterController<T> {
                     ObservableList<Object> filterList = entry.getValue();
                     Object itemVal = entry.getKey().getCellObservableValue(remItem).getValue();
                     filterList.remove(itemVal);
-                    if (!filterList.contains(null)) { // Add a null value for comboboxes
-                        filterList.add(null);
-                    }
                 });
             }
             for (T addItem : change.getAddedSubList()) {
@@ -135,13 +154,14 @@ class DataFilterController<T> {
                     if (!filterList.contains(itemVal)) { // Don't add duplicate items
                         filterList.add(itemVal);
                     }
-                    if (!filterList.contains(null)) { // Add a null value for comboboxes
-                        filterList.add(null);
-                    }
 
                     filterList.sort((Comparator<Object>) entry.getKey().getComparator());
                 });
             }
+        }
+
+        for (int idx = 0; idx < sliderValues.size(); idx++) {
+            filterDialog.updateSliders(idx, sliderValues.get(idx));
         }
     }
 

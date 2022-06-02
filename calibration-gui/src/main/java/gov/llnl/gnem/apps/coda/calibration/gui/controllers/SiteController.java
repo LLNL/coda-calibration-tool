@@ -19,8 +19,10 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -33,6 +35,7 @@ import com.google.common.eventbus.EventBus;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.ParamExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
@@ -67,6 +70,8 @@ import reactor.core.scheduler.Schedulers;
 @Component
 public class SiteController extends AbstractMeasurementController {
 
+    private static final String AVERAGE_LABEL = "Average";
+
     private static final String X_AXIS_LABEL = "center freq (Hz)";
 
     private static final String DISPLAY_NAME = "Site";
@@ -98,10 +103,12 @@ public class SiteController extends AbstractMeasurementController {
     @FXML
     private SplitPane rawSplitPane;
 
+    private List<SiteFrequencyBandParameters> siteTerms;
+
     @Autowired
     private SiteController(final SpectraClient spectraClient, final ParameterClient paramClient, final EventClient referenceEventClient, final WaveformClient waveformClient,
-            final SymbolStyleMapFactory styleFactory, final GeoMap map, final MapPlottingUtilities iconFactory, final PlotFactory plotFactory, final EventBus bus) {
-        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, plotFactory, bus);
+            final SymbolStyleMapFactory styleFactory, final GeoMap map, final MapPlottingUtilities iconFactory, final ParamExporter paramExporter, final PlotFactory plotFactory, final EventBus bus) {
+        super(spectraClient, paramClient, referenceEventClient, waveformClient, styleFactory, map, iconFactory, paramExporter, plotFactory, bus);
     }
 
     @Override
@@ -162,10 +169,10 @@ public class SiteController extends AbstractMeasurementController {
         });
 
         relativeSiteTermsPlot = plotFactory.lineAndMarkerScatterPlot();
-        relativeSiteTermsPlot.getTitle().setText("Relative site and transfer function corrections");
+        relativeSiteTermsPlot.getTitle().setText("Relative site terms");
         relativeSiteTermsPlot.getTitle().setFontSize(16);
         relativeSiteTermsPlot.setSymbolSize(12);
-        relativeSiteTermsPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Site and transfer correction log10(N-m)"));
+        relativeSiteTermsPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Relative Amplification (log10)"));
         relativeSiteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, 0.0, 10.0), new AxisLimits(Axis.Type.Y, 0.0, 2.0));
         relativeSiteTermsPlot.setMargin(60, 40, 50, null);
         relativeSiteTermsPlotPane.setPickOnBounds(false);
@@ -204,66 +211,103 @@ public class SiteController extends AbstractMeasurementController {
     @Override
     protected void reloadData() {
         super.reloadData();
-        List<SiteFrequencyBandParameters> siteTerms = paramClient.getSiteSpecificFrequencyBandParameters().filter(Objects::nonNull).collectList().block(Duration.of(10l, ChronoUnit.SECONDS));
+        siteTerms = paramClient.getSiteSpecificFrequencyBandParameters().filter(Objects::nonNull).collectList().block(Duration.of(10l, ChronoUnit.SECONDS));
+
+        Set<String> stationSet = new TreeSet<>();
+        List<Symbol> symbols = new ArrayList<>();
+
+        double minSite = 1E2;
+        double maxSite = -1E2;
+        double minCenterFreq = 1E2;
+        double maxCenterFreq = -1E2;
+
+        Map<Double, Symbol> averageSymbols = new TreeMap<>();
+        Map<Double, SiteFrequencyBandParameters> averageSiteTerms = new TreeMap<>();
+
+        siteTerms.sort((l, r) -> Double.compare(l.getLowFrequency(), r.getLowFrequency()));
+        for (SiteFrequencyBandParameters val : siteTerms) {
+            if (val != null && val.getStation() != null) {
+                final String key = val.getStation().getStationName();
+                stationSet.add(key);
+                final PlotPoint pp = getPlotPoint(key, true);
+                double centerFreq = centerFreq(val.getLowFrequency(), val.getHighFrequency());
+                //Dyne-cm to nm for plot, in log
+                double site = val.getSiteTerm() - 7.0;
+
+                if (site < minSite) {
+                    minSite = site;
+                }
+                if (site > maxSite) {
+                    maxSite = site;
+                }
+                if (centerFreq < minCenterFreq) {
+                    minCenterFreq = centerFreq;
+                }
+                if (centerFreq > maxCenterFreq) {
+                    maxCenterFreq = centerFreq;
+                }
+
+                final LabeledPlotPoint point = new LabeledPlotPoint(key, new PlotPoint(centerFreq, site, pp.getStyle(), pp.getColor(), pp.getColor()));
+                symbols.add(plotFactory.createSymbol(point.getStyle(), key, point.getX(), point.getY(), point.getColor(), Color.BLACK, point.getColor(), key, true));
+
+                averageSymbols.merge(
+                        val.getLowFrequency(),
+                            plotFactory.createSymbol(point.getStyle(), AVERAGE_LABEL, point.getX(), point.getY(), Color.BLACK, Color.BLACK, Color.BLACK, key, true),
+                            (l, r) -> {
+                                l.setY((l.getY() + r.getY()) / 2.0);
+                                l.setText(AVERAGE_LABEL);
+                                return l;
+                            });
+
+                averageSiteTerms.compute(val.getLowFrequency(), (k, v) -> {
+                    SiteFrequencyBandParameters avg;
+                    if (v == null) {
+                        avg = new SiteFrequencyBandParameters().mergeNonNullOrEmptyFields(val).setSiteTerm(site);
+                        avg.getStation().setStationName(AVERAGE_LABEL);
+                    } else {
+                        avg = v;
+                    }
+                    avg.setSiteTerm((avg.getSiteTerm() + val.getSiteTerm()) / 2.0);
+                    return avg;
+                });
+
+            }
+        }
+
+        maxSite = maxSite + .1;
+        if (minSite > maxSite) {
+            minSite = maxSite - .1;
+        } else {
+            minSite = minSite - .1;
+        }
+
+        maxCenterFreq = maxCenterFreq + .1;
+        if (minCenterFreq > maxCenterFreq) {
+            minCenterFreq = maxCenterFreq - .1;
+        } else {
+            minCenterFreq = minCenterFreq - 1.0;
+        }
+        final double minX = minCenterFreq;
+        final double maxX = maxCenterFreq;
+        final double minY = minSite;
+        final double maxY = maxSite;
+
+        symbols.addAll(averageSymbols.values());
+        siteTerms.addAll(averageSiteTerms.values());
+
         try {
             runGuiUpdate(() -> {
                 siteTermsPlot.clear();
                 relativeSiteTermsPlot.clear();
                 stationList.clear();
-                Set<String> stationSet = new TreeSet<>();
 
-                double minSite = 1E2;
-                double maxSite = -1E2;
-                double minCenterFreq = 1E2;
-                double maxCenterFreq = -1E2;
-
-                siteTerms.sort((l, r) -> Double.compare(l.getLowFrequency(), r.getLowFrequency()));
-
-                for (SiteFrequencyBandParameters val : siteTerms) {
-                    if (val != null && val.getStation() != null) {
-                        final String key = val.getStation().getStationName();
-                        stationSet.add(key);
-                        final PlotPoint pp = getPlotPoint(key, true);
-                        double centerFreq = centerFreq(val.getLowFrequency(), val.getHighFrequency());
-                        //Dyne-cm to nm for plot, in log
-                        double site = val.getSiteTerm() - 7.0;
-
-                        if (site < minSite) {
-                            minSite = site;
-                        }
-                        if (site > maxSite) {
-                            maxSite = site;
-                        }
-                        if (centerFreq < minCenterFreq) {
-                            minCenterFreq = centerFreq;
-                        }
-                        if (centerFreq > maxCenterFreq) {
-                            maxCenterFreq = centerFreq;
-                        }
-
-                        final LabeledPlotPoint point = new LabeledPlotPoint(key, new PlotPoint(centerFreq, site, pp.getStyle(), pp.getColor(), pp.getColor()));
-                        Symbol symbol = plotFactory.createSymbol(point.getStyle(), key, point.getX(), point.getY(), point.getColor(), Color.BLACK, point.getColor(), key, true);
-                        siteTermsPlot.addPlotObject(symbol);
-                    }
+                for (Symbol symbol : symbols) {
+                    siteTermsPlot.addPlotObject(symbol);
                 }
-
-                maxSite = maxSite + .1;
-                if (minSite > maxSite) {
-                    minSite = maxSite - .1;
-                } else {
-                    minSite = minSite - .1;
-                }
-
-                maxCenterFreq = maxCenterFreq + .1;
-                if (minCenterFreq > maxCenterFreq) {
-                    minCenterFreq = maxCenterFreq - .1;
-                } else {
-                    minCenterFreq = minCenterFreq - 1.0;
-                }
-
-                siteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minCenterFreq, maxCenterFreq), new AxisLimits(Axis.Type.Y, minSite, maxSite));
+                siteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minX, maxX), new AxisLimits(Axis.Type.Y, minY, maxY));
                 siteTermsPlot.replot();
 
+                stationList.add(AVERAGE_LABEL);
                 stationList.addAll(stationSet);
                 if (!stationList.isEmpty()) {
                     siteTermStationCombo.getSelectionModel().select(0);
@@ -275,12 +319,8 @@ public class SiteController extends AbstractMeasurementController {
     }
 
     private void refreshRelativeSitePlot(String stationName) {
-        List<SiteFrequencyBandParameters> siteTerms = paramClient.getSiteSpecificFrequencyBandParameters().filter(Objects::nonNull).collectList().block(Duration.of(10l, ChronoUnit.SECONDS));
-
-        try {
-            runGuiUpdate(() -> {
-                relativeSiteTermsPlot.clear();
-
+        if (siteTerms != null) {
+            try {
                 double minSite = Double.MAX_VALUE;
                 double maxSite = -Double.MAX_VALUE;
                 double minCenterFreq = Double.MAX_VALUE;
@@ -288,6 +328,7 @@ public class SiteController extends AbstractMeasurementController {
 
                 siteTerms.sort((l, r) -> Double.compare(l.getLowFrequency(), r.getLowFrequency()));
 
+                List<Symbol> symbols = new ArrayList<>();
                 if (stationName != null) {
                     List<SiteFrequencyBandParameters> relativeTerms = siteTerms.stream()
                                                                                .filter(sfb -> stationName.equalsIgnoreCase(sfb.getStation().getStationName()))
@@ -301,9 +342,10 @@ public class SiteController extends AbstractMeasurementController {
                                 final PlotPoint pp = getPlotPoint(key, true);
                                 double centerFreq = centerFreq(val.getLowFrequency(), val.getHighFrequency());
 
-                                SiteFrequencyBandParameters relativeTerm = relativeTerms.stream().filter(sfb -> val.getLowFrequency() == sfb.getLowFrequency()).findAny().get();
+                                SiteFrequencyBandParameters relativeTerm = relativeTerms.stream().filter(sfb -> val.getLowFrequency() == sfb.getLowFrequency()).findAny().orElse(null);
                                 if (relativeTerm != null) {
-                                    double site = val.getSiteTerm() - relativeTerm.getSiteTerm();
+                                    //For plotting purposes they want to invert the Y axis
+                                    double site = (val.getSiteTerm() - relativeTerm.getSiteTerm()) * -1.0;
 
                                     if (site < minSite) {
                                         minSite = site;
@@ -319,8 +361,7 @@ public class SiteController extends AbstractMeasurementController {
                                     }
 
                                     final LabeledPlotPoint point = new LabeledPlotPoint(key, new PlotPoint(centerFreq, site, pp.getStyle(), pp.getColor(), pp.getColor()));
-                                    Symbol symbol = plotFactory.createSymbol(point.getStyle(), key, point.getX(), point.getY(), point.getColor(), Color.BLACK, point.getColor(), key, true);
-                                    relativeSiteTermsPlot.addPlotObject(symbol);
+                                    symbols.add(plotFactory.createSymbol(point.getStyle(), key, point.getX(), point.getY(), point.getColor(), Color.BLACK, point.getColor(), key, true));
                                 }
                             }
                         }
@@ -338,16 +379,27 @@ public class SiteController extends AbstractMeasurementController {
                         } else {
                             minCenterFreq = minCenterFreq - 1.0;
                         }
-
-                        relativeSiteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minCenterFreq, maxCenterFreq), new AxisLimits(Axis.Type.Y, minSite, maxSite));
-                        relativeSiteTermsPlot.replot();
                     }
                 }
-            });
-        } catch (InvocationTargetException |
 
-                InterruptedException interrupted) {
-            // NOP
+                final double minX = minCenterFreq;
+                final double maxX = maxCenterFreq;
+                final double minY = minSite;
+                final double maxY = maxSite;
+
+                runGuiUpdate(() -> {
+                    relativeSiteTermsPlot.clear();
+
+                    for (Symbol symbol : symbols) {
+                        relativeSiteTermsPlot.addPlotObject(symbol);
+                    }
+                    relativeSiteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minX, maxX), new AxisLimits(Axis.Type.Y, minY, maxY));
+                    relativeSiteTermsPlot.replot();
+
+                });
+            } catch (InvocationTargetException | InterruptedException interrupted) {
+                // NOP
+            }
         }
     }
 

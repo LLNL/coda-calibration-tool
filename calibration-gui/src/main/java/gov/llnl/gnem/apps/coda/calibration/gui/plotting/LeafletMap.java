@@ -12,7 +12,7 @@
 * This work was performed under the auspices of the U.S. Department of Energy
 * by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
 */
-package gov.llnl.gnem.apps.coda.common.mapping;
+package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,12 +29,15 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.llnl.gnem.apps.coda.common.mapping.LeafletIcon;
+import gov.llnl.gnem.apps.coda.common.mapping.MAP_CALLBACK_EVENT_TYPE;
+import gov.llnl.gnem.apps.coda.common.mapping.MapCallbackEvent;
+import gov.llnl.gnem.apps.coda.common.mapping.WMSLayerDescriptor;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoBox;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconStyles;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon.IconTypes;
-import gov.llnl.gnem.apps.coda.common.mapping.api.Line;
+import gov.llnl.gnem.apps.coda.common.mapping.utils.LeafletToJavascript;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
@@ -59,6 +62,7 @@ public class LeafletMap {
     private final ObservableSet<Icon> icons = FXCollections.synchronizedObservableSet(FXCollections.observableSet(new HashSet<>()));
     private final ObservableSet<GeoShape> shapes = FXCollections.observableSet(new HashSet<>());
     private Pane parent;
+
     private final Set<WMSLayerDescriptor> layers = new HashSet<>();
     private final AtomicBoolean mapReady = new AtomicBoolean(false);
     private final Map<String, BiConsumer<Boolean, String>> callbackMap = new HashMap<>();
@@ -73,6 +77,7 @@ public class LeafletMap {
     private final MenuItem includeOutPolygon = new MenuItem("Include outside");
     private final MenuItem excludeInPolygon = new MenuItem("Exclude inside");
     private final MenuItem includeInPolygon = new MenuItem("Include inside");
+    private LeafletToJavascript leaflet2js = new LeafletToJavascript();
 
     public class IconCallbackHandler {
         private final BiConsumer<Boolean, String> iconCallbackHandler;
@@ -218,22 +223,7 @@ public class LeafletMap {
 
     public void addLayerToMap(final WMSLayerDescriptor layer) {
         Platform.runLater(() -> {
-            final StringBuilder sb = new StringBuilder();
-
-            sb.append("layerControl.addOverlay(");
-            sb.append("L.tileLayer.wms('");
-            sb.append(layer.getUrl());
-            sb.append("', { layers: '");
-            for (int i = 0; i < layer.getLayers().size(); i++) {
-                sb.append(layer.getLayers().get(i));
-                if (i != layer.getLayers().size() - 1) {
-                    sb.append(':');
-                }
-            }
-            sb.append("'}),\"");
-            sb.append(layer.getName());
-            sb.append("\");");
-            webView.getEngine().executeScript(sb.toString());
+            webView.getEngine().executeScript(leaflet2js.createJsWmsRepresentation(layer));
         });
     }
 
@@ -272,7 +262,7 @@ public class LeafletMap {
         Platform.runLater(() -> {
             final StringBuilder sb = new StringBuilder();
             for (final Icon icon : iconCollection) {
-                sb.append(createJsIconRepresentation(icon));
+                sb.append(leaflet2js.createJsIconRepresentation(icon));
                 if (icon.getIconSelectionCallback() != null) {
                     callbackMap.put(icon.getId(), icon.getIconSelectionCallback());
                 }
@@ -306,7 +296,7 @@ public class LeafletMap {
         Platform.runLater(() -> {
             final StringBuilder sb = new StringBuilder();
             for (final GeoShape shape : shapeCollection) {
-                sb.append(createJsShapeRepresentation(shape));
+                sb.append(leaflet2js.createJsShapeRepresentation(shape));
             }
             webView.getEngine().executeScript(sb.toString());
         });
@@ -322,131 +312,6 @@ public class LeafletMap {
         }));
     }
 
-    private String createJsShapeRepresentation(final GeoShape shape) {
-        //TODO: Encapsulate this better...
-        final StringBuilder sb = new StringBuilder();
-
-        if (shape instanceof Line) {
-            final Line line = (Line) shape;
-            sb.append("if (!markers.has(\"");
-            sb.append(line.getId());
-            sb.append("\")) {");
-            sb.append("marker = L.polyline([");
-            sb.append('[');
-            sb.append(line.getStartLocation().getLatitude());
-            sb.append(',');
-            sb.append(line.getStartLocation().getLongitude());
-            sb.append(']');
-            sb.append(',');
-            sb.append('[');
-            sb.append(line.getEndLocation().getLatitude());
-            sb.append(',');
-            sb.append(line.getEndLocation().getLongitude());
-            sb.append(']');
-            sb.append(']');
-            sb.append(", {color: 'black', interactive: false, weight: 1, pane: 'background-pane', bubblingMouseEvents: false, smoothFactor: 1}");
-            sb.append(')');
-            sb.append(".addTo(lineGroup);");
-            sb.append("marker._uid = \"");
-            sb.append(shape.getId());
-            sb.append("\"; markers.set(marker._uid, lineGroup.getLayerId(marker)); }");
-        }
-        return sb.toString();
-    }
-
-    private String createJsIconRepresentation(final Icon icon) {
-        //TODO: Encapsulate this better...
-        final StringBuilder sb = new StringBuilder();
-
-        sb.append("if (!markers.has(\"");
-        sb.append(icon.getId());
-        sb.append("\")) {");
-
-        switch (icon.getType()) {
-        case TRIANGLE_UP:
-            sb.append("marker = L.shapeMarker([");
-            sb.append(icon.getLocation().getLatitude());
-            sb.append(',');
-            sb.append(icon.getLocation().getLongitude());
-            sb.append("], {");
-            sb.append("shape: 'triangle-up',");
-            sb.append(getTriangleStyle(icon.getStyle()));
-            sb.append("radius: 4");
-            sb.append("})");
-            break;
-        case CIRCLE:
-        case DEFAULT:
-            sb.append("marker = L.circleMarker([");
-            sb.append(icon.getLocation().getLatitude());
-            sb.append(',');
-            sb.append(icon.getLocation().getLongitude());
-            sb.append(']');
-            sb.append(getCircleStyle(icon.getStyle()));
-            sb.append(')');
-            break;
-        default:
-            return "";
-        }
-        if (icon.getIconSelectionCallback() != null) {
-            sb.append(addCallbacks(icon.getId(), icon.getFriendlyName()));
-        }
-        sb.append(".addTo(iconGroup);");
-        sb.append("marker._uid = \"");
-        sb.append(icon.getId());
-        sb.append("\"; markers.set(marker._uid, iconGroup.getLayerId(marker)); }");
-        return sb.toString();
-    }
-
-    private String addCallbacks(final String id, final String name) {
-        return ".on('click', function() { iconCallbackHandler.accept(true, \""
-                + id
-                + "\"); }).bindPopup('"
-                + name
-                + "').on('popupclose', function() { iconCallbackHandler.accept(false, \""
-                + id
-                + "\"); }).on('mouseover', function() { if (\""
-                + id
-                + "\" !== mouseoverIconId) { mouseoverIconId = \""
-                + id
-                + "\"; }}).on('mouseout', function() { if (\""
-                + id
-                + "\" === mouseoverIconId) { mouseoverIconId = null; }})";
-    }
-
-    private String getTriangleStyle(final IconStyles style) {
-        String jsonStyle;
-        switch (style) {
-        case FOCUSED:
-            jsonStyle = "color: 'white', fillColor: 'white', opacity: 1, fillOpacity: 1, lineJoin: 'mitre', pane: 'important-event-pane', interactive: false,";
-            break;
-        case BACKGROUND:
-            jsonStyle = "color: 'gray', fillColor: 'gray', opacity: 1, fillOpacity: 1, lineJoin: 'mitre',";
-            break;
-        case DEFAULT:
-        default:
-            jsonStyle = "color: 'yellow', fillColor: 'yellow', opacity: 1, fillOpacity: 1, lineJoin: 'mitre',";
-            break;
-        }
-        return jsonStyle;
-    }
-
-    private String getCircleStyle(final IconStyles style) {
-        String jsonStyle;
-        switch (style) {
-        case FOCUSED:
-            jsonStyle = ", { radius: 5, color: 'black', fillColor: '#ffffff', opacity: 1, fillOpacity: 1, pane: 'important-event-pane', interactive: false }";
-            break;
-        case BACKGROUND:
-            jsonStyle = ", { radius: 5, color: 'black', fillColor: '#505050', opacity: 1, fillOpacity: 1 }";
-            break;
-        case DEFAULT:
-        default:
-            jsonStyle = ", { radius: 5, color: 'black', fillColor: '#ff0000', opacity: 1, fillOpacity: 1 }";
-            break;
-        }
-        return jsonStyle;
-    }
-
     public WebView getWebView() {
         return webView;
     }
@@ -456,7 +321,7 @@ public class LeafletMap {
     }
 
     public void fitToBounds(final GeoBox bounds) {
-        webView.getEngine().executeScript("fitBounds([[" + bounds.getMinX() + "," + bounds.getMinY() + "], [" + bounds.getMaxX() + "," + bounds.getMaxY() + "]]);");
+        webView.getEngine().executeScript("fitBounds([[" + bounds.getMinY() + "," + bounds.getMinX() + "], [" + bounds.getMaxY() + "," + bounds.getMaxX() + "]]);");
     }
 
     public GeoBox getMapBounds() {

@@ -75,7 +75,12 @@ public class WaveformsCollectionJsonController {
         return ResponseEntity.ok(waveforms);
     }
 
-    @GetMapping(value = "/query/shared-event-station-by-id/{id}", name = "getActiveSharedEventStationStacksById")
+    @GetMapping(value = "/query/shared-event-station-by-id/{id}", name = "getSharedEventStationStacksById")
+    public ResponseEntity<?> getSharedEventStationStacksById(@PathVariable Long id) {
+        return ResponseEntity.ok(getWaveformService().getSharedEventStationStacksById(id));
+    }
+
+    @GetMapping(value = "/query/active-shared-event-station-by-id/{id}", name = "getActiveSharedEventStationStacksById")
     public ResponseEntity<?> getActiveSharedEventStationStacksById(@PathVariable Long id) {
         return ResponseEntity.ok(getWaveformService().getActiveSharedEventStationStacksById(id));
     }
@@ -109,6 +114,15 @@ public class WaveformsCollectionJsonController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
         getWaveformService().setActiveFlagByStationName(stationName, active);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/set-active/by-station-name-and-event-id/{active}", name = "setActiveFlagByStationNameAndEventId")
+    public ResponseEntity<?> setActiveFlagByStationNameAndEventId(@PathVariable Boolean active, @Valid @RequestBody String stationName, @Valid @RequestBody String eventId, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }
+        getWaveformService().setActiveFlagByStationNameAndEventId(stationName, eventId, active);
         return ResponseEntity.ok().build();
     }
 

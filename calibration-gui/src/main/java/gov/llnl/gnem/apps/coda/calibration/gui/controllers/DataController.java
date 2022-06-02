@@ -66,6 +66,7 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
@@ -282,13 +283,13 @@ public class DataController implements MapListeningController, RefreshableContro
         //The filter controller will manage the list so don't add the listData directly
         //to the table, otherwise the event handlers will trip over themselves
         DataFilterController<Waveform> filterController = new DataFilterController<>(tableView, listData);
-
-        filterController.addFilterToColumn(eventCol, (data, item) -> data.getEvent().getEventId().equals(item));
-        filterController.addFilterToColumn(depthCol, (data, item) -> dfmt2.format(data.getEvent().getDepth()).equals(item));
-        filterController.addFilterToColumn(lowFreqCol, (data, item) -> data.getLowFrequency().toString().equals(item));
-        filterController.addFilterToColumn(highFreqCol, (data, item) -> data.getHighFrequency().toString().equals(item));
-        filterController.addFilterToColumn(stationCol, (data, item) -> data.getStream().getStation().getStationName().equals(item));
-        filterController.addFilterToColumn(networkCol, (data, item) -> data.getStream().getStation().getNetworkName().equals(item));
+        ToggleGroup freqFieldsToggle = new ToggleGroup(); //The toggle group will prevent freqFields from both being active during the 'And' filter.
+        filterController.addFilterToColumn(false, null, eventCol, (data, value) -> data.getEvent().getEventId().equals(value));
+        filterController.addFilterToColumn(false, null, depthCol, (data, value) -> dfmt2.format(data.getEvent().getDepth()).equals(value));
+        filterController.addFilterToColumn(true, freqFieldsToggle, lowFreqCol, (data, value) -> data.getLowFrequency().toString().equals(value));
+        filterController.addFilterToColumn(true, freqFieldsToggle, highFreqCol, (data, value) -> data.getHighFrequency().toString().equals(value));
+        filterController.addFilterToColumn(false, null, stationCol, (data, value) -> data.getStream().getStation().getStationName().equals(value));
+        filterController.addFilterToColumn(false, null, networkCol, (data, value) -> data.getStream().getStation().getNetworkName().equals(value));
     }
 
     @Override

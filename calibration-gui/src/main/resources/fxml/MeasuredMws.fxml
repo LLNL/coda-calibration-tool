@@ -19,7 +19,9 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
+<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css"
+	xmlns="http://javafx.com/javafx/16"
+	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
 	<children>
 		<VBox>
 			<children>
@@ -29,57 +31,68 @@
 							<content>
 								<VBox>
 									<children>
-										<SplitPane dividerPositions="0.2" VBox.vgrow="ALWAYS">
+										<SplitPane dividerPositions="0.28" VBox.vgrow="ALWAYS">
 											<items>
 												<HiddenHeaderTableView fx:id="summaryTable" prefHeight="200.0" prefWidth="200.0">
 													<columns>
-														<TableColumn fx:id="summaryNameCol" editable="false" maxWidth="500.0" minWidth="75.0" prefWidth="-1.0" sortable="false" text="" />
-														<TableColumn fx:id="summaryValueCol" editable="false" maxWidth="1000.0" minWidth="-1.0" prefWidth="-1.0" sortable="false" text="" />
+														<TableColumn fx:id="summaryNameCol" editable="false" maxWidth="500.0" minWidth="75.0" prefWidth="-1.0" sortable="false" style="-fx-font-size: 14;" text="" />
+														<TableColumn fx:id="summaryValueCol" editable="false" maxWidth="1000.0" minWidth="-1.0" prefWidth="-1.0" sortable="false" style="-fx-font-size: 14;" text="" />
 													</columns>
 													<columnResizePolicy>
 														<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
 													</columnResizePolicy>
 												</HiddenHeaderTableView>
-                                    <StackPane pickOnBounds="false" VBox.vgrow="ALWAYS">
-                                       <children>
-      												<StackPane fx:id="spectraPlotPane" pickOnBounds="false" prefHeight="160.0" prefWidth="200.0" />
-            										<HBox pickOnBounds="false" prefWidth="200.0">
-            											<children>
-            												<Pane minWidth="15.0" prefWidth="15.0" />
-            												<VBox>
-            													<children>
-            														<Label text="Event" />
-            														<ComboBox fx:id="evidCombo" minWidth="150.0" prefWidth="150.0" />
-            													</children>
-            												</VBox>
-            												<Pane minWidth="15.0" prefWidth="15.0" />
-            												<VBox>
-            													<children>
-            														<Label />
-            														<Button minWidth="25.0" mnemonicParsing="false" fx:id="xAxisShrink">
-            															<tooltip>
-            																<Tooltip text="Toggle X-Axis shrink-to-data" />
-            															</tooltip>
-            														</Button>
-            													</children>
-            												</VBox>
-            												<VBox>
-            													<children>
-            														<Label />
-            														<Button fx:id="yAxisShrink" minWidth="25.0" mnemonicParsing="false">
-            															<tooltip>
-            																<Tooltip text="Toggle Y-Axis shrink-to-data" />
-            															</tooltip>
-            														</Button>
-            													</children>
-            												</VBox>
-            											</children>
-            											<padding>
-            												<Insets bottom="10.0" top="10.0" />
-            											</padding>
-            										</HBox>
-                                       </children>
-                                    </StackPane>
+												<StackPane pickOnBounds="false" VBox.vgrow="ALWAYS">
+													<children>
+														<StackPane fx:id="spectraPlotPane" pickOnBounds="false" prefHeight="160.0" prefWidth="200.0" />
+														<HBox pickOnBounds="false" prefWidth="200.0">
+															<children>
+																<Pane minWidth="15.0" prefWidth="15.0" />
+																<VBox>
+																	<children>
+																		<Label text="Event" />
+																		<ComboBox fx:id="evidCombo" minWidth="150.0" prefWidth="150.0" />
+																	</children>
+																</VBox>
+																<Pane minWidth="15.0" prefWidth="15.0" />
+																<VBox>
+																	<children>
+																		<Label />
+																		<Button minWidth="25.0" mnemonicParsing="false" fx:id="xAxisShrink">
+																			<tooltip>
+																				<Tooltip text="Toggle X-Axis shrink-to-data" />
+																			</tooltip>
+																		</Button>
+																	</children>
+																</VBox>
+																<VBox>
+																	<children>
+																		<Label />
+																		<Button fx:id="yAxisShrink" minWidth="25.0" mnemonicParsing="false">
+																			<tooltip>
+																				<Tooltip text="Toggle Y-Axis shrink-to-data" />
+																			</tooltip>
+																		</Button>
+																	</children>
+																</VBox>
+																<Pane minWidth="10.0" prefWidth="10.0" />
+																<VBox>
+																	<children>
+																		<Label />
+																		<Button fx:id="exportSpectraBtn" minWidth="25.0" mnemonicParsing="false" onAction="#exportSpectra">
+																			<tooltip>
+																				<Tooltip text="Download spectra data" />
+																			</tooltip>
+																		</Button>
+																	</children>
+																</VBox>
+															</children>
+															<padding>
+																<Insets bottom="10.0" top="10.0" />
+															</padding>
+														</HBox>
+													</children>
+												</StackPane>
 											</items>
 										</SplitPane>
 									</children>
@@ -164,20 +177,6 @@
 																<TableColumn fx:id="bandCoverageCol" editable="false" prefWidth="75.0" text="Band Coverage" visible="false" />
 																<TableColumn fx:id="dateCol" editable="false" prefWidth="150.0" text="Date" />
 																<TableColumn fx:id="measuredMwCol" editable="false" prefWidth="75.0" text="Mw" />
-																<TableColumn fx:id="obsEnergyCol" editable="false" prefWidth="75.0" text="ObsEnergy" visible="false" />
-																<TableColumn fx:id="totalEnergyCol" editable="false" prefWidth="75.0" text="ObsTotalEnergy" />
-																<TableColumn fx:id="totalEnergyMDACCol" editable="false" prefWidth="97.5" text="MDAC_Energy" visible="false" />
-																<TableColumn fx:id="energyRatioCol" editable="false" prefWidth="97.5" text="Obs/TotalObs" />
-																<TableColumn fx:id="energyStressCol" editable="false" prefWidth="97.5" text="ObsAppStress" />
-																<TableColumn fx:id="measuredStressCol" editable="false" prefWidth="60.5" text="App.Stress (MPa)" />
-																<TableColumn fx:id="mwCol" editable="false" prefWidth="75.0" text="Ref Mw" />
-																<TableColumn fx:id="stressCol" editable="false" prefWidth="150.0" text="Ref Stress" />
-																<TableColumn fx:id="measuredCornerFreqCol" editable="false" prefWidth="150.0" text="Fc (Hz)" />
-																<TableColumn fx:id="mistfitCol" editable="false" prefWidth="150.0" text="Misfit" visible="false" />
-																<TableColumn fx:id="valMwCol" editable="false" prefWidth="75.0" text="Val Mw" visible="false" />
-																<TableColumn fx:id="valStressCol" editable="false" prefWidth="150.0" text="Val Stress" visible="false" />
-																<TableColumn fx:id="iterationsCol" editable="false" prefWidth="150.0" text="Iterations" visible="false" />
-																<TableColumn fx:id="dataCountCol" editable="false" prefWidth="150.0" text="Data Count" visible="false" />
 																<TableColumn prefWidth="75.0" text="Mw UQ">
 																	<columns>
 																		<TableColumn fx:id="measuredMwUq1LowCol" editable="false" prefWidth="150.0" text="Misfit1 (min)" visible="false" />
@@ -186,7 +185,70 @@
 																		<TableColumn fx:id="measuredMwUq2HighCol" editable="false" prefWidth="150.0" text="Misfit2 (max)" visible="false" />
 																	</columns>
 																</TableColumn>
-                                                <TableColumn fx:id="likelyPoorlyConstrainedCol" editable="false" prefWidth="150.0" text="Poorly Constrained" visible="false" />
+																<TableColumn fx:id="measuredMeCol" editable="false" prefWidth="75.0" text="Me" />
+																<TableColumn prefWidth="75.0" text="Me UQ">
+																	<columns>
+																		<TableColumn fx:id="measuredMeUq1LowCol" editable="false" prefWidth="150.0" text="Misfit1 (min)" visible="false" />
+																		<TableColumn fx:id="measuredMeUq1HighCol" editable="false" prefWidth="150.0" text="Misfit1 (max)" visible="false" />
+																		<TableColumn fx:id="measuredMeUq2LowCol" editable="false" prefWidth="150.0" text="Misfit2 (min)" visible="false" />
+																		<TableColumn fx:id="measuredMeUq2HighCol" editable="false" prefWidth="150.0" text="Misfit2 (max)" visible="false" />
+																	</columns>
+																</TableColumn>
+																<TableColumn fx:id="obsEnergyCol" editable="false" prefWidth="75.0" text="ObsEnergy" visible="false" />
+																<TableColumn fx:id="totalEnergyCol" editable="false" prefWidth="75.0" text="ObsTotalEnergy" />
+																<TableColumn prefWidth="75.0" text="Obs. Energy UQ">
+																	<columns>
+																		<TableColumn fx:id="totalEnergyUq1LowCol" editable="false" prefWidth="150.0" text="Misfit1 (min)" visible="false" />
+																		<TableColumn fx:id="totalEnergyUq1HighCol" editable="false" prefWidth="150.0" text="Misfit1 (max)" visible="false" />
+																		<TableColumn fx:id="totalEnergyUq2LowCol" editable="false" prefWidth="150.0" text="Misfit2 (min)" visible="false" />
+																		<TableColumn fx:id="totalEnergyUq2HighCol" editable="false" prefWidth="150.0" text="Misfit2 (max)" visible="false" />
+																	</columns>
+																</TableColumn>
+																<TableColumn fx:id="totalEnergyMDACCol" editable="false" prefWidth="97.5" text="MDAC_Energy" visible="false" />
+																<TableColumn prefWidth="75.0" text="MDAC Energy UQ">
+																	<columns>
+																		<TableColumn fx:id="totalEnergyMDACUq1LowCol" editable="false" prefWidth="150.0" text="Misfit1 (min)" visible="false" />
+																		<TableColumn fx:id="totalEnergyMDACUq1HighCol" editable="false" prefWidth="150.0" text="Misfit1 (max)" visible="false" />
+																		<TableColumn fx:id="totalEnergyMDACUq2LowCol" editable="false" prefWidth="150.0" text="Misfit2 (min)" visible="false" />
+																		<TableColumn fx:id="totalEnergyMDACUq2HighCol" editable="false" prefWidth="150.0" text="Misfit2 (max)" visible="false" />
+																	</columns>
+																</TableColumn>
+																<TableColumn fx:id="energyRatioCol" editable="false" prefWidth="97.5" text="Obs/TotalObs" />
+																<TableColumn fx:id="energyStressCol" editable="false" prefWidth="97.5" text="ObsAppStress" />
+																<TableColumn prefWidth="75.0" text="Obs. App. Stress UQ">
+																	<columns>
+																		<TableColumn fx:id="energyStressUq1LowCol" editable="false" prefWidth="150.0" text="Misfit1 (min)" visible="false" />
+																		<TableColumn fx:id="energyStressUq1HighCol" editable="false" prefWidth="150.0" text="Misfit1 (max)" visible="false" />
+																		<TableColumn fx:id="energyStressUq2LowCol" editable="false" prefWidth="150.0" text="Misfit2 (min)" visible="false" />
+																		<TableColumn fx:id="energyStressUq2HighCol" editable="false" prefWidth="150.0" text="Misfit2 (max)" visible="false" />
+																	</columns>
+																</TableColumn>
+																<TableColumn fx:id="measuredStressCol" editable="false" prefWidth="60.5" text="App.Stress (MPa)" />
+																<TableColumn prefWidth="75.0" text="App. Stress UQ">
+																	<columns>
+																		<TableColumn fx:id="measuredStressUq1LowCol" editable="false" prefWidth="150.0" text="Misfit1 (min)" visible="false" />
+																		<TableColumn fx:id="measuredStressUq1HighCol" editable="false" prefWidth="150.0" text="Misfit1 (max)" visible="false" />
+																		<TableColumn fx:id="measuredStressUq2LowCol" editable="false" prefWidth="150.0" text="Misfit2 (min)" visible="false" />
+																		<TableColumn fx:id="measuredStressUq2HighCol" editable="false" prefWidth="150.0" text="Misfit2 (max)" visible="false" />
+																	</columns>
+																</TableColumn>
+																<TableColumn fx:id="mwCol" editable="false" prefWidth="75.0" text="Ref Mw" />
+																<TableColumn fx:id="stressCol" editable="false" prefWidth="150.0" text="Ref Stress" />
+																<TableColumn fx:id="measuredCornerFreqCol" editable="false" prefWidth="150.0" text="Fc (Hz)" />
+																<TableColumn prefWidth="75.0" text="Corner Freq UQ">
+																	<columns>
+																		<TableColumn fx:id="measuredCornerFreqUq1LowCol" editable="false" prefWidth="150.0" text="Misfit1 (min)" visible="false" />
+																		<TableColumn fx:id="measuredCornerFreqUq1HighCol" editable="false" prefWidth="150.0" text="Misfit1 (max)" visible="false" />
+																		<TableColumn fx:id="measuredCornerFreqUq2LowCol" editable="false" prefWidth="150.0" text="Misfit2 (min)" visible="false" />
+																		<TableColumn fx:id="measuredCornerFreqUq2HighCol" editable="false" prefWidth="150.0" text="Misfit2 (max)" visible="false" />
+																	</columns>
+																</TableColumn>
+																<TableColumn fx:id="mistfitCol" editable="false" prefWidth="150.0" text="Misfit" visible="false" />
+																<TableColumn fx:id="valMwCol" editable="false" prefWidth="75.0" text="Val Mw" visible="false" />
+																<TableColumn fx:id="valStressCol" editable="false" prefWidth="150.0" text="Val Stress" visible="false" />
+																<TableColumn fx:id="iterationsCol" editable="false" prefWidth="150.0" text="Iterations" visible="false" />
+																<TableColumn fx:id="dataCountCol" editable="false" prefWidth="150.0" text="Data Count" visible="false" />
+																<TableColumn fx:id="likelyPoorlyConstrainedCol" editable="false" prefWidth="150.0" text="Poorly Constrained" visible="false" />
 															</columns>
 															<columnResizePolicy>
 																<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

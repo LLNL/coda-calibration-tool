@@ -45,7 +45,9 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ValidationMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.EventSpectraReport;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
@@ -70,10 +72,11 @@ public class ParamExporter {
     private List<MeasuredMwTempFileWriter> mwWriters;
     private List<ReferenceMwTempFileWriter> referenceMwWriters;
     private List<ValidationMwTempFileWriter> validationMwWriters;
+    private List<SpectraTempFileWriter> spectraWriters;
 
     @Autowired
     public ParamExporter(ParameterClient paramClient, EventClient eventClient, List<ParamTempFileWriter> paramWriters, List<MeasuredMwTempFileWriter> mwWriters,
-            List<ReferenceMwTempFileWriter> referenceMwWriters, List<ValidationMwTempFileWriter> validationMwWriters) {
+            List<ReferenceMwTempFileWriter> referenceMwWriters, List<ValidationMwTempFileWriter> validationMwWriters, List<SpectraTempFileWriter> spectraWriters) {
         this.paramClient = paramClient;
         this.paramWriters = paramWriters;
 
@@ -81,6 +84,7 @@ public class ParamExporter {
         this.mwWriters = mwWriters;
         this.referenceMwWriters = referenceMwWriters;
         this.validationMwWriters = validationMwWriters;
+        this.spectraWriters = spectraWriters;
     }
 
     public File createExportArchive() throws IOException {
@@ -123,25 +127,24 @@ public class ParamExporter {
         }
 
         if (mwWriters != null) {
-            List<MeasuredMwDetails> measuredMwsDetails = new ArrayList<>();
-            //Get corresponding Event details
-            measuredMwsDetails.addAll(eventClient.getMeasuredEventDetails().filter(Objects::nonNull).filter(MeasuredMwDetails::isValid).toStream().collect(Collectors.toList()));
-
+            List<MeasuredMwDetails> measuredMwsDetails = new ArrayList<>(eventClient.getMeasuredEventDetails()
+                                                                                    .filter(Objects::nonNull)
+                                                                                    .filter(MeasuredMwDetails::isValid)
+                                                                                    .toStream()
+                                                                                    .collect(Collectors.toList()));
             for (MeasuredMwTempFileWriter writer : mwWriters) {
                 writer.writeMeasuredMws(tmpFolder, measuredMwsDetails);
             }
 
             if (referenceMwWriters != null) {
-                List<ReferenceMwParameters> referenceMws = new ArrayList<>();
-                referenceMws.addAll(eventClient.getReferenceEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
+                List<ReferenceMwParameters> referenceMws = new ArrayList<>(eventClient.getReferenceEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
                 for (ReferenceMwTempFileWriter writer : referenceMwWriters) {
                     writer.writeReferenceMwParams(tmpFolder, referenceMws);
                 }
             }
 
             if (validationMwWriters != null) {
-                List<ValidationMwParameters> validationMws = new ArrayList<>();
-                validationMws.addAll(eventClient.getValidationEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
+                List<ValidationMwParameters> validationMws = new ArrayList<>(eventClient.getValidationEvents().filter(Objects::nonNull).toStream().collect(Collectors.toList()));
                 for (ValidationMwTempFileWriter writer : validationMwWriters) {
                     writer.writeValidationMws(tmpFolder, validationMws);
                 }
@@ -152,7 +155,7 @@ public class ParamExporter {
         zipDir.deleteOnExit();
 
         try (Stream<Path> fileStream = Files.walk(tmpFolder, 5)) {
-            List<File> files = fileStream.map(p -> p.toFile()).filter(f -> f.isFile()).collect(Collectors.toList());
+            List<File> files = fileStream.map(Path::toFile).filter(File::isFile).collect(Collectors.toList());
             try (ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("zip", Files.newOutputStream(zipDir.toPath()))) {
                 for (File file : files) {
                     os.putArchiveEntry(new ZipArchiveEntry(file, file.getName()));
@@ -181,6 +184,12 @@ public class ParamExporter {
     public void writeMeasuredMws(Path path, String filename, List<MeasuredMwDetails> mws) {
         for (MeasuredMwTempFileWriter writer : mwWriters) {
             writer.writeMeasuredMws(path, filename, mws);
+        }
+    }
+
+    public void writeSpectra(Path path, String filename, List<EventSpectraReport> formattedExportValues) {
+        for (SpectraTempFileWriter writer : spectraWriters) {
+            writer.writeSpectraValues(path, filename, formattedExportValues);
         }
     }
 }

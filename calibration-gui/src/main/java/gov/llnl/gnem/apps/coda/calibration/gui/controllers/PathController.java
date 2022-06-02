@@ -590,7 +590,7 @@ public class PathController implements MapListeningController, RefreshableContro
                         continue;
                     }
                     if (beforeStatsStaPairs.get(staPair).getN() >= stationCountFilterField.getValue()) {
-                        final String staPairDisplayName = staPair.getLeft().getStationName() + " " + staPair.getRight().getStationName();
+                        final String staPairDisplayName = staPair.getX().getStationName() + " " + staPair.getY().getStationName();
                         final Symbol plotObj = plotFactory.createSymbol(
                                 SymbolStyles.SQUARE,
                                     "Before",

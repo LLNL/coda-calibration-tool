@@ -307,10 +307,6 @@ public class MdacCalculator {
         return Math.pow(10.0, (1.5 * Mw + 9.10));
     }
 
-    public static double mwInDyne(double testMw) {
-        return Math.pow(10, 1.5 * testMw + 10.73);
-    }
-
     public double apparentStressFromMwFc(Double mw, Double fc) {
         double K = calculateK(zeta, alphaS, betaS, radpatP, radpatS);
         double M0 = mwToM0(mw);

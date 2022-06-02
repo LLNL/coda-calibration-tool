@@ -14,6 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.model.domain;
 
+import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -101,15 +103,7 @@ public class SiteFrequencyBandParameters {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        long temp;
-        temp = Double.doubleToLongBits(highFrequency);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(lowFrequency);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((station == null) ? 0 : station.hashCode());
-        return result;
+        return Objects.hash(highFrequency, lowFrequency, station);
     }
 
     @Override
@@ -127,11 +121,7 @@ public class SiteFrequencyBandParameters {
         if (Double.doubleToLongBits(lowFrequency) != Double.doubleToLongBits(other.lowFrequency)) {
             return false;
         }
-        if (station == null) {
-            if (other.station != null) {
-                return false;
-            }
-        } else if (!station.equals(other.station)) {
+        if (!Objects.equals(station, other.station)) {
             return false;
         }
         return true;
@@ -164,22 +154,19 @@ public class SiteFrequencyBandParameters {
             }
             if (overlay.getStation() != null) {
                 if (station == null) {
-                    station = overlay.getStation();
-                } else {
-                    if (overlay.getStation().getNetworkName() != null) {
-                        if (!overlay.getStation().getNetworkName().equals("UNK") || station.getNetworkName() == null) {
-                            station.setNetworkName(overlay.getStation().getNetworkName());
-                        }
-                    }
-                    if (overlay.getStation().getStationName() != null) {
-                        station.setStationName(overlay.getStation().getStationName());
-                    }
-                    if (overlay.getStation().getLatitude() != 0.0) {
-                        station.setLatitude(overlay.getStation().getLatitude());
-                    }
-                    if (overlay.getStation().getLongitude() != 0.0) {
-                        station.setLongitude(overlay.getStation().getLongitude());
-                    }
+                    station = new Station();
+                }
+                if ((overlay.getStation().getNetworkName() != null) && (!overlay.getStation().getNetworkName().equals("UNK") || station.getNetworkName() == null)) {
+                    station.setNetworkName(overlay.getStation().getNetworkName());
+                }
+                if (overlay.getStation().getStationName() != null) {
+                    station.setStationName(overlay.getStation().getStationName());
+                }
+                if (overlay.getStation().getLatitude() != 0.0) {
+                    station.setLatitude(overlay.getStation().getLatitude());
+                }
+                if (overlay.getStation().getLongitude() != 0.0) {
+                    station.setLongitude(overlay.getStation().getLongitude());
                 }
             }
             if (overlay.getSiteTerm() != 0.0) {

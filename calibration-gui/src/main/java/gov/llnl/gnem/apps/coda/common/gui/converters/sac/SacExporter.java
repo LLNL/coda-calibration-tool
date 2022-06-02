@@ -52,8 +52,8 @@ public class SacExporter {
                 float[] sequence = new Sequence(w.getSegment()).getArray();
                 header.npts = sequence.length;
                 header.write(os);
-                for (int i = 0; i < sequence.length; i++) {
-                    os.writeFloat(sequence[i]);
+                for (float element : sequence) {
+                    os.writeFloat(element);
                 }
                 os.flush();
 
@@ -106,7 +106,9 @@ public class SacExporter {
             header.kevnm = w.getEvent().getEventId();
             header.evla = (float) w.getEvent().getLatitude();
             header.evlo = (float) w.getEvent().getLongitude();
-            header.evdp = (float) w.getEvent().getDepth();
+            //Evdp in meters and we expect Event->Depth to be km so need to convert
+            // back when we save
+            header.evdp = (float) (w.getEvent().getDepth() / 1000.0);
             String depType = w.getSegmentType();
             if (depType != null && !depType.trim().isEmpty()) {
                 if (depType.toLowerCase(Locale.ENGLISH).startsWith("dis")) {

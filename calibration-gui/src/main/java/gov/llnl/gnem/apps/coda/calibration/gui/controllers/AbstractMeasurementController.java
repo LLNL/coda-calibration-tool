@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
@@ -43,6 +44,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,9 +55,12 @@ import com.google.common.eventbus.Subscribe;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.ParamExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
+import gov.llnl.gnem.apps.coda.calibration.gui.util.FileDialogs;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.TextWrappingTableCell;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.EventSpectraReport;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
@@ -85,6 +90,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
@@ -167,7 +173,31 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     protected TableColumn<MeasuredMwDetails, String> totalEnergyCol;
 
     @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq1LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq1HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq2LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq2HighCol;
+
+    @FXML
     protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq1LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq1HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq2LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq2HighCol;
 
     @FXML
     protected TableColumn<MeasuredMwDetails, String> energyRatioCol;
@@ -176,10 +206,25 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     protected TableColumn<MeasuredMwDetails, String> energyStressCol;
 
     @FXML
+    protected TableColumn<MeasuredMwDetails, String> energyStressUq1LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> energyStressUq1HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> energyStressUq2LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> energyStressUq2HighCol;
+
+    @FXML
     protected TableColumn<MeasuredMwDetails, String> stressCol;
 
     @FXML
     protected TableColumn<MeasuredMwDetails, String> measuredMwCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredMeCol;
 
     @FXML
     protected TableColumn<MeasuredMwDetails, String> measuredStressCol;
@@ -207,6 +252,42 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
     @FXML
     protected TableColumn<MeasuredMwDetails, String> measuredMwUq2HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredMeUq1LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredMeUq1HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredMeUq2LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredMeUq2HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredStressUq1LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredStressUq1HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredStressUq2LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredStressUq2HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq1LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq1HighCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq2LowCol;
+
+    @FXML
+    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq2HighCol;
 
     @FXML
     protected TableColumn<MeasuredMwDetails, Integer> iterationsCol;
@@ -254,7 +335,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     private final Map<String, List<LabeledPlotPoint>> plotPointMap = new HashMap<>();
 
     private final SymbolStyleMapFactory symbolStyleMapFactory;
-    private Map<String, PlotPoint> symbolStyleMap;
+    private Map<String, PlotPoint> symbolStyleMap = new HashMap<>();
 
     private final GeoMap mapImpl;
 
@@ -281,6 +362,9 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     protected Button yAxisShrink;
     private boolean shouldYAxisShrink = false;
 
+    @FXML
+    protected Button exportSpectraBtn;
+
     private boolean isVisible = false;
 
     protected List<SpectraPlotController> spectraControllers = new ArrayList<>(1);
@@ -288,15 +372,18 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     protected final PlotFactory plotFactory;
     private final EventBus bus;
 
+    private ParamExporter paramExporter;
+
     // TODO: Break this up into components so this isn't so incredibly huge.
     protected AbstractMeasurementController(final SpectraClient spectraClient, final ParameterClient paramClient, final EventClient referenceEventClient, final WaveformClient waveformClient,
-            final SymbolStyleMapFactory styleFactory, final GeoMap map, final MapPlottingUtilities iconFactory, final PlotFactory plotFactory, final EventBus bus) {
+            final SymbolStyleMapFactory styleFactory, final GeoMap map, final MapPlottingUtilities iconFactory, final ParamExporter paramExporter, final PlotFactory plotFactory, final EventBus bus) {
         this.spectraClient = spectraClient;
         this.paramClient = paramClient;
         this.referenceEventClient = referenceEventClient;
         this.waveformClient = waveformClient;
         this.symbolStyleMapFactory = styleFactory;
         this.mapImpl = map;
+        this.paramExporter = paramExporter;
         this.plotFactory = plotFactory;
         this.bus = bus;
         this.iconFactory = iconFactory;
@@ -334,6 +421,13 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             return shouldYAxisShrink;
         }, Axis.Type.Y);
 
+        final Label label = new Label("\uE2C4");
+        label.getStyleClass().add("material-icons-medium");
+        label.setMaxHeight(16);
+        label.setMinWidth(16);
+        exportSpectraBtn.setGraphic(label);
+        exportSpectraBtn.setContentDisplay(ContentDisplay.CENTER);
+
         mwPlot = plotFactory.basicPlot();
         mwPlot.getTitle().setText("Mw");
         mwPlot.getTitle().setFontSize(16);
@@ -366,7 +460,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         energyVsMomentPlot = plotFactory.basicPlot();
         energyVsMomentPlot.getTitle().setText("Energy vs Moment");
         energyVsMomentPlot.getTitle().setFontSize(16);
-        energyVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "Total Observed Energy (J)"), plotFactory.axis(Axis.Type.Y, "log10 Mo (N-m)"));
+        energyVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "Total Observed Energy (log J)"), plotFactory.axis(Axis.Type.Y, "log10 Mo (N-m)"));
         Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         energyVsMomentPlot.addAxes(rightAxis);
@@ -409,25 +503,53 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
         CellBindingUtils.attachTextCellFactories(mwCol, MeasuredMwDetails::getRefMw, dfmt4);
         CellBindingUtils.attachTextCellFactories(stressCol, MeasuredMwDetails::getRefApparentStressInMpa, dfmt4);
-
         CellBindingUtils.attachTextCellFactories(valMwCol, MeasuredMwDetails::getValMw, dfmt4);
         CellBindingUtils.attachTextCellFactories(valStressCol, MeasuredMwDetails::getValApparentStressInMpa, dfmt4);
+
         CellBindingUtils.attachTextCellFactories(measuredMwCol, MeasuredMwDetails::getMw, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(obsEnergyCol, MeasuredMwDetails::getObsEnergy, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyCol, MeasuredMwDetails::getTotalEnergy, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyMDACCol, MeasuredMwDetails::getTotalEnergyMDAC, dfmt4);
-        CellBindingUtils.attachTextCellFactories(energyRatioCol, MeasuredMwDetails::getEnergyRatio, dfmt4);
-        CellBindingUtils.attachTextCellFactories(energyStressCol, MeasuredMwDetails::getEnergyStress, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(measuredStressCol, MeasuredMwDetails::getApparentStressInMpa, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredCornerFreqCol, MeasuredMwDetails::getCornerFreq, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(mistfitCol, MeasuredMwDetails::getMisfit, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredMwUq1LowCol, MeasuredMwDetails::getMw1Min, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredMwUq1HighCol, MeasuredMwDetails::getMw1Max, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredMwUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
         CellBindingUtils.attachTextCellFactories(measuredMwUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMeCol, MeasuredMwDetails::getMe, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMeUq1LowCol, MeasuredMwDetails::getMw1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMeUq1HighCol, MeasuredMwDetails::getMw1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMeUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredMeUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
+
+        CellBindingUtils.attachTextCellFactories(obsEnergyCol, MeasuredMwDetails::getObsEnergy, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyCol, MeasuredMwDetails::getTotalEnergy, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyUq1LowCol, MeasuredMwDetails::getLogTotalEnergy1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyUq1HighCol, MeasuredMwDetails::getLogTotalEnergy1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyUq2LowCol, MeasuredMwDetails::getLogTotalEnergy2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyUq2HighCol, MeasuredMwDetails::getLogTotalEnergy2Max, dfmt4);
+
+        CellBindingUtils.attachTextCellFactories(totalEnergyMDACCol, MeasuredMwDetails::getTotalEnergyMDAC, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq1LowCol, MeasuredMwDetails::getLogTotalEnergyMDAC1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq1HighCol, MeasuredMwDetails::getLogTotalEnergyMDAC1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq2LowCol, MeasuredMwDetails::getLogTotalEnergyMDAC2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq2HighCol, MeasuredMwDetails::getLogTotalEnergyMDAC2Max, dfmt4);
+
+        CellBindingUtils.attachTextCellFactories(energyRatioCol, MeasuredMwDetails::getEnergyRatio, dfmt4);
+        CellBindingUtils.attachTextCellFactories(energyStressCol, MeasuredMwDetails::getEnergyStress, dfmt4);
+        CellBindingUtils.attachTextCellFactories(energyStressUq1LowCol, MeasuredMwDetails::getObsAppStress1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(energyStressUq1HighCol, MeasuredMwDetails::getObsAppStress1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(energyStressUq2LowCol, MeasuredMwDetails::getObsAppStress2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(energyStressUq2HighCol, MeasuredMwDetails::getObsAppStress2Max, dfmt4);
+
+        CellBindingUtils.attachTextCellFactories(measuredStressCol, MeasuredMwDetails::getApparentStressInMpa, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredStressUq1LowCol, MeasuredMwDetails::getApparentStress1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredStressUq1HighCol, MeasuredMwDetails::getApparentStress1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredStressUq2LowCol, MeasuredMwDetails::getApparentStress2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredStressUq2HighCol, MeasuredMwDetails::getApparentStress2Max, dfmt4);
+
+        CellBindingUtils.attachTextCellFactories(measuredCornerFreqCol, MeasuredMwDetails::getCornerFreq, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq1LowCol, MeasuredMwDetails::getCornerFreq1Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq1HighCol, MeasuredMwDetails::getCornerFreq1Max, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq2LowCol, MeasuredMwDetails::getCornerFreq2Min, dfmt4);
+        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq2HighCol, MeasuredMwDetails::getCornerFreq2Max, dfmt4);
+
+        CellBindingUtils.attachTextCellFactories(mistfitCol, MeasuredMwDetails::getMisfit, dfmt4);
         CellBindingUtils.attachTextCellFactories(bandCoverageCol, MeasuredMwDetails::getBandCoverage, dfmt4);
         CellBindingUtils.attachTextCellFactoriesString(likelyPoorlyConstrainedCol, mw -> mw.isLikelyPoorlyConstrained().toString());
 
@@ -453,14 +575,14 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             @Override
             protected void updateItem(Pair<String, String> entry, boolean b) {
                 super.updateItem(entry, b);
-                if (entry != null && entry.getLeft() != null && entry.getLeft().contains("(Model Fit)")) {
+                if (entry != null && entry.getX() != null && entry.getX().contains("(Model Fit)")) {
                     setStyle("-fx-font-weight:bold;");
                 }
             }
         });
 
-        CellBindingUtils.attachTextCellFactoriesString(summaryNameCol, Pair::getLeft);
-        CellBindingUtils.attachTextCellFactoriesString(summaryValueCol, Pair::getRight);
+        CellBindingUtils.attachTextCellFactoriesString(summaryNameCol, Pair::getX);
+        CellBindingUtils.attachTextCellFactoriesString(summaryValueCol, Pair::getY);
         summaryNameCol.setCellFactory(param -> new TextWrappingTableCell());
     }
 
@@ -523,15 +645,53 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             }
 
             final Spectra fitSpectra = fittingSpectra.get(0);
-            summaryValues.add(new Pair<>("Mw (Model Fit)", dfmt2.format(fitSpectra.getMw())));
+            summaryValues.add(
+                    new Pair<>("Mw (Model Fit)",
+                               dfmt2.format(
+                                       fitSpectra.getMw()) + " [" + dfmt2.format(mwDetails.getMw2Min() - fitSpectra.getMw()) + ", " + dfmt2.format(mwDetails.getMw2Max() - fitSpectra.getMw()) + "]"));
 
             if (fitSpectra.getApparentStress() > 0.0) {
-                summaryValues.add(new Pair<>("Apparent Stress (Model Fit)", dfmt2.format(fitSpectra.getApparentStress()) + " MPa"));
+                summaryValues.add(
+                        new Pair<>("Apparent Stress (Model Fit)",
+                                   dfmt2.format(fitSpectra.getApparentStress())
+                                           + " MPa ["
+                                           + dfmt2.format(mwDetails.getApparentStress2Min() - fitSpectra.getApparentStress())
+                                           + ", "
+                                           + dfmt2.format(mwDetails.getApparentStress2Max() - fitSpectra.getApparentStress())
+                                           + "]"));
             }
-            summaryValues.add(new Pair<>("Energy (Model Fit)", dfmt2.format(fitSpectra.getlogTotalEnergyMDAC()) + " J"));
+            summaryValues.add(
+                    new Pair<>("Energy (Model Fit)",
+                               dfmt2.format(fitSpectra.getLogTotalEnergyMDAC())
+                                       + " ["
+                                       + dfmt2.format(mwDetails.getLogTotalEnergyMDAC2Min() - fitSpectra.getLogTotalEnergyMDAC())
+                                       + ", "
+                                       + dfmt2.format(mwDetails.getLogTotalEnergyMDAC2Max() - fitSpectra.getLogTotalEnergyMDAC())
+                                       + "] log J"));
 
-            summaryValues.add(new Pair<>("Observed Total Energy", dfmt2.format(fitSpectra.getLogTotalEnergy()) + " J"));
-            summaryValues.add(new Pair<>("Observed Apparent Stress", dfmt2.format(fitSpectra.getObsAppStress()) + " MPa"));
+            summaryValues.add(
+                    new Pair<>("Total Energy",
+                               dfmt2.format(fitSpectra.getLogTotalEnergy())
+                                       + " ["
+                                       + dfmt2.format(mwDetails.getLogTotalEnergy2Min() - fitSpectra.getLogTotalEnergy())
+                                       + ", "
+                                       + dfmt2.format(mwDetails.getLogTotalEnergy2Max() - fitSpectra.getLogTotalEnergy())
+                                       + "] log J"));
+
+            summaryValues.add(
+                    new Pair<>("Me (Total Energy)",
+                               dfmt2.format(
+                                       mwDetails.getMe()) + " [" + dfmt2.format(mwDetails.getMe2Min() - mwDetails.getMe()) + ", " + dfmt2.format(mwDetails.getMe2Max() - mwDetails.getMe()) + "]"));
+
+            summaryValues.add(
+                    new Pair<>("Observed Apparent Stress",
+                               dfmt2.format(fitSpectra.getObsAppStress())
+                                       + " MPa ["
+                                       + dfmt2.format(mwDetails.getObsAppStress2Min() - fitSpectra.getObsAppStress())
+                                       + ", "
+                                       + dfmt2.format(mwDetails.getObsAppStress2Max() - fitSpectra.getObsAppStress())
+                                       + "]"));
+
             summaryValues.add(new Pair<>("Observed / Total Energy", dfmt2.format(100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy()))) + " %"));
             summaryValues.add(
                     new Pair<>("Extrapolated / Total Energy", dfmt2.format(100.0 - (100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy())))) + " %"));
@@ -871,7 +1031,9 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                     energyVsMomentPlot.replot();
                 });
 
-                symbolStyleMap = symbolStyleMapFactory.build(spectralMeasurements, specMeas -> specMeas.getWaveform().getStream().getStation().getStationName());
+                //Wastes a little compute but KISS
+                Map<String, PlotPoint> styleMap = symbolStyleMapFactory.build(spectralMeasurements, specMeas -> specMeas.getWaveform().getStream().getStation().getStationName());
+                styleMap.entrySet().forEach(e -> symbolStyleMap.putIfAbsent(e.getKey(), e.getValue()));
 
                 runGuiUpdate(() -> {
                     stationSymbols.clear();
@@ -991,6 +1153,57 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     @Override
     public Runnable getRefreshFunction() {
         return this::reloadData;
+    }
+
+    public void exportSpectra() {
+        Platform.runLater(() -> {
+            if (evidCombo.getValue() != null) {
+                final File file = FileDialogs.openFileSaveDialog(evidCombo.getValue(), "-Spectra.json", spectraPlotPanel.getScene().getWindow());
+                if (file != null && FileDialogs.ensureFileIsWritable(file)) {
+                    final String filePath = file.getAbsolutePath();
+                    List<EventSpectraReport> formattedExportValues = getFormattedValues(evidCombo.getValue(), spectralMeasurements);
+                    paramExporter.writeSpectra(Paths.get(FilenameUtils.getFullPath(filePath)), FilenameUtils.getName(filePath), formattedExportValues);
+                }
+            }
+        });
+    }
+
+    private List<EventSpectraReport> getFormattedValues(String eventId, List<SpectraMeasurement> measurements) {
+        Map<String, EventSpectraReport> valuesMap = new HashMap<>();
+        if (eventId != null && measurements != null) {
+            List<SpectraMeasurement> filteredMeasurements = measurements;
+            if (!eventId.equalsIgnoreCase("All")) {
+                filteredMeasurements = filterToEvent(eventId, measurements);
+            }
+            Map<String, Map<Double, Double>> averageValues = new HashMap<>();
+            for (SpectraMeasurement meas : filteredMeasurements) {
+                String key = meas.getWaveform().getEvent().getEventId()
+                        + "-"
+                        + meas.getWaveform().getStream().getStation().getNetworkName()
+                        + "-"
+                        + meas.getWaveform().getStream().getStation().getStationName();
+                valuesMap.computeIfAbsent(
+                        key,
+                            k -> new EventSpectraReport(meas.getWaveform().getEvent().getEventId(),
+                                                        meas.getWaveform().getStream().getStation().getNetworkName(),
+                                                        meas.getWaveform().getStream().getStation().getStationName(),
+                                                        new ArrayList<>()));
+
+                Double freq = centerFreq(meas.getWaveform());
+                valuesMap.get(key).add(new Pair<>(freq, meas.getPathAndSiteCorrected()));
+                averageValues.computeIfAbsent(meas.getWaveform().getEvent().getEventId(), k -> new TreeMap<>()).merge(freq, meas.getPathAndSiteCorrected(), (l, r) -> (l + r) / 2.0);
+            }
+
+            for (Entry<String, Map<Double, Double>> average : averageValues.entrySet()) {
+                valuesMap.put(
+                        "Average-" + average.getKey(),
+                            new EventSpectraReport(average.getKey(),
+                                                   null,
+                                                   "Average",
+                                                   average.getValue().entrySet().stream().map(e -> new Pair<>(e.getKey(), e.getValue())).collect(Collectors.toList())));
+            }
+        }
+        return new ArrayList<>(valuesMap.values());
     }
 
     @Override

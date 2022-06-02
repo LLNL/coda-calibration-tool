@@ -43,9 +43,13 @@ public interface WaveformService extends BaseService<Waveform, Long> {
 
     public List<Long> setActiveFlagByStationName(String stationName, boolean active);
 
+    public List<Long> setActiveFlagByStationNameAndEventId(String stationName, String eventId, boolean active);
+
     public List<Waveform> findAllActiveStacksByEventIdAndStationNames(String eventId, List<String> stationNames);
 
     public List<Waveform> getAllActiveStacksInStationNames(List<String> stationNames);
+
+    public List<Waveform> getSharedEventStationStacksById(Long id);
 
     public List<Waveform> getActiveSharedEventStationStacksById(Long id);
 }

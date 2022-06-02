@@ -33,8 +33,6 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -61,6 +59,7 @@ import org.springframework.stereotype.Component;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MwOptimizerMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
@@ -105,45 +104,49 @@ public class SpectraCalculator {
     private double minApparentStress = 0.0001;
     @Value("${spectra-calc.max-apparent-stress-mpa:1000.00}")
     private double maxApparentStress = 1000.00;
-    @Value("${report-stress-bounds-in-uq:false}")
-    private boolean reportStressBoundsInUQ = false;
+
+    @Value("${spectra-calc.suspect-iterations:50}")
+    private int suspectIterations = 50;
+    @Value("${spectra-calc.suspect-mw-range:1.5}")
+    private double suspectMwRange = 1.5;
 
     private static final int LOG10_M0 = 0;
     private static final int MW_FIT = 1;
     private static final int DATA_COUNT = 2;
     private static final int RMS_FIT = 3;
-    private static final int APP_STRESS = 4;
-    private static final int MW_MEAN = 5;
-    private static final int MW_1_MIN = 6;
-    private static final int MW_1_MAX = 7;
-    private static final int MW_2_MIN = 8;
-    private static final int MW_2_MAX = 9;
-    private static final int APP_STRESS_MEAN = 10;
-    private static final int FIT_MEAN = 11;
-    private static final int MW_SD = 12;
-    private static final int APP_STRESS_SD = 13;
-    private static final int FIT_SD = 14;
-    private static final int APP_1_MIN = 15;
-    private static final int APP_1_MAX = 16;
-    private static final int APP_2_MIN = 17;
-    private static final int APP_2_MAX = 18;
-    private static final int CORNER_FREQ = 19;
-    private static final int CORNER_FREQ_SD = 20;
-    private static final int ITR_COUNT = 21;
-    private static final int MDAC_ENERGY = 22;
-    private static final int PARAM_COUNT = 23;
+    private static final int FIT_MEAN = 4;
+    private static final int FIT_SD = 5;
+    private static final int APP_STRESS = 6;
+    private static final int MW_1_MIN = 7;
+    private static final int MW_1_MAX = 8;
+    private static final int MW_2_MIN = 9;
+    private static final int MW_2_MAX = 10;
+    private static final int APP_1_MIN = 11;
+    private static final int APP_1_MAX = 12;
+    private static final int APP_2_MIN = 13;
+    private static final int APP_2_MAX = 14;
+    private static final int CORNER_FREQ = 15;
+    private static final int CORNER_FREQ_1_MIN = 16;
+    private static final int CORNER_FREQ_1_MAX = 17;
+    private static final int CORNER_FREQ_2_MIN = 18;
+    private static final int CORNER_FREQ_2_MAX = 19;
+    private static final int ITR_COUNT = 20;
+    private static final int MDAC_ENERGY = 21;
+    private static final int PARAM_COUNT = 22;
 
     private static final int MW = 0;
     private static final int MPA = 1;
     private static final int FIT = 2;
-    private static final int CORNER = 3;
 
-    private final Comparator<Triple<Double, Double, Double>> mwFittingComparator = (o1, o2) -> {
-        int compare = Double.compare(o1.getLeft(), o2.getLeft());
+    private final Comparator<MwOptimizerMeasurement> mwFittingComparator = (o1, o2) -> {
+        int compare = Double.compare(o1.getFit(), o2.getFit());
         if (compare == 0) {
-            compare = Double.compare(o1.getMiddle(), o2.getMiddle());
+            compare = Double.compare(o1.getMw(), o2.getMw());
             if (compare == 0) {
-                compare = Double.compare(o2.getRight(), o1.getRight());
+                compare = Double.compare(o2.getStress(), o1.getStress());
+                if (compare == 0) {
+                    compare = Double.compare(o2.getCornerFreq(), o1.getCornerFreq());
+                }
             }
         }
         return compare;
@@ -449,38 +452,73 @@ public class SpectraCalculator {
     public List<MeasuredMwParameters> measureMws(MwMeasurementInputData inputData, final PICK_TYPES selectedPhase, MdacParametersFI mdacFi) {
         return inputData.getEvidMap().entrySet().parallelStream().map(entry -> {
             SortedMap<FrequencyBand, SummaryStatistics> measurements = new TreeMap<>(entry.getValue());
+            SortedMap<FrequencyBand, Double> mainMeas = new TreeMap<>();
+            SortedMap<FrequencyBand, Double> low1Meas = new TreeMap<>();
+            SortedMap<FrequencyBand, Double> low2Meas = new TreeMap<>();
+            SortedMap<FrequencyBand, Double> high1Meas = new TreeMap<>();
+            SortedMap<FrequencyBand, Double> high2Meas = new TreeMap<>();
+
             double[] MoMw = fitMw(entry.getKey(), measurements, selectedPhase, mdacFi, inputData.getMdacPs(), inputData.getEventWeights().get(entry.getKey()));
             if (MoMw == null) {
                 log.warn("MoMw calculation returned null value");
                 return null;
             }
 
-            EnergyInfo info = calcTotalEnergyInfo(measurements, MoMw[MW_FIT], MoMw[APP_STRESS], mdacFi);
+            double max = 0.0;
+            double sd;
+            for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
+                sd = Math.sqrt(meas.getValue().getVariance());
+                if (Double.isFinite(sd) && (sd > max || max == 0.0)) {
+                    max = sd;
+                }
+            }
 
-            boolean isLikelyPoorlyConstrained = (MoMw[ITR_COUNT] > 50
+            for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
+                //Collect spread for 50-95 bands and build 4 spectra
+
+                //5 is not really enough but these are typically very small batches so we have to live
+                // with what we can get
+                if (meas.getValue().getN() >= 5) {
+                    sd = Math.sqrt(meas.getValue().getVariance());
+                } else if (max != 0.0) {
+                    sd = max;
+                } else {
+                    sd = meas.getValue().getMean() / 4.0;
+                    if (!Double.isFinite(sd)) {
+                        sd = 0.5;
+                    }
+                }
+
+                mainMeas.put(meas.getKey(), meas.getValue().getMean());
+                low1Meas.put(meas.getKey(), meas.getValue().getMean() - sd);
+                low2Meas.put(meas.getKey(), meas.getValue().getMean() - 2 * sd);
+                high1Meas.put(meas.getKey(), meas.getValue().getMean() + sd);
+                high2Meas.put(meas.getKey(), meas.getValue().getMean() + 2 * sd);
+            }
+
+            //TODO: Calc energy for each of the 5 spectra
+            EnergyInfo info = calcTotalEnergyInfo(mainMeas, MoMw[MW_FIT], MoMw[APP_STRESS], mdacFi);
+            EnergyInfo infoLow1 = calcTotalEnergyInfo(low1Meas, MoMw[MW_1_MIN], MoMw[APP_1_MIN], mdacFi);
+            EnergyInfo infoLow2 = calcTotalEnergyInfo(low2Meas, MoMw[MW_2_MIN], MoMw[APP_2_MIN], mdacFi);
+            EnergyInfo infoHigh1 = calcTotalEnergyInfo(high1Meas, MoMw[MW_1_MAX], MoMw[APP_1_MAX], mdacFi);
+            EnergyInfo infoHigh2 = calcTotalEnergyInfo(high2Meas, MoMw[MW_2_MAX], MoMw[APP_2_MAX], mdacFi);
+
+            boolean isLikelyPoorlyConstrained = (MoMw[ITR_COUNT] > suspectIterations
                     || MoMw[CORNER_FREQ] < measurements.firstKey().getLowFrequency() + (measurements.firstKey().getHighFrequency() - measurements.firstKey().getLowFrequency()) / 2.
                     || MoMw[CORNER_FREQ] > measurements.lastKey().getLowFrequency() + (measurements.lastKey().getHighFrequency() - measurements.lastKey().getLowFrequency()) / 2.
-                    || Math.abs(MoMw[MW_2_MIN] - MoMw[MW_2_MAX]) >= 1.5);
+                    || Math.abs(MoMw[MW_2_MIN] - MoMw[MW_2_MAX]) >= suspectMwRange);
 
             return new MeasuredMwParameters().setEventId(entry.getKey().getEventId())
                                              .setDataCount((int) MoMw[DATA_COUNT])
                                              .setStationCount(inputData.getStationCount().get(entry.getKey().getEventId()))
                                              .setBandCoverage(inputData.getBandCoverageMetric().get(entry.getKey().getEventId()))
-                                             .setObsEnergy(info.getObsEnergy())
-                                             .setLogTotalEnergy(info.getLogTotalEnergy())
-                                             .setLogTotalEnergyMDAC(info.getLogEnergyMDAC())
-                                             .setEnergyRatio(info.getEnergyRatio())
-                                             .setObsAppStress(info.getObsApparentStress())
+                                             .setLogM0Nm(MoMw[LOG10_M0])
                                              .setMw(MoMw[MW_FIT])
-                                             .setMeanMw(MoMw[MW_MEAN])
-                                             .setMwSd(MoMw[MW_SD])
                                              .setMw1Min(MoMw[MW_1_MIN])
                                              .setMw1Max(MoMw[MW_1_MAX])
                                              .setMw2Min(MoMw[MW_2_MIN])
                                              .setMw2Max(MoMw[MW_2_MAX])
                                              .setApparentStressInMpa(MoMw[APP_STRESS])
-                                             .setMeanApparentStressInMpa(MoMw[APP_STRESS_MEAN])
-                                             .setApparentStressSd(MoMw[APP_STRESS_SD])
                                              .setApparentStress1Min(MoMw[APP_1_MIN])
                                              .setApparentStress1Max(MoMw[APP_1_MAX])
                                              .setApparentStress2Min(MoMw[APP_2_MIN])
@@ -489,7 +527,34 @@ public class SpectraCalculator {
                                              .setMeanMisfit(MoMw[FIT_MEAN])
                                              .setMisfitSd(MoMw[FIT_SD])
                                              .setCornerFrequency(MoMw[CORNER_FREQ])
-                                             .setCornerFrequencySd(MoMw[CORNER_FREQ_SD])
+                                             .setCornerFrequencyUq1Min(MoMw[CORNER_FREQ_1_MIN])
+                                             .setCornerFrequencyUq1Max(MoMw[CORNER_FREQ_1_MAX])
+                                             .setCornerFrequencyUq2Min(MoMw[CORNER_FREQ_2_MIN])
+                                             .setCornerFrequencyUq2Max(MoMw[CORNER_FREQ_2_MAX])
+                                             .setObsEnergy(info.getObsEnergy())
+                                             .setLogTotalEnergy(info.getLogTotalEnergy())
+                                             .setLogTotalEnergy1Min(infoLow1.getLogTotalEnergy())
+                                             .setLogTotalEnergy1Max(infoHigh1.getLogTotalEnergy())
+                                             .setLogTotalEnergy2Min(infoLow2.getLogTotalEnergy())
+                                             .setLogTotalEnergy2Max(infoHigh2.getLogTotalEnergy())
+                                             .setLogTotalEnergyMDAC(info.getLogEnergyMDAC())
+                                             .setLogTotalEnergyMDAC1Min(infoLow1.getLogEnergyMDAC())
+                                             .setLogTotalEnergyMDAC1Max(infoHigh1.getLogEnergyMDAC())
+                                             .setLogTotalEnergyMDAC2Min(infoLow2.getLogEnergyMDAC())
+                                             .setLogTotalEnergyMDAC2Max(infoHigh2.getLogEnergyMDAC())
+                                             .setObsAppStress(info.getObsApparentStress())
+                                             .setObsAppStress1Min(infoLow1.getObsApparentStress())
+                                             .setObsAppStress1Max(infoHigh1.getObsApparentStress())
+                                             .setObsAppStress2Min(infoLow2.getObsApparentStress())
+                                             .setObsAppStress2Max(infoHigh2.getObsApparentStress())
+                                             .setEnergyRatio(info.getEnergyRatio())
+                                             //Me calc from Mayeda, Kevin & Walter, William. (1996).
+                                             //Journal of Geophysical Research. 1011. 11195-11208. 10.1029/96JB00112.
+                                             .setMe(info.getLogTotalEnergy() / 1.5 - 3.2)
+                                             .setMe1Min(infoLow1.getLogTotalEnergy() / 1.5 - 3.2)
+                                             .setMe1Max(infoHigh1.getLogTotalEnergy() / 1.5 - 3.2)
+                                             .setMe2Min(infoLow2.getLogTotalEnergy() / 1.5 - 3.2)
+                                             .setMe2Max(infoHigh2.getLogTotalEnergy() / 1.5 - 3.2)
                                              .setIterations((int) MoMw[ITR_COUNT])
                                              .setLikelyPoorlyConstrained(isLikelyPoorlyConstrained);
         }).filter(Objects::nonNull).collect(Collectors.toList());
@@ -509,7 +574,7 @@ public class SpectraCalculator {
      * envelopes, J. Geophys. Res., 101( B5), 11195– 11208,
      * doi:10.1029/96JB00112.
      */
-    public EnergyInfo calcTotalEnergyInfo(final SortedMap<FrequencyBand, SummaryStatistics> measurements, double mwMDAC, double apparentStress, MdacParametersFI mdacFI) {
+    public EnergyInfo calcTotalEnergyInfo(final SortedMap<FrequencyBand, Double> measurements, double mwMDAC, double apparentStress, MdacParametersFI mdacFI) {
 
         final int measCount = measurements.entrySet().size();
 
@@ -519,9 +584,8 @@ public class SpectraCalculator {
 
         // Initialize data for calculations below
         int idx = 0;
-        for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
-            // Unit conversion from Dyne cm to MKS
-            logAmplitudes[idx] = meas.getValue().getMean() - 7.0;
+        for (final Entry<FrequencyBand, Double> meas : measurements.entrySet()) {
+            logAmplitudes[idx] = meas.getValue() - 7.0;
             lowFreq[idx] = meas.getKey().getLowFrequency();
             highFreq[idx] = meas.getKey().getHighFrequency();
             idx++;
@@ -621,7 +685,7 @@ public class SpectraCalculator {
         final double[] result = new double[PARAM_COUNT];
 
         final SortedMap<Double, Double> frequencyBands = new TreeMap<>();
-        final SortedSet<Triple<Double, Double, Double>> optimizerMeasurements = Collections.synchronizedSortedSet(new TreeSet<>(mwFittingComparator));
+        final SortedSet<MwOptimizerMeasurement> optimizerMeasurements = Collections.synchronizedSortedSet(new TreeSet<>(mwFittingComparator));
         long dataCount = 0l;
 
         for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
@@ -663,7 +727,7 @@ public class SpectraCalculator {
             final double fit = WCVRMSD(weightMap, dataMap);
             final double corner = mdacService.getCornerFrequency(mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(testSigma), testMw));
             stats.addValue(new double[] { testMw, testSigma, fit, corner });
-            optimizerMeasurements.add(new ImmutableTriple<>(fit, testMw, testSigma));
+            optimizerMeasurements.add(new MwOptimizerMeasurement(fit, testMw, testSigma, corner));
             return fit;
         };
 
@@ -677,7 +741,7 @@ public class SpectraCalculator {
             // converted back into dyne-cm to match Kevin's format
             final double testMw = optimizerResult.getPoint()[MW];
             // log10M0
-            result[LOG10_M0] = Math.log10(mdacService.getMwInDyne(testMw));
+            result[LOG10_M0] = Math.log10(mdacService.getM0(testMw));
             result[MW_FIT] = testMw; // best Mw fit
             // this is the number of elements that have a signal measurement
             result[DATA_COUNT] = dataCount;
@@ -697,7 +761,7 @@ public class SpectraCalculator {
                     final double res = mdacFunction.value(new double[] { mw, stress });
                     final double corner = mdacService.getCornerFrequency(mdacPs, mdacFi.setPsi(0.0).setSigma(stress), mw);
                     stats.addValue(new double[] { mw, stress, res, corner });
-                    optimizerMeasurements.add(new ImmutableTriple<>(res, mw, stress));
+                    optimizerMeasurements.add(new MwOptimizerMeasurement(res, mw, stress, corner));
                     if (res < best) {
                         best = res;
                         result[MW_FIT] = mw;
@@ -707,23 +771,18 @@ public class SpectraCalculator {
                 }
             }
 
-            result[LOG10_M0] = Math.log10(mdacService.getMwInDyne(result[MW_FIT]));
+            result[LOG10_M0] = Math.log10(mdacService.getM0(result[MW_FIT]));
             result[RMS_FIT] = best;
         }
 
         final RealMatrix C = stats.getCovariance();
-
-        final double[] mean = stats.getMean();
-        result[MW_MEAN] = mean[MW];
-        result[MW_SD] = Math.sqrt(C.getEntry(MW, MW));
-        result[APP_STRESS_MEAN] = mean[MPA];
-        result[APP_STRESS_SD] = Math.sqrt(C.getEntry(MPA, MPA));
-        result[FIT_MEAN] = mean[FIT];
-        result[FIT_SD] = Math.sqrt(C.getEntry(FIT, FIT));
-        result[CORNER_FREQ_SD] = Math.sqrt(C.getEntry(CORNER, CORNER));
         result[MDAC_ENERGY] = mdacService.getEnergy(result[MW_FIT], result[APP_STRESS], mdacPs, mdacFi);
 
-        // This is kinda wonky mathmatically but at least it roughly scales with N so
+        final double[] mean = stats.getMean();
+        result[FIT_MEAN] = mean[FIT];
+        result[FIT_SD] = Math.sqrt(C.getEntry(FIT, FIT));
+
+        // This is kinda wonky mathematically but at least it roughly scales with N so
         // until I can get a stats person to eyeball this it'll have to do.
         final double SE = Math.sqrt(C.getEntry(FIT, FIT) / (stats.getN() - 2.0));
         final double f1 = result[RMS_FIT] + SE;
@@ -739,29 +798,39 @@ public class SpectraCalculator {
         double as2min = Double.POSITIVE_INFINITY;
         double as2max = Double.NEGATIVE_INFINITY;
 
-        for (final Triple<Double, Double, Double> meas : optimizerMeasurements) {
-            final Double fit = meas.getLeft();
-            final Double mw = meas.getMiddle();
-            final Double apparentStress = meas.getRight();
+        double cf1min = Double.POSITIVE_INFINITY;
+        double cf1max = Double.NEGATIVE_INFINITY;
+        double cf2min = Double.POSITIVE_INFINITY;
+        double cf2max = Double.NEGATIVE_INFINITY;
+
+        for (final MwOptimizerMeasurement meas : optimizerMeasurements) {
+            final Double fit = meas.getFit();
+            final Double mw = meas.getMw();
+            final Double apparentStress = meas.getStress();
+            final Double cornerFreq = meas.getCornerFreq();
 
             if (fit < f1) {
                 if (mw < mw1min) {
                     mw1min = mw;
                     as1min = apparentStress;
+                    cf1min = cornerFreq;
                 }
                 if (mw > mw1max) {
                     mw1max = mw;
                     as1max = apparentStress;
+                    cf1max = cornerFreq;
                 }
             }
             if (fit < f2) {
                 if (mw < mw2min) {
                     mw2min = mw;
                     as2min = apparentStress;
+                    cf2min = cornerFreq;
                 }
                 if (mw > mw2max) {
                     mw2max = mw;
                     as2max = apparentStress;
+                    cf2max = cornerFreq;
                 }
             } else {
                 break;
@@ -772,19 +841,18 @@ public class SpectraCalculator {
         result[MW_1_MAX] = mw1max;
         result[MW_2_MIN] = mw2min;
         result[MW_2_MAX] = mw2max;
-        if (reportStressBoundsInUQ) {
-            result[APP_1_MIN] = as1min;
-            result[APP_1_MAX] = as1max;
-            result[APP_2_MIN] = as2min;
-            result[APP_2_MAX] = as2max;
-        } else {
-            result[APP_1_MIN] = result[APP_STRESS];
-            result[APP_1_MAX] = result[APP_STRESS];
-            result[APP_2_MIN] = result[APP_STRESS];
-            result[APP_2_MAX] = result[APP_STRESS];
-        }
+        result[APP_1_MIN] = Math.max(Math.min(as1min, as1max), Math.min(as2min, as2max));
+        result[APP_1_MAX] = Math.min(Math.max(as1min, as1max), Math.max(as2min, as2max));
+        result[APP_2_MIN] = Math.min(Math.min(as1min, as1max), Math.min(as2min, as2max));
+        result[APP_2_MAX] = Math.max(Math.max(as1min, as1max), Math.max(as2min, as2max));
+
         result[CORNER_FREQ] = mdacService.getCornerFrequency(
                 mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(result[APP_STRESS]), result[MW_FIT]));
+        result[CORNER_FREQ_1_MIN] = cf1min;
+        result[CORNER_FREQ_1_MAX] = cf1max;
+        result[CORNER_FREQ_2_MIN] = cf2min;
+        result[CORNER_FREQ_2_MAX] = cf2max;
+
         result[ITR_COUNT] = iterations;
 
         return result;

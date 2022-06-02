@@ -17,7 +17,6 @@ package gov.llnl.gnem.apps.coda.common.gui.converters.sac;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -62,14 +61,11 @@ public class SacLoader implements FileToWaveformConverter {
     private static final Logger log = LoggerFactory.getLogger(SacLoader.class);
     //FIXME: This is just silly, I wish we could reliably get SAC files with .sac extensions but even still we need a better way than this...
     private final PathMatcher filter = FileSystems.getDefault().getPathMatcher("regex:(?i).*(\\.env|\\.synenv|\\.out|\\.param[s]?|\\.zip\\.tar|\\.gz|\\.tgz|\\.7z|\\.dat|\\.txt|\\.[a-z]*sh)$");
-    private final PathMatcher acceptFilter = new PathMatcher() {
-        @Override
-        public boolean matches(Path path) {
-            if (path != null && path.toFile().exists() && path.toFile().isFile() && !path.toFile().isHidden() && !filter.matches(path)) {
-                return true;
-            }
-            return false;
+    private final PathMatcher acceptFilter = path -> {
+        if (path != null && path.toFile().exists() && path.toFile().isFile() && !path.toFile().isHidden() && !filter.matches(path)) {
+            return true;
         }
+        return false;
     };
 
     @Override
@@ -178,15 +174,16 @@ public class SacLoader implements FileToWaveformConverter {
                 return exceptionalResult(headerResult.getErrors());
             }
             double stationLongitude = header.stlo;
-                        
+
             double eventDepth;
             if (SACHeader.isDefault(header.evdp)) {
                 eventDepth = 0;
+            } else {
+                //Just going to assume they are following the SAC header standard
+                // and using meters for this field and we want Km
+                eventDepth = header.evdp / 1000.0;
             }
-            else {
-                eventDepth = header.evdp;
-            }           
-            
+
             String dataType = StringUtils.trimToEmpty((String) header.getVariableMap().get("depvariabletype")).toLowerCase(Locale.ENGLISH);
             if (dataType.startsWith("acc")) {
                 dataType = ACCELERATION;

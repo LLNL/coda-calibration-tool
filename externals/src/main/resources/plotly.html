@@ -2,9 +2,9 @@
 <html lang="en">
 
 <head>
-<title>Plot</title>
-<script src='plotly.min.js'></script>
-<link rel='stylesheet' href='plotly.css' />
+	<title>Plot</title>
+	<script src='plotly.min.js'></script>
+	<link rel='stylesheet' href='plotly.css' />
 </head>
 
 <body>
@@ -50,6 +50,7 @@
 		var plotDiv = document.getElementById('plot');
 		var plotTitle;
 		var backgroundColor;
+		var dataExporter;
 
 		var data = [];
 
@@ -91,65 +92,70 @@
 			responsive: true,
 			displaylogo: false,
 			showTips: false,
-			modeBarButtonsToRemove: ['autoScale2d', 'autoScale3d', 'toImage']
+			modeBarButtonsToRemove: ['autoScale2d', 'autoScale3d', 'toImage'],
+			modeBarButtonsToAdd: [{
+				name: 'downloadData', title: 'Download data for plot', icon: Plotly.Icons.disk, click: (d) => {
+					dataExporter.exportData()
+				}
+			}]
 		};
-		
+
 		var updateGroupVelocityVisibility = function () {
-			
+
 			// Update the line's visibility
 			for (var i = 0; i < layout.shapes.length; i++) {
 				var curShape = layout.shapes[i];
-				if(curShape.name === 'Start' || curShape.name === 'End'){
+				if (curShape.name === 'Start' || curShape.name === 'End') {
 					curShape.visible = layout.showGroupVelocity;
 				}
 			}
-			
+
 			// Update the line's text visibility
 			for (var i = 0; i < layout.annotations.length; i++) {
 				var annotation = layout.annotations[i];
-				if(annotation.text === 'Start' || annotation.text == 'End') {
+				if (annotation.text === 'Start' || annotation.text == 'End') {
 					annotation.visible = layout.showGroupVelocity;
 				}
 			}
 		}
-		
+
 		var updateWindowLineVisibility = function () {
-			
+
 			// Update the line's visibility
 			for (var i = 0; i < layout.shapes.length; i++) {
 				var curShape = layout.shapes[i];
-				if(curShape.name === 'Max' || curShape.name == 'Min'){
+				if (curShape.name === 'Max' || curShape.name == 'Min') {
 					curShape.visible = layout.showWindowLines;
 				}
 			}
-			
+
 			// Update the line's text visibility
 			for (var i = 0; i < layout.annotations.length; i++) {
 				var annotation = layout.annotations[i];
-				if(annotation.text === 'Max' || annotation.text == 'Min') {
+				if (annotation.text === 'Max' || annotation.text == 'Min') {
 					annotation.visible = layout.showWindowLines;
 				}
 			}
 		}
-		
-		var moveFmarkerToX = function(x) {
+
+		var moveFmarkerToX = function (x) {
 			// Find f-marker and update it's position to new x value
 			for (var i = 0; i < layout.shapes.length; i++) {
 				var curShape = layout.shapes[i];
-				if(curShape.name === 'f'){
+				if (curShape.name === 'f') {
 					curShape.x0 = [x];
 					curShape.x1 = [x];
-				}				
+				}
 			}
 			plotData.fireShapeMoveEvent(curShape.name, curShape.x0, curShape.x1, curShape.y0, curShape.y1);
 		}
-		
+
 		var setGroupVelocityVisibility = function (show) {
 			layout.showGroupVelocity = show;
 			updateGroupVelocityVisibility();
 			Plotly.react("plot", data, layout, config).then(attach);
 		}
-		
+
 		var setWindowLineVisibility = function (show) {
 			layout.showWindowLines = show;
 			updateWindowLineVisibility();
@@ -198,7 +204,7 @@
 					break
 			}
 		};
-		
+
 		//For moving picks on click-drag instead of requiring the click, click-drag, click default behavior from Plotly
 		var drag = Plotly.PD3.behavior.drag();
 		drag.on("drag", function () {
@@ -299,8 +305,8 @@
 					var clickX = event.clientX;
 					var leftMargin = plotDiv._fullLayout._size.l;
 					var xaxis = plotDiv._fullLayout.xaxis;
-					var plotX = xaxis.p2c(event.clientX-leftMargin);
-					
+					var plotX = xaxis.p2c(event.clientX - leftMargin);
+
 					moveFmarkerToX(plotX);
 				}
 			});
@@ -336,9 +342,9 @@
 						//nop
 					}
 				}
-			});			
+			});
 		};
-		
+
 		Plotly.newPlot("plot", data, layout, config).then(attach);
 		attachPlotDivHandlers();
 
