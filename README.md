@@ -9,7 +9,7 @@ The `Coda Calibration Tool` (CCT) is a Java based application for calibrating 1D
 ***
 ## [Demo](#demo)
 
-![CCT](demo.gif)
+![CCT](https://user-images.githubusercontent.com/10851365/179833833-8bc0eadc-abf7-49b1-a831-9555675d3aa8.mp4)
 
 <sub>Data courtesy of [Northern California Earthquake Data Center](http://ncedc.org/)</sub>
 
@@ -159,6 +159,7 @@ The `Coda Calibration Tool` is provided under the [Apache License](LICENSE.txt).
 ```
 
 ***
+
 ## [Disclaimer](#disclaimer)
 ```text
   This work was performed under the auspices of the U.S. Department of Energy 
