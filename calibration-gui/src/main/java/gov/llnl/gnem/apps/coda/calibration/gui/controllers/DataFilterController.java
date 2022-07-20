@@ -33,6 +33,19 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleGroup;
 
+/***
+ *
+ * @author downie4
+ *
+ *         The data filter controller handles the items and their order in a
+ *         provided TableView. It will instantiate a filter dialog that will
+ *         open when users click the filter button above a column in the table
+ *         view. It is used to provide filter capabilities to a table view for
+ *         the users to narrow the results shown in the table.
+ * @param <T>
+ *            The element type that the data filter will be filtering (contained
+ *            within the TableView provided to this class)
+ */
 class DataFilterController<T> {
     // The list of unfiltered table items
     ObservableList<T> items;
@@ -44,6 +57,24 @@ class DataFilterController<T> {
     private List<ObservableList<Object>> sliderValues;
     private FilteredList<T> filteredItems;
 
+    /***
+     * The DataFilterController can handle multiple filter options to be used on
+     * the specified TableView. The filters are activated by clicking a filter
+     * button that is placed in the column header of a filterable table column,
+     * and when clicked it will open a filter dialog. Note: You must specify
+     * which columns you'd like to filter in the table by calling the
+     * {@link DataFilterController#addFilterToColumn(boolean, ToggleGroup, TableColumn, gov.llnl.gnem.apps.coda.calibration.gui.controllers.PredicateBuilder.ValueComparer)}
+     * method of the DataFilterController.
+     *
+     * @param tableView
+     *            The table view which will be modified by the filter controller
+     *            to have a filter dialog
+     * @param items
+     *            An unfiltered observable list that will populate the table
+     *
+     * @author downie4
+     *
+     */
     DataFilterController(final TableView<T> tableView, final ObservableList<T> items) {
         this.items = items;
         this.buttons = new ArrayList<>();
@@ -81,6 +112,23 @@ class DataFilterController<T> {
         });
     }
 
+    /***
+     * This method tells the filter controller to add a filter button for the
+     * specified column in the table. Appropriate handlers and predicates are
+     * then generated for the column.
+     *
+     * @param slider
+     *            Set true if the column should display a slider and each column
+     *            element has a list of values to use for the slider.
+     * @param toggleGroup
+     *            This allows the filter to be added to a toggle group so that
+     *            only one filter in the group can be applied at a time.
+     * @param column
+     *            The column to add the filter to.
+     * @param converter
+     *            Used to compare values between items of the column for sorting
+     *            and filtering purposes.
+     */
     public void addFilterToColumn(boolean slider, ToggleGroup toggleGroup, TableColumn<T, ?> column, PredicateBuilder.ValueComparer<T> converter) {
 
         // Create the checkbox that opens the filter panel/dialog
@@ -132,12 +180,27 @@ class DataFilterController<T> {
         }
     }
 
+    /***
+     * Convenience method that will enable/disable the filter buttons on the
+     * TableView (for example if the table is empty or loaded).
+     *
+     * @param disabled
+     *            Set to true or false to set the disabled status of the filter
+     *            buttons.
+     */
     public void setFiltersDisabled(Boolean disabled) {
         buttons.forEach(button -> {
             button.setDisable(disabled);
         });
     }
 
+    /***
+     * This method is used to notify the controller that there was a change to
+     * the items list of the TableView.
+     *
+     * @param change
+     *            The changes done to the ObservableList of the table.
+     */
     public void updateFilterLists(final Change<? extends T> change) {
         while (change.next()) {
             for (T remItem : change.getRemoved()) {

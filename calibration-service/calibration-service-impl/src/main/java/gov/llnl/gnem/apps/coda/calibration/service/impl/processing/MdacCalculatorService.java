@@ -37,9 +37,6 @@ public class MdacCalculatorService {
      *            Independent parameters for the MDAC2 model
      * @param Mw
      *            Magnitude of expected event
-     * @param distance
-     *            In kilometers. May be set to < 0, in which case it is not used
-     *            in computing the source spectra
      * @return Function that computes logAmp, M0/wwc, w*M0/wwc given a frequency
      */
     public DoubleFunction<double[]> getCalculateMdacSourceSpectraFunction(final MdacParametersPS psEntry, final MdacParametersFI fiEntry, final double Mw) {
@@ -68,7 +65,7 @@ public class MdacCalculatorService {
      *            The phase to use for the MDAC calculation. Should be one of
      *            the phases in {@link PICK_TYPES}.
      * @param sigma
-     *            Apparent stress in MPA to use. May be null to use the MDAC
+     *            Apparent stress in MPa to use. May be null to use the MDAC
      *            parameters instead. Otherwise Psi=0 and Sigma=stress
      * @return Function that computes logAmp In Dyne-CM given a frequency
      */
@@ -98,11 +95,11 @@ public class MdacCalculatorService {
     }
 
     /**
-     * @param psEntry
+     * @param psRows
      *            Phase specific parameters for the MDAC2 model
-     * @param fiEntry
+     * @param mdacFiEntry
      *            Independent parameters for the MDAC2 model
-     * @param Mw
+     * @param refMw
      *            Magnitude of expected event
      * @param phase
      *            The phase to use for the MDAC calculation. Should be one of

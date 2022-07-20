@@ -61,6 +61,7 @@ import llnl.gnem.core.gui.plotting.api.PlotObject;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.Title;
 import llnl.gnem.core.gui.plotting.api.VerticalLine;
+import llnl.gnem.core.gui.plotting.events.PlotAxisChange;
 import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
 import llnl.gnem.core.gui.plotting.events.PlotShapeMove;
 import llnl.gnem.core.gui.plotting.fx.utils.FxUtils;
@@ -129,6 +130,7 @@ public class PlotlyPlot implements BasicPlot {
         plotData.setShowLegend(true);
         plotData.setShowGroupVelocity(false);
         plotData.setShowWindowLines(false);
+        plotData.setShowCodaStartLine(false);
         plotData.setAxes(new ArrayList<>(0));
         plotData.setPlotReady(new AtomicBoolean(false));
         plotData.setDefaultTypePlots(new HashMap<>());
@@ -205,6 +207,22 @@ public class PlotlyPlot implements BasicPlot {
         CompletableFuture.runAsync(() -> {
             if (propertyChange.getPropertyChangeListeners().length > 0) {
                 propertyChange.firePropertyChange(new PropertyChangeEvent(this, "shape_move", null, new PlotShapeMove(name, x0, x1, y0, y1)));
+            }
+        });
+    }
+
+    public void fireOtherChangeEvent(final String data) {
+        CompletableFuture.runAsync(() -> {
+            if (propertyChange.getPropertyChangeListeners().length > 0) {
+                propertyChange.firePropertyChange(new PropertyChangeEvent(this, "other_change", null, data));
+            }
+        });
+    }
+
+    public void fireAxisChangeEvent(final boolean reset, final double xMin, final double xMax, final double yMin, final double yMax) {
+        CompletableFuture.runAsync(() -> {
+            if (propertyChange.getPropertyChangeListeners().length > 0) {
+                propertyChange.firePropertyChange(new PropertyChangeEvent(this, "axis_change", null, new PlotAxisChange(reset, xMin, xMax, yMin, yMax)));
             }
         });
     }
@@ -339,6 +357,11 @@ public class PlotlyPlot implements BasicPlot {
     @Override
     public void addPlotObject(final PlotObject object) {
         addPlotObject(object, plotData);
+    }
+
+    @Override
+    public void setUseHorizontalBottomLegend(boolean useHorizontalBottomLegend) {
+        plotData.setUseHorizontalBottomLegend(useHorizontalBottomLegend);
     }
 
     protected synchronized void addPlotObject(final PlotObject object, final PlotlyPlotData plot) {
@@ -606,6 +629,7 @@ public class PlotlyPlot implements BasicPlot {
         layoutNode.put("hovermode", "closest");
         layoutNode.put("showGroupVelocity", plotData.shouldShowGroupVelocity());
         layoutNode.put("showWindowLines", plotData.shouldShowWindowLine());
+        layoutNode.put("showCodaStartLine", plotData.shouldShowCodaStartLine());
         if (!subPlots.isEmpty()) {
             layoutNode.with("grid").put("rows", subPlots.size()).put("columns", 1).put("pattern", "independent");
             for (int i = 0; i < subPlots.size(); i++) {
@@ -618,6 +642,11 @@ public class PlotlyPlot implements BasicPlot {
             }
         } else {
             layoutNode.put("showlegend", plotData.shouldShowLegend());
+            if (plotData.useHorizontalBottomLegend()) {
+                layoutNode.with("legend").put("orientation", "h");
+                layoutNode.with("legend").put("x", "0.0");
+                layoutNode.with("legend").put("y", "-0.5");
+            }
             for (final Axis axis : plotData.getAxes()) {
                 String axisType;
                 String axisSide = null;
@@ -641,6 +670,12 @@ public class PlotlyPlot implements BasicPlot {
                     overlaying = "y";
                     anchor = "y";
                     break;
+                case X_TOP:
+                    axisType = "xaxis2";
+                    axisSide = "top";
+                    overlaying = "x";
+                    anchor = "x";
+                    break;
                 default:
                     axisType = null;
                     break;
@@ -653,6 +688,11 @@ public class PlotlyPlot implements BasicPlot {
                     layoutNode.with(axisType).put("zeroline", false);
                     layoutNode.with(axisType).put("hoverformat", ".2f");
                     layoutNode.with(axisType).with("title").put("text", axis.getText()).with("font").put("size", 12);
+
+                    if (axisSide != null && axisSide.equals("top")) {
+                        layoutNode.with(axisType).with("title").put("standoff", 0);
+                    }
+
                     layoutNode.with(axisType).put("linecolor", "black");
                     layoutNode.with(axisType).put("linewidth", 1.25);
                     layoutNode.with(axisType).put("mirror", true);

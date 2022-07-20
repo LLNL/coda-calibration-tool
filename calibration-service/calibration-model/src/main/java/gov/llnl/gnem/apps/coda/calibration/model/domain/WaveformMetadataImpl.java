@@ -33,6 +33,8 @@ public class WaveformMetadataImpl implements WaveformMetadata {
     private Date beginTime;
     private Date endTime;
     private Date maxVelTime;
+    private Date codaStartTime;
+    private Date userStartTime;
     private String segmentType;
     private String segmentUnits;
     private Double lowFrequency;
@@ -42,7 +44,6 @@ public class WaveformMetadataImpl implements WaveformMetadata {
     private Boolean active = Boolean.TRUE;
 
     public WaveformMetadataImpl() {
-        super();
     }
 
     public WaveformMetadataImpl(Waveform waveform) {
@@ -52,7 +53,8 @@ public class WaveformMetadataImpl implements WaveformMetadata {
         this.stream = waveform.getStream();
         this.beginTime = waveform.getBeginTime();
         this.endTime = waveform.getEndTime();
-        this.maxVelTime = waveform.getMaxVelTime();
+        this.codaStartTime = waveform.getCodaStartTime();
+        this.userStartTime = waveform.getUserStartTime();
         this.segmentType = waveform.getSegmentType();
         this.segmentUnits = waveform.getSegmentUnits();
         this.lowFrequency = waveform.getLowFrequency();
@@ -96,6 +98,16 @@ public class WaveformMetadataImpl implements WaveformMetadata {
     @Override
     public Date getMaxVelTime() {
         return maxVelTime;
+    }
+
+    @Override
+    public Date getCodaStartTime() {
+        return codaStartTime;
+    }
+
+    @Override
+    public Date getUserStartTime() {
+        return userStartTime;
     }
 
     @Override
@@ -160,6 +172,11 @@ public class WaveformMetadataImpl implements WaveformMetadata {
 
     public WaveformMetadataImpl setEndTime(Date endTime) {
         this.endTime = endTime;
+        return this;
+    }
+
+    public WaveformMetadataImpl setUserStartTime(Date userStartTime) {
+        this.userStartTime = userStartTime;
         return this;
     }
 

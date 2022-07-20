@@ -52,7 +52,8 @@ public interface SpectraMeasurementService {
 
     public Spectra computeReferenceSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
 
-    public Spectra computeValidationSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);    
+    public Spectra computeValidationSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
 
     public List<Spectra> getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
+
 }

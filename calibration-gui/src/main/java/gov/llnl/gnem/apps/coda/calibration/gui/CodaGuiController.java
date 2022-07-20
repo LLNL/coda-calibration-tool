@@ -28,10 +28,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import javax.annotation.PreDestroy;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
@@ -70,19 +73,26 @@ import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.envelope.gui.EnvelopeGuiController;
 import javafx.application.Platform;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.image.Image;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.web.WebView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 @Component
 public class CodaGuiController {
@@ -184,11 +194,21 @@ public class CodaGuiController {
         return thread;
     });
 
+    private Stage manualStage;
+
+    private Environment env;
+
+    private WebView manualWebview;
+
+    private HostnameVerifier hostnameVerifier;
+
+    private SSLContext sslContext;
+
     @Autowired
     public CodaGuiController(GeoMap mapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
             ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, WaveformGui waveformGui, DataController data,
             ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient,
-            EnvelopeGuiController envelopeGui, EventBus bus) {
+            EnvelopeGuiController envelopeGui, HostnameVerifier hostnameVerifier, SSLContext sslContext, Environment env, EventBus bus) {
         this.mapController = mapController;
         this.waveformClient = waveformClient;
         this.envelopeLoadingController = waveformLoadingController;
@@ -205,8 +225,14 @@ public class CodaGuiController {
         this.measuredMws = measuredMws;
         this.configClient = configClient;
         this.envelopeGui = envelopeGui;
+        this.sslContext = sslContext;
+        this.env = env;
         this.bus = bus;
         bus.register(this);
+
+        //This is here just to make sure this class is built before the downstream classes so the HTTPS
+        // connections get the right SSLContext factories
+        this.hostnameVerifier = hostnameVerifier;
 
         activeTabRefresh = data.getRefreshFunction();
 
@@ -244,6 +270,43 @@ public class CodaGuiController {
                 mapController.show();
                 mapController.fitViewToActiveShapes();
             }
+        });
+    }
+
+    @FXML
+    private void openManual(ActionEvent e) {
+        Platform.runLater(() -> {
+            if (manualStage == null) {
+                manualStage = new Stage(StageStyle.DECORATED);
+                manualStage.setTitle("Coda Calibration Tool Documentation");
+                try {
+                    manualStage.getIcons().add(new Image(this.getClass().getResourceAsStream("/coda_256x256.png")));
+                } catch (NullPointerException npe) {
+                    log.trace("Unable to load icon for manual scene. {}", npe);
+                }
+
+                manualWebview = new WebView();
+
+                manualWebview.getEngine().setJavaScriptEnabled(true);
+                manualWebview.getEngine().getLoadWorker().stateProperty().addListener((o, ov, nv) -> {
+                    if (nv == Worker.State.FAILED) {
+                        log.error("WebView Failed: ", manualWebview.getEngine().getLoadWorker().getException());
+                    }
+                });
+
+                AnchorPane pane = new AnchorPane(manualWebview);
+                Scene scene = new Scene(pane, 1280, 720);
+                pane.prefWidthProperty().bind(scene.widthProperty());
+                pane.prefHeightProperty().bind(scene.heightProperty());
+
+                manualWebview.prefWidthProperty().bind(pane.widthProperty());
+                manualWebview.prefHeightProperty().bind(pane.heightProperty());
+                manualStage.setScene(scene);
+            }
+            manualWebview.getEngine().load("https://" + env.getProperty("server.address") + ":" + env.getProperty("server.port") + "/index.html");
+
+            manualStage.show();
+            manualStage.toFront();
         });
     }
 

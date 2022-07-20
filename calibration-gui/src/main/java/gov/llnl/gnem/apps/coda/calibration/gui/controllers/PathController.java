@@ -537,7 +537,9 @@ public class PathController implements MapListeningController, RefreshableContro
 
                 for (final SpectraMeasurement firstMeasurement : measurements) {
                     for (final SpectraMeasurement secondMeasurement : measurements) {
-                        if (!firstMeasurement.equals(secondMeasurement) && firstMeasurement.getWaveform().getEvent().equals(secondMeasurement.getWaveform().getEvent())) {
+                        if (!firstMeasurement.equals(secondMeasurement)
+                                && firstMeasurement.getWaveform().getEvent().getEventId() != null
+                                && firstMeasurement.getWaveform().getEvent().equals(secondMeasurement.getWaveform().getEvent())) {
                             final Station firstStation = firstMeasurement.getWaveform().getStream().getStation();
                             final Station secondStation = secondMeasurement.getWaveform().getStream().getStation();
                             if (!firstStation.equals(secondStation)) {
@@ -584,92 +586,98 @@ public class PathController implements MapListeningController, RefreshableContro
                     }
                 }
 
-                for (final Entry<Pair<Station, Station>, Double> distanceStaPair : distanceStaPairs.entrySet()) {
-                    final Pair<Station, Station> staPair = distanceStaPair.getKey();
-                    if (Double.isNaN(beforeStatsStaPairs.get(staPair).getStandardDeviation()) || beforeStatsStaPairs.get(staPair).getStandardDeviation() == 0.0) {
-                        continue;
+                try {
+                    for (final Entry<Pair<Station, Station>, Double> distanceStaPair : distanceStaPairs.entrySet()) {
+                        final Pair<Station, Station> staPair = distanceStaPair.getKey();
+                        if (Double.isNaN(beforeStatsStaPairs.get(staPair).getStandardDeviation()) || beforeStatsStaPairs.get(staPair).getStandardDeviation() == 0.0) {
+                            continue;
+                        }
+                        if (distanceStaPair.getValue() != null && beforeStatsStaPairs.get(staPair).getN() >= stationCountFilterField.getValue()) {
+                            final String staPairDisplayName = staPair.getX().getStationName() + " " + staPair.getY().getStationName();
+                            final Symbol plotObj = plotFactory.createSymbol(
+                                    SymbolStyles.SQUARE,
+                                        "Before",
+                                        distanceStaPair.getValue(),
+                                        beforeStatsStaPairs.get(staPair).getStandardDeviation(),
+                                        Color.RED,
+                                        Color.RED,
+                                        Color.RED,
+                                        staPairDisplayName,
+                                        false);
+                            plotObj.setZindex(BEFORE_Z_INDEX);
+                            plotObj.setText(staPairDisplayName + " " + beforeStatsStaPairs.get(staPair).getN());
+
+                            final Symbol plotObj2 = plotFactory.createSymbol(
+                                    SymbolStyles.CIRCLE,
+                                        "After",
+                                        distanceStaPair.getValue(),
+                                        afterStatsStaPairs.get(staPair).getStandardDeviation(),
+                                        Color.BLUE,
+                                        Color.BLUE,
+                                        Color.BLUE,
+                                        staPairDisplayName,
+                                        false);
+                            plotObj2.setZindex(AFTER_Z_INDEX);
+                            plotObj2.setText(staPairDisplayName + " " + afterStatsStaPairs.get(staPair).getN());
+
+                            if (xmax == null) {
+                                xmax = plotObj.getX();
+                            }
+                            if (xmin == null) {
+                                xmin = plotObj.getX();
+                            }
+                            if (ymax == null) {
+                                ymax = plotObj.getY();
+                            }
+                            if (ymin == null) {
+                                ymin = plotObj.getY();
+                            }
+                            if (plotObj.getX() > xmax) {
+                                xmax = plotObj.getX();
+                            }
+                            if (plotObj.getY() > ymax) {
+                                ymax = plotObj.getY();
+                            }
+                            if (plotObj.getX() < xmin) {
+                                xmin = plotObj.getX();
+                            }
+                            if (plotObj.getY() < ymin) {
+                                ymin = plotObj.getY();
+                            }
+                            sdPlot.addPlotObject(plotObj);
+
+                            if (plotObj2.getX() > xmax) {
+                                xmax = plotObj2.getX();
+                            }
+                            if (plotObj2.getY() > ymax) {
+                                ymax = plotObj2.getY();
+                            }
+                            if (plotObj2.getX() < xmin) {
+                                xmin = plotObj2.getX();
+                            }
+                            if (plotObj2.getY() < ymin) {
+                                ymin = plotObj2.getY();
+                            }
+                            sdPlot.addPlotObject(plotObj2);
+
+                            final Point2D point1 = new Point2D(plotObj.getX(), plotObj.getY());
+                            final Point2D point2 = new Point2D(plotObj2.getX(), plotObj2.getY());
+                            sdSymbolMap.put(point1, sourceMeasurements.get(staPair));
+                            sdSymbolMap.put(point2, sourceMeasurements.get(staPair));
+                        }
                     }
-                    if (beforeStatsStaPairs.get(staPair).getN() >= stationCountFilterField.getValue()) {
-                        final String staPairDisplayName = staPair.getX().getStationName() + " " + staPair.getY().getStationName();
-                        final Symbol plotObj = plotFactory.createSymbol(
-                                SymbolStyles.SQUARE,
-                                    "Before",
-                                    distanceStaPair.getValue(),
-                                    beforeStatsStaPairs.get(staPair).getStandardDeviation(),
-                                    Color.RED,
-                                    Color.RED,
-                                    Color.RED,
-                                    staPairDisplayName,
-                                    false);
-                        plotObj.setZindex(BEFORE_Z_INDEX);
-                        plotObj.setText(staPairDisplayName + " " + beforeStatsStaPairs.get(staPair).getN());
+                    sdPlot.getTitle().setText("σ(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + "; σ(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation()));
+                    Double xAxisPaddingPercent = 0.1;
+                    Double yAxisPaddingPercent = 0.3;
 
-                        final Symbol plotObj2 = plotFactory.createSymbol(
-                                SymbolStyles.CIRCLE,
-                                    "After",
-                                    distanceStaPair.getValue(),
-                                    afterStatsStaPairs.get(staPair).getStandardDeviation(),
-                                    Color.BLUE,
-                                    Color.BLUE,
-                                    Color.BLUE,
-                                    staPairDisplayName,
-                                    false);
-                        plotObj2.setZindex(AFTER_Z_INDEX);
-                        plotObj2.setText(staPairDisplayName + " " + afterStatsStaPairs.get(staPair).getN());
-
-                        if (xmax == null) {
-                            xmax = plotObj.getX();
-                        }
-                        if (xmin == null) {
-                            xmin = plotObj.getX();
-                        }
-                        if (ymax == null) {
-                            ymax = plotObj.getY();
-                        }
-                        if (ymin == null) {
-                            ymin = plotObj.getY();
-                        }
-                        if (plotObj.getX() > xmax) {
-                            xmax = plotObj.getX();
-                        }
-                        if (plotObj.getY() > ymax) {
-                            ymax = plotObj.getY();
-                        }
-                        if (plotObj.getX() < xmin) {
-                            xmin = plotObj.getX();
-                        }
-                        if (plotObj.getY() < ymin) {
-                            ymin = plotObj.getY();
-                        }
-                        sdPlot.addPlotObject(plotObj);
-
-                        if (plotObj2.getX() > xmax) {
-                            xmax = plotObj2.getX();
-                        }
-                        if (plotObj2.getY() > ymax) {
-                            ymax = plotObj2.getY();
-                        }
-                        if (plotObj2.getX() < xmin) {
-                            xmin = plotObj2.getX();
-                        }
-                        if (plotObj2.getY() < ymin) {
-                            ymin = plotObj2.getY();
-                        }
-                        sdPlot.addPlotObject(plotObj2);
-
-                        final Point2D point1 = new Point2D(plotObj.getX(), plotObj.getY());
-                        final Point2D point2 = new Point2D(plotObj2.getX(), plotObj2.getY());
-                        sdSymbolMap.put(point1, sourceMeasurements.get(staPair));
-                        sdSymbolMap.put(point2, sourceMeasurements.get(staPair));
+                    if (xmin != null && xmax != null) {
+                        sdPlot.setAxisLimits(
+                                new AxisLimits(Axis.Type.X, xmin - ((xmax - xmin) * xAxisPaddingPercent), xmax + ((xmax - xmin) * xAxisPaddingPercent)),
+                                    new AxisLimits(Axis.Type.Y, ymin - ((ymax - ymin) * yAxisPaddingPercent), ymax + ((ymax - ymin) * yAxisPaddingPercent)));
                     }
+                } catch (NullPointerException npe) {
+                    log.error(npe.getLocalizedMessage(), npe);
                 }
-                sdPlot.getTitle().setText("σ(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + "; σ(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation()));
-                Double xAxisPaddingPercent = 0.1;
-                Double yAxisPaddingPercent = 0.3;
-
-                sdPlot.setAxisLimits(
-                        new AxisLimits(Axis.Type.X, xmin - ((xmax - xmin) * xAxisPaddingPercent), xmax + ((xmax - xmin) * xAxisPaddingPercent)),
-                            new AxisLimits(Axis.Type.Y, ymin - ((ymax - ymin) * yAxisPaddingPercent), ymax + ((ymax - ymin) * yAxisPaddingPercent)));
             }
         }
     }
@@ -702,7 +710,7 @@ public class PathController implements MapListeningController, RefreshableContro
 
                     for (final SpectraMeasurement firstMeasurement : firstMeasurements) {
                         for (final SpectraMeasurement secondMeasurement : secondMeasurements) {
-                            if (firstMeasurement.getWaveform().getEvent().equals(secondMeasurement.getWaveform().getEvent())) {
+                            if (firstMeasurement.getWaveform().getEvent().getEventId() != null && firstMeasurement.getWaveform().getEvent().equals(secondMeasurement.getWaveform().getEvent())) {
                                 beforeStats.addValue(firstMeasurement.getRawAtMeasurementTime() - secondMeasurement.getRawAtMeasurementTime());
                                 afterStats.addValue(firstMeasurement.getPathCorrected() - secondMeasurement.getPathCorrected());
 

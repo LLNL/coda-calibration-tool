@@ -32,6 +32,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters
 @Component
 @Configuration
 public class ConfigureJacksonMixins {
+
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Bean

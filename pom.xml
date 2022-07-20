@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="https://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>coda-calibration</artifactId>
-	<version>1.0.17</version>
+	<version>1.0.18</version>
 	<name>coda-calibration</name>
 
 	<packaging>pom</packaging>
@@ -65,27 +63,28 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
-		<maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
-		<maven.surefire.plugin.version>3.0.0-M5</maven.surefire.plugin.version>
-		<maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
+		<maven.javadoc.plugin.version>3.4.0</maven.javadoc.plugin.version>
+		<maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
+		<maven.shade.plugin.version>3.3.0</maven.shade.plugin.version>
 		<maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
 		<maven.source.plugin.version>3.2.1</maven.source.plugin.version>
 
 		<jfx.version>17.0.2</jfx.version>
 		<jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-		<spring.boot.version>2.6.6</spring.boot.version>
-		<reactor.version>2020.0.17</reactor.version>
+		<spring.boot.version>2.7.1</spring.boot.version>
+		<reactor.version>2020.0.20</reactor.version>
 
 		<javax.persistence.version>2.2.1</javax.persistence.version>
 		<org.apache.xmlgraphics.batik-script.version>1.14
 		</org.apache.xmlgraphics.batik-script.version>
 		<xml.apis.ext.version>1.3.04</xml.apis.ext.version>
-		<geographiclib.java.version>1.52</geographiclib.java.version>
-		<eclipse.collections.version>11.0.0</eclipse.collections.version>
+		<geographiclib.java.version>2.0</geographiclib.java.version>
+		<eclipse.collections.version>11.1.0</eclipse.collections.version>
 		<javax.version>2.0.0-RC1</javax.version>
-		<jts.version>1.18.2</jts.version>
+		<jts.version>1.19.0</jts.version>
 		<jts2geojson.version>0.17.0</jts2geojson.version>
 		<native-image-version>21.0.0.2</native-image-version>
+		<springdoc.version>1.6.9</springdoc.version>
 
 		<!-- GUI Specific -->
 		<tyrus.standalone.client.version>1.18
@@ -96,17 +95,23 @@
 		<failsafe.version>2.4.4</failsafe.version>
 
 		<!-- Testing -->
-		<spring.test.version>5.3.16</spring.test.version>
+		<spring.test.version>5.3.21</spring.test.version>
 		<junit.jupiter.version>5.8.2</junit.jupiter.version>
-		<mockito.version>4.4.0</mockito.version>
+		<mockito.version>4.6.1</mockito.version>
 		<javax.annotation.version>1.3.2</javax.annotation.version>
 
 		<!-- CVE overrides -->
-		<log4j2.version>2.17.2</log4j2.version>
+		<log4j2.version>2.18.0</log4j2.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springdoc</groupId>
+				<artifactId>springdoc-openapi-ui</artifactId>
+				<version>${springdoc.version}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>org.apache.logging.log4j</groupId>
 				<artifactId>log4j-core</artifactId>
@@ -493,6 +498,15 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>${maven.javadoc.plugin.version}</version>
+					<executions>
+						<execution>
+							<id>javadoc</id>
+							<goals>
+								<goal>javadoc</goal>
+							</goals>
+							<phase>prepare-package</phase>
+						</execution>
+					</executions>
 				</plugin>
 
 				<plugin>
@@ -521,7 +535,6 @@
 						<excludeDevtools>true</excludeDevtools>
 					</configuration>
 				</plugin>
-
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>

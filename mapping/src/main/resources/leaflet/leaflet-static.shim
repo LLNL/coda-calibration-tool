@@ -920,20 +920,12 @@
 		var showOverlay = function () {
 			document.getElementById("map").style.background = null;
 			document.getElementsByClassName("leaflet-control-container")[0].style.visibility = null;
-			document.getElementsByClassName("leaflet-drawing-pane-pane")[0].style.visibility = null;
-			document.getElementsByClassName("leaflet-background-pane-pane")[0].style.visibility = null;
-			document.getElementsByClassName("leaflet-overlay-pane")[0].style.visibility = null;
-			document.getElementsByClassName("leaflet-important-event-pane-pane")[0].style.visibility = null;
 			document.body.style.overflow = 'visible';
 		}
 
 		var hideOverlay = function () {
 			document.getElementById("map").style.background = "transparent";
 			document.getElementsByClassName("leaflet-control-container")[0].style.visibility = "hidden";
-			document.getElementsByClassName("leaflet-drawing-pane-pane")[0].style.visibility = "hidden";
-			document.getElementsByClassName("leaflet-background-pane-pane")[0].style.visibility = "hidden";
-			document.getElementsByClassName("leaflet-overlay-pane")[0].style.visibility = "hidden";
-			document.getElementsByClassName("leaflet-important-event-pane-pane")[0].style.visibility = "hidden";
 			document.body.style.overflow = 'hidden';
 		}
 

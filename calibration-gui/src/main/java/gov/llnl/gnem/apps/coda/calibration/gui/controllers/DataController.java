@@ -70,6 +70,13 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
+/***
+ * The DataController handles populating and displaying loaded data as a table.
+ * Each row contains a specific waveform and will open a waveform display when
+ * clicked. The columns represent information about the waveform for the user to
+ * view at a glance.
+ */
+
 @Component
 public class DataController implements MapListeningController, RefreshableController {
 

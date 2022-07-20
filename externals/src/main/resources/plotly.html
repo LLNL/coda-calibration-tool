@@ -11,13 +11,22 @@
 	<div>
 		<div id='plot' class='plot'></div>
 	</div>
-	<script>
+	<script defer>
 		'use strict';
 
 		//Forces the second yaxis to plot if it has no data when added to the plot.
-		const blankTrace = {
+		const blankTraceY = {
 			y: [-1E30, +1E30],
 			yaxis: 'y2',
+			showlegend: false,
+			type: 'scatter',
+			mode: 'none',
+			opacity: 0
+		};
+
+		const blankTraceX = {
+			x: [-1E30, +1E30],
+			xaxis: 'x2',
 			showlegend: false,
 			type: 'scatter',
 			mode: 'none',
@@ -83,7 +92,8 @@
 			legend: {
 			},
 			showGroupVelocity: false,
-			showWindowLines: false
+			showWindowLines: false,
+			showCodaStartLine: false
 		};
 
 		var layout = Object.assign({}, layout_template);
@@ -138,6 +148,25 @@
 			}
 		}
 
+
+		var updateCodaStartLineVisibility = function () {
+			// Update the line's visibility
+			for (var i = 0; i < layout.shapes.length; i++) {
+				var curShape = layout.shapes[i];
+				if (curShape.name === 'cs' || curShape.name == 'ucs') {
+					curShape.visible = layout.showCodaStartLine;
+				}
+			}
+
+			// Update the line's text visibility
+			for (var i = 0; i < layout.annotations.length; i++) {
+				var annotation = layout.annotations[i];
+				if (annotation.text === 'cs' || annotation.text == 'ucs') {
+					annotation.visible = layout.showCodaStartLine;
+				}
+			}
+		}
+
 		var moveFmarkerToX = function (x) {
 			// Find f-marker and update it's position to new x value
 			for (var i = 0; i < layout.shapes.length; i++) {
@@ -159,6 +188,12 @@
 		var setWindowLineVisibility = function (show) {
 			layout.showWindowLines = show;
 			updateWindowLineVisibility();
+			Plotly.react("plot", data, layout, config).then(attach);
+		}
+
+		var setCodaStartLineVisibility = function (show) {
+			layout.showCodaStartLine = show;
+			updateCodaStartLineVisibility();
 			Plotly.react("plot", data, layout, config).then(attach);
 		}
 
@@ -316,6 +351,18 @@
 				plotSelection("selection", data)
 			});
 			plotDiv.on('plotly_relayout', function (data) {
+				//Check if this is an axis change event
+				if (Object.keys(data).some(i => { return i.startsWith('xaxis.autorange') })) {
+					plotData.fireAxisChangeEvent(true, 0, 0, data["yaxis.range[0]"], data["yaxis.range[1]"]);
+				}
+				if (Object.keys(data).some(i => { return i.startsWith('xaxis.range') })) {
+					if (Object.keys(data).some(i => { return i.startsWith('xaxis.showspikes') })) {
+						plotData.fireAxisChangeEvent(true, 0, 0, data["yaxis.range[0]"], data["yaxis.range[1]"]);
+					} else {
+						plotData.fireAxisChangeEvent(false, data["xaxis.range[0]"], data["xaxis.range[1]"], data["yaxis.range[0]"], data["yaxis.range[1]"]);
+					}
+				}
+
 				//Check if this was a shape movement event
 				let shapeMoved = Object.keys(data).some(i => { return i.startsWith('shapes') });
 				if (shapeMoved) {
@@ -327,11 +374,13 @@
 						}
 					}
 				}
-				if (Object.keys(data).some(i => { return i.startsWith('yaxis') })) {
+
+				if (!layout.grid && Object.keys(data).some(i => { return i.startsWith('yaxis') })) {
 					try {
 						//Make sure we don't go into an infinite update loop
 						//Yes I know that this effectively resets a move on the right Y axis but for our use case right now (spectral plot)
 						// I'm not worried about it.
+						// The layout grid check is to skip this on subplots (for now)
 						if (layout.yaxis2.range[0] != plotDiv._fullLayout.yaxis.range[0] || layout.yaxis2.range[1] != plotDiv._fullLayout.yaxis.range[1]) {
 							layout.yaxis2.range = [plotDiv._fullLayout.yaxis.range[0], plotDiv._fullLayout.yaxis.range[1]];
 							layout.yaxis2.autorange = false;
@@ -342,8 +391,26 @@
 						//nop
 					}
 				}
+
+				if (!layout.grid && Object.keys(data).some(i => { return i.startsWith('xaxis') })) {
+					try {
+						//Handle the same instance on X axis moves too
+						if (layout.xaxis2.range[0] != plotDiv._fullLayout.xaxis.range[0] || layout.xaxis2.range[1] != plotDiv._fullLayout.xaxis.range[1]) {
+							layout.xaxis2.range = [plotDiv._fullLayout.xaxis.range[0], plotDiv._fullLayout.xaxis.range[1]];
+							layout.xaxis2.autorange = false;
+							Plotly.relayout(plotDiv, layout).then(attach);
+						}
+					}
+					catch (err) {
+						//nop
+					}
+				}
+
+				if (plotData != undefined) {
+					plotData.fireOtherChangeEvent(JSON.stringify(data));
+				}
 			});
-		};
+		}
 
 		Plotly.newPlot("plot", data, layout, config).then(attach);
 		attachPlotDivHandlers();
@@ -374,6 +441,9 @@
 				if (plotTitle !== undefined) {
 					layout.title.text = plotTitle.getText();
 					layout.title.font.size = plotTitle.getFontSize();
+					if (plotTitle.getYOffset()) {
+						layout.title.y = plotTitle.getYOffset();
+					}
 				}
 				data = JSON.parse(plotData.getPlotDataJSON());
 				var layout_new = JSON.parse(plotData.getPlotLayoutJSON());
@@ -381,6 +451,7 @@
 					Object.assign(layout, layout_new);
 					updateGroupVelocityVisibility();
 					updateWindowLineVisibility();
+					updateCodaStartLineVisibility();
 				}
 
 				if (backgroundColor !== undefined) {
@@ -391,14 +462,23 @@
 						+ (backgroundColor.getOpacity() * 255) + ")\'";
 				}
 				try {
-					if (layout.yaxis2 && layout.yaxis2.side === 'right' && !data.includes(blankTrace)) {
-						blankTrace.y = [plotDiv._fullLayout.yaxis.range[0], plotDiv._fullLayout.yaxis.range[1]];
+					if (layout.yaxis2 && layout.yaxis2.side === 'right' && !data.includes(blankTraceY)) {
+						blankTraceY.y = [plotDiv._fullLayout.yaxis.range[0], plotDiv._fullLayout.yaxis.range[1]];
 						layout.yaxis2.range = plotDiv._fullLayout.yaxis.range;
 						//This trace is only here to force the secondary Y axis to show up if it exists.
-						data.push(blankTrace);
-						//Shove the legend over a little to support the right axis to try and avoid overlap
-						//Ideally we would calculate this some other way to get it pixel perfect but good enough for today
-						layout.legend.x = 1.1;
+						data.push(blankTraceY);
+
+						if (layout.legend.orientation !== 'h') {
+							//Shove the legend over a little to support the right axis to try and avoid overlap
+							//Ideally we would calculate this some other way to get it pixel perfect but good enough for today
+							layout.legend.x = 1.2;
+						}
+					}
+					if (!layout.grid && layout.xaxis2 && !data.includes(blankTraceX)) {
+						blankTraceX.x = [plotDiv._fullLayout.xaxis.range[0], plotDiv._fullLayout.xaxis.range[1]];
+						layout.xaxis2.range = plotDiv._fullLayout.xaxis.range;
+						//This trace is only here to force the secondary X axis to show up if it exists.
+						data.push(blankTraceX);
 					}
 				} catch (msg) {
 					//nop

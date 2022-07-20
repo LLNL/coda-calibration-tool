@@ -181,7 +181,6 @@ public class SpectralPlot extends Pane implements Serializable {
      *            used mostly as { log10(centerFrequency), log10(amplitiude),
      *            {@link SymbolStyles} }
      *            </p>
-     * @param showLegend
      * @param spectra
      *            <p>
      *            Spectra containing the amp/freq/mw information for a

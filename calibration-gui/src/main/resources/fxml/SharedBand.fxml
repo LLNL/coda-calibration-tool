@@ -53,6 +53,7 @@
 						<TableColumn editable="false" prefWidth="75.0" text="XT" visible="false" fx:id="xtCol" />
 						<TableColumn fx:id="qCol" editable="false" prefWidth="75.0" text="Q" visible="false" />
 						<TableColumn fx:id="measureTimeCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Measurement Time (s)" visible="false" />
+						<TableColumn fx:id="startOffsetCol"  onEditCommit="#postUpdate" prefWidth="75.0" text="Start Offset (s)" visible="false" />
 					</columns>
 					<columnResizePolicy>
 						<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

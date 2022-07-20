@@ -14,6 +14,8 @@
 */
 package gov.llnl.gnem.apps.coda.common.model.domain;
 
+import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -101,6 +103,9 @@ public class SharedFrequencyBandParameters {
     @Column(name = "MEASURE_TIME")
     @NumberFormat
     private double measurementTime = 100d;
+
+    @NumberFormat
+    private double codaStartOffset = 0d;
 
     public Long getId() {
         return this.id;
@@ -286,6 +291,15 @@ public class SharedFrequencyBandParameters {
         return this;
     }
 
+    public double getCodaStartOffset() {
+        return codaStartOffset;
+    }
+
+    public SharedFrequencyBandParameters setCodaStartOffset(double codaStartOffset) {
+        this.codaStartOffset = codaStartOffset;
+        return this;
+    }
+
     public double getMeasurementTime() {
         return measurementTime;
     }
@@ -297,96 +311,78 @@ public class SharedFrequencyBandParameters {
 
     @Override
     public String toString() {
-        return "SharedFrequencyBandParameters [id="
-                + id
-                + ", version="
-                + version
-                + ", lowFrequency="
-                + getLowFrequency()
-                + ", highFrequency="
-                + getHighFrequency()
-                + ", velocity0="
-                + velocity0
-                + ", velocity1="
-                + velocity1
-                + ", velocity2="
-                + velocity2
-                + ", beta0="
-                + beta0
-                + ", beta1="
-                + beta1
-                + ", beta2="
-                + beta2
-                + ", gamma0="
-                + gamma0
-                + ", gamma1="
-                + gamma1
-                + ", gamma2="
-                + gamma2
-                + ", minSnr="
-                + minSnr
-                + ", s1="
-                + p1
-                + ", s2="
-                + p2
-                + ", xc="
-                + xc
-                + ", xt="
-                + xt
-                + ", q="
-                + q
-                + ", minLength="
-                + minLength
-                + ", maxLength="
-                + maxLength
-                + ", measurementTime="
-                + measurementTime
-                + "]";
+        StringBuilder builder = new StringBuilder();
+        builder.append("SharedFrequencyBandParameters [id=")
+               .append(id)
+               .append(", version=")
+               .append(version)
+               .append(", frequencyBand=")
+               .append(frequencyBand)
+               .append(", velocity0=")
+               .append(velocity0)
+               .append(", velocity1=")
+               .append(velocity1)
+               .append(", velocity2=")
+               .append(velocity2)
+               .append(", beta0=")
+               .append(beta0)
+               .append(", beta1=")
+               .append(beta1)
+               .append(", beta2=")
+               .append(beta2)
+               .append(", gamma0=")
+               .append(gamma0)
+               .append(", gamma1=")
+               .append(gamma1)
+               .append(", gamma2=")
+               .append(gamma2)
+               .append(", minSnr=")
+               .append(minSnr)
+               .append(", p1=")
+               .append(p1)
+               .append(", p2=")
+               .append(p2)
+               .append(", xc=")
+               .append(xc)
+               .append(", xt=")
+               .append(xt)
+               .append(", q=")
+               .append(q)
+               .append(", minLength=")
+               .append(minLength)
+               .append(", maxLength=")
+               .append(maxLength)
+               .append(", measurementTime=")
+               .append(measurementTime)
+               .append(", codaStartOffset=")
+               .append(codaStartOffset)
+               .append("]");
+        return builder.toString();
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        long temp;
-        temp = Double.doubleToLongBits(beta0);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(beta1);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(beta2);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + ((frequencyBand == null) ? 0 : frequencyBand.hashCode());
-        temp = Double.doubleToLongBits(gamma0);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(gamma1);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(gamma2);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(maxLength);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(measurementTime);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(minLength);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(minSnr);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(q);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(p1);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(p2);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(velocity0);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(velocity1);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(velocity2);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(xc);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(xt);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        return result;
+        return Objects.hash(
+                beta0,
+                    beta1,
+                    beta2,
+                    codaStartOffset,
+                    frequencyBand,
+                    gamma0,
+                    gamma1,
+                    gamma2,
+                    maxLength,
+                    measurementTime,
+                    minLength,
+                    minSnr,
+                    p1,
+                    p2,
+                    q,
+                    velocity0,
+                    velocity1,
+                    velocity2,
+                    xc,
+                    xt);
     }
 
     @Override
@@ -394,75 +390,30 @@ public class SharedFrequencyBandParameters {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof SharedFrequencyBandParameters)) {
             return false;
         }
         SharedFrequencyBandParameters other = (SharedFrequencyBandParameters) obj;
-        if (Double.doubleToLongBits(beta0) != Double.doubleToLongBits(other.beta0)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(beta1) != Double.doubleToLongBits(other.beta1)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(beta2) != Double.doubleToLongBits(other.beta2)) {
-            return false;
-        }
-        if (frequencyBand == null) {
-            if (other.frequencyBand != null) {
-                return false;
-            }
-        } else if (!frequencyBand.equals(other.frequencyBand)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(gamma0) != Double.doubleToLongBits(other.gamma0)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(gamma1) != Double.doubleToLongBits(other.gamma1)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(gamma2) != Double.doubleToLongBits(other.gamma2)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(maxLength) != Double.doubleToLongBits(other.maxLength)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(measurementTime) != Double.doubleToLongBits(other.measurementTime)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(minLength) != Double.doubleToLongBits(other.minLength)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(minSnr) != Double.doubleToLongBits(other.minSnr)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(q) != Double.doubleToLongBits(other.q)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(p1) != Double.doubleToLongBits(other.p1)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(p2) != Double.doubleToLongBits(other.p2)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(velocity0) != Double.doubleToLongBits(other.velocity0)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(velocity1) != Double.doubleToLongBits(other.velocity1)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(velocity2) != Double.doubleToLongBits(other.velocity2)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(xc) != Double.doubleToLongBits(other.xc)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(xt) != Double.doubleToLongBits(other.xt)) {
-            return false;
-        }
-        return true;
+        return Double.doubleToLongBits(beta0) == Double.doubleToLongBits(other.beta0)
+                && Double.doubleToLongBits(beta1) == Double.doubleToLongBits(other.beta1)
+                && Double.doubleToLongBits(beta2) == Double.doubleToLongBits(other.beta2)
+                && Double.doubleToLongBits(codaStartOffset) == Double.doubleToLongBits(other.codaStartOffset)
+                && Objects.equals(frequencyBand, other.frequencyBand)
+                && Double.doubleToLongBits(gamma0) == Double.doubleToLongBits(other.gamma0)
+                && Double.doubleToLongBits(gamma1) == Double.doubleToLongBits(other.gamma1)
+                && Double.doubleToLongBits(gamma2) == Double.doubleToLongBits(other.gamma2)
+                && Double.doubleToLongBits(maxLength) == Double.doubleToLongBits(other.maxLength)
+                && Double.doubleToLongBits(measurementTime) == Double.doubleToLongBits(other.measurementTime)
+                && Double.doubleToLongBits(minLength) == Double.doubleToLongBits(other.minLength)
+                && Double.doubleToLongBits(minSnr) == Double.doubleToLongBits(other.minSnr)
+                && Double.doubleToLongBits(p1) == Double.doubleToLongBits(other.p1)
+                && Double.doubleToLongBits(p2) == Double.doubleToLongBits(other.p2)
+                && Double.doubleToLongBits(q) == Double.doubleToLongBits(other.q)
+                && Double.doubleToLongBits(velocity0) == Double.doubleToLongBits(other.velocity0)
+                && Double.doubleToLongBits(velocity1) == Double.doubleToLongBits(other.velocity1)
+                && Double.doubleToLongBits(velocity2) == Double.doubleToLongBits(other.velocity2)
+                && Double.doubleToLongBits(xc) == Double.doubleToLongBits(other.xc)
+                && Double.doubleToLongBits(xt) == Double.doubleToLongBits(other.xt);
     }
 
     public SharedFrequencyBandParameters mergeNonNullOrEmptyFields(SharedFrequencyBandParameters overlay) {
@@ -486,6 +437,7 @@ public class SharedFrequencyBandParameters {
         this.q = overlay.q;
         this.minLength = overlay.minLength;
         this.maxLength = overlay.maxLength;
+        this.codaStartOffset = overlay.getCodaStartOffset();
         this.measurementTime = overlay.measurementTime;
 
         return this;

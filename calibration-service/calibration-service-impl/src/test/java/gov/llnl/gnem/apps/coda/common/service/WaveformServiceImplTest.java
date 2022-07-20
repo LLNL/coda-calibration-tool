@@ -72,7 +72,7 @@ public class WaveformServiceImplTest {
         Waveform secondWaveform = waveformService.findOneForUpdate(firstWaveform.getId());
 
         secondWaveform.setAssociatedPicks(
-                secondWaveform.getAssociatedPicks().stream().map(p -> new WaveformPick().mergeNonNullOrEmptyFields(p).setPickTimeSecFromOrigin(-100f)).collect(Collectors.toList()));
+                secondWaveform.getAssociatedPicks().stream().map(p -> new WaveformPick().mergeNonNullOrEmptyFields(p).setPickTimeSecFromOrigin(-100d)).collect(Collectors.toList()));
         secondWaveform = waveformService.save(secondWaveform);
 
         assertThat(secondWaveform.getAssociatedPicks()).size().describedAs("Should still only have one pick on the waveform itself").isEqualTo(1);
@@ -109,13 +109,15 @@ public class WaveformServiceImplTest {
                                   zeroDate,
                                   zeroDate,
                                   zeroDate,
+                                  zeroDate,
+                                  zeroDate,
                                   "vel",
                                   "nm/s",
                                   1.0,
                                   1.5,
                                   4d,
                                   Boolean.TRUE);
-        w.getAssociatedPicks().add(new WaveformPick().setPickName("f").setPickTimeSecFromOrigin(0f).setPickType("f").setWaveform(w));
+        w.getAssociatedPicks().add(new WaveformPick().setPickName("f").setPickTimeSecFromOrigin(0d).setPickType("f").setWaveform(w));
         return w;
     }
 }

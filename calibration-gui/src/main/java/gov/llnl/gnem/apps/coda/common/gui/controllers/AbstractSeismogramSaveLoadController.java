@@ -48,6 +48,12 @@ import javafx.application.Platform;
 import javafx.scene.input.MouseEvent;
 import reactor.core.publisher.Flux;
 
+/**
+ * The AbstractSeismogramSaveLoadController defines the contract and workflow
+ * for using a {@link FileToSeismogramConverter} to produce one or more
+ * {@link Waveform} domain objects from a file and vice-versa. This abstraction
+ * is intended to help support future formats beyond SAC files.
+ */
 public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeismogramConverter, R> {
 
     protected static final Long LOCAL_FAIL_EVENT = -1l;
@@ -72,7 +78,6 @@ public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeis
 
     public AbstractSeismogramSaveLoadController(List<FC> fileConverters, EventBus bus, Logger log, SacExporter sacExporter, Supplier<Flux<Waveform>> saveClient,
             BiFunction<Long, List<Waveform>, Flux<R>> loadClient) {
-        super();
         this.fileConverters = fileConverters;
         this.saveClient = saveClient;
         this.loadClient = loadClient;

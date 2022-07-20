@@ -114,6 +114,9 @@ public class SharedBandController {
     @FXML
     private TableColumn<SharedFrequencyBandParameters, String> measureTimeCol;
 
+    @FXML
+    private TableColumn<SharedFrequencyBandParameters, String> startOffsetCol;
+
     private ObservableList<SharedFrequencyBandParameters> sharedFbData = FXCollections.observableArrayList();
 
     private ParameterClient client;
@@ -173,6 +176,8 @@ public class SharedBandController {
         CellBindingUtils.attachEditableTextCellFactories(minLengthCol, SharedFrequencyBandParameters::getMinLength, SharedFrequencyBandParameters::setMinLength);
         CellBindingUtils.attachEditableTextCellFactories(maxLengthCol, SharedFrequencyBandParameters::getMaxLength, SharedFrequencyBandParameters::setMaxLength);
         CellBindingUtils.attachEditableTextCellFactories(measureTimeCol, SharedFrequencyBandParameters::getMeasurementTime, SharedFrequencyBandParameters::setMeasurementTime);
+
+        CellBindingUtils.attachEditableTextCellFactories(startOffsetCol, SharedFrequencyBandParameters::getCodaStartOffset, SharedFrequencyBandParameters::setCodaStartOffset);
 
         codaSharedTableView.setItems(sharedFbData);
         lowFreqCol.setSortType(TableColumn.SortType.ASCENDING); // Default sort is low_freq ASC

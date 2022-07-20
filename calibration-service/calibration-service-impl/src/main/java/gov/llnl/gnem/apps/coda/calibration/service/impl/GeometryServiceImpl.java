@@ -106,7 +106,7 @@ public class GeometryServiceImpl implements GeometryService {
                     geoms.add(reader.read(feature.getGeometry()));
                 }
 
-                //BufferOp here helps us repair the any self intersections, important!
+                //BufferOp here helps us repair any self-intersections, important!
                 PreparedGeometry geo = PreparedGeometryFactory.prepare(BufferOp.bufferOp(GeometryCombiner.combine(geoms), 0.0));
 
                 Geometry bounds = geo.getGeometry().getEnvelope();

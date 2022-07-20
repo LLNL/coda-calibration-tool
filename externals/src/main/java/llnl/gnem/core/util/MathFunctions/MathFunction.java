@@ -32,8 +32,8 @@ public class MathFunction {
     private static final SecureRandom rng = new SecureRandom();
 
     /**
-     * The Heavyside step function H(x) = 0.0 when x < 0 = 0.5 when x == 0 = 1.0
-     * when x > 0
+     * The Heavyside step function H(x) = 0.0 when x &lt; 0 = 0.5 when x == 0 =
+     * 1.0 when x &gt; 0
      *
      * @param value
      *            the original value
@@ -52,7 +52,7 @@ public class MathFunction {
     /**
      * Find the closest power of 2 to the input number
      *
-     * e.g. 5 ==> 4, 100 ==> 128, 2==>2 etc.
+     * e.g. 5 ==&gt; 4, 100 ==&gt; 128, 2==&gt;2 etc.
      *
      * @param num
      *            a long valued variable
@@ -74,7 +74,7 @@ public class MathFunction {
     /**
      * Find the next power of 2 greater than the input number
      *
-     * e.g. 5 ==> 8, 100 ==> 128, 2==>2 etc.
+     * e.g. 5 ==&gt; 8, 100 ==&gt; 128, 2==&gt;2 etc.
      *
      * @param num
      *            a long valued variable
@@ -93,7 +93,7 @@ public class MathFunction {
     /**
      * Round up an integer to the next power of 2
      *
-     * e.g. 5 ==> 8, 100 ==> 128, 2==>2 etc.
+     * e.g. 5 ==&gt; 8, 100 ==&gt; 128, 2==&gt;2 etc.
      *
      * @param num
      *            an integer
@@ -106,7 +106,7 @@ public class MathFunction {
     /**
      * Find the closest power of 2 to the input number
      *
-     * e.g. 5 ==> 4, 100 ==> 128, 2==>2 etc.
+     * e.g. 5 ==&gt; 4, 100 ==&gt; 128, 2==&gt;2 etc.
      *
      * @param num
      *            an integer
@@ -136,7 +136,7 @@ public class MathFunction {
      *
      * below is an approximate expansion (to order 10)
      *
-     * |Arg(z)| < pi /\ (|z| --> inf.)
+     * |Arg(z)| &lt; pi /\ (|z| --&gt; inf.)
      */
     public static double Gamma(double z) {
         double sqrt2PI = Math.sqrt(2 * Math.PI);

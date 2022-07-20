@@ -37,6 +37,7 @@ import org.glassfish.tyrus.client.ClientProperties;
 import org.glassfish.tyrus.client.SslEngineConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -104,8 +105,12 @@ public class CodaWebClientBuilder {
     private SslEngineConfigurator sslEngineConfigurator;
     private ReactorClientHttpConnector connector;
     private final ExchangeStrategies strategies;
+    private SSLContext sc;
+    private ApplicationContext appContext;
 
-    public CodaWebClientBuilder(final EventBus bus, final WebclientConfig config, final StompSessionHandlerAdapter frameHandler, @Nullable final ExchangeStrategies strategies) {
+    public CodaWebClientBuilder(final EventBus bus, ApplicationContext appContext, final WebclientConfig config, final StompSessionHandlerAdapter frameHandler,
+            @Nullable final ExchangeStrategies strategies) {
+        this.appContext = appContext;
         this.config = config;
         this.strategies = strategies;
         bus.register(this);
@@ -116,8 +121,10 @@ public class CodaWebClientBuilder {
         HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try (InputStream keyStore = classLoader.getResourceAsStream(trustStoreName)) {
-            final SSLContext sc = SslUtils.initMergedSSLTrustStore(keyStore);
+            sc = SslUtils.initMergedSSLTrustStore(keyStore);
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            SSLContext.setDefault(sc);
+
             sslEngineConfigurator = new SslEngineConfigurator(sc);
             sslEngineConfigurator.setHostnameVerifier(hostnameVerifier);
         } catch (IOException | GeneralSecurityException e) {
@@ -193,5 +200,13 @@ public class CodaWebClientBuilder {
         }
 
         return builder.build();
+    }
+
+    public @Bean @Scope("prototype") HostnameVerifier getHostnameVerifier() {
+        return hostnameVerifier;
+    }
+
+    public @Bean @Scope("prototype") SSLContext getSSLContext() {
+        return sc;
     }
 }

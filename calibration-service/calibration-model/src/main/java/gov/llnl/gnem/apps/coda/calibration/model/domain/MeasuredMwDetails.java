@@ -131,7 +131,7 @@ public class MeasuredMwDetails {
 
     private Double bandCoverage;
 
-    private Boolean likelyPoorlyConstrained;
+    private Boolean likelyPoorlyConstrained = false;
 
     public MeasuredMwDetails(MeasuredMwParameters meas, ReferenceMwParameters ref, ValidationMwParameters val, Event event) {
         if (meas != null) {

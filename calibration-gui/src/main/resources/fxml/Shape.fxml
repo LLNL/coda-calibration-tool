@@ -11,26 +11,26 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="shape" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css, @FitPlot.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController">
+<StackPane fx:id="shape" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pickOnBounds="false" stylesheets="@CommonGui.css, @FitPlot.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController">
 	<children>
-		<VBox>
+		<VBox pickOnBounds="false">
 			<children>
-				<ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+				<ScrollPane fitToHeight="true" fitToWidth="true" pickOnBounds="false" VBox.vgrow="ALWAYS">
 					<content>
                   <StackPane pickOnBounds="false">
                      <children>
       								<StackPane fx:id="plotContainer" minHeight="50.0" minWidth="50.0" pickOnBounds="false" />
             				<HBox pickOnBounds="false" prefWidth="200.0">
             					<children>
-            						<Pane prefWidth="30.0" />
-            						<VBox>
+            						<Pane pickOnBounds="false" prefWidth="30.0" />
+            						<VBox pickOnBounds="false">
             							<children>
             								<Label text="Frequency Band" />
             								<ComboBox fx:id="frequencyBandCombo" prefWidth="150.0" />
             							</children>
             						</VBox>
-            						<Pane minWidth="15.0" />
-            						<VBox>
+            						<Pane minWidth="15.0" pickOnBounds="false" />
+            						<VBox pickOnBounds="false">
             							<children>
             								<Label />
             	                			<Button fx:id="yAxisShrink" minWidth="20.0" mnemonicParsing="false">

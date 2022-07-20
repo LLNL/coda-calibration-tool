@@ -28,6 +28,7 @@ import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -66,6 +67,11 @@ public class CodaCalibrationStandalone extends Application {
             if (preloaderName == null) {
                 System.setProperty("javafx.preloader", SimpleGuiPreloader.class.getName());
             }
+            //Until we drop Java 8 support we have to disable HTTP2
+            // because it uses a different path to set the SSLContext that
+            // we don't have access to.
+            System.setProperty("com.sun.webkit.useHTTP2Loader", "false");
+
             final CountDownLatch latch = new CountDownLatch(1);
             SwingUtilities.invokeLater(() -> {
                 new JFXPanel(); // initializes JavaFX environment
@@ -83,7 +89,7 @@ public class CodaCalibrationStandalone extends Application {
 
     @Override
     public void init() throws Exception {
-        setContext(new SpringApplicationBuilder(CalibrationApplication.class).headless(false).run(initialArgs));
+        setContext(new SpringApplicationBuilder(CalibrationApplication.class).web(WebApplicationType.SERVLET).headless(false).build().run(initialArgs));
     }
 
     private ConfigurableApplicationContext setContext(ConfigurableApplicationContext context) {

@@ -17,7 +17,9 @@ package gov.llnl.gnem.apps.coda.common.model.domain;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.persistence.Basic;
@@ -46,9 +48,11 @@ import org.springframework.util.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
+
 @Entity
 @Table(name = "Waveform", indexes = { @Index(columnList = "beginTime", name = "btime_index"), @Index(columnList = "endTime", name = "etime_index"),
-        @Index(columnList = "maxVelTime", name = "maxVel_index"), @Index(columnList = "event_id", name = "w_event_id_index"), @Index(columnList = "station_name", name = "w_station_name_index"),
+        @Index(columnList = "codaStartTime", name = "maxVel_index"), @Index(columnList = "event_id", name = "w_event_id_index"), @Index(columnList = "station_name", name = "w_station_name_index"),
         @Index(columnList = "network_name", name = "w_network_name_index"), @Index(columnList = "lowFrequency", name = "lowFreq_index"), @Index(columnList = "highFrequency", name = "highFreq_index"),
         @Index(columnList = "segmentType", name = "type_index"), @Index(columnList = "segmentUnits", name = "units_index"), @Index(columnList = "sampleRate", name = "rate_index"),
         @Index(columnList = "channelName", name = "channel_name_index"), @Index(columnList = "active", name = "active") })
@@ -82,6 +86,16 @@ public class Waveform {
     @Temporal(TemporalType.TIMESTAMP)
     @DateTimeFormat(style = "M-")
     private Date maxVelTime;
+
+    @Column(name = "codaStartTime")
+    @Temporal(TemporalType.TIMESTAMP)
+    @DateTimeFormat(style = "M-")
+    private Date codaStartTime;
+
+    @Column(name = "userStartTime", nullable = true)
+    @Temporal(TemporalType.TIMESTAMP)
+    @DateTimeFormat(style = "M-")
+    private Date userStartTime;
 
     @Column(name = "segmentType")
     private String segmentType;
@@ -126,6 +140,8 @@ public class Waveform {
         this.setBeginTime(waveform.getBeginTime());
         this.setEndTime(waveform.getEndTime());
         this.setMaxVelTime(waveform.getMaxVelTime());
+        this.setCodaStartTime(waveform.getCodaStartTime());
+        this.setUserStartTime(waveform.getUserStartTime());
         this.setSegmentType(waveform.getSegmentType());
         this.setSegmentUnits(waveform.getSegmentUnits());
         this.setSampleRate(waveform.getSampleRate());
@@ -135,8 +151,8 @@ public class Waveform {
         this.setActive(waveform.getActive());
     }
 
-    public Waveform(Long id, Integer version, Event event, Stream stream, Date beginTime, Date endTime, Date maxVelTime, String segmentType, String segmentUnits, Double lowFrequency,
-            Double highFrequency, Double sampleRate, Boolean active) {
+    public Waveform(Long id, Integer version, Event event, Stream stream, Date beginTime, Date endTime, Date maxVelTime, Date codaStartTime, Date userStartTime, String segmentType,
+            String segmentUnits, Double lowFrequency, Double highFrequency, Double sampleRate, Boolean active) {
         this.id = id;
         this.version = version;
         this.event = event;
@@ -144,6 +160,8 @@ public class Waveform {
         this.beginTime = beginTime;
         this.endTime = endTime;
         this.maxVelTime = maxVelTime;
+        this.codaStartTime = codaStartTime;
+        this.userStartTime = userStartTime;
         this.segmentType = segmentType;
         this.segmentUnits = segmentUnits;
         this.lowFrequency = lowFrequency;
@@ -198,6 +216,24 @@ public class Waveform {
 
     public Waveform setMaxVelTime(Date maxVelTime) {
         this.maxVelTime = maxVelTime;
+        return this;
+    }
+
+    public Date getCodaStartTime() {
+        return codaStartTime;
+    }
+
+    public Waveform setCodaStartTime(Date codaStartTime) {
+        this.codaStartTime = codaStartTime;
+        return this;
+    }
+
+    public Date getUserStartTime() {
+        return userStartTime;
+    }
+
+    public Waveform setUserStartTime(Date userStartTime) {
+        this.userStartTime = userStartTime;
         return this;
     }
 
@@ -366,8 +402,35 @@ public class Waveform {
         if (waveformOverlay.getMaxVelTime() != null) {
             this.setMaxVelTime(waveformOverlay.getMaxVelTime());
         }
+        if (waveformOverlay.getCodaStartTime() != null) {
+            this.setCodaStartTime(waveformOverlay.getCodaStartTime());
+        }
+
+        //Null is a valid value for UserStartTime so just set that directly
+        this.setUserStartTime(waveformOverlay.getUserStartTime());
+
         if (waveformOverlay.getAssociatedPicks() != null && !waveformOverlay.getAssociatedPicks().isEmpty()) {
-            this.setAssociatedPicks(waveformOverlay.getAssociatedPicks());
+            //Merge picks
+            Map<String, WaveformPick> picksByName = this.getAssociatedPicks().stream().collect(Collectors.toMap(WaveformPick::getPickName, Function.identity()));
+            waveformOverlay.getAssociatedPicks().stream().forEach(p -> {
+                WaveformPick managedPick = picksByName.get(p.getPickName());
+                if (managedPick != null) {
+                    managedPick.mergeNonNullOrEmptyFields(p);
+                } else {
+                    picksByName.put(p.getPickName(), p);
+                }
+            });
+            if (picksByName.containsKey(PICK_TYPES.CS.getPhase()) && picksByName.containsKey(PICK_TYPES.UCS.getPhase())) {
+                WaveformPick p = picksByName.remove(PICK_TYPES.CS.getPhase());
+                p.setWaveform(null);
+            }
+            if (!waveformOverlay.getAssociatedPicks().stream().anyMatch(p -> PICK_TYPES.UCS.getPhase().equals(p.getPickName()))) {
+                WaveformPick p = picksByName.remove(PICK_TYPES.UCS.getPhase());
+                if (p != null) {
+                    p.setWaveform(null);
+                }
+            }
+            this.setAssociatedPicks(new ArrayList<>(picksByName.values()));
         }
         if (waveformOverlay.isActive() != null) {
             this.setActive(waveformOverlay.isActive());
@@ -377,7 +440,23 @@ public class Waveform {
 
     @Override
     public int hashCode() {
-        return Objects.hash(beginTime, endTime, event, highFrequency, lowFrequency, maxVelTime, sampleRate, segment, segmentType, segmentUnits, stream);
+        return Objects.hash(
+                active,
+                    beginTime,
+                    codaStartTime,
+                    endTime,
+                    event,
+                    highFrequency,
+                    id,
+                    lowFrequency,
+                    maxVelTime,
+                    sampleRate,
+                    segment,
+                    segmentType,
+                    segmentUnits,
+                    stream,
+                    userStartTime,
+                    version);
     }
 
     @Override
@@ -389,21 +468,27 @@ public class Waveform {
             return false;
         }
         Waveform other = (Waveform) obj;
-        return Objects.equals(beginTime, other.beginTime)
+        return Objects.equals(active, other.active)
+                && Objects.equals(beginTime, other.beginTime)
+                && Objects.equals(codaStartTime, other.codaStartTime)
                 && Objects.equals(endTime, other.endTime)
                 && Objects.equals(event, other.event)
                 && Objects.equals(highFrequency, other.highFrequency)
+                && Objects.equals(id, other.id)
                 && Objects.equals(lowFrequency, other.lowFrequency)
                 && Objects.equals(maxVelTime, other.maxVelTime)
                 && Objects.equals(sampleRate, other.sampleRate)
                 && Objects.equals(segment, other.segment)
                 && Objects.equals(segmentType, other.segmentType)
                 && Objects.equals(segmentUnits, other.segmentUnits)
-                && Objects.equals(stream, other.stream);
+                && Objects.equals(stream, other.stream)
+                && Objects.equals(userStartTime, other.userStartTime)
+                && Objects.equals(version, other.version);
     }
 
     @Override
     public String toString() {
+        final int maxLen = 10;
         StringBuilder builder = new StringBuilder();
         builder.append("Waveform [id=")
                .append(id)
@@ -419,6 +504,10 @@ public class Waveform {
                .append(endTime)
                .append(", maxVelTime=")
                .append(maxVelTime)
+               .append(", codaStartTime=")
+               .append(codaStartTime)
+               .append(", userStartTime=")
+               .append(userStartTime)
                .append(", segmentType=")
                .append(segmentType)
                .append(", segmentUnits=")
@@ -429,9 +518,13 @@ public class Waveform {
                .append(highFrequency)
                .append(", sampleRate=")
                .append(sampleRate)
+               .append(", segment=")
+               .append(segment)
+               .append(", associatedPicks=")
+               .append(associatedPicks != null ? associatedPicks.subList(0, Math.min(associatedPicks.size(), maxLen)) : null)
                .append(", active=")
                .append(active)
-               .append(']');
+               .append("]");
         return builder.toString();
     }
 

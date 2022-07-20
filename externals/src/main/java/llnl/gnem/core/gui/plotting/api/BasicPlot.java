@@ -56,4 +56,6 @@ public interface BasicPlot extends Serializable {
 
     public void setMargin(Integer top, Integer bottom, Integer left, Integer right);
 
+    public void setUseHorizontalBottomLegend(boolean useHorizontalBottomLegend);
+
 }

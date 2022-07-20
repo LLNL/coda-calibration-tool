@@ -40,16 +40,16 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     public Waveform findOneByAllFields(@Param("beginTime") Date beginTime, @Param("endTime") Date endTime, @Param("event") Event event, @Param("stream") Stream stream,
             @Param("segmentType") String segmentType, @Param("segmentUnits") String segmentUnits, @Param("lowFrequency") Double lowFrequency, @Param("highFrequency") Double highFrequency);
 
-    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w order by w.id desc")
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.codaStartTime, w.userStartTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w order by w.id desc")
     public Set<Waveform> getWaveformMetadata();
 
-    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.active = :active order by w.id desc")
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.codaStartTime, w.userStartTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.active = :active order by w.id desc")
     public List<Waveform> getWaveformMetadataByActive(@Param("active") boolean active);
 
-    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.id in :ids order by w.id desc")
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.codaStartTime, w.userStartTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.id in :ids order by w.id desc")
     public List<Waveform> findAllMetadataByIds(@Param("ids") List<Long> ids);
 
-    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.id = :id order by w.id desc")
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.codaStartTime, w.userStartTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w where w.id = :id order by w.id desc")
     public Waveform findWaveformMetadataById(@Param("id") Long id);
 
     @Query("select p from WaveformPick p where p.waveform.id = :id")
@@ -82,7 +82,7 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
     @Query("update Waveform w SET w.active = :active where w.id not in (:ids)")
     public int setActiveNotIn(@Param("active") boolean active, @Param("ids") List<Long> waveformIds);
 
-    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w "
+    @Query("select new Waveform(w.id, w.version, w.event, w.stream, w.beginTime, w.endTime, w.maxVelTime, w.codaStartTime, w.userStartTime, w.segmentType, w.segmentUnits, w.lowFrequency, w.highFrequency, w.sampleRate, w.active) from Waveform w "
             + "where w.active = :active and"
             + "(w.stream.station.latitude between :minX and :maxX "
             + "and w.stream.station.longitude between :minY and :maxY) "

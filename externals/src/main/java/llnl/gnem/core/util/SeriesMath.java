@@ -1359,8 +1359,8 @@ public class SeriesMath {
     public static float getExtremum(float[] data) {
         float smax = 0.0f;
         float sabs;
-        for (int i = 0; i < data.length; i++) {
-            sabs = Math.abs(data[i]);
+        for (float element : data) {
+            sabs = Math.abs(element);
             if (sabs > smax) {
                 smax = sabs;
             }
@@ -1702,8 +1702,8 @@ public class SeriesMath {
      */
     public static double getNorm(double[] data) {
         double sumsquares = 0.;
-        for (int ii = 0; ii < data.length; ii++) {
-            sumsquares = sumsquares + data[ii] * data[ii];
+        for (double element : data) {
+            sumsquares = sumsquares + element * element;
         }
 
         return Math.sqrt(sumsquares);
@@ -2557,9 +2557,6 @@ public class SeriesMath {
      * Check whether the data series has flat segments - where every element of
      * the segment is identical
      *
-     * @param minsegmentlength
-     *            the shortest number of datapoints that must be identical
-     *            before it qualifies as "flat"
      * @param data
      * @param segmentlength
      *            an integer number of elements defining the shortest segment

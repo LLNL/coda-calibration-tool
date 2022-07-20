@@ -19,6 +19,18 @@ import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
 
+/***
+ * The predicate builder is used by the filter controller to manage predicates
+ * used for filtering the table view results in the DataFilterController. With
+ * this helper class, the filter can link together multiple And/Or predicates as
+ * a single predicate. Active predicates are used while inactive ones are stored
+ * until activated.
+ *
+ * @author downie4
+ *
+ * @param <T>
+ */
+
 class PredicateBuilder<T> {
 
     public interface ValueComparer<T> {
@@ -33,6 +45,18 @@ class PredicateBuilder<T> {
         this.activePredicates = new HashMap<>();
     }
 
+    /***
+     * Creates a predicate which can then be used by the predicate builder. Adds
+     * it to the list of stored predicates but leaves it inactive.
+     *
+     * @param name
+     *            The string name to give the new predicate.
+     * @param comparer
+     *            The comparer to use for comparing between items by the
+     *            predicate.
+     * @param item
+     *            The value which will be compared with in the predicate.
+     */
     public void setPredicate(String name, ValueComparer<T> comparer, Object item) {
         Predicate<T> predicate = createPredicate(comparer, item.toString());
         if (predicate != null) {
@@ -42,6 +66,16 @@ class PredicateBuilder<T> {
         }
     }
 
+    /***
+     * Activates/deactivate a predicate. If the predicate is active, then it
+     * will be used by the predicate builder for comparisons.
+     *
+     * @param name
+     *            Name of the predicate to activate/deactivate.
+     * @param active
+     *            If true, the predicate will be activated otherwise it will be
+     *            deactivated.
+     */
     public void setPredicateActiveState(String name, Boolean active) {
         Predicate<T> predicate = predicates.get(name);
         if (predicate != null) {
@@ -53,20 +87,51 @@ class PredicateBuilder<T> {
         }
     }
 
+    /***
+     * Deactivates a group of predicates, useful for toggle groups.
+     *
+     * @param groupNames
+     *            A list of the predicate names that should be deactivated.
+     */
     public void deactivateGroup(List<String> groupNames) {
         groupNames.forEach(name -> {
             setPredicateActiveState(name, false);
         });
     }
 
+    /***
+     * Combines all the activate predicates into a single 'And' predicate. This
+     * means that all activate predicates must evaluate to true for the returned
+     * predicate to return true.
+     *
+     * @return A new 'And' predicate of type T.
+     */
     public Predicate<T> getAndPredicate() {
         return activePredicates.values().stream().reduce(Predicate::and).orElse(x -> true);
     }
 
+    /***
+     * Combines all the activate predicates into a single 'Or' predicate. This
+     * means that if any activate predicate evaluates to true returned predicate
+     * will return true.
+     *
+     * @return A new 'And' predicate of type T.
+     */
     public Predicate<T> getOrPredicate() {
         return activePredicates.values().stream().reduce(Predicate::or).orElse(x -> false);
     }
 
+    /***
+     * Creates a basic predicate.
+     *
+     * @param comparer
+     *            The comparer to use for making comparisons in by the
+     *            predicate.
+     * @param item
+     *            The string value to use by the predicate.
+     * @return A new predicate that will evaluate true if comparer determines
+     *         item and incoming value are equal
+     */
     private Predicate<T> createPredicate(ValueComparer<T> comparer, String item) {
         if (comparer == null || item == null || StringUtils.isBlank(item)) {
             return null;

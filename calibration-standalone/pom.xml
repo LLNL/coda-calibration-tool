@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="https://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
 
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.17</version>
+		<version>1.0.18</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -38,7 +36,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>						
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 						</manifest>
 						<manifestEntries>
 							<Implementation-Version>${project.version}</Implementation-Version>
@@ -48,76 +46,18 @@
 						</manifestEntries>
 					</archive>
 				</configuration>
-			</plugin>				
+			</plugin>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<dependencies>
-					<dependency>
-						<groupId>org.springframework.boot</groupId>
-						<artifactId>spring-boot-maven-plugin</artifactId>
-						<version>${spring.boot.version}</version>
-					</dependency>
-				</dependencies>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
 				<executions>
 					<execution>
-						<phase>package</phase>
 						<goals>
-							<goal>shade</goal>
+							<goal>repackage</goal>
 						</goals>
-						<configuration>
-							<transformers>
-								<transformer
-										implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
-									<resource>META-INF/spring.handlers</resource>
-								</transformer>
-								<transformer
-										implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
-									<resource>META-INF/spring.factories</resource>
-								</transformer>
-								<transformer
-										implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
-									<resource>META-INF/spring.schemas</resource>
-								</transformer>
-								<transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
-                 					<resource>META-INF/spring.tooling</resource>								
-								</transformer>	
-								<transformer
-										implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-								<transformer
-										implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<manifestEntries>
-                   				 		<Main-Class>org.springframework.boot.loader.PropertiesLauncher</Main-Class>		
-										<Start-Class>gov.llnl.gnem.apps.coda.calibration.standalone.CodaCalibrationStandalone</Start-Class>
-									</manifestEntries>
-								</transformer>
-							</transformers>
-						</configuration>
 					</execution>
 				</executions>
-				<configuration>
-					<filters>
-						<filter>
-							<artifact>*:*</artifact>	
-							<excludes>
-								<exclude>**/module-info.*</exclude>
-							</excludes>
-						</filter>					
-						<filter>
-							<!-- filter out signature files from signed dependencies, else repackaging fails with security ex -->
-							<artifact>*:*</artifact>
-							<excludes>
-								<exclude>META-INF/*.SF</exclude>
-								<exclude>META-INF/*.DSA</exclude>
-								<exclude>META-INF/*.RSA</exclude>
-							</excludes>
-						</filter>						
-					</filters>				
-					<shadedArtifactAttached>true</shadedArtifactAttached>
-              		<shadedClassifierName>runnable</shadedClassifierName>
-					<createDependencyReducedPom>false</createDependencyReducedPom>
-				</configuration>
-			</plugin>				
+			</plugin>
 		</plugins>
 	</build>
 

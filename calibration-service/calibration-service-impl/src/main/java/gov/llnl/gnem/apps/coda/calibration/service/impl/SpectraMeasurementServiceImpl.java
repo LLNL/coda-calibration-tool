@@ -59,8 +59,8 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
 
     private MeasuredMwsRepository measuredEventRepo;
 
-    @Value("${show-stress-bounds-in-uq-spectra:false}")
-    private boolean showStressBoundsInUQSpectra = false;
+    @Value("${show-stress-bounds-in-uq-spectra:true}")
+    private boolean showStressBoundsInUQSpectra = true;
 
     @Autowired
     public SpectraMeasurementServiceImpl(SpectraMeasurementRepository spectraRepo, SpectraCalculator spectraCalc, MeasuredMwsRepository measuredEventRepo,
@@ -170,4 +170,5 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
         }
         return spectra;
     }
+
 }

@@ -29,6 +29,35 @@ public class CodaSNREndTimePicker implements EndTimePicker {
 
     private static final double BAD_PICK = -100.0;
 
+    /**
+     * Attempts to estimate a coda-end time for a given waveform. Has
+     * rudimentary support for spike detection and coda-slope deviations from
+     * what the physics expects to try and identify aftershocks, artifacts, or
+     * other interfering events.
+     *
+     * Generally works well between 1 and 25hz for most regions of the world but
+     * is not particularly good below 1hz.
+     *
+     * @param waveform
+     *            the waveform
+     * @param sampleRate
+     *            the sample rate
+     * @param startTimeEpochSeconds
+     *            the start time in epoch seconds for the phase onset
+     * @param startOffset
+     *            the start offset indicates where the picker should start
+     *            assessment (e.g. phase onset)
+     * @param minLengthSec
+     *            the minimum coda length (sec)
+     * @param maxLengthSec
+     *            the maximum coda length (sec)
+     * @param minimumSnr
+     *            the minimum SNR threshold
+     * @param noise
+     *            the estimated noise amplitude level
+     * @return the estimated end time or the BAD_PICK value if no estimate can
+     *         be made
+     */
     @Override
     public double getEndTime(float[] waveform, double sampleRate, double startTimeEpochSeconds, int startOffset, double minLengthSec, double maxLengthSec, double minimumSnr, double noise) {
 

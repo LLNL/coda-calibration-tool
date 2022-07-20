@@ -38,12 +38,16 @@ public class NumberFormatFactory {
         return forPattern("#0.0#");
     }
 
+    public static NumberFormat twoDecimalForcedOneLeadingZero() {
+        return forPattern("#0.00");
+    }
+
     public static NumberFormat fourDecimalOneLeadingZero() {
-        return forPattern("#0.0###");
+        return forPattern("#0.00##");
     }
 
     public static NumberFormat sixDecimalOneLeadingZero() {
-        return forPattern("#0.0#####");
+        return forPattern("#0.00####");
     }
 
     public static DecimalFormat forPattern(String pattern) {

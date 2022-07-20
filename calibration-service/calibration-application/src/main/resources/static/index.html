@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="None" />
+  <link rel="shortcut icon" href="img/favicon.ico" />
+  <title>Coda Calibration Tool Documentation</title>
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/theme_extra.css" />
+
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Home";
+    var mkdocs_page_input_path = "index.md";
+    var mkdocs_page_url = null;
+  </script>
+
+  <script src="js/jquery-3.6.0.min.js" defer></script>
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> Coda Calibration Tool Documentation
+          </a>
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+          <ul class="current">
+            <li class="toctree-l1 current"><a class="reference internal current" href=".">Home</a>
+              <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="#about-cct">About CCT</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="#tutorial-guide-for-new-users">Tutorial Guide
+                    for New Users</a>
+                  <ul>
+                    <li class="toctree-l3"><a class="reference internal" href="#getting-started">Getting Started</a>
+                      <ul>
+                        <li class="toctree-l4"><a class="reference internal" href="#downloading-cct">Downloading CCT</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal"
+                            href="#downloading-sf-bay-area-example-tarfile">Downloading SF Bay Area example tarfile</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#running-cct">Running CCT</a>
+                        </li>
+                      </ul>
+                    </li>
+                    <li class="toctree-l3"><a class="reference internal"
+                        href="#recommendations-for-selecting-calibration-data">Recommendations For Selecting Calibration
+                        Data</a>
+                    </li>
+                    <li class="toctree-l3"><a class="reference internal"
+                        href="#creating-envelopes-with-sac-waveform-data">Creating Envelopes with SAC Waveform Data</a>
+                      <ul>
+                        <li class="toctree-l4"><a class="reference internal" href="#initial-waveform-data">Initial
+                            Waveform Data</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#envelope-formation">Envelope
+                            Formation</a>
+                        </li>
+                      </ul>
+                    </li>
+                    <li class="toctree-l3"><a class="reference internal" href="#san-francisco-bay-example-dataset">San
+                        Francisco Bay Example Dataset</a>
+                      <ul>
+                        <li class="toctree-l4"><a class="reference internal"
+                            href="#untar-example-file-and-description">Untar Example File and Description</a>
+                        </li>
+                      </ul>
+                    </li>
+                    <li class="toctree-l3"><a class="reference internal"
+                        href="#step-by-step-bay-area-cct-example">Step-by-Step Bay Area CCT Example</a>
+                      <ul>
+                        <li class="toctree-l4"><a class="reference internal" href="#read-in-necesssary-data">Read in
+                            necesssary data</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#run-the-calibration">Run the
+                            calibration</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#qa-results-vertical-tabs">QA Results
+                            (vertical tabs)</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#data-tab">Data tab</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#sorting-re-picking-events">Sorting
+                            &amp; Re-Picking Events</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#parameters-tab">Parameters tab</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#shape-tab">Shape tab</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#path-tab">Path tab</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#site-tab">Site tab</a>
+                        </li>
+                        <li class="toctree-l4"><a class="reference internal" href="#measured-mws-tab">Measured Mws
+                            tab</a>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="#glossary-of-terms">Glossary of terms</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="#building-cct-from-the-java-source-code">Building CCT from the Java Source Code</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="#accessing-the-internal-database">Accessing
+                    the internal database</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="#using-rest-endpoints-to-get-mws">Using REST
+                    endpoints to get Mws</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="#logging-settings-at-runtime">Logging
+                    settings at runtime</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="#overriding-envelope-creation-bands-when-using-rest-services">Overriding envelope creation
+                    bands when using REST services</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="#references">References</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="#configuration-variables">Configuration
+                    variables</a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <ul>
+            <li class="toctree-l1"><a class="reference internal" href="javadoc/index.html">JavaDoc</a>
+            </li>
+          </ul>
+          <ul>
+            <li class="toctree-l1"><a class="reference internal" href="swagger-ui/index.html">REST API Docs</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href=".">Coda Calibration Tool Documentation</a>
+
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+            <ul class="wy-breadcrumbs">
+              <li><a href="." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+              <li>Home</li>
+              <li class="wy-breadcrumbs-aside">
+              </li>
+            </ul>
+            <hr />
+          </div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+
+              <h1 id="coda-calibration-tool-cct-1018-documentation">Coda Calibration Tool (CCT) 1.0.18 documentation
+              </h1>
+              <p><sub>2022-07-31; Version 1.0; Authors Barno, Justin | Mayeda, Kevin</sub></p>
+              <h2 id="about-cct">About CCT</h2>
+              <p>The Coda Calibration Tool (CCT) is a Java-based application that stems from a collaborative project by
+                scientists from the USNDC (AFTAC/SDS) and DOE (LLNL) as well as significant input from seismologists
+                from the University of Utah, INGV (Milan) and USGS (Golden, CO), Natural Resources Canada. This tool
+                consolidates research-mode scripts circa 1995 (SAC, C-shell, Fortran) into a robust platform-independent
+                tool using the empirical 1-D method outlined by <a href="https://doi.org/10.1029/96JB00112">Mayeda and
+                  Walter (1996)</a> and <a href="https://doi.org/10.1785/0120020020">Mayeda et al. (2003)</a>.</p>
+              <p>CCT provides a fast and efficient means of calibrating and processing local and regional coda envelopes
+                to estimate stable source spectra, moment magnitude, and apparent stress, that are roughly 3-to-4 times
+                less variable than estimates derived from traditional direct wave estimates. The source parameters
+                represent averaged values and are virtually free of lateral path heterogeneity and source radiation
+                anisotropy. </p>
+              <p>The methodology has two options for dealing with potential regional source scaling. In the first (and
+                preferred) case, independent, ground-truth reference source spectra are used in the calibration process
+                to constrain the frequency-dependent site terms. In the second case, reference events with independent
+                <strong>M<sub>w</sub></strong> estimates are used to constrain the long-period site terms, but for the
+                higher frequencies we impose a <a href="https://doi.org/10.1029/JB075i026p04997">Brune (1970)</a> source
+                spectrum with an a priori source scaling, currently set so that the apparent stress increases as
+                <strong>~M<sub>o</sub> 0.25</strong>.</p>
+              <h2 id="tutorial-guide-for-new-users">Tutorial Guide for New Users</h2>
+              <p>The following is a step-by-step guide for a specific example taken from the San Francisco Bay Area
+                region using broadband waveform data from the UC Berkeley Seismological Laboratory.</p>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>For a new dataset and region, you should expect to run CCT multiple times before settling on a final
+                  coda calibration. </p>
+                <p>Initial calibrations invariably will require finding and removing problem events/envelopes/stations
+                  that for whatever reason prevent the code from finding the ‘best’ model parameters.</p>
+              </div>
+              <p>Overwriting the Envelope directory during the initial QA of the data is common. The data set from the
+                SF Bay area was reviewed several times and the resulting calibration is very stable, but this serves as
+                a good example of how you might calibrate your own dataset.</p>
+              <h3 id="getting-started">Getting Started</h3>
+              <h4 id="downloading-cct">Downloading CCT</h4>
+              <p>The latest version of the Coda Calibration Tool (CCT) can be found on the <a
+                  href="https://github.com/LLNL/coda-calibration-tool/releases/">release page</a></p>
+              <p>The standalone CCT jar file is calibration-standalone-1.0.18-runnable.jar while the REST services only
+                are available in calibration-application-1.0.18-runnable.jar.</p>
+              <h4 id="downloading-sf-bay-area-example-tarfile">Downloading SF Bay Area example tarfile</h4>
+              <p>The complete SF Bay Area calibration which includes SAC waveforms, stacked envelopes and JavaScript
+                Object Notation (JSON) parameter files can be <a
+                  href="https://drive.google.com/file/d/1c1-mmBofJRhNjAChFxunWq3MpbNFO0x8/view?usp=sharing">downloaded
+                  here</a></p>
+              <h4 id="running-cct">Running CCT</h4>
+              <p>You can launch CCT by executing Java from the command line as:</p>
+              <p><code>java -Xmx12g -jar calibration-standalone-1.0.18-runnable.jar</code></p>
+              <p>Or, if you have Java 11+ as:</p>
+              <p><code>java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.18-runnable.jar</code></p>
+              <p>Generally your -Xmx flag should be set to, at most, ~70% of the physical RAM available on the machine.
+              </p>
+              <p>You can add the <code>--spring.profiles.active=file</code> flag to the Java call if your dataset is
+                larger than the physical RAM on your machine.
+                This will output a large database file that is also useful if you want to save the entire database or
+                connect to it with an external database browser tool. The tradeoff is that you have to wait for the
+                read/write times of the hard drive so this mode can be slower than the default RAM-only mode.</p>
+              <h3 id="recommendations-for-selecting-calibration-data">Recommendations For Selecting Calibration Data
+              </h3>
+              <p>For a stable and robust calibration, it is best to choose larger events with good SNR that are
+                distributed geographically in the region of interest and recorded by a large number of stations. In
+                addition to broad event distribution, the stations should also be well distributed, otherwise it is
+                difficult to constrain the path terms.</p>
+              <p>Furthermore, it is best to choose clean records that have little if any aftershocks that might
+                contaminate the coda. Including lots of questionable events can ruin the calibration so it is far better
+                to be selective in the choice of events…, more events is not necessarily better! </p>
+              <p>For the SF Bay Area example dataset, there is an abundance of seismicity and many broadband stations to
+                choose from. In this case we have 10 broadband stations and 40 events which is more than sufficient for
+                constraining the calibration parameters (e.g ., we could have used 75% less events and stations and
+                would have obtained nearly the same calibration). We could likely have comparable results with far less
+                events and stations. </p>
+              <p>For example, in the coda calibration in Israel outlined in <a
+                  href="https://doi.org/10.1785/0120020020">Mayeda et al. (2003)</a> we used only two stations on
+                opposite ends of the country and a smattering of events throughout the country. With regard to the
+                length of SAC waveform segments, for regional events ranging between ~3.5&lt;
+                <strong>M<sub>w</sub></strong> &lt;6, it is recommended to choose window lengths of ~-300 sec to ~2000
+                sec relative to the origin time. </p>
+              <p>These longer records are necessary for the long-period surface wave codas (0.02&lt; f &lt;0.3-Hz) for
+                the larger events, but depending on the seismicity level, you can modify the window lengths. For a very
+                local calibration (~&lt;100 km), with only small magnitude events (<strong>M<sub>w</sub></strong> &lt;
+                ~4.0), window lengths of -50 to 400 seconds relative to the origin time might suffice.</p>
+              <p>Once the envelopes are formed, they are decimated so they will not take up as much space.</p>
+              <h3 id="creating-envelopes-with-sac-waveform-data">Creating Envelopes with SAC Waveform Data</h3>
+              <h4 id="initial-waveform-data">Initial Waveform Data</h4>
+              <ol>
+                <li>CCT requires SAC files. Horizontal components are preferred, but you can use verticals, just don’t
+                  mix them and keep in separate folders. Envelope tool will stack all components for an event recorded
+                  at station X. </li>
+              </ol>
+              <p>The tool will use the SAC header variables for the event name (<strong>KEVNM</strong>) and station name
+                (<strong>KSTNM</strong>) in the SAC header to create the names for the envelope files. </p>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>The Envelope tool only cares about event time and network/station/channel name. Everything else is
+                  optional, though we recommend loading the SAC headers completely.</p>
+              </div>
+              <ol>
+                <li>
+                  <p>Deconvolve instrument response to velocity in nm/sec. Check that the <strong>IDEP</strong>
+                    parameter in the SAC headers is ‘<strong>VELOCITY (NM/SEC)</strong>’.</p>
+                </li>
+                <li>
+                  <p>Set both station and event location headers (i.e., <strong>STLA</strong>, <strong>STLO</strong>,
+                    <strong>EVLA</strong>, <strong>EVLO</strong>)</p>
+                </li>
+                <li>
+                  <p>Set origin time to 0 seconds.</p>
+                </li>
+              </ol>
+              <p>Below is an example header of one of the horizontal components. </p>
+              <p>Event origin time must be 0 in the ‘<strong>OMARKER</strong>’ header. This can be done using the "ch"
+                command in SAC as follows for the example waveform from Tajikistan (TJ.CHGR): </p>
+              <p><code>sac&gt; ch o gmt 2010 342 08 21 34 560</code> (to introduce the event origin time) </p>
+              <p><code>sac&gt; ch allt ( -1 * &amp;1,o )</code> (all times are shifted.., begin (B), end (E) to match
+                the ‘<strong>OMARKER</strong>’)</p>
+              <div class="admonition warning">
+                <p class="admonition-title">Warning</p>
+                <p>If ‘<strong>OMARKER</strong>’ and event locations are not set in the SAC header CCT will not work.
+                </p>
+              </div>
+              <p><img alt="img" src="img/waveform_example_1.png" />
+              <figcaption align="center">Figure. 1, A raw input waveform</figcaption> <br /></p>
+              <p><img alt="img" src="img/waveform_example_1_headers.png" />
+              <figcaption align="center">Figure. 2, The related SAC headers</figcaption>
+              </p>
+              <h4 id="envelope-formation">Envelope Formation</h4>
+              <ol>
+                <li>
+                  <p>Start the envelope tool from the main CCT menu </p>
+                  <ul>
+                    <li>Tools &gt; Create Envelopes</li>
+                  </ul>
+                </li>
+                <li>
+                  <p>Load a parameter file: </p>
+                  <ul>
+                    <li>File &gt; Import Job Config...
+                      (Choose the JSON file that defines the frequency bands you are interested in such as
+                      envelope-bands.json)
+                      <img alt="img" src="img/envelope_example_1.png" />
+                      <figcaption align="center">Figure. 3, Importing an envelop job configuration file.</figcaption>
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <p>The envelope tool is flexible, allowing you to create other frequency bands or different bandwidths
+                    if needed. This can be done by selecting "Band Generation Settings" with overlap and log 10 (or
+                    linear) spacing. More overlap will result in smoother spectra.
+                    <img alt="img" src="img/envelope_example_2.png" />
+                  <figcaption align="center">Figure. 4, Generating bands from a specification instead.</figcaption>
+                  <br /></p>
+                </li>
+                <li>
+                  <p>Load SAC waveform files: File &gt; Envelopes from Directory... or File &gt; Envelopes from Files…
+                    Choose your processed SAC files. Warning! If you choose "Envelopes from Directory", the tool will
+                    attempt to process all files in the directory as well as in all subdirectories. Therefore, it is
+                    recommended to store your processed SAC waveforms in their own directory (without any extraneous
+                    files or subdirectories).</p>
+                </li>
+                <li>
+                  <p>Immediately you will be prompted to choose a location for your output envelopes. We recommend a
+                    subdirectory called "Envelopes" in the working data directory (i.e. , Data_new/Envelopes).</p>
+                </li>
+                <li>
+                  <p>Close the Envelope Tool when the progress bar completes.
+                    The envelopes will be created in the following directory structure:
+                    ...Data_new/Envelopes/YEAR/MONTH/EVID/STATION/STA_COMP_EVID_FREQ1_FREQ2_VEL_.ENV In subsequent
+                    steps, you can import all stack envelopes created in this envelope tool with "File &gt; Import stack
+                    directory…" and choose the "Envelopes" directory.</p>
+                </li>
+              </ol>
+              <h3 id="san-francisco-bay-example-dataset">San Francisco Bay Example Dataset</h3>
+              <h4 id="untar-example-file-and-description">Untar Example File and Description</h4>
+              <p>In a terminal window copy and untar the <strong>Bay_Area_CCT_Example.tar</strong> to your directory of
+                choice. This should be the working directory from which you run CCT.</p>
+              <p>You should see the following files and directories:</p>
+              <p><img alt="img" src="img/folders.png" />
+              <figcaption align="center">Figure. 5, Example data set list.</figcaption> <br /></p>
+              <ul>
+                <li>
+                  <p><strong>Calibration_Data</strong> <em>directory</em></p>
+                  <p>Upon completion of calibration, you can export this directory which includes the most current JSON
+                    calibration parameter file that includes frequency-dependent parameters for site-correction,
+                    envelope shape, velocity, path-correction, minimum and maximum coda window length, GT reference
+                    events with apparent stress, and reference <strong>M<sub>w</sub></strong>’s. Additionally there are
+                    separate site correction files for each station that was calibrated. All files in this example are
+                    in ASCII format.</p>
+                </li>
+                <li>
+                  <p><strong>Calibration_Parameters_Kevin.json</strong> <em>file</em></p>
+                  <p>Parameter file that represents the ‘final’ JSON file for the Bay Area coda calibration (taken from
+                    the Calibration_Data directory and renamed). This could be used for automated processing of future
+                    events, or as a starting point in any future updated calibration if new events or stations were
+                    acquired.</p>
+                </li>
+                <li>
+                  <p><strong>Data_new</strong> <em>directory</em></p>
+                  <p>Directory of deconvolved broadband horizontal component velocity SAC waveforms for each event and
+                    station. The envelope tool was used to form these envelopes (already applied in this example) and
+                    were copied to the Envelope_stack_Kevin_picks directory.</p>
+                </li>
+              </ul>
+              <div class="admonition warning">
+                <p class="admonition-title">Warning</p>
+                <p>If other components exist in the Data_new directory, such as the vertical component or other sampling
+                  rate channels, then they will all be added to the final stacked envelope. Only include in this
+                  directory the components for which you intend on using in the calibration! Also, it will search
+                  sub-directories so be aware!</p>
+              </div>
+              <ul>
+                <li>
+                  <p><strong>Envelope_stack_Kevin_picks</strong> <em>directory</em></p>
+                  <p>Directory of stacked, log 10 averaged horizontal envelopes for pre-determined narrow frequency
+                    bands that have been manually QA’d and measurement end times were picked ( f-markers ).</p>
+                </li>
+                <li>
+                  <p><strong>Mw_CMT_BSL.dat</strong> <em>file</em></p>
+                  <p>ASCII file of independent moment magnitudes determined from full waveform inversion courtesy of
+                    Doug Dreger at the Berkeley Seismological Laboratory (BSL). These SF Bay area events can be used for
+                    calibration and/or validation. Some of these events were added to the end of the
+                    Calibration_Parameters_Kevin.json file.</p>
+                </li>
+                <li>
+                  <p><strong>application.properties</strong> <em>file</em></p>
+                  <p>Optional configuration override file for CCT. This example shows how to use other independent map
+                    layers from a WMS 1.3 server (e.g., NASA WorldWind) to be included in the CCT maps. Note : This file
+                    must reside in the directory where CCT is initiated.</p>
+                </li>
+                <li>
+                  <p><strong>Envelope-bands.json</strong> <em>file</em></p>
+                  <p>JSON file that controls the frequency bands for creating new envelopes using the envelope tool.
+                    There are options for smoothing and interpolation if you choose to change the preset values.</p>
+                </li>
+              </ul>
+              <h3 id="step-by-step-bay-area-cct-example">Step-by-Step Bay Area CCT Example</h3>
+              <h4 id="read-in-necesssary-data">Read in necesssary data</h4>
+              <p>Read in stacked envelopes using the pulldown tab: File&gt;Import Stack Directory…
+                <img alt="img" src="img/import_stacks.png" />
+              <figcaption align="center">Figure. 6, Importing stacked envelopes in a directory.</figcaption> <br /></p>
+              <p>Select the <strong>Envelopes_stack_Kevin_picks</strong> directory</p>
+              <p>You will see the following Task-Progress pop-up window as the envelopes are being read in (roughly 7
+                seconds on my machine).</p>
+              <p>Upon completion you’ll see this:</p>
+              <p><img alt="img" src="img/import_complete.png" />
+              <figcaption align="center">Figure. 7, Dialog showing amount of envelopes imported, errors (if any), and if
+                the process has completed.</figcaption> <br /></p>
+              <p>Next, read in the Coda Parameter file: File&gt;Import Coda Param...</p>
+              <p>Select the <strong>Calibration_Parameters_Kevin.json</strong> file (This reads instantly)</p>
+              <p>To view the data in map form, click the Map button in the upper right. In the upper right map pop-up,
+                select the tile pull-down in the upper right. Be sure the application.properties file is in the working
+                directory if you want to use custom layers. You can click on a station or event to see the corresponding
+                name and view envelopes. </p>
+              <p><img alt="img" src="img/map.png" />
+              <figcaption align="center">Figure. 8, The CCT map showing a custom WMS layer featuring the <a
+                  href="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer">USGS topographic</a>
+                map.</figcaption> <br /></p>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>If you want to take a high resolution image, you can click the camera icon in the lower left corner.
+                </p>
+              </div>
+              <h4 id="run-the-calibration">Run the calibration</h4>
+              <p><img alt="img" src="img/run_calibration.png" />
+              <figcaption align="center">Figure. 9, Beginning a calibration in CCT.</figcaption> <br /></p>
+              <p>At this point you have two choices. If this were a brand new calibration, then none of the envelopes
+                have been picked with measure end times (<strong>f-markers</strong>) so you can choose <strong>Run
+                  Calibration (Auto Pick)</strong> which uses a simple STA/LTA kind of approach to find the ‘best’ end
+                time measurement. </p>
+              <p>This provides a good initial estimate but you will find that many need to be refined manually to change
+                the auto-picked <strong>f-markers</strong>, then re-run the calibration again. Auto-picked envelopes
+                will always have an ‘<strong>ap</strong>’ designation on each envelope at the peak S -wave arrival but
+                if you manually change the <strong>f-marker</strong> and export the envelopes, the ‘<strong>ap</strong>’
+                will disappear the next time the data is read into CCT.</p>
+              <p>For this example however, use the other pull-down option which is Run Calibration. This will use the
+                existing <strong>f-marker</strong> picks in the SAC headers (manual and auto-picked) and begin fitting
+                the envelopes to obtain the envelope shape parameters (e.g., <strong>𝜸</strong> and
+                <strong>b</strong>), peak S-velocity as a function of distance (e.g., <strong>V(r|f)</strong>), perform
+                path correction inversion (e.g., <strong>P(r|f)</strong>), and finally site correction determination
+                using predetermined ground-truth (GT) source spectra (e.g., <strong>[S(f)·T(f)]</strong>). This takes
+                less than 2 minutes on my machine and you can close the Progress pop-up screen if you want without
+                affecting the calibration progress.</p>
+              <h4 id="qa-results-vertical-tabs">QA Results (vertical tabs)</h4>
+              <h4 id="data-tab">Data tab</h4>
+              <p>This is the single most important QA feature of the tool because it allows you to manually re-pick
+                envelopes or eliminate bad traces, then you will have to re-run CCT to get a more refined calibration.
+              </p>
+              <p>Calibrations are only as good as the input data so it’s important to eliminate bad envelopes or make
+                time pick adjustments, then repeat the calibration. Through an iterative process the calibration
+                parameters will be better constrained and robust. </p>
+              <p>Adjusted picks can either be written out to a new folder or to the existing folder (see below for more
+                details).</p>
+              <h4 id="sorting-re-picking-events">Sorting &amp; Re-Picking Events</h4>
+              <p>In the data table, under the requency column heading, you can click on the low heading tab and this
+                will sort the bands from lowest to highest frequency based on the low end of the frequency band. </p>
+              <p>Similarly, by clicking on the station column heading you can sort by station in alphabetical order or
+                the event column heading and it will sort by event ID.</p>
+              <p><img alt="img" src="img/select_data.png" />
+              <figcaption align="center">Figure. 10, Selecting a row to view the associated waveform record.
+              </figcaption> <br /></p>
+              <p>By clicking on any event row (above figure) a pop-up window of the observed envelope (blue), best fit
+                synthetic (green), and model (gray) will appear (see below figure). </p>
+              <p><img alt="img" src="img/waveform.png" />
+              <figcaption align="center">Figure. 11, Waveform record plot with associated metadata.</figcaption> <br />
+              </p>
+              <p>The <strong>f-marker</strong> (red vertical line) can be adjusted by clicking, then dragging the
+                <strong>f-marker</strong> with the mouse. Place the <strong>f-marker</strong> before the envelope
+                returns to the pre-event noise level and also before any visible aftershocks in the coda. </p>
+              <p>Results will be most accurate when the synthetic envelope and model envelope (green and gray lines,
+                respectively) match. For example, sometimes the fit and model envelopes will diverge towards the end of
+                the envelope, and it is best to place the <strong>f-marker</strong> before they diverge, if possible.
+              </p>
+              <p>Group velocity markers can be toggle on with the "GV" button. This shows the expected phase onset time
+                given the event origin time and distance based on the start and stop velocity settings in the parameter
+                tab.</p>
+              <p>The minimum and maximum window time restrictions for the length of the coda window can be visualized by
+                toggling the "Window" button. The window restrictions are also defined in the parameters tab. The
+                minimum window length is a hard restriction that will eliminate coda windows that do not have a
+                sufficient data. The maximum window length is a soft restriction that will truncate longer coda windows
+                to the maximum.</p>
+              <p>The waveform with a red F-pick icon button toggles 'click-to-pick' mode. While in this mode clicking
+                anywhere in the plot will automatically move the <strong>f-marker</strong> without needing to click and
+                drag. This mode is most useful when you are planning to pick or re-pick potentially many waveforms in a
+                session.</p>
+              <p>The 'move start' (<strong>MS</strong>) button toggles the display of the coda-start
+                (<strong>CS</strong>) marker. This marker tells the amplitude measurement code where to cut the coda
+                window before performing the L1 fit and making the amplitude measurement. This is useful when an area as
+                very high variability early in the coda for potentially reducing variance in the amplitude measurements.
+              </p>
+              <p>You can add an offset for an entire frequency band in the parameters tab using the 'coda-start' column.
+                You can also change the start for an individual offset of a specific waveform by clicking and dragging
+                the "CS" pick. When you release the mouse you will see the "CS" pick change to a 'user coda start'
+                (<strong>UCS</strong>) pick instead. A "UCS" pick works the same as a "CS" pick but the code will not
+                move a "UCS" pick when parameters change and a "UCS" is always given priority over a "CS" pick.</p>
+              <p>The solid horizontal black line is the sum of the averaged SNR and pre-set tolerance in the calibration
+                JSON file (which you can change if you want). The dashed horizontal line is a quasi average noise level
+                amplitude. </p>
+              <p>To eliminate a trace move the <strong>f-marker</strong> before the start of the S-wave arrival. If you
+                do not want to use an envelope or an entire event, you can uncheck the box in the "Used" column and it
+                will not be exported in the next step. </p>
+              <p>You can zoom into the envelope figure by dragging a box around the area you want to zoom into on the
+                waveform plot. Double-click anywhere on the screen to revert back to the original scale or hit the home
+                icon in the top right icon tray to reset the axes. </p>
+              <p>To select a large number of envelopes (see next figure) you can click the upper bound and then while
+                depressing the ‘shift’ button use your mouse to select then ‘single click’ the lower bound that you
+                desire (see highlighted blue area). This allows reviewing lots of data to look for trends (e.g.,
+                aftershocks, noise bursts) across stations, bands or events. I select a single band and methodically
+                review all events and stations. </p>
+              <p><img alt="img" src="img/multiple_waveform.png" />
+              <figcaption align="center">Figure. 12, Viewing multiple waveforms at once in a paginated display.
+              </figcaption> <br /></p>
+              <p>CCT will display five envelopes at a time, and you can use left and right arrow keys or the associated
+                buttons (top left) to page through all the envelopes in your selection. Once you’re done, export the
+                waveforms; otherwise all your manual picking will be lost! </p>
+              <p>Also, in the Data pull down tab, you can choose ‘Make Picks Reviewed’ which will change all auto-picked
+                <strong>f-markers</strong> reviewed, if for example you’ve visually checked all the
+                <strong>f-markers</strong> and would like them to be changed to ‘reviewed’. If you export the envelopes
+                then all ‘<strong>ap</strong>’ marks will disappear. </p>
+              <div class="admonition important">
+                <p class="admonition-title">Important</p>
+                <p>To save all the new picks in the current session, under File choose Export Waveforms and you can
+                  choose the same Envelope directory, in this case Envelope_stack_Kevin_picks, or create a new
+                  directory. The next time you run the calibration, the tool will use the new <strong>f-marker</strong>
+                  picks.</p>
+              </div>
+              <h4 id="parameters-tab">Parameters tab</h4>
+              <p>Allows users to view the calibration parameters during the current calibration and make adjustments,
+                specifically the window length limits (<strong>Min</strong> and <strong>Max</strong>) as well as
+                <strong>SNR</strong> levels (in log 10). These changes will ONLY be kept if you export the calibration
+                (File-&gt;Export Calibration). You will then have to use the newly created
+                <strong>Calibration_Parameters.json</strong> file for the subsequent calibration refinement.</p>
+              <p><img alt="img" src="img/parameters_example.png" />
+              <figcaption align="center">Figure. 13, The parameters table that defines the core of a calibraition.
+              </figcaption> <br /></p>
+              <h4 id="shape-tab">Shape tab</h4>
+              <p>Allows users to view empirical envelope shape parameters and velocity fits to the observed data as a
+                function of distance (see <a href="https://doi.org/10.1785/0120020020">Mayeda et al. 2003</a> for more
+                details). </p>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>You must first hit the Refresh button in the upper right corner. </p>
+              </div>
+              <p>Then in the Frequency Band pull-down tab, you can select the frequency band you would like to view. If
+                you keep the mouse on the Frequency Band tab, you can use the up or down arrows to cycle through the
+                various bands. </p>
+              <p>In the example below I have selected an outlier in peak Velocity in the 1.5-2.0-Hz band which is now
+                highlighted with a blue circle, as well as in the subsequent shape parameter plots, <strong>𝜸</strong>
+                and <strong>b</strong>. The event envelope is shown to the left and the event and station is shown on
+                the map in white. The envelope shape parameter <strong>𝜸</strong> (Gamma), which controls the shape of
+                the early coda, and <strong>b</strong>, which controls the later coda (exponential term), all look to
+                have reasonable fits as a function of distance using a simple equation of a hyperbola (blue dashed
+                lines).</p>
+              <p><img alt="img" src="img/shape.png" />
+              <figcaption align="center">Figure. 14, Plots showing the results of calibrating the three 1D shape models.
+              </figcaption> <br /></p>
+              <h4 id="path-tab">Path tab</h4>
+              <p>Allows users to view interstation amplitude before and after path correction.</p>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>You must first hit the Refresh button in the upper right corner.</p>
+              </div>
+              <p>Reviewing the path corrections for all the frequency bands is important for identifying outliers in the
+                data due to incorrect instrument correction or degenerative issues with a particular waveform
+                (aftershocks can often be the culprit). It also allows you to ascertain if the path corrections are
+                reasonable and whether the distribution of calibration data and stations is sufficient. </p>
+              <p>The example below on the far right shows interstation amplitude scatter between stations BKS and SAO at
+                1.0-1.5-Hz before (red triangles) and after path correction (blue triangles). For this example, the
+                interstation scatter for the path-corrected data is 0.13 and the stations are ~142 km apart. </p>
+              <p>The middle panel is a summary of all possible interstation combinations for this band where we have
+                plotted data standard deviation as a function of station separation in km with a minimum number of
+                common events of 4 (see ‘Station Count Filter’). </p>
+              <p>If there were outliers, this feature helps to identify the offending envelope or event so that it can
+                be either re-picked or removed. We see that the path corrections are working well because data standard
+                deviation for path-corrected coda (blue circles) remains at ~0.1. As expected, the uncorrected coda
+                amplitude’s standard deviation increases with increasing station separation (red squares).</p>
+              <p><img alt="img" src="img/path.png" />
+              <figcaption align="center">Figure. 15, Plots showing the the path correction results by frequency band for
+                the whole dataset (left) and two specific stations compared to each other (right).</figcaption> <br />
+              </p>
+              <h4 id="site-tab">Site tab</h4>
+              <p>Allows users to view source spectra in units of N-m after site/transfer function correction
+                determinations (e.g., <strong>[S(f)·T(f)]</strong>) have been made using selected GT reference events.
+              </p>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>You must first hit the Refresh button in the upper right corner. </p>
+              </div>
+              <p>Under the Source Spectra tab, selecting the Event drop-down menu allows you to cycle through the
+                various events. The example below shows the case for one of the reference events for which we had
+                previously determined an apparent stress (τ<sub>a</sub> = μEs/Mo) of 0.15 MPa using coda spectral ratios
+                (see <a href="https://doi.org/10.1029/2007GL030041">Mayeda et al., 2007</a>). </p>
+              <p>Using several GT reference events, CCT determines the best average, station-specific site/transfer
+                terms per band to be applied to all events. This obviates the need to assume any apparent stress scaling
+                for the region. If only independent <strong>M<sub>w</sub></strong>’s are available, then CCT defaults to
+                an assumed scaling of <strong>F<sub>c</sub> ~ M<sub>o</sub> 0.25</strong> following <a
+                  href="https://doi.org/10.1029/96JB00112">Mayeda and Walter (1996)</a>. </p>
+              <p>On the right of the spectra are the stations used for this event. Black dashed line is the reference <a
+                  href="https://doi.org/10.1029/JB075i026p04997">Brune (1970)</a> spectral shape that was determined
+                beforehand. Red dashed line is the best-fitting Brune spectral model to the observed data. Black solid
+                lines connect the averaged spectral value in each band. Vertical line and <strong>F<sub>c</sub></strong>
+                on the spectra denote the corner frequency from the best-fit source spectra.</p>
+              <p>On the left hand side of the moment-rate source spectra are associated metadata and final measurement
+                values.</p>
+              <ul>
+                <li>
+                  <p><strong>Observed Total Energy</strong> </p>
+                  <ul>
+                    <li>Integrated observed energy (from velocity-squared spectra)</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Observed Apparent Stress</strong> </p>
+                  <ul>
+                    <li>Apparent stress derived only from observed measurements</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Model Fit </strong>M<sub>w</sub>**** </p>
+                  <ul>
+                    <li><strong>M<sub>w</sub></strong> derived from omega-square fitting to observed data</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Model Fit Apparent Stress</strong> </p>
+                  <ul>
+                    <li>Apparent stress derived from theoretical best-fit omega square model</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Model Fit Energy</strong> </p>
+                  <ul>
+                    <li>Integrated energy from 0 to infinity</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Reference </strong>M<sub>w</sub>**** </p>
+                  <ul>
+                    <li>Independent <strong>M<sub>w</sub></strong> derived a priori, preferably from waveform modeling.
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+              <p><img alt="img" src="img/site.png" />
+              <figcaption align="center">Figure. 16, Site correction and final results plots showing the end spectra for
+                each event after all corrections have been made.</figcaption> <br /></p>
+              <p>As with other data panels, you can click on any amplitude spectral value and a pop-up window showing
+                the envelope fit will appear which can be adjusted if necessary. Remember to export envelopes to save
+                any changes made to <strong>f-markers</strong>! You can also zoom in on any part of the spectra to QC
+                the data points by clicking and dragging.</p>
+              <p>https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServerSource Results tab allows you to
+                review the quality of the calibration (see figure below). The top left figure shows
+                <strong>M<sub>w</sub></strong> for validation events (black squares) compared to the measured
+                <strong>M<sub>w</sub></strong> coda from spectral fitting (x-axis) as shown in the Source Spectra tab.
+                <strong>M<sub>w</sub></strong> for GT reference events (red circles) also are shown.</p>
+              <p><img alt="img" src="img/site_results.png" />
+              <figcaption align="center">Figure. 17, The site results overview displaying the raw data table and summary
+                plots for the entire calibration data set.</figcaption> <br /></p>
+              <p>The upper middle figure shows that the reference events’ apparent stress are faithfully returned after
+                calibration. Upper right figure shows variation in site correction. The bottom left figure shows seismic
+                moment vs total energy. Lower middle figure shows moment vs apparent stress and the figure on lower
+                right shows the associated moment vs corner frequency. Finally, the table on the bottom shows all the
+                measured source parameters along with other diagnostic information such as misfit, error, iteration
+                count,
+                station count, etc.</p>
+              <p>The Site-&gt;Site Terms tab shows two figures. The bottom figure in the screenshot below shows averaged
+                station-specific site and S-to-coda transfer terms that are used to transform the distance-corrected
+                coda amplitudes (in dimensionless units) to an absolute value in N-m. </p>
+              <p>To isolate only the weak motion S-coda site term (from the common S-to-coda transfer function term), a
+                ratio (subtraction since values are in log 10) can be made relative to the average across the network,
+                or relative to a particular site, such as a ‘rock’ site. This option is shown in the top figure taken
+                from Ridgecrest, CA CCT calibration where we have chosen a hard rock site POR as the reference in this
+                example. Notice we observe pronounced relative amplification in the ~0.2 to 3.0-Hz range for softer soil
+                sites, whereas above this range we see that absorption (low surface Q) dominates those same sites.</p>
+              <p><img alt="img" src="img/site_terms.png" />
+              <figcaption align="center">Figure. 17, Plots showing the relative site correction terms for each station,
+                a network average, and a plot relative to any individual station in the correction set.</figcaption>
+              <br /></p>
+              <h4 id="measured-mws-tab">Measured Mws tab</h4>
+              <p>This feature allows you to measure <strong>M<sub>w</sub></strong>s using an existing calibration for
+                new events in a region. This feature also enables automated processing of new events as they are formed
+                provided the event is located in the calibrated area and a calibrated station recorded the event by
+                using the REST services CCT provides. </p>
+              <p>Oftentimes we impose a more strict set of guidelines for calibration, whereas for routine event
+                processing we might relax the minimum window length or change the SNR levels. Save your
+                <strong>M<sub>w</sub></strong>s with File -&gt; Export Measured Mws…</p>
+              <h2 id="glossary-of-terms">Glossary of terms</h2>
+              <ul>
+                <li>
+                  <p><strong>Auto-Pick (ap)</strong> </p>
+                  <ul>
+                    <li>Designation to show that the f-marker (envelope measurement stopping point) was chosen
+                      automatically by CCT using a modified STA/LTA between the observed and synthetic coda envelopes.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>b(r|f) 'beta' (parameter)</strong></p>
+                  <ul>
+                    <li>Exponential decay parameter that controls the envelope shape as a function of distance, r, for
+                      each frequency band, f. (e.g., see Equation 1 below)</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Calibration Events</strong></p>
+                  <ul>
+                    <li>Good quality events used to determine envelope shape, velocity and path terms. Best to choose
+                      events with good spatial distribution across the network of stations and ample signal length,
+                      preferably free of aftershocks and data spikes.</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>𝜸(r|f): 'gamma' (parameter)</strong></p>
+                  <ul>
+                    <li>Envelope decay parameter that controls the early part of the coda shape immediately after the
+                      direct wave arrival as a function of distance, r, for each frequency band, f. (e.g ., see Equation
+                      1 below)</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Ground-Truth (GT) Reference Events</strong></p>
+                  <ul>
+                    <li>
+                      <p>Theoretical Brune source spectra defined by an independent moment magnitude
+                        (<strong>M<sub>w</sub></strong>) and an apparent stress estimate (in MPa). These are used for
+                        determining frequency dependent site terms for each station for all frequency bands. Can be used
+                        in conjunction with Reference <strong>M<sub>w</sub></strong> Events. </p>
+                    </li>
+                    <li>
+                      <p>These can be appended to the calibration JSON file (see Calibration_Parameters_Kevin.json). Use
+                        of GT events precludes assuming any stress drop scaling for the region.</p>
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>f-marker</strong></p>
+                  <ul>
+                    <li>Envelope measurement stopping time stored in the observed envelope header that can be picked
+                      automatically or manually. If an ap pick is visible at the direct arrival, the f-marker was
+                      obtained through autopicking. Once the f-marker is manually moved and the envelope is saved, the
+                      ap pick disappears the next time it is read in.</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Reference M<sub>w</sub> Events</strong> </p>
+                  <ul>
+                    <li>Independent moment magnitudes determined by waveform modeling that are used to constrain only
+                      the long period site terms. Can be used in conjunction with GT reference events. These can be
+                      appended to the calibration JSON file (see Calibration_Parameters_Kevin.json).</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Validation Events</strong></p>
+                  <ul>
+                    <li>Independent moment magnitudes used to validate the calibration. These events were not used for
+                      site correction determination, but could be used for envelope shape, velocity and path
+                      determination. These can be placed in the calibration JSON file (see
+                      Calibration_Parameters_Kevin.json).</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>V(r|f) velocity (parameter)</strong> </p>
+                  <ul>
+                    <li>Peak velocity of the S-wave or surface wave envelope as a function of distance. This gives us a
+                      starting time ts = r/V(r|f) to begin the synthetic envelopes which will be used to measure the
+                      observed envelopes. (e.g., see Equation 1 below)</li>
+                  </ul>
+                </li>
+                <li>
+                  <p><strong>Equation 1</strong> </p>
+                  <ul>
+                    <li><img alt="img" src="img/amplitude_formula.png" /></li>
+                    <li>
+                      <p>Coda amplitude <strong>A<sub>c</sub></strong> is a function of distance (<strong>r</strong>)
+                        and time (<strong>t</strong>) relative to the origin time for each narrow frequency band,
+                        <strong>f</strong>. <strong>W0</strong> is the source term, <strong>S</strong> is the site term,
+                        <strong>T</strong> is the S-to-coda transfer function, <strong>P</strong> is the empirical path
+                        correction term, <strong>H</strong> is the Heaviside step function, <strong>𝜸</strong> and
+                        <strong>b</strong> control the coda envelope shape as a function of distance,
+                        <strong>r</strong>(km). <strong>t<sub>s</sub></strong> is the direct wave arrival time,
+                        <strong>t<sub>s</sub> = r/V(r|f)</strong> and <strong>V(r|f)</strong> is the velocity at
+                        distance <strong>r</strong> of the peak arrival that is empirically determined by CCT. </p>
+                    </li>
+                    <li>
+                      <p>See <a href="https://doi.org/10.1785/0120020020">Mayeda et al., (2003)</a> for a more detailed
+                        explanation of the method and parameterization. </p>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>The site (<strong>S</strong>) and transfer function (<strong>T</strong>) terms are combined in the
+                  tool, as both are distance independent and cannot be separated. It is assumed that the S-to-coda
+                  transfer function is common for all events in a region, except in extreme cases of very shallow or
+                  deep crustal events. We often refer to the ‘site term’ but it actually includes both effects.</p>
+              </div>
+              <h2 id="building-cct-from-the-java-source-code">Building CCT from the Java Source Code</h2>
+              <p>Building CCT from source code will require Apache Maven version 3.8.x or later. If the version of Maven
+                in your system is older that the required version, you will need to download a recent release from <a
+                  href="https://downloads.apache.org/maven/maven-3">https://downloads.apache.org/maven/maven-3</a></p>
+              <p>We recommend that users download the pre-compiled versions of Apache Maven (see files under the
+                binaries/ folder). In the case that the user will need to build Apache Maven 3.8.x from source, this
+                will require the Java JDK version 1.11.x or later.</p>
+              <p>Once you have the JDK and Maven binaries you can build CCT by opening the top level 'coda-calibration'
+                directory and running in a terminal:</p>
+              <pre><code>$&gt;mvn clean install
+</code></pre>
+              <p>Which will download all the dependencies, compile all the code, and then produce built artifacts. You
+                should see a build report upon completion in the terminal (see below):</p>
+              <p><img alt="img" src="img/build_success.png" />
+              <figcaption align="center">Figure. 18, Build success report for CCT and sub-modules.</figcaption> <br />
+              </p>
+              <p>Artifacts are available for the overall project along with all sub-modules in the relevant target/
+                folders in each project and sub-project. Of most interest to end users is the standalone desktop
+                application jar that can be found at
+                'coda-calibration/calibration-standalone/target/calibration-standalone-[VERSION]-runnable.jar'.</p>
+              <h2 id="accessing-the-internal-database">Accessing the internal database</h2>
+              <p>CCT uses an H2 database for storing all data and derived measurements internally during processing. The
+                tool additionally supports an 'external file' mode that allows for external tools to access this
+                database. This capability allows for querying, joing, aggregating, and exporting any data produced by
+                the tool. CCT additionally includes the H2 web-based SQL client as a built in option if no other JDBC
+                tools are available.</p>
+              <ol>
+                <li>
+                  <p>Launch the tool in file-based database mode:</p>
+                  <pre><code>java -jar calibration-standalone-*-runnable.jar --spring.profiles.active=file
+</code></pre>
+                  <p>This will create a codaH2.*.db set of files in the current directory</p>
+                </li>
+                <li>
+                  <p>Launch the embedded database browser (or any H2/JDBC compatible reader like <a
+                      href="https://dbeaver.io/">DBeaver</a>)</p>
+                  <pre><code>java -cp calibration-standalone-*-runnable.jar -Dh2.bindAddress=127.0.0.1 -Dloader.main=org.h2.tools.Console org.springframework.boot.loader.PropertiesLauncher
+</code></pre>
+                </li>
+                <li>
+                  <p>Now you can connect to the *.db file as a database using this connection string (update folder path
+                    to match yours)</p>
+                  <pre><code>jdbc:h2:/path/to/codaH2.db;DB_CLOSE_DELAY=-1;COMPRESS=TRUE;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9999
+</code></pre>
+                  <p><img alt="img" src="img/h2_login.png" />
+                  <figcaption align="center">Figure. 19, Login screen for connecting to the database as the default 'sa'
+                    user.</figcaption> <br /></p>
+                </li>
+                <li>
+                  <p>Now you can start writing queries using any built-in SQL functions and export your results to CSV
+                    using the ‘CSVWRITE’ function
+                    <img alt="img" src="img/h2_sql_example.png" />
+                  <figcaption align="center">Figure. 20, Example of using the built in H2 functions to export a SQL
+                    query directly as a CSV file.</figcaption> <br /></p>
+                </li>
+              </ol>
+              <h2 id="using-rest-endpoints-to-get-mws">Using REST endpoints to get Mws</h2>
+              <p>The internal APIs are expecting internal JSON formats. CCT makes a distinction between the front-end
+                import/export JSON and the backend transport JSON for a couple of reasons, mostly support for changing
+                them independently and because we consolidate a lot of logic into the human facing "summary" JSON. </p>
+              <p>As a result, you need to translate the exported calibration JSON to the internal format. The easiest
+                way to do that is to load up the tool and import your calibration, then do a GET on the relevant
+                endpoints to get the internal representation. Ideally before the end of the summer I should put together
+                docs on this and maybe add a special endpoint just to do an import of existing user JSON as a one shot.
+              </p>
+              <p>So the shared frequency band parameters is a GET request to the <a
+                  href="https://127.0.0.1:53921/api/v1/params/shared-fb-parameters">https://127.0.0.1:53921/api/v1/params/shared-fb-parameters</a>
+                REST endpoint and the site specific parameters is a GET to <a
+                  href="https://127.0.0.1:53921/api/v1/params/site-fb-parameters">https://127.0.0.1:53921/api/v1/params/site-fb-parameters</a>.
+                See the <a href="swagger/">API Documentation</a> for additional information about the JSON schema and
+                endpoints.</p>
+              <p>See the <a
+                  href="https://github.com/LLNL/coda-calibration-tool/blob/master/example-notebooks/measure-mws/Mw-From-FDSN-waveforms.ipynb">Example
+                  Jupyter Notebook</a> for a working example of using these two JSON files for a calibrated region using
+                FDSN webservices to fetch event information and waveforms, then feeding that information to CCT to
+                measure <strong>M<sub>w</sub></strong>s.</p>
+              <h2 id="logging-settings-at-runtime">Logging settings at runtime</h2>
+              <p>CCT pins the logging level to INFO in the default config. The runtime flag you need must be more
+                specific to override this setting. </p>
+              <div class="admonition warning">
+                <p class="admonition-title">Warning</p>
+                <p>Rather than being able to set -Dlogging.level.gov.llnl=[LEVEL] you must go down to
+                  -Dlogging.level.gov.llnl.gnem.apps.coda=[LEVEL] or more spefific to override the logging level.</p>
+              </div>
+              <h2 id="overriding-envelope-creation-bands-when-using-rest-services">Overriding envelope creation bands
+                when using REST services</h2>
+              <p>You will need to change the example notebook POST command to the envelope service endpoints if you want
+                to customize the bands generated. Alter the request (Python example below) to add a custom envelope job
+                configuration JSON to the job request. This will cause the envelope service to use these bands instead
+                of the default configuration. This also allows changing smoothing and bandwidth settings for bands.</p>
+              <pre><code>with open("envelope_job_config.json") as env_bands:
+    envelope_bands = json.load(env_bands)
+    waveData["jobConfig"] = envelope_bands
+    r = requests.post('https://127.0.0.1:53921/api/v1/envelopes/create/batch-stacks-only/10000', json=waveData, verify=False)
+    print(r.status_code)
+</code></pre>
+              <p>See the <a href="https://github.com/LLNL/coda-calibration-tool/blob/master/example-notebooks/">Example
+                  Jupyter Notebooks</a> for usage examples.</p>
+              <h2 id="references">References</h2>
+              <p>Barno, J. (2017). LLNL/coda-calibration-tool, <a href="https://doi.org/10.11578/dc.20180306.1">doi:
+                  10.11578/dc.20180306.1</a>.</p>
+              <p>Brune, J. N., Tectonic stress and spectra of seismic shear waves from earthquakes, J. <a
+                  href="https://doi.org/10.1029/JB075i026p04997">Geophys. Res. 75, 4997-5009, 1970.</a></p>
+              <p>Mayeda, K. and W.R. Walter, Moment, energy, stress drop, and source spectra of western U.S.
+                earthquakes, <a href="https://doi.org/10.1029/96JB00112">11195-11208, 101, J. Geophys. Res. , 1996.</a>
+              </p>
+              <p>Mayeda, K., Hofstetter A., O'Boyle J. L., Walter, W. R, Stable and transportable regional magnitudes
+                based on coda-derived moment-rate spectra. <a href="https://doi.org/10.1785/0120020020">Bull. Seismol.
+                  Soc. Am., 93, 224-239, 2003.</a></p>
+              <p>Mayeda, K., L. Malagnini, W.R. Walter, A new spectral ratio method using narrow band coda envelopes:
+                Evidence for non-self-similarity in the Hector Mine sequence, Geophys. Res. Lett., <a
+                  href="https://doi.org/10.1029/2007GL030041">doi:10.1029/2007GL030041</a>, 2007.</p>
+              <h2 id="configuration-variables">Configuration variables</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Variable</th>
+                    <th>Default value</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>app.height</td>
+                    <td>800</td>
+                    <td>Default height in pixels of the CCT window</td>
+                  </tr>
+                  <tr>
+                    <td>app.width</td>
+                    <td>600</td>
+                    <td>Default width in pixels of the CCT window</td>
+                  </tr>
+                  <tr>
+                    <td>distance-threshold-km</td>
+                    <td>300.0</td>
+                    <td>Distance threshold for the critical distance to be used for determining which set of the group
+                      velocity values to use while building the path model</td>
+                  </tr>
+                  <tr>
+                    <td>envelope-app.max-batching</td>
+                    <td>50</td>
+                    <td>Maximum number of waveforms to process per batch while generating waveforms. Larger values take
+                      more memory but may speed up the process if you are generating large numbers.</td>
+                  </tr>
+                  <tr>
+                    <td>group-velocity1-gt-distance</td>
+                    <td>4.7</td>
+                    <td>Maximum onset group velocity (km/s) if beyond the critical distance</td>
+                  </tr>
+                  <tr>
+                    <td>group-velocity2-gt-distance</td>
+                    <td>2.3</td>
+                    <td>Minimum onset group velocity (km/s) if beyond the critical distance</td>
+                  </tr>
+                  <tr>
+                    <td>group-velocity1-lt-distance</td>
+                    <td>3.9</td>
+                    <td>Maximum onset group velocity (km/s) if before the critical distance</td>
+                  </tr>
+                  <tr>
+                    <td>group-velocity2-lt-distance</td>
+                    <td>1.9</td>
+                    <td>Minimum onset group velocity (km/s) if before the critical distance</td>
+                  </tr>
+                  <tr>
+                    <td>measurementPoolSize</td>
+                    <td>10</td>
+                    <td>Number of threads to allocate to the measurement pool, larger values may increase throughput on
+                      machines with high CPU core numbers</td>
+                  </tr>
+                  <tr>
+                    <td>path.phase-velocity-kms</td>
+                    <td>3.5</td>
+                    <td>Expected phase velocity to use during path correction</td>
+                  </tr>
+                  <tr>
+                    <td>path.use-aggressive-opt</td>
+                    <td>true</td>
+                    <td>Run additional optimization chains to increase stability, can be set to false for faster runs in
+                      most cases when there is sufficient data.</td>
+                  </tr>
+                  <tr>
+                    <td>phase-velocity-kms</td>
+                    <td>3.5</td>
+                    <td>Expected phase velocity to use</td>
+                  </tr>
+                  <tr>
+                    <td>phase.phase-velocity-kms</td>
+                    <td>3.5</td>
+                    <td>Expected phase velocity to use</td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.b0reg</td>
+                    <td>10000</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.bDistMax</td>
+                    <td>1550</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.bDistMin</td>
+                    <td>0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.fittingPointCount</td>
+                    <td>10000</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.g0reg</td>
+                    <td>100</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.g1reg</td>
+                    <td>-1</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.gDistMax</td>
+                    <td>0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.gDistMin</td>
+                    <td>600</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.iterations</td>
+                    <td>10</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.lengthWeight</td>
+                    <td>0.5</td>
+                    <td>Weighting given to how long the coda window is when fitting the gray shapelines [0.0, 1.0].</td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxBeta</td>
+                    <td>-0.0001</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxBP1</td>
+                    <td>1000</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxBP2</td>
+                    <td>20</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxBP3</td>
+                    <td>1500</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxGamma</td>
+                    <td>4.0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxGP1</td>
+                    <td>100</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxGP2</td>
+                    <td>101</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxGP3</td>
+                    <td>101</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxIntercept</td>
+                    <td>20.0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxVP1</td>
+                    <td>600</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxVP2</td>
+                    <td>5000</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.maxVP3</td>
+                    <td>5000</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minBeta</td>
+                    <td>-4.0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minBP1</td>
+                    <td>-500</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minBP2</td>
+                    <td>0.1</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minBP3</td>
+                    <td>0.0001</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minGamma</td>
+                    <td>0.001</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minGP1</td>
+                    <td>0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minGP2</td>
+                    <td>0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minGP3</td>
+                    <td>1</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minIntercept</td>
+                    <td>0.001</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minVP1</td>
+                    <td>50</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minVP2</td>
+                    <td>1</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.minVP3</td>
+                    <td>1</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.v0reg</td>
+                    <td>100</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.vDistMax</td>
+                    <td>1600</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.vDistMin</td>
+                    <td>0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.ybbMax</td>
+                    <td>0.0005</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.ybbMin</td>
+                    <td>-12.0E-2</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.yggMax</td>
+                    <td>100</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.yggMin</td>
+                    <td>0.01</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.yvvMax</td>
+                    <td>6.01</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>shape-constraints.yvvMin</td>
+                    <td>0.5</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>show-energy-uq-summary</td>
+                    <td>false</td>
+                    <td>Show additional UQ min/max values for energy measurements in the summary table in
+                      Site/Measurement.</td>
+                  </tr>
+                  <tr>
+                    <td>show-stress-bounds-in-uq-spectra</td>
+                    <td>true</td>
+                    <td>Show the stress values in addition to the Mw values when plotting the UQ spectra in
+                      Site/Measurement.</td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.iteration-cutoff</td>
+                    <td>50</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.max-apparent-stress-mpa</td>
+                    <td>1000.00</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.max-mw</td>
+                    <td>10.0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.min-apparent-stress-mpa</td>
+                    <td>0.0001</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.min-mw</td>
+                    <td>0.01</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.suspect-energy-ratio</td>
+                    <td>0.25</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.suspect-iterations</td>
+                    <td>50</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectra-calc.suspect-mw-range</td>
+                    <td>1.5</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>spectraTruncationEnabled</td>
+                    <td>true</td>
+                    <td>Allows spectra to be truncated when mixing GT spectra reference events with Mw only references.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>velocity.calc.distance-threshold-km</td>
+                    <td>300.0</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>velocity.calc.group-velocity1-gt-distance</td>
+                    <td>4.7</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>velocity.calc.group-velocity1-lt-distance</td>
+                    <td>3.9</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>velocity.calc.group-velocity2-gt-distance</td>
+                    <td>2.3</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>velocity.calc.group-velocity2-lt-distance</td>
+                    <td>1.9</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>webclient.basePath</td>
+                    <td>localhost:53921</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+
+            </div>
+          </div>
+          <footer>
+            <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+              <a href="javadoc/" class="btn btn-neutral float-right" title="JavaDoc">Next <span
+                  class="icon icon-circle-arrow-right"></span></a>
+            </div>
+
+            <hr />
+
+            <div role="contentinfo">
+              <!-- Copyright etc -->
+            </div>
+
+            Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a
+              href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a
+              href="https://readthedocs.org">Read the Docs</a>.
+          </footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+
+
+
+      <span><a href="javadoc/" style="color: #fcfcfc">Next &raquo;</a></span>
+
+    </span>
+  </div>
+  <script>var base_url = '.';</script>
+  <script src="js/theme_extra.js" defer></script>
+  <script src="js/theme.js" defer></script>
+  <script defer>
+    window.onload = function () {
+      SphinxRtdTheme.Navigation.enable(true);
+    };
+  </script>
+
+</body>
+
+</html>
+
+<!--
+MkDocs version : 1.3.0
+Build Date UTC : 2022-07-13 16:20:52.921109+00:00
+-->

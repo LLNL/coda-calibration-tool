@@ -26,4 +26,8 @@ public interface Title extends Serializable {
 
     public int getFontSize();
 
+    public void setYOffset(Double yOffset);
+
+    public Double getYOffset();
+
 }

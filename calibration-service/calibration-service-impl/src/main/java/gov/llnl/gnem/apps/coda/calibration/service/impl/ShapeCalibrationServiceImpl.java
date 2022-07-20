@@ -151,7 +151,7 @@ public class ShapeCalibrationServiceImpl implements ShapeCalibrationService {
                     //Ensure pick is propagated back to waveform
                     double end = curve.getEndTime();
                     if (end >= 0d) {
-                        endPick.setPickTimeSecFromOrigin((float) end);
+                        endPick.setPickTimeSecFromOrigin(end);
                     }
                 }
             }

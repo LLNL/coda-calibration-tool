@@ -20,6 +20,7 @@ public class BasicTitle implements Title {
     private static final long serialVersionUID = 1L;
     private String text = "";
     private int fontSize = 12;
+    private Double yOffset = null;
 
     @Override
     public String getText() {
@@ -41,4 +42,13 @@ public class BasicTitle implements Title {
         return fontSize;
     }
 
+    @Override
+    public void setYOffset(Double yOffset) {
+        this.yOffset = yOffset;
+    }
+
+    @Override
+    public Double getYOffset() {
+        return yOffset;
+    }
 }

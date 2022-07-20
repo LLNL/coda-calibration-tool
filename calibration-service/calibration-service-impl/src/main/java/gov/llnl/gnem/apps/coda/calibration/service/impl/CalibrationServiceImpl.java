@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +38,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.PreDestroy;
 
@@ -97,9 +95,18 @@ import gov.llnl.gnem.apps.coda.common.model.util.LightweightIllegalStateExceptio
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
+import gov.llnl.gnem.apps.coda.common.service.api.WaveformPickService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
+import gov.llnl.gnem.apps.coda.common.service.util.MetadataUtils;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
+import llnl.gnem.core.util.TimeT;
+import llnl.gnem.core.util.Geometry.EModel;
 
+/**
+ * The CalibrationServiceImpl class is the core control loop of the service
+ * layer in CCT responsible for creating calibrations and measurement Mw values
+ * given existing calibration parameters.
+ */
 @Service
 @Transactional
 //FIXME: Kind of becoming a god-class, maybe see if we can break this up.
@@ -139,13 +146,15 @@ public class CalibrationServiceImpl implements CalibrationService {
 
     private Map<Long, Future<?>> runningJobs = new ConcurrentHashMap<>(2);
 
+    private WaveformPickService pickService;
+
     @Autowired
     public CalibrationServiceImpl(WaveformService waveformService, PeakVelocityMeasurementService peakVelocityMeasurementsService, SharedFrequencyBandParametersService sharedParametersService,
             ShapeCalibrationService shapeCalibrationService, SpectraMeasurementService spectraMeasurementService, SyntheticCodaGenerationService syntheticGenerationService,
             PathCalibrationService pathCalibrationService, MdacParametersFiService mdacFiService, MdacParametersPsService mdacPsService, ReferenceMwParametersService referenceMwService,
             ValidationMwParametersService validationMwService, SiteCalibrationService siteCalibrationService, SyntheticService syntheticService, NotificationService notificationService,
-            DatabaseCleaningService cleaningService, ConfigurationService configService, SiteFrequencyBandParametersService siteParamsService, SpectraCalculator spectraCalc, AutopickingService picker,
-            @Qualifier("MeasurementExecutorService") ExecutorService measureService) {
+            DatabaseCleaningService cleaningService, ConfigurationService configService, SiteFrequencyBandParametersService siteParamsService, SpectraCalculator spectraCalc,
+            WaveformPickService pickService, AutopickingService picker, @Qualifier("MeasurementExecutorService") ExecutorService measureService) {
         this.waveformService = waveformService;
         this.peakVelocityMeasurementsService = peakVelocityMeasurementsService;
         this.sharedParametersService = sharedParametersService;
@@ -164,6 +173,7 @@ public class CalibrationServiceImpl implements CalibrationService {
         this.configService = configService;
         this.siteParamsService = siteParamsService;
         this.spectraCalc = spectraCalc;
+        this.pickService = pickService;
         this.picker = picker;
         this.measureService = measureService;
     }
@@ -265,19 +275,21 @@ public class CalibrationServiceImpl implements CalibrationService {
             }
             List<Event> eventsInStacks = stacks.stream().map(Waveform::getEvent).filter(Objects::nonNull).distinct().collect(Collectors.toList());
             VelocityConfiguration velocityConfig = configService.getVelocityConfiguration();
-            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandMap = mapParamsToFrequencyBands(siteParamsService.findAll());
-            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.findAll());
+            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandMap = MetadataUtils.mapSiteParamsToFrequencyBands(siteParamsService.findAll());
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = MetadataUtils.mapSharedParamsToFrequencyBands(sharedParametersService.findAll());
 
             List<Waveform> measStacks = stacks;
-            List<PeakVelocityMeasurement> velocityMeasured = Optional.ofNullable(peakVelocityMeasurementsService.measureVelocities(measStacks, velocityConfig))
-                                                                     .orElseGet(Stream::empty)
-                                                                     .collect(Collectors.toList());
+            List<PeakVelocityMeasurement> velocityMeasured = Optional.ofNullable(peakVelocityMeasurementsService.measureVelocities(measStacks, velocityConfig)).orElseGet(ArrayList::new);
+
+            //Offset the coda start picks to the model velocity from the individual peak velocity estimate
+            velocityMeasured = offsetCodaStarts(velocityMeasured, frequencyBandParameterMap);
+
             if (autoPickingEnabled) {
                 velocityMeasured = picker.autoPickVelocityMeasuredWaveforms(velocityMeasured, frequencyBandParameterMap);
             }
 
             final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap = new HashMap<>(frequencyBandParameterMap);
-            velocityMeasured = filterVelocityBySnr(snrFilterMap, velocityMeasured.stream());
+            velocityMeasured = filterVelocityBySnr(snrFilterMap, velocityMeasured);
 
             measStacks = velocityMeasured.stream().map(PeakVelocityMeasurement::getWaveform).filter(Objects::nonNull).collect(Collectors.toList());
             measStacks = filterToEndPicked(measStacks);
@@ -333,6 +345,7 @@ public class CalibrationServiceImpl implements CalibrationService {
             if (persistResults) {
                 peakVelocityMeasurementsService.deleteAll();
                 syntheticService.deleteAll();
+
                 peakVelocityMeasurementsService.save(velocityMeasured);
                 syntheticService.save(synthetics);
             }
@@ -387,7 +400,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.STARTING));
                     log.info("Starting calibration at {}", LocalDateTime.now());
 
-                    Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.findAll());
+                    Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = MetadataUtils.mapSharedParamsToFrequencyBands(sharedParametersService.findAll());
                     final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap = new HashMap<>(frequencyBandParameterMap);
 
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.PEAK_STARTING));
@@ -401,7 +414,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // 1) Compute the peak velocity, amplitude, and SNR values
                     // for the given coda stacks using theoretical group velocities
                     // to cut the windows for noise and SN/LG arrival
-                    Stream<PeakVelocityMeasurement> velocityMeasurements = peakVelocityMeasurementsService.measureVelocities(stacks, velocityConfig);
+                    List<PeakVelocityMeasurement> velocityMeasurements = peakVelocityMeasurementsService.measureVelocities(stacks, velocityConfig);
 
                     //Save the max velocity information even if we aren't auto-picking
                     stacks = waveformService.save(stacks);
@@ -417,7 +430,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     List<PeakVelocityMeasurement> snrFilteredVelocity = filterVelocityBySnr(snrFilterMap, velocityMeasurements);
 
                     // Now save the new ones we just calculated
-                    peakVelocityMeasurementsService.save(snrFilteredVelocity);
+                    snrFilteredVelocity = peakVelocityMeasurementsService.save(snrFilteredVelocity);
 
                     ConcurrencyUtils.checkInterrupt();
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.SHAPE_STARTING));
@@ -436,7 +449,10 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // to generate synthetic coda at any given distance and frequency band
                     // combination
                     frequencyBandParameterMap = shapeCalibrationService.measureShapes(snrFilteredVelocity, frequencyBandParameterMap, constraints);
-                    frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
+                    frequencyBandParameterMap = MetadataUtils.mapSharedParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
+
+                    //Offset the coda start picks to the model velocity from the individual peak velocity estimate
+                    snrFilteredVelocity = peakVelocityMeasurementsService.save(offsetCodaStarts(snrFilteredVelocity, frequencyBandParameterMap));
 
                     // 3) Now we need to generate some basic synthetics for the
                     // measurement code to use to determine where to measure the
@@ -476,7 +492,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // effect correction needs to be for each frequency band
                     frequencyBandParameterMap = pathCalibrationService.measurePathCorrections(spectraByFrequencyBand(spectra), frequencyBandParameterMap, velocityConfig);
 
-                    frequencyBandParameterMap = mapParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
+                    frequencyBandParameterMap = MetadataUtils.mapSharedParamsToFrequencyBands(sharedParametersService.save(frequencyBandParameterMap.values()));
                     ConcurrencyUtils.checkInterrupt();
 
                     // 5) Measure the amplitudes again but this time we can
@@ -550,8 +566,8 @@ public class CalibrationServiceImpl implements CalibrationService {
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    private List<PeakVelocityMeasurement> filterVelocityBySnr(final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap, Stream<PeakVelocityMeasurement> velocityMeasurements) {
-        return velocityMeasurements.parallel().filter(vel -> {
+    private List<PeakVelocityMeasurement> filterVelocityBySnr(final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap, List<PeakVelocityMeasurement> velocityMeasurements) {
+        return velocityMeasurements.stream().parallel().filter(vel -> {
             boolean valid = false;
             if (vel.getWaveform() != null) {
                 FrequencyBand fb = new FrequencyBand(vel.getWaveform().getLowFrequency(), vel.getWaveform().getHighFrequency());
@@ -577,18 +593,6 @@ public class CalibrationServiceImpl implements CalibrationService {
                       .filter(Objects::nonNull)
                       .filter(s -> s.getWaveform() != null)
                       .collect(Collectors.groupingBy(s -> new FrequencyBand(s.getWaveform().getLowFrequency(), s.getWaveform().getHighFrequency())));
-    }
-
-    private Map<FrequencyBand, SharedFrequencyBandParameters> mapParamsToFrequencyBands(Collection<SharedFrequencyBandParameters> params) {
-        return params.stream().collect(Collectors.toMap(fbp -> new FrequencyBand(fbp.getLowFrequency(), fbp.getHighFrequency()), fbp -> fbp));
-    }
-
-    private Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> mapParamsToFrequencyBands(List<SiteFrequencyBandParameters> params) {
-        return params.stream()
-                     .collect(
-                             Collectors.groupingBy(
-                                     site -> new FrequencyBand(site.getLowFrequency(), site.getHighFrequency()),
-                                         Collectors.toMap(SiteFrequencyBandParameters::getStation, Function.identity())));
     }
 
     @PreDestroy
@@ -643,5 +647,41 @@ public class CalibrationServiceImpl implements CalibrationService {
             }
         }
         return infoMesssages;
+    }
+
+    private List<PeakVelocityMeasurement> offsetCodaStarts(List<PeakVelocityMeasurement> velocityMeasurements, final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap) {
+        if (velocityMeasurements != null && frequencyBandParameterMap != null) {
+            velocityMeasurements.parallelStream().forEach(p -> {
+                SharedFrequencyBandParameters sfb = frequencyBandParameterMap.get(new FrequencyBand(p.getWaveform().getLowFrequency(), p.getWaveform().getHighFrequency()));
+                //Offset to this back to the model predicted velocity instead of the raw max velocity
+                if ((sfb != null) && (p.getWaveform().getMaxVelTime() != null)) {
+                    double distance = EModel.getDistanceWGS84(
+                            p.getWaveform().getEvent().getLatitude(),
+                                p.getWaveform().getEvent().getLongitude(),
+                                p.getWaveform().getStream().getStation().getLatitude(),
+                                p.getWaveform().getStream().getStation().getLongitude());
+
+                    TimeT codastart = new TimeT(p.getWaveform().getEvent().getOriginTime()).add(distance / (sfb.getVelocity0() - sfb.getVelocity1() / (sfb.getVelocity2() + distance)));
+                    codastart.add(sfb.getCodaStartOffset());
+                    double offset = codastart.subtractD(new TimeT(p.getWaveform().getCodaStartTime()));
+                    p.getWaveform().setCodaStartTime(codastart.getDate());
+                    List<WaveformPick> csPicks = p.getWaveform()
+                                                  .getAssociatedPicks()
+                                                  .parallelStream()
+                                                  .filter(pick -> PICK_TYPES.CS.getPhase().equalsIgnoreCase(pick.getPickName().trim()))
+                                                  .collect(Collectors.toList());
+
+                    if (csPicks != null) {
+                        for (WaveformPick startPick : csPicks) {
+                            p.getWaveform().getAssociatedPicks().remove(startPick);
+                            startPick.setPickTimeSecFromOrigin(startPick.getPickTimeSecFromOrigin() + offset);
+                            startPick = pickService.save(startPick);
+                            p.getWaveform().getAssociatedPicks().add(startPick);
+                        }
+                    }
+                }
+            });
+        }
+        return velocityMeasurements;
     }
 }

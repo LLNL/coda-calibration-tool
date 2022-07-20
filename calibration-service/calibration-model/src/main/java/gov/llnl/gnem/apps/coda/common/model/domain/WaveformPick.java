@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.common.model.domain;
 
 import java.io.Serializable;
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -54,7 +55,7 @@ public class WaveformPick implements Serializable {
     private String pickType;
 
     @Column(name = "pickTimeSecFromOrigin")
-    private Float pickTimeSecFromOrigin;
+    private Double pickTimeSecFromOrigin;
 
     public Long getId() {
         return this.id;
@@ -99,11 +100,11 @@ public class WaveformPick implements Serializable {
         return this;
     }
 
-    public Float getPickTimeSecFromOrigin() {
+    public Double getPickTimeSecFromOrigin() {
         return pickTimeSecFromOrigin;
     }
 
-    public WaveformPick setPickTimeSecFromOrigin(Float pickTimeSecFromOrigin) {
+    public WaveformPick setPickTimeSecFromOrigin(Double pickTimeSecFromOrigin) {
         this.pickTimeSecFromOrigin = pickTimeSecFromOrigin;
         return this;
     }
@@ -115,13 +116,7 @@ public class WaveformPick implements Serializable {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((pickName == null) ? 0 : pickName.hashCode());
-        result = prime * result + ((pickTimeSecFromOrigin == null) ? 0 : pickTimeSecFromOrigin.hashCode());
-        result = prime * result + ((pickType == null) ? 0 : pickType.hashCode());
-        result = prime * result + ((waveform == null) ? 0 : waveform.hashCode());
-        return result;
+        return Objects.hash(pickName, pickType, waveform);
     }
 
     @Override
@@ -129,21 +124,11 @@ public class WaveformPick implements Serializable {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (!(obj instanceof WaveformPick)) {
             return false;
         }
         WaveformPick other = (WaveformPick) obj;
-        if (pickType == null) {
-            if (other.pickType != null) {
-                return false;
-            }
-        } else if (!pickType.equals(other.pickType)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(pickName, other.pickName) && Objects.equals(pickType, other.pickType);
     }
 
     public WaveformPick mergeNonNullOrEmptyFields(WaveformPick pickOverlay) {

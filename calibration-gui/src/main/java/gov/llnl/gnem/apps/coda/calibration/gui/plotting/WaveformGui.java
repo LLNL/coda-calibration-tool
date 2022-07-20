@@ -130,6 +130,9 @@ public class WaveformGui {
         screenshotFolderChooser.setTitle("Screenshot Export Folder");
         waveformPlotManager = new CodaWaveformPlotManager(waveformClient, shapeClient, paramsClient, peakVelocityClient, map, mapPlotUtilities);
         waveformPlotManager.attachToDisplayNode(waveformPlotNode);
+        stage.setOnCloseRequest(evt -> {
+            waveformPlotManager.setSavedAxisLimits(null);
+        });
     }
 
     @FXML

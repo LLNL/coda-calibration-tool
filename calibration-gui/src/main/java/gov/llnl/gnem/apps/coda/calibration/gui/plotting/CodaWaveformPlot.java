@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2022, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -14,11 +14,16 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
@@ -43,10 +48,12 @@ import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import javafx.application.Platform;
 import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
+import llnl.gnem.core.gui.plotting.api.AxisLimits;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
 import llnl.gnem.core.gui.plotting.api.PlotObject;
 import llnl.gnem.core.gui.plotting.api.VerticalLine;
+import llnl.gnem.core.gui.plotting.events.PlotAxisChange;
 import llnl.gnem.core.gui.plotting.events.PlotShapeMove;
 import llnl.gnem.core.gui.plotting.plotly.BasicAxis;
 import llnl.gnem.core.gui.plotting.plotly.BasicLine;
@@ -97,6 +104,14 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
     private BooleanSupplier showWindowLines;
 
+    private final PropertyChangeSupport axisProperty = new PropertyChangeSupport(this);
+
+    private PropertyChangeListener axisChangeListener = null;
+
+    private double plotPadding = 0.05; // Percent of padding for top and bottom in plots
+
+    private BooleanSupplier showCodaStartLine;
+
     private enum PLOT_ORDERING {
         BACKGROUND(0), NOISE_BOX(1), WAVEFORM(2), NOISE_LINE(3), SHAPE_FIT(4), MODEL_FIT(5), PICKS(6);
 
@@ -112,7 +127,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
     }
 
     public CodaWaveformPlot(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramClient, final PeakVelocityClient velocityClient,
-            BooleanSupplier showGroupVelocity, BooleanSupplier showWindowLines, final TimeSeries... seismograms) {
+            BooleanSupplier showGroupVelocity, BooleanSupplier showWindowLines, BooleanSupplier showCodaStartLine, final TimeSeries... seismograms) {
         super(seismograms);
         xAxis = new BasicAxis(Axis.Type.X, "Time (seconds from origin)");
         yAxis = new BasicAxis(Axis.Type.Y, "log10(amplitude)");
@@ -123,19 +138,22 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         this.velocityClient = velocityClient;
         this.showGroupVelocity = showGroupVelocity;
         this.showWindowLines = showWindowLines;
+        this.showCodaStartLine = showCodaStartLine;
     }
 
     public void setGroupVelocityVisbility() {
         if (groupVelocityLineStart != null && groupVelocityLineEnd != null) {
             final String script = "setGroupVelocityVisibility(" + showGroupVelocity.getAsBoolean() + ");";
             plotData.setShowGroupVelocity(showGroupVelocity.getAsBoolean());
-            Platform.runLater(() -> {
-                try {
-                    engine.executeScript(script);
-                } catch (final Exception e) {
-                    log.debug(e.getLocalizedMessage());
-                }
-            });
+            if (plotData.getPlotReady().get()) {
+                Platform.runLater(() -> {
+                    try {
+                        engine.executeScript(script);
+                    } catch (final Exception e) {
+                        log.debug(e.getLocalizedMessage());
+                    }
+                });
+            }
         }
     }
 
@@ -143,6 +161,22 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         if (minWindowLine != null) {
             final String script = "setWindowLineVisibility(" + showWindowLines.getAsBoolean() + ");";
             plotData.setShowWindowLines(showWindowLines.getAsBoolean());
+            if (plotData.getPlotReady().get()) {
+                Platform.runLater(() -> {
+                    try {
+                        engine.executeScript(script);
+                    } catch (final Exception e) {
+                        log.debug(e.getLocalizedMessage());
+                    }
+                });
+            }
+        }
+    }
+
+    public void setCodaStartLineVisbility() {
+        final String script = "setCodaStartLineVisibility(" + showCodaStartLine.getAsBoolean() + ");";
+        plotData.setShowCodaStartLine(showCodaStartLine.getAsBoolean());
+        if (plotData.getPlotReady().get()) {
             Platform.runLater(() -> {
                 try {
                     engine.executeScript(script);
@@ -181,9 +215,36 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
             final MinMax minmax = rawSeries.getMinMax();
             double min = minmax.getMin();
-            min = min - Math.abs(min * .1);
+            min = min - Math.abs(minmax.getRange() * plotPadding);
             double max = minmax.getMax();
-            max = max + Math.abs(max * .1);
+            max = max + Math.abs(minmax.getRange() * plotPadding);
+
+            // Adjust zoom level if zoomed
+            if (this.isZoomed()) {
+                try {
+                    // Get the min/max y values within the subsection of the xAxis
+                    final double xMin = this.getxAxis().getMin();
+                    final double xMax = this.getxAxis().getMax();
+                    final double startTime = Math.abs(rawSeries.getZeroTimeOffsetSeconds());
+
+                    TimeSeries zoomedSection = new TimeSeries(rawSeries);
+                    zoomedSection.cut(xMin + startTime, xMax + startTime);
+
+                    // The y-axis min and max are adjusted with 10% relative padding
+                    final MinMax yzoomRange = zoomedSection.getMinMax();
+                    min = yzoomRange.getMin();
+                    min = min - Math.abs(yzoomRange.getRange() * plotPadding);
+                    max = yzoomRange.getMax();
+                    max = max + Math.abs(yzoomRange.getRange() * plotPadding);
+
+                    xAxis.setMin(xMin);
+                    xAxis.setMax(xMax);
+                } catch (Exception e) {
+                    // Don't zoom
+                    this.resetAxisLimits();
+                }
+            }
+
             yAxis.setMin(min);
             yAxis.setMax(max);
 
@@ -194,6 +255,8 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             setTitle(labelText);
 
             setGroupVelocityLines(distance); // Adds group velocity lines to the appropriate location based on distance
+
+            setCodaStartLineVisbility();
 
             final List<WaveformPick> picks = waveform.getAssociatedPicks();
             final double beginEpochTime = new TimeT(waveform.getBeginTime()).getEpochTime();
@@ -219,8 +282,8 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
                     pickTime = pickTime + originTimeZeroOffset;
                     addPickToAll(pick.getPickName(), pickTime);
                     pickLineMap.put(pick.getPickName(), pick);
-                    this.replot();
                 }
+                this.replot();
             }
 
             shapeClient.getMeasuredShape(waveform.getId()).subscribe(shape -> {
@@ -287,6 +350,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
                             plotSynthetic(waveform, synth, beginTime, waveformSegment, event, distance, labelText, params);
                             this.synthetic = synth;
                         } else if (this.synthetic != null && synthetic.getSourceWaveform() != null && synthetic.getSourceWaveform().getId().equals(waveform.getId())) {
+                            synthetic.setSourceWaveform(waveform);
                             plotSynthetic(waveform, synthetic, beginTime, waveformSegment, event, distance, labelText, params);
                         }
 
@@ -306,14 +370,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
     }
 
     private double calcWindowTime(final double time, final SharedFrequencyBandParameters params, final Waveform waveform, final double distance) {
-        double windowTime = 0;
-        if (waveform.getMaxVelTime() != null) {
-            windowTime = new TimeT(waveform.getMaxVelTime()).add(time).subtractD(new TimeT(waveform.getBeginTime()));
-        } else {
-            // Calculation from getDistanceFunction in syntheticCodaModel
-            windowTime = time + distance / (params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance));
-        }
-        return windowTime;
+        return time + distance / (params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance));
     }
 
     private void setWindowLines(final SharedFrequencyBandParameters params, final Waveform waveform, final double distance, final double originTimeOffset) {
@@ -381,10 +438,17 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
         float[] synthSegment = doublesToFloats(synth.getSegment());
 
-        final TimeSeries synthSeriesBeforeEndMarker = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
+        TimeT startTime = new TimeT(synth.getBeginTime());
+
+        final TimeSeries synthSeriesBeforeStartMarker = new TimeSeries(synthSegment, synth.getSampleRate(), startTime);
+        synthSeriesBeforeStartMarker.setIdentifier("Synthetic");
+        synthSeriesBeforeStartMarker.setZeroTimeOffsetSeconds(originTimeZeroOffset);
+
+        final TimeSeries synthSeriesBeforeEndMarker = new TimeSeries(synthSegment, synth.getSampleRate(), startTime);
         synthSeriesBeforeEndMarker.setIdentifier("Synthetic");
         synthSeriesBeforeEndMarker.setZeroTimeOffsetSeconds(originTimeZeroOffset);
-        final TimeSeries synthSeriesRemaining = new TimeSeries(synthSegment, synth.getSampleRate(), new TimeT(synth.getBeginTime()));
+
+        final TimeSeries synthSeriesRemaining = new TimeSeries(synthSegment, synth.getSampleRate(), startTime);
         synthSeriesRemaining.setIdentifier("Synthetic");
         synthSeriesRemaining.setZeroTimeOffsetSeconds(originTimeZeroOffset);
 
@@ -405,8 +469,6 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
         interpolatedSeries.interpolate(synthSeriesBeforeEndMarker.getSamprate());
 
-        final TimeT startTime = new TimeT(synth.getBeginTime());
-
         double deltaOriginEnd = new TimeT(endTime).subtractD(originTime);
         double maxWindowTime = calcWindowTime(params.getMaxLength(), params, waveform, distance);
         if (deltaOriginEnd > maxWindowTime) {
@@ -415,39 +477,69 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
         if (startTime.lt(endTime)) {
             interpolatedSeries.cut(startTime, endTime);
-            synthSeriesBeforeEndMarker.cut(startTime, endTime);
-            if (synthSeriesBeforeEndMarker.getLength() > 1) {
-                final TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
-                final int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
-                final double median = diffSeis.getMedian();
 
-                float[] cutSegment = synthSeriesBeforeEndMarker.getData();
-                for (int i = 0; i < cutSegment.length; i++) {
-                    if (i > 0 && cutSegment[i] + median < minWaveformValue) {
-                        synthSeriesBeforeEndMarker.cut(0, i);
-                        break;
-                    }
+            if (synth.getSourceWaveform().getUserStartTime() != null) {
+                TimeT codaStartTime = new TimeT(synth.getSourceWaveform().getUserStartTime());
+                if (startTime.le(codaStartTime)) {
+                    synthSeriesBeforeStartMarker.cut(startTime, codaStartTime);
+                    startTime = codaStartTime;
+                } else {
+                    synthSeriesBeforeStartMarker.setData(new float[0]);
                 }
+            } else {
+                synthSeriesBeforeStartMarker.setData(new float[0]);
+            }
 
+            try {
+                synthSeriesBeforeEndMarker.cut(startTime, endTime);
                 if (synthSeriesBeforeEndMarker.getLength() > 1) {
-                    addPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                    final TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
+                    final int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
+                    final double median = diffSeis.getMedian();
 
-                    if (endTime.lt(synthSeriesRemaining.getEndtime())) {
-                        synthSeriesRemaining.cutBefore(endTime);
-                        final int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
-                        cutSegment = synthSeriesRemaining.getData();
-                        for (int i = 0; i < cutSegment.length; i++) {
-                            if (i > 0 && cutSegment[i] + median < minWaveformValue) {
-                                synthSeriesRemaining.cut(0, i);
-                                break;
+                    float[] cutSegment = synthSeriesBeforeEndMarker.getData();
+                    for (int i = 0; i < cutSegment.length; i++) {
+                        if (i > 0 && cutSegment[i] + median < minWaveformValue) {
+                            synthSeriesBeforeEndMarker.cut(0, i);
+                            break;
+                        }
+                    }
+
+                    if (synthSeriesBeforeStartMarker.getLength() > 1) {
+                        addPlotObject(
+                                createLine(
+                                        (int) (new TimeT(synthSeriesBeforeStartMarker.getTime()).subtractD(beginTime) + 0.5),
+                                            median,
+                                            synthSeriesBeforeStartMarker,
+                                            Color.GREEN,
+                                            DEFAULT_LINE_WIDTH,
+                                            LineStyles.DOT),
+                                    PLOT_ORDERING.MODEL_FIT.getZOrder());
+                    }
+
+                    if (synthSeriesBeforeEndMarker.getLength() > 1) {
+                        addPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+
+                        if (endTime.lt(synthSeriesRemaining.getEndtime())) {
+                            synthSeriesRemaining.cutBefore(endTime);
+                            final int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
+                            cutSegment = synthSeriesRemaining.getData();
+                            for (int i = 0; i < cutSegment.length; i++) {
+                                if (i > 0 && cutSegment[i] + median < minWaveformValue) {
+                                    synthSeriesRemaining.cut(0, i);
+                                    break;
+                                }
+                            }
+                            if (synthSeriesRemaining.getLength() > 1) {
+                                addPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, LineStyles.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
                             }
                         }
-                        if (synthSeriesRemaining.getLength() > 1) {
-                            addPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, LineStyles.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
-                        }
                     }
                 }
+            } catch (IllegalArgumentException ex) {
+                log.debug("Unable to cut starting synthetic for start pick {}.", ex);
             }
+
         }
     }
 
@@ -489,7 +581,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             try {
                 final WaveformPick pick = pickLineMap.get(move.getName());
                 if (pick != null && pick.getWaveform() != null) {
-                    pick.setPickTimeSecFromOrigin((float) move.getX0());
+                    pick.setPickTimeSecFromOrigin(move.getX0());
                     if (pick.getPickName() != null && PICK_TYPES.F.getPhase().equalsIgnoreCase(pick.getPickName().trim())) {
                         pick.getWaveform()
                             .setAssociatedPicks(
@@ -499,12 +591,59 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
                                         .filter(p -> p.getPickName() != null && !PICK_TYPES.AP.getPhase().equalsIgnoreCase(p.getPickName().trim()))
                                         .collect(Collectors.toList()));
                         waveformClient.postWaveform(pick.getWaveform()).subscribe(this::setWaveform);
+                    } else if (pick.getPickName() != null && PICK_TYPES.CS.getPhase().equalsIgnoreCase(pick.getPickName().trim())) {
+                        List<WaveformPick> newPicks = pick.getWaveform().getAssociatedPicks().stream().map(p -> {
+                            if (p.getPickName() != null && PICK_TYPES.CS.getPhase().equalsIgnoreCase(p.getPickName().trim())) {
+                                Date startTime = new Date();
+                                startTime.setTime((long) (p.getWaveform().getEvent().getOriginTime().getTime() + (p.getPickTimeSecFromOrigin() * 1000)));
+                                p.setPickName(PICK_TYPES.UCS.getPhase());
+                                p.setPickType(PICK_TYPES.UCS.name());
+                                p.getWaveform().setUserStartTime(startTime);
+                                p.setId(null);
+                            }
+                            return p;
+                        }).collect(Collectors.toList());
+                        pick.getWaveform().setAssociatedPicks(newPicks);
+                        waveformClient.postWaveform(pick.getWaveform()).subscribe(this::setWaveform);
+                    } else if (pick.getPickName() != null && PICK_TYPES.UCS.getPhase().equalsIgnoreCase(pick.getPickName().trim())) {
+                        Date startTime = new Date();
+                        startTime.setTime((long) (pick.getWaveform().getEvent().getOriginTime().getTime() + (pick.getPickTimeSecFromOrigin() * 1000)));
+                        pick.getWaveform().setUserStartTime(startTime);
+                        waveformClient.postWaveform(pick.getWaveform()).subscribe(this::setWaveform);
                     }
                 }
             } catch (ClassCastException | JsonProcessingException e) {
                 log.info("Error updating Waveform, {}", move.getName(), e);
             }
         }
+    }
+
+    @Override
+    protected void handleAxisChange(PlotAxisChange change) {
+
+        if (this.axisChangeListener != null) {
+            CompletableFuture.runAsync(() -> {
+                axisProperty.firePropertyChange(new PropertyChangeEvent(this, "axis_change", null, change));
+            });
+        }
+
+        if (change.isReset()) {
+            this.resetAxisLimits();
+            return;
+        }
+
+        setAxisLimits(change.getAxisLimits().getFirst(), change.getAxisLimits().getSecond());
+    }
+
+    public void setAxisChangeListener(PropertyChangeListener axisChange) {
+
+        // Remove existing listener before adding another one
+        if (this.axisChangeListener != null) {
+            this.axisProperty.removePropertyChangeListener("axis_change", this.axisChangeListener);
+        }
+
+        this.axisChangeListener = axisChange;
+        this.axisProperty.addPropertyChangeListener("axis_change", this.axisChangeListener);
     }
 
     public static float[] doublesToFloats(final double[] x) {
@@ -527,10 +666,19 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         return yAxis;
     }
 
+    public void resetAxisLimits() {
+        this.setAxisLimits(new AxisLimits(Axis.Type.X, 0.0, 0.0), new AxisLimits(Axis.Type.Y, 0.0, 0.0));
+    }
+
+    public boolean isZoomed() {
+        return this.xAxis.getMin() != this.xAxis.getMax();
+    }
+
     private void addPlotObject(final PlotObject object, final int zOrder) {
         if (object != null) {
             object.setZindex(zOrder);
         }
         addPlotObject(object);
     }
+
 }

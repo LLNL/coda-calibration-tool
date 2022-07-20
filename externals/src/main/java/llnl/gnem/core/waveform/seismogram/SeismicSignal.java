@@ -390,7 +390,7 @@ public interface SeismicSignal {
      * segment. This should define where your time axis should set 0 at in the
      * trace relative to the begin time of the segment.
      *
-     * @param double
+     * @param zeroTimeOffsetSeconds
      *            Offset defining time in seconds that the segment should be
      *            shifted.
      */

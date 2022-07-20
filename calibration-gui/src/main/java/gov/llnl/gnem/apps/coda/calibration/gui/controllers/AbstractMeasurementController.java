@@ -48,6 +48,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -79,6 +80,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.messaging.SpectraMeasurementChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 import javafx.application.Platform;
@@ -116,6 +118,15 @@ import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
 import llnl.gnem.core.gui.plotting.plotly.BasicAxis;
 import llnl.gnem.core.util.TimeT;
 
+/**
+ * The AbstractMeasurementController defines the common shared displays used in
+ * both the Site and Measurement views.
+ *
+ * Generally containers all logic, data access, and plotting code necessary to
+ * display a seismic source spectra for each event along with summary figures
+ * for the dataset as a whole.
+ *
+ */
 public abstract class AbstractMeasurementController implements MapListeningController, RefreshableController, ScreenshotEnabledController {
 
     private static final Integer VALIDATION_Z_ORDER = 0;
@@ -345,7 +356,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     private MenuItem include;
     protected ContextMenu menu;
 
-    private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
+    private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalForcedOneLeadingZero();
     private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
 
     private final AtomicReference<Double> minFreq = new AtomicReference<>(1.0);
@@ -373,6 +384,9 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     private final EventBus bus;
 
     private ParamExporter paramExporter;
+
+    @Value("${show-energy-uq-summary:false}")
+    private boolean showEnergyUQ = false;
 
     // TODO: Break this up into components so this isn't so incredibly huge.
     protected AbstractMeasurementController(final SpectraClient spectraClient, final ParameterClient paramClient, final EventClient referenceEventClient, final WaveformClient waveformClient,
@@ -458,36 +472,40 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         sdPlot.attachToDisplayNode(sdPlotPane);
 
         energyVsMomentPlot = plotFactory.basicPlot();
-        energyVsMomentPlot.getTitle().setText("Energy vs Moment");
+        energyVsMomentPlot.getTitle().setText("Energy/Moment vs Moment");
         energyVsMomentPlot.getTitle().setFontSize(16);
-        energyVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "Total Observed Energy (log J)"), plotFactory.axis(Axis.Type.Y, "log10 Mo (N-m)"));
-        Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
+        energyVsMomentPlot.getTitle().setYOffset(0.92);
+        energyVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "log10 Mo (N-m)"), plotFactory.axis(Axis.Type.Y, "Energy (log J)/log10 Mo (N-m)"));
+
+        Axis rightAxis = new BasicAxis(Axis.Type.X_TOP, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         energyVsMomentPlot.addAxes(rightAxis);
         energyVsMomentPlot.showLegend(false);
-        energyVsMomentPlot.setMargin(30, 40, 50, 50);
+        energyVsMomentPlot.setMargin(70, 50, 50, 50);
         energyVsMomentPlot.attachToDisplayNode(energyVsMomentPane);
 
         apparentStressVsMomentPlot = plotFactory.basicPlot();
         apparentStressVsMomentPlot.getTitle().setText("Apparent Stress vs Moment");
         apparentStressVsMomentPlot.getTitle().setFontSize(16);
-        apparentStressVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "App. Stress (Mpa)"), plotFactory.axis(Axis.Type.Y, "log10 Mo (N-m)"));
-        rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
+        apparentStressVsMomentPlot.getTitle().setYOffset(0.92);
+        apparentStressVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "log10 Mo (N-m)"), plotFactory.axis(Axis.Type.LOG_Y, "App. Stress (MPa)"));
+        apparentStressVsMomentPlot.setAxisLimits(new AxisLimits(Axis.Type.LOG_Y, Math.log10(0.01), Math.log10(100.0)));
+        rightAxis = new BasicAxis(Axis.Type.X_TOP, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         apparentStressVsMomentPlot.addAxes(rightAxis);
         apparentStressVsMomentPlot.showLegend(false);
-        apparentStressVsMomentPlot.setMargin(30, 40, 50, 50);
+        apparentStressVsMomentPlot.setMargin(70, 40, 50, 50);
         apparentStressVsMomentPlot.attachToDisplayNode(apparentStressVsMomentPane);
 
         cornerFreqVsMomentPlot = plotFactory.basicPlot();
-        cornerFreqVsMomentPlot.getTitle().setText("Corner Frequency vs Moment");
+        cornerFreqVsMomentPlot.getTitle().setText("Moment vs Corner Frequency");
         cornerFreqVsMomentPlot.getTitle().setFontSize(16);
         cornerFreqVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Corner Freq (Hz)"), plotFactory.axis(Axis.Type.Y, "log10 Mo (N-m)"));
         rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
         cornerFreqVsMomentPlot.addAxes(rightAxis);
-        cornerFreqVsMomentPlot.showLegend(false);
-        cornerFreqVsMomentPlot.setMargin(30, 40, 50, 50);
+        cornerFreqVsMomentPlot.showLegend(true);
+        cornerFreqVsMomentPlot.setMargin(30, 50, 50, 50);
         cornerFreqVsMomentPlot.attachToDisplayNode(cornerFreqVsMomentPane);
 
         evidCombo.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -629,6 +647,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 final Event event = filteredMeasurements.get(0).getWaveform().getEvent();
                 String date = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant());
                 String jDay = Integer.toString(new TimeT(event.getOriginTime()).getJdate()).substring(4);
+                summaryValues.add(new Pair<>("Evid", event.getEventId()));
                 summaryValues.add(new Pair<>("Date", String.format("%s (%s)", date, jDay)));
                 summaryValues.add(new Pair<>("Origin Time", DateTimeFormatter.ISO_TIME.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant())));
                 summaryValues.add(new Pair<>("Latitude", dfmt4.format(event.getLatitude())));
@@ -644,57 +663,77 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 filteredMeasurements = Collections.emptyList();
             }
 
-            final Spectra fitSpectra = fittingSpectra.get(0);
-            summaryValues.add(
-                    new Pair<>("Mw (Model Fit)",
-                               dfmt2.format(
-                                       fitSpectra.getMw()) + " [" + dfmt2.format(mwDetails.getMw2Min() - fitSpectra.getMw()) + ", " + dfmt2.format(mwDetails.getMw2Max() - fitSpectra.getMw()) + "]"));
-
-            if (fitSpectra.getApparentStress() > 0.0) {
+            if (mwDetails.getEventId() != null) {
+                final Spectra fitSpectra = fittingSpectra.get(0);
                 summaryValues.add(
-                        new Pair<>("Apparent Stress (Model Fit)",
-                                   dfmt2.format(fitSpectra.getApparentStress())
-                                           + " MPa ["
-                                           + dfmt2.format(mwDetails.getApparentStress2Min() - fitSpectra.getApparentStress())
+                        new Pair<>("Mw (Model Fit)",
+                                   dfmt2.format(fitSpectra.getMw())
+                                           + " ["
+                                           + dfmt2.format(mwDetails.getMw2Min() - fitSpectra.getMw())
                                            + ", "
-                                           + dfmt2.format(mwDetails.getApparentStress2Max() - fitSpectra.getApparentStress())
+                                           + dfmt2.format(mwDetails.getMw2Max() - fitSpectra.getMw())
                                            + "]"));
+
+                if (fitSpectra.getApparentStress() > 0.0) {
+                    summaryValues.add(
+                            new Pair<>("Apparent Stress (Model Fit)",
+                                       dfmt2.format(fitSpectra.getApparentStress())
+                                               + " MPa ["
+                                               + dfmt2.format(mwDetails.getApparentStress2Min() - fitSpectra.getApparentStress())
+                                               + ", "
+                                               + dfmt2.format(mwDetails.getApparentStress2Max() - fitSpectra.getApparentStress())
+                                               + "]"));
+                }
+
+                summaryValues.add(
+                        new Pair<>("Energy (Model Fit)",
+                                   dfmt2.format(fitSpectra.getLogTotalEnergyMDAC())
+                                           + " ["
+                                           + dfmt2.format(mwDetails.getLogTotalEnergyMDAC2Min() - fitSpectra.getLogTotalEnergyMDAC())
+                                           + ", "
+                                           + dfmt2.format(mwDetails.getLogTotalEnergyMDAC2Max() - fitSpectra.getLogTotalEnergyMDAC())
+                                           + "] log J"));
+
+                if (showEnergyUQ) {
+
+                    summaryValues.add(
+                            new Pair<>("Total Energy",
+                                       dfmt2.format(fitSpectra.getLogTotalEnergy())
+                                               + " ["
+                                               + dfmt2.format(mwDetails.getLogTotalEnergy2Min() - fitSpectra.getLogTotalEnergy())
+                                               + ", "
+                                               + dfmt2.format(mwDetails.getLogTotalEnergy2Max() - fitSpectra.getLogTotalEnergy())
+                                               + "] log J"));
+
+                    summaryValues.add(
+                            new Pair<>("Me (Total Energy)",
+                                       dfmt2.format(mwDetails.getMe())
+                                               + " ["
+                                               + dfmt2.format(mwDetails.getMe2Min() - mwDetails.getMe())
+                                               + ", "
+                                               + dfmt2.format(mwDetails.getMe2Max() - mwDetails.getMe())
+                                               + "]"));
+
+                    summaryValues.add(
+                            new Pair<>("Observed Apparent Stress",
+                                       dfmt2.format(fitSpectra.getObsAppStress())
+                                               + " MPa ["
+                                               + dfmt2.format(mwDetails.getObsAppStress2Min() - fitSpectra.getObsAppStress())
+                                               + ", "
+                                               + dfmt2.format(mwDetails.getObsAppStress2Max() - fitSpectra.getObsAppStress())
+                                               + "]"));
+                } else {
+                    summaryValues.add(new Pair<>("Total Energy", dfmt2.format(fitSpectra.getLogTotalEnergy()) + " log J"));
+
+                    summaryValues.add(new Pair<>("Me (Total Energy)", dfmt2.format(mwDetails.getMe())));
+
+                    summaryValues.add(new Pair<>("Observed Apparent Stress", dfmt2.format(fitSpectra.getObsAppStress()) + " MPa"));
+                }
+
+                summaryValues.add(new Pair<>("Observed / Total Energy", dfmt2.format(100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy()))) + " %"));
+                summaryValues.add(
+                        new Pair<>("Extrapolated / Total Energy", dfmt2.format(100.0 - (100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy())))) + " %"));
             }
-            summaryValues.add(
-                    new Pair<>("Energy (Model Fit)",
-                               dfmt2.format(fitSpectra.getLogTotalEnergyMDAC())
-                                       + " ["
-                                       + dfmt2.format(mwDetails.getLogTotalEnergyMDAC2Min() - fitSpectra.getLogTotalEnergyMDAC())
-                                       + ", "
-                                       + dfmt2.format(mwDetails.getLogTotalEnergyMDAC2Max() - fitSpectra.getLogTotalEnergyMDAC())
-                                       + "] log J"));
-
-            summaryValues.add(
-                    new Pair<>("Total Energy",
-                               dfmt2.format(fitSpectra.getLogTotalEnergy())
-                                       + " ["
-                                       + dfmt2.format(mwDetails.getLogTotalEnergy2Min() - fitSpectra.getLogTotalEnergy())
-                                       + ", "
-                                       + dfmt2.format(mwDetails.getLogTotalEnergy2Max() - fitSpectra.getLogTotalEnergy())
-                                       + "] log J"));
-
-            summaryValues.add(
-                    new Pair<>("Me (Total Energy)",
-                               dfmt2.format(
-                                       mwDetails.getMe()) + " [" + dfmt2.format(mwDetails.getMe2Min() - mwDetails.getMe()) + ", " + dfmt2.format(mwDetails.getMe2Max() - mwDetails.getMe()) + "]"));
-
-            summaryValues.add(
-                    new Pair<>("Observed Apparent Stress",
-                               dfmt2.format(fitSpectra.getObsAppStress())
-                                       + " MPa ["
-                                       + dfmt2.format(mwDetails.getObsAppStress2Min() - fitSpectra.getObsAppStress())
-                                       + ", "
-                                       + dfmt2.format(mwDetails.getObsAppStress2Max() - fitSpectra.getObsAppStress())
-                                       + "]"));
-
-            summaryValues.add(new Pair<>("Observed / Total Energy", dfmt2.format(100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy()))) + " %"));
-            summaryValues.add(
-                    new Pair<>("Extrapolated / Total Energy", dfmt2.format(100.0 - (100.0 * (Math.pow(10, fitSpectra.getObsEnergy()) / Math.pow(10, fitSpectra.getLogTotalEnergy())))) + " %"));
 
             if (referenceSpectra != null && SPECTRA_TYPES.REF.equals(referenceSpectra.getType())) {
                 summaryValues.add(new Pair<>("Reference Mw", dfmt2.format(referenceSpectra.getMw())));
@@ -710,7 +749,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 }
             }
 
-            if (mwDetails != null) {
+            if (mwDetails != null && mwDetails.getEventId() != null) {
                 summaryValues.add(null);
                 summaryValues.add(new Pair<>("Iterations", Integer.toString(mwDetails.getIterations())));
                 summaryValues.add(new Pair<>("Data Count", Integer.toString(mwDetails.getDataCount())));
@@ -871,8 +910,8 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
                     double minMw = 10.0;
                     double maxMw = 0.0;
-                    double minEnergy = 10.0;
-                    double maxEnergy = 0.0;
+                    double minEnergy = -7;
+                    double maxEnergy = -1;
                     double minStress = 0.01;
                     double maxStress = 100.0;
                     for (final MeasuredMwDetails ev : evs) {
@@ -890,21 +929,24 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                             double m0 = (1.5 * mw) + 9.1;
                             if (ev.getApparentStressInMpa() != null && ev.getApparentStressInMpa() != 0.0) {
                                 apparentStressVsMomentPlot.addPlotObject(
-                                        plotFactory.createSymbol(SymbolStyles.CIRCLE, "", ev.getApparentStressInMpa(), m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
+                                        plotFactory.createSymbol(SymbolStyles.CIRCLE, "", m0, ev.getApparentStressInMpa(), Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
                             }
                             if (ev.getCornerFreq() != null && ev.getCornerFreq() != 0.0) {
-                                cornerFreqVsMomentPlot.addPlotObject(
-                                        plotFactory.createSymbol(SymbolStyles.CIRCLE, "", ev.getCornerFreq(), m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
+                                Symbol symbol = plotFactory.createSymbol(SymbolStyles.CIRCLE, "Data", ev.getCornerFreq(), m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false);
+                                symbol.showInLegend(false);
+                                cornerFreqVsMomentPlot.addPlotObject(symbol);
                             }
                             if (ev.getTotalEnergy() != null && ev.getTotalEnergy() != 0.0) {
-                                final double energy = ev.getTotalEnergy();
+                                final double energy = ev.getTotalEnergy() - m0;
                                 if (energy < minEnergy) {
                                     minEnergy = energy;
                                 }
                                 if (energy > maxEnergy) {
                                     maxEnergy = energy;
                                 }
-                                energyVsMomentPlot.addPlotObject(plotFactory.createSymbol(SymbolStyles.CIRCLE, "", energy, m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
+                                Symbol symbol = plotFactory.createSymbol(SymbolStyles.CIRCLE, "Data", m0, energy, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false);
+                                symbol.showInLegend(false);
+                                energyVsMomentPlot.addPlotObject(symbol);
                             }
 
                             if (ev.getRefMw() != null && ev.getRefMw() != 0.0) {
@@ -994,7 +1036,19 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                         minEnergy = minEnergy - Math.abs(minEnergy * .1);
                     }
 
-                    energyVsMomentPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minEnergy, maxEnergy));
+                    energyVsMomentPlot.setAxisLimits(new AxisLimits(Axis.Type.Y, minEnergy, maxEnergy));
+
+                    double minM0 = (1.5 * minMw) + 9.1;
+                    double maxM0 = (1.5 * maxMw) + 9.1;
+                    double C = 5 * Math.pow(10, -5);
+                    Line energyConstantLine = plotFactory.line(new double[] { minM0, maxM0 }, new double[] { Math.log10(C), Math.log10(C) }, Color.BLACK, LineStyles.SOLID, 2);
+                    energyConstantLine.setName("1.5 MPa");
+                    energyConstantLine.showInLegend(true);
+                    energyVsMomentPlot.addPlotObject(energyConstantLine);
+
+                    energyConstantLine = plotFactory.line(new double[] { minM0, maxM0 }, new double[] { Math.log10(C) - 1.0, Math.log10(C) - 1.0 }, Color.BLACK, LineStyles.DASH, 2);
+                    energyConstantLine.setName("0.15 MPa");
+                    energyVsMomentPlot.addPlotObject(energyConstantLine);
 
                     maxStress = maxStress + Math.abs(maxStress * .1);
                     if (minStress > maxStress) {
@@ -1025,6 +1079,35 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
                     mwPlot.replot();
                     stressPlot.replot();
+
+                    //f0=4.9x10^6*vs*(Drop/M0)^1/3
+
+                    Line stressConstantLine = createStressConstantLine(minM0, maxM0, 0.1, LineStyles.DASH);
+                    stressConstantLine.setName("0.1 MPa");
+                    stressConstantLine.showInLegend(true);
+                    cornerFreqVsMomentPlot.addPlotObject(stressConstantLine);
+
+                    stressConstantLine = plotFactory.line(new double[] { minM0, maxM0 }, new double[] { 0.1, 0.1 }, Color.BLACK, LineStyles.DASH, 2);
+                    stressConstantLine.setName("0.1 MPa");
+                    apparentStressVsMomentPlot.addPlotObject(stressConstantLine);
+
+                    stressConstantLine = createStressConstantLine(minM0, maxM0, 1.0, LineStyles.SOLID);
+                    stressConstantLine.setName("1.0 MPa");
+                    stressConstantLine.showInLegend(true);
+                    cornerFreqVsMomentPlot.addPlotObject(stressConstantLine);
+
+                    stressConstantLine = plotFactory.line(new double[] { minM0, maxM0 }, new double[] { 1.0, 1.0 }, Color.BLACK, LineStyles.SOLID, 2);
+                    stressConstantLine.setName("1.0 MPa");
+                    apparentStressVsMomentPlot.addPlotObject(stressConstantLine);
+
+                    stressConstantLine = createStressConstantLine(minM0, maxM0, 10.0, LineStyles.DOT);
+                    stressConstantLine.setName("10.0 MPa");
+                    stressConstantLine.showInLegend(true);
+                    cornerFreqVsMomentPlot.addPlotObject(stressConstantLine);
+
+                    stressConstantLine = plotFactory.line(new double[] { minM0, maxM0 }, new double[] { 10.0, 10.0 }, Color.BLACK, LineStyles.DOT, 2);
+                    stressConstantLine.setName("10.0 MPa");
+                    apparentStressVsMomentPlot.addPlotObject(stressConstantLine);
 
                     apparentStressVsMomentPlot.replot();
                     cornerFreqVsMomentPlot.replot();
@@ -1119,7 +1202,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                         minCenterFreq = minCenterFreq - 1.0;
                     }
 
-                    sdPlot.setAxisLimits(new AxisLimits(Axis.Type.X, minCenterFreq, maxCenterFreq), new AxisLimits(Axis.Type.Y, minSite, maxSite));
+                    sdPlot.setAxisLimits(new AxisLimits(Axis.Type.LOG_X, Math.log10(minCenterFreq), Math.log10(maxCenterFreq)), new AxisLimits(Axis.Type.Y, minSite, maxSite));
                     sdPlot.replot();
                 });
             }
@@ -1129,6 +1212,20 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             log.warn("Interrupt during re-plotting of controller", ex);
             Thread.currentThread().interrupt();
         }
+    }
+
+    private Line createStressConstantLine(double minM0, double maxM0, double stressMpa, LineStyles style) {
+        double drop = 4.3 * stressMpa;
+        double vs = 3.2;
+        double f0const = (4.9 * 2.5) * Math.pow(10, 6) * vs;
+        //Formula is in dyne so adding in + 7 to get back there from n-m
+        Line stressConstantLine = plotFactory.line(
+                new double[] { f0const * Math.pow(drop / Math.pow(10, minM0 + 7.0), 1.0 / 3.0), f0const * Math.pow(drop / Math.pow(10, maxM0 + 7.0), 1.0 / 3.0) },
+                    new double[] { minM0, maxM0 },
+                    Color.BLACK,
+                    style,
+                    2);
+        return stressConstantLine;
     }
 
     protected void preloadData() {
@@ -1319,6 +1416,34 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             }
         }
         refreshView();
+    }
+
+    @Subscribe
+    private void listener(final SpectraMeasurementChangeEvent changeEvent) {
+        final List<Long> nonNull = changeEvent.getIds().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        synchronized (spectralMeasurements) {
+            final Map<Long, SpectraMeasurement> activeMeasurements = spectralMeasurements.stream().collect(Collectors.toMap(x -> x.getWaveform().getId(), Function.identity()));
+            final List<SpectraMeasurement> results = spectraClient.getMeasuredSpectraMetadataByIds(nonNull).collect(Collectors.toList()).block(Duration.ofSeconds(10l));
+            if (results != null) {
+                if (changeEvent.isAddOrUpdate()) {
+                    results.forEach(md -> {
+                        final SpectraMeasurement measurement = activeMeasurements.get(md.getWaveform().getId());
+                        if (measurement != null) {
+                            measurement.setPathAndSiteCorrected(md.getPathAndSiteCorrected());
+                            measurement.setRawAtMeasurementTime(md.getRawAtMeasurementTime());
+                            measurement.setRawAtStart(md.getRawAtStart());
+                        }
+                    });
+                } else if (changeEvent.isDelete()) {
+                    results.forEach(md -> {
+                        final SpectraMeasurement measurement = activeMeasurements.remove(md.getWaveform().getId());
+                        if (measurement != null) {
+                            spectralMeasurements.remove(measurement);
+                        }
+                    });
+                }
+            }
+        }
     }
 
     protected void handlePlotObjectClicked(final PlotObjectClick poc, final Function<Point2D, SpectraMeasurement> measurementFunc) {

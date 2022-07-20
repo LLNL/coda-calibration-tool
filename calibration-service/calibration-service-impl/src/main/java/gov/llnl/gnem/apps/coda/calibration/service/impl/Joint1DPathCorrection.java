@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -109,6 +110,22 @@ public class Joint1DPathCorrection implements PathCalibrationService {
         this.pathCalibrationMeasurementService = pathCalibrationMeasurementService;
     }
 
+    /**
+     * Measure path corrections using a joint inversion of a 1d model for all
+     * data. Model being used is an Extended Street-Herrmann spreading model
+     * that has a two distance crossovers.
+     *
+     * @param dataByFreqBand
+     *            the data by frequency band
+     * @param frequencyBandParameters
+     *            the shared frequency band parameters
+     * @param velConf
+     *            the velocity configuration
+     * @return the map of new shared frequency band parameters with the inverted
+     *         path parameters populated, binned by frequency band
+     * @throws InterruptedException
+     *             the interrupted exception
+     */
     @Override
     public Map<FrequencyBand, SharedFrequencyBandParameters> measurePathCorrections(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand,
             Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, VelocityConfiguration velConf) throws InterruptedException {
@@ -216,9 +233,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                 }
 
                 double[] sigmaArray = new double[optimizationParams.length];
-                for (int i = 0; i < sigmaArray.length; i++) {
-                    sigmaArray[i] = 0.5;
-                }
+                Arrays.fill(sigmaArray, 0.5);
 
                 // starting residual
                 Double initialResidual = Math.pow(costFunction(freqBandData, dataMap, distanceMap, stationIdxMap, frequencyBand, optimizationParams) / totalDataCount, 2.0);

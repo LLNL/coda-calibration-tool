@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -15,16 +15,25 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl.processing;
 
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.google.common.base.Functions;
+
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
+import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
+import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
+import gov.llnl.gnem.apps.coda.common.service.api.WaveformPickService;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 import llnl.gnem.core.util.TimeT;
@@ -37,16 +46,21 @@ public class MaxVelocityCalculator {
     private static final Logger log = LoggerFactory.getLogger(MaxVelocityCalculator.class);
     private WaveformToTimeSeriesConverter converter;
     private VelocityConfiguration velConf;
+    private SharedFrequencyBandParametersService sfbService;
+    private WaveformPickService pickService;
 
     @Autowired
-    public MaxVelocityCalculator(VelocityConfiguration velConf, WaveformToTimeSeriesConverter converter) {
+    public MaxVelocityCalculator(VelocityConfiguration velConf, WaveformToTimeSeriesConverter converter, SharedFrequencyBandParametersService sfbService, WaveformPickService pickService) {
         this.converter = converter;
         this.velConf = velConf;
+        this.sfbService = sfbService;
+        this.pickService = pickService;
     }
 
-    public Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
+    public List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
         return computeMaximumVelocity(
                 waveforms,
+                    getFrequencyBandMap(),
                     velConf.getGroupVelocity1InKmsGtDistance(),
                     velConf.getGroupVelocity2InKmsGtDistance(),
                     velConf.getGroupVelocity1InKmsLtDistance(),
@@ -54,10 +68,11 @@ public class MaxVelocityCalculator {
                     velConf.getDistanceThresholdInKm());
     }
 
-    public Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, VelocityConfiguration velocityConfiguration) {
+    public List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, VelocityConfiguration velocityConfiguration) {
         if (velocityConfiguration != null) {
             return computeMaximumVelocity(
                     waveforms,
+                        getFrequencyBandMap(),
                         velocityConfiguration.getGroupVelocity1InKmsGtDistance(),
                         velocityConfiguration.getGroupVelocity2InKmsGtDistance(),
                         velocityConfiguration.getGroupVelocity1InKmsLtDistance(),
@@ -68,12 +83,23 @@ public class MaxVelocityCalculator {
         }
     }
 
-    private Stream<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, double gv1GtDistanceThreshold, double gv2GtDistanceThreshold, double gv1LtDistanceThreshold,
-            double gv2LtDistanceThreshold, double thresholdInKm) {
+    private Map<FrequencyBand, SharedFrequencyBandParameters> getFrequencyBandMap() {
+        return sfbService.findAll().stream().collect(Collectors.toMap(sfb -> new FrequencyBand(sfb.getLowFrequency(), sfb.getHighFrequency()), Functions.identity(), (arg0, arg1) -> arg0));
+    }
+
+    private List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBands, double gv1GtDistanceThreshold,
+            double gv2GtDistanceThreshold, double gv1LtDistanceThreshold, double gv2LtDistanceThreshold, double thresholdInKm) {
         return waveforms.stream().parallel().map(rawWaveform -> {
             if (Thread.currentThread().isInterrupted()) {
                 return null;
             }
+
+            SharedFrequencyBandParameters band = frequencyBands.get(new FrequencyBand(rawWaveform.getLowFrequency(), rawWaveform.getHighFrequency()));
+            double codaOffset = 0d;
+            if (band != null) {
+                codaOffset = band.getCodaStartOffset();
+            }
+
             TimeSeries waveform = converter.convert(rawWaveform);
             double distance = EModel.getDistanceWGS84(
                     rawWaveform.getEvent().getLatitude(),
@@ -113,10 +139,33 @@ public class MaxVelocityCalculator {
 
                 // the envelope noise is in log10 units.
                 double snrPeak = peakS[1] - noise;
-                
+
+                //TODO: Check for user set max time instead if that exists
                 //Attach the measurement to the waveform for later
                 rawWaveform.setMaxVelTime(origintime.add(peakS[0]).getDate());
-                
+                rawWaveform.setCodaStartTime(origintime.add(peakS[0] + codaOffset).getDate());
+
+                boolean hasUserStartPick = false;
+                if (rawWaveform.getAssociatedPicks() != null) {
+                    for (WaveformPick pick : rawWaveform.getAssociatedPicks()) {
+                        if (PICK_TYPES.UCS.getPhase().equals(pick.getPickName())) {
+                            hasUserStartPick = true;
+                            break;
+                        }
+                    }
+                    //Drop old CS picks if there are any
+                    rawWaveform.setAssociatedPicks(rawWaveform.getAssociatedPicks().stream().filter(p -> !PICK_TYPES.CS.getPhase().equals(p.getPickName())).collect(Collectors.toList()));
+
+                    if (!hasUserStartPick) {
+                        WaveformPick startPick = new WaveformPick().setPickType(PICK_TYPES.CS.name())
+                                                                   .setPickName(PICK_TYPES.CS.getPhase())
+                                                                   .setWaveform(rawWaveform)
+                                                                   .setPickTimeSecFromOrigin(peakS[0] + codaOffset);
+                        startPick = pickService.save(startPick);
+                        rawWaveform.getAssociatedPicks().add(startPick);
+                    }
+                }
+
                 return new PeakVelocityMeasurement().setWaveform(rawWaveform)
                                                     .setNoiseStartSecondsFromOrigin(0d)
                                                     .setNoiseEndSecondsFromOrigin(20d)
@@ -130,6 +179,6 @@ public class MaxVelocityCalculator {
                 log.info("Unable to compute maximum velocity, this stack will be skipped. {} {}.", ill.getMessage(), rawWaveform);
                 return new PeakVelocityMeasurement();
             }
-        }).filter(measurement -> measurement != null && measurement.getWaveform() != null);
+        }).filter(measurement -> measurement != null && measurement.getWaveform() != null).collect(Collectors.toList());
     }
 }

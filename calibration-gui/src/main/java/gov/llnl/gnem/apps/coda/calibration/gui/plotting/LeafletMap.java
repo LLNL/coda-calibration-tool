@@ -125,40 +125,42 @@ public class LeafletMap {
             reload.setOnAction(e -> webView.getEngine().reload());
 
             webView.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-                if (MouseButton.SECONDARY == event.getButton()) {
-                    final WebEngine engine = webView.getEngine();
-                    contextMenu.getItems().clear();
-                    final Object activeIconId = engine.executeScript("getActiveIcon();");
-                    final Object activePolygonId = engine.executeScript("getActivePolygon();");
-                    if (activeIconId instanceof String) {
-                        icons.stream().filter(icon -> icon.getId().equalsIgnoreCase((String) activeIconId)).findFirst().ifPresent(icon -> {
-                            include.setOnAction(e -> invokeActivationCallbacks(icon, true));
-                            exclude.setOnAction(e -> invokeActivationCallbacks(icon, false));
-                            contextMenu.getItems().addAll(include, exclude);
+                if (mapReady.get()) {
+                    if (MouseButton.SECONDARY == event.getButton()) {
+                        final WebEngine engine = webView.getEngine();
+                        contextMenu.getItems().clear();
+                        final Object activeIconId = engine.executeScript("getActiveIcon();");
+                        final Object activePolygonId = engine.executeScript("getActivePolygon();");
+                        if (activeIconId instanceof String) {
+                            icons.stream().filter(icon -> icon.getId().equalsIgnoreCase((String) activeIconId)).findFirst().ifPresent(icon -> {
+                                include.setOnAction(e -> invokeActivationCallbacks(icon, true));
+                                exclude.setOnAction(e -> invokeActivationCallbacks(icon, false));
+                                contextMenu.getItems().addAll(include, exclude);
+                                contextMenu.show(webView, event.getScreenX(), event.getScreenY());
+                            });
+                        } else if (activePolygonId instanceof Boolean && (boolean) activePolygonId) {
+                            excludeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, false));
+                            includeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, true));
+                            excludeInPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_IN_ICON, false));
+                            includeInPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_IN_ICON, true));
+                            contextMenu.getItems().addAll(excludeOutPolygon, includeOutPolygon, excludeInPolygon, includeInPolygon);
                             contextMenu.show(webView, event.getScreenX(), event.getScreenY());
-                        });
-                    } else if (activePolygonId instanceof Boolean && (boolean) activePolygonId) {
-                        excludeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, false));
-                        includeOutPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_OUT_ICON, true));
-                        excludeInPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_IN_ICON, false));
-                        includeInPolygon.setOnAction(e -> invokeActivationCallbacks(POLYGON_IN_ICON, true));
-                        contextMenu.getItems().addAll(excludeOutPolygon, includeOutPolygon, excludeInPolygon, includeInPolygon);
-                        contextMenu.show(webView, event.getScreenX(), event.getScreenY());
+                        } else {
+                            contextMenu.getItems().addAll(reload);
+                            contextMenu.show(webView, event.getScreenX(), event.getScreenY());
+                        }
                     } else {
-                        contextMenu.getItems().addAll(reload);
-                        contextMenu.show(webView, event.getScreenX(), event.getScreenY());
+                        contextMenu.hide();
                     }
-                } else {
-                    contextMenu.hide();
                 }
             });
             webView.getEngine().getLoadWorker().stateProperty().addListener((obs, o, n) -> {
                 if (n == Worker.State.SUCCEEDED) {
-                    layers.forEach(this::addLayerToMap);
                     final JSObject wind = (JSObject) webView.getEngine().executeScript("window");
                     wind.setMember("iconCallbackHandler", iconCallbackHandler);
                     wind.setMember("polygonChangeCallbackHandler", polygonChangeCallbackHandler);
                     mapReady.set(true);
+                    layers.forEach(this::addLayerToMap);
                     return;
                 }
             });
@@ -222,9 +224,11 @@ public class LeafletMap {
     }
 
     public void addLayerToMap(final WMSLayerDescriptor layer) {
-        Platform.runLater(() -> {
-            webView.getEngine().executeScript(leaflet2js.createJsWmsRepresentation(layer));
-        });
+        if (mapReady.get()) {
+            Platform.runLater(() -> {
+                webView.getEngine().executeScript(leaflet2js.createJsWmsRepresentation(layer));
+            });
+        }
     }
 
     public boolean addIcon(final Icon icon) {
@@ -267,14 +271,18 @@ public class LeafletMap {
                     callbackMap.put(icon.getId(), icon.getIconSelectionCallback());
                 }
             }
-            webView.getEngine().executeScript(sb.toString());
+            if (mapReady.get()) {
+                webView.getEngine().executeScript(sb.toString());
+            }
         });
     }
 
     private void removeIconsFromMap(final Collection<? extends Icon> icons) {
-        Platform.runLater(() -> icons.forEach(icon -> {
-            webView.getEngine().executeScript("removeIcon(\"" + icon.getId() + "\");");
-        }));
+        if (mapReady.get()) {
+            Platform.runLater(() -> icons.forEach(icon -> {
+                webView.getEngine().executeScript("removeIcon(\"" + icon.getId() + "\");");
+            }));
+        }
     }
 
     public void addShape(final GeoShape shape) {
@@ -298,18 +306,24 @@ public class LeafletMap {
             for (final GeoShape shape : shapeCollection) {
                 sb.append(leaflet2js.createJsShapeRepresentation(shape));
             }
-            webView.getEngine().executeScript(sb.toString());
+            if (mapReady.get()) {
+                webView.getEngine().executeScript(sb.toString());
+            }
         });
     }
 
     public void fitViewToActiveShapes() {
-        Platform.runLater(() -> webView.getEngine().executeScript("fitViewToActiveShapes();"));
+        if (mapReady.get()) {
+            Platform.runLater(() -> webView.getEngine().executeScript("fitViewToActiveShapes();"));
+        }
     }
 
     private void removeShapesFromMap(final Collection<? extends GeoShape> shapes) {
-        Platform.runLater(() -> shapes.forEach(shape -> {
-            webView.getEngine().executeScript("removeShape(\"" + shape.getId() + "\");");
-        }));
+        if (mapReady.get()) {
+            Platform.runLater(() -> shapes.forEach(shape -> {
+                webView.getEngine().executeScript("removeShape(\"" + shape.getId() + "\");");
+            }));
+        }
     }
 
     public WebView getWebView() {
@@ -317,45 +331,65 @@ public class LeafletMap {
     }
 
     public String getSvgLayer() {
-        return (String) webView.getEngine().executeScript("getSvgLayer();");
+        String svg = "";
+        if (mapReady.get()) {
+            svg = (String) webView.getEngine().executeScript("getSvgLayer();");
+        }
+        return svg;
     }
 
     public void fitToBounds(final GeoBox bounds) {
-        webView.getEngine().executeScript("fitBounds([[" + bounds.getMinY() + "," + bounds.getMinX() + "], [" + bounds.getMaxY() + "," + bounds.getMaxX() + "]]);");
+        if (mapReady.get()) {
+            webView.getEngine().executeScript("fitBounds([[" + bounds.getMinY() + "," + bounds.getMinX() + "], [" + bounds.getMaxY() + "," + bounds.getMaxX() + "]]);");
+        }
     }
 
     public GeoBox getMapBounds() {
-        GeoBox bounds;
-        try {
-            final Double mapXne = (Double) webView.getEngine().executeScript("getMapBoundXne();");
-            final Double mapYne = (Double) webView.getEngine().executeScript("getMapBoundYne();");
-            final Double mapXsw = (Double) webView.getEngine().executeScript("getMapBoundXsw();");
-            final Double mapYsw = (Double) webView.getEngine().executeScript("getMapBoundYsw();");
-            bounds = new GeoBox(mapXne, mapYne, mapXsw, mapYsw);
-        } catch (ClassCastException | NullPointerException e) {
-            bounds = null;
-            log.debug("Problem attempting to get bounds from map : {}", e.getLocalizedMessage(), e);
+        GeoBox bounds = null;
+        if (mapReady.get()) {
+            try {
+                final Double mapXne = (Double) webView.getEngine().executeScript("getMapBoundXne();");
+                final Double mapYne = (Double) webView.getEngine().executeScript("getMapBoundYne();");
+                final Double mapXsw = (Double) webView.getEngine().executeScript("getMapBoundXsw();");
+                final Double mapYsw = (Double) webView.getEngine().executeScript("getMapBoundYsw();");
+                bounds = new GeoBox(mapXne, mapYne, mapXsw, mapYsw);
+            } catch (ClassCastException | NullPointerException e) {
+                bounds = null;
+                log.debug("Problem attempting to get bounds from map : {}", e.getLocalizedMessage(), e);
+            }
         }
         return bounds;
     }
 
     public void setShowOverlay(final boolean showOverlay) {
-        if (showOverlay) {
-            webView.getEngine().executeScript("showOverlay();");
-        } else {
-            webView.getEngine().executeScript("hideOverlay();");
+        if (mapReady.get()) {
+            if (showOverlay) {
+                webView.getEngine().executeScript("showOverlay();");
+            } else {
+                webView.getEngine().executeScript("hideOverlay();");
+            }
         }
     }
 
     public Boolean hasVisibleTileLayers() {
-        return (Boolean) webView.getEngine().executeScript("hasVisibleTiles();");
+        Boolean visibileTiles = Boolean.FALSE;
+        if (mapReady.get()) {
+            visibileTiles = (Boolean) webView.getEngine().executeScript("hasVisibleTiles();");
+        }
+        return visibileTiles;
     }
 
     public String getPolygonGeoJSON() {
-        return (String) webView.getEngine().executeScript("getPolygonGeoJSON();");
+        String geoJSON = "";
+        if (mapReady.get()) {
+            geoJSON = (String) webView.getEngine().executeScript("getPolygonGeoJSON();");
+        }
+        return geoJSON;
     }
 
     public void setPolygonGeoJSON(final String geoJSON) {
-        webView.getEngine().executeScript("setPolygonGeoJSON('" + geoJSON + "');");
+        if (mapReady.get()) {
+            webView.getEngine().executeScript("setPolygonGeoJSON('" + geoJSON + "');");
+        }
     }
 }

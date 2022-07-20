@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoubleUnaryOperator;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,7 +91,7 @@ public class SiteCalibrationServiceImplTest {
 
     @Mock
     private ServiceConfig svcConf;
-    
+
     @Mock
     private SharedFrequencyBandParametersRepository sharedFrequencyBandParametersRepository;
 
@@ -101,8 +102,11 @@ public class SiteCalibrationServiceImplTest {
     protected void setUp() throws Exception {
         Mockito.when(mdac.getCalculateMdacSourceSpectraFunction(Mockito.any(), Mockito.any(), Mockito.anyDouble())).thenReturn(f -> new double[] { 1.0, 1.0, 1.0, 1.0 });
         Mockito.when(mdac.getCalculateMdacAmplitudeForMwFunction(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.any(), Mockito.anyDouble())).thenReturn(f -> Double.valueOf(1.0d));
+        Mockito.when(mdac.getCalculateMdacAmplitudeForMwFunction(Mockito.any(), Mockito.any(), Mockito.anyDouble(), Mockito.any())).thenReturn((DoubleUnaryOperator) operand -> 0);
         Mockito.when(sharedFrequencyBandParametersRepository.findDistinctFrequencyBands()).thenReturn(new ArrayList<FrequencyBand>());
-        
+        Mockito.when(mdacFiService.findFirst()).thenReturn(new MdacParametersFI());
+        Mockito.when(mdacPsService.findMatchingPhase(Mockito.any())).thenReturn(new MdacParametersPS());
+
         SpectraCalculator spectraCalc = new SpectraCalculator(converter, syntheticCodaModel, mdac, mdacFiService, mdacPsService, velConf);
         siteCalibrationServiceImpl.setSpectraCalc(spectraCalc);
         siteCalibrationServiceImpl.setServiceConfig(new ServiceConfig());

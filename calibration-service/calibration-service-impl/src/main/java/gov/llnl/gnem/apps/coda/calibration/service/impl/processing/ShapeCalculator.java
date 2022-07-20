@@ -63,12 +63,12 @@ public class ShapeCalculator {
         // amplitude prediction for that frequency band from the velocity model
 
         measuredShapes = filteredVelocityMeasurements.parallelStream().map(filteredVelocityMeasurement -> {
-            
+
             CalibrationCurveFitter curveFitter = new CalibrationCurveFitter();
             PeakVelocityMeasurement velocityMeasurement = filteredVelocityMeasurement.getKey();
             WaveformPick endPick = filteredVelocityMeasurement.getValue();
-            
-            boolean isAutoPicked = velocityMeasurement.getWaveform().getAssociatedPicks().stream().anyMatch(wp -> wp.getPickName().equalsIgnoreCase(PICK_TYPES.AP.name()));                                                       
+
+            boolean isAutoPicked = velocityMeasurement.getWaveform().getAssociatedPicks().stream().anyMatch(wp -> wp.getPickName().equalsIgnoreCase(PICK_TYPES.AP.name()));
             boolean shouldAutoPick = autoPickingEnabled && isAutoPicked;
 
             FrequencyBand freqBand = new FrequencyBand(velocityMeasurement.getWaveform().getLowFrequency(), velocityMeasurement.getWaveform().getHighFrequency());
@@ -95,7 +95,7 @@ public class ShapeCalculator {
             }
 
             Double timeDifference = maxTimeRaw - travelTimeRaw;
-            TimeT travelTime = originTime.add(maxTimeRaw);
+            TimeT travelTime = originTime.add(travelTimeRaw);
 
             endTime = originTime.add(endPick.getPickTimeSecFromOrigin());
 
@@ -104,7 +104,7 @@ public class ShapeCalculator {
                 return null;
             }
 
-            //TOOD: Make synthetic creation/fit part of the optimization pass
+            //TODO: Make synthetic creation/fit part of the optimization pass
             TimeSeries seis = converter.convert(velocityMeasurement.getWaveform());
             try {
                 seis.cut(travelTime, endTime);
@@ -114,7 +114,7 @@ public class ShapeCalculator {
                 if (constraints != null && constraints.getFittingPointCount() > 0 && seis.getNsamp() > constraints.getFittingPointCount()) {
                     double samprate = (constraints.getFittingPointCount() / (double) seis.getNsamp()) * seis.getSamprate();
                     seis.interpolate(samprate);
-                }                
+                }
 
                 if (frequencyBandParameter.getMinLength() > 0 && seis.getLengthInSeconds() < frequencyBandParameter.getMinLength()) {
                     log.trace(
@@ -138,7 +138,7 @@ public class ShapeCalculator {
                     //Ensure pick is persisted back to waveform
                     double end = curve.getEndTime();
                     if (end >= 0d) {
-                        endPick.setPickTimeSecFromOrigin((float) (end + seis.getTime().subtractD(originTime)));
+                        endPick.setPickTimeSecFromOrigin(end + seis.getTime().subtractD(originTime));
                     }
                 }
 

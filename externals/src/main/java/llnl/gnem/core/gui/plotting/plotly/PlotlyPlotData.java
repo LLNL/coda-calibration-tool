@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2022, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 *
@@ -37,6 +37,8 @@ public class PlotlyPlotData implements Serializable {
     private boolean showLegend;
     private boolean showGroupVelocity;
     private boolean showWindowLine;
+    private boolean showCodaStartLine;
+    private boolean useHorizontalBottomLegend;
 
     public PlotlyPlotData(final PlotlyTrace defaultTraceStyle, final Color backgroundColor, final Title plotTitle) {
         this.defaultTraceStyle = defaultTraceStyle;
@@ -116,11 +118,27 @@ public class PlotlyPlotData implements Serializable {
         this.showGroupVelocity = showGroupVelocity;
     }
 
+    public boolean shouldShowCodaStartLine() {
+        return showCodaStartLine;
+    }
+
+    public void setShowCodaStartLine(boolean showCodaStartLine) {
+        this.showCodaStartLine = showCodaStartLine;
+    }
+
     public boolean shouldShowWindowLine() {
         return showWindowLine;
     }
 
     public void setShowWindowLines(final boolean showWindowLine) {
         this.showWindowLine = showWindowLine;
+    }
+
+    public void setUseHorizontalBottomLegend(boolean useHorizontalBottomLegend) {
+        this.useHorizontalBottomLegend = useHorizontalBottomLegend;
+    }
+
+    public boolean useHorizontalBottomLegend() {
+        return useHorizontalBottomLegend;
     }
 }

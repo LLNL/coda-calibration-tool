@@ -47,6 +47,22 @@ public class AutopickingServiceImpl implements AutopickingService {
         this.endTimePicker = endTimePicker;
     }
 
+    /**
+     * Attempt to automatically pick velocity measured waveforms for the
+     * coda-end measurement (f-pick).
+     *
+     * The auto-picker will only add an f-pick to a waveform if no f-pick
+     * already exists or the waveform as an 'ap' pick that indicates an
+     * auto-picked waveform that has not been human reviewed
+     *
+     * @param velocityMeasurements
+     *            the velocity measurements
+     * @param frequencyBandParameters
+     *            the shared frequency band parameters, used for min/max times,
+     *            SNR thresholds, etc
+     * @return the list of peak velocity measurements with newly made auto-picks
+     *         attached
+     */
     @Override
     public List<PeakVelocityMeasurement> autoPickVelocityMeasuredWaveforms(final List<PeakVelocityMeasurement> velocityMeasurements,
             final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters) {
@@ -65,8 +81,7 @@ public class AutopickingServiceImpl implements AutopickingService {
 
             if ((!endPick.isPresent() || pick.isPresent()) && params != null) {
                 log.trace("Starting autopick");
-                vel.getWaveform().getAssociatedPicks().forEach(p -> p.setWaveform(null));
-                vel.getWaveform().getAssociatedPicks().clear();
+                vel.getWaveform().getAssociatedPicks().removeIf(p -> PICK_TYPES.AP.name().equals(p.getPickType()) || PICK_TYPES.F.name().equals(p.getPickType()));
 
                 double minlength = params.getMinLength();
                 double maxlength = params.getMaxLength();
@@ -105,15 +120,12 @@ public class AutopickingServiceImpl implements AutopickingService {
                     stopTime = maxlength;
                 }
 
-                WaveformPick autoPick = new WaveformPick().setPickType(PICK_TYPES.F.name())
-                                                          .setPickName(PICK_TYPES.F.getPhase())
-                                                          .setWaveform(vel.getWaveform())
-                                                          .setPickTimeSecFromOrigin((float) stopTime);
+                WaveformPick autoPick = new WaveformPick().setPickType(PICK_TYPES.F.name()).setPickName(PICK_TYPES.F.getPhase()).setWaveform(vel.getWaveform()).setPickTimeSecFromOrigin(stopTime);
 
                 WaveformPick startPick = new WaveformPick().setPickType(PICK_TYPES.AP.name())
                                                            .setPickName(PICK_TYPES.AP.getPhase())
                                                            .setWaveform(vel.getWaveform())
-                                                           .setPickTimeSecFromOrigin((float) startTime.subtractD(originTime));
+                                                           .setPickTimeSecFromOrigin(startTime.subtractD(originTime));
 
                 vel.getWaveform().getAssociatedPicks().add(autoPick);
                 vel.getWaveform().getAssociatedPicks().add(startPick);

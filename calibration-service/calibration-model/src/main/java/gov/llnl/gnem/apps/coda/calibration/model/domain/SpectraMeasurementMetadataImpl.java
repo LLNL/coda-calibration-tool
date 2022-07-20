@@ -29,7 +29,6 @@ public class SpectraMeasurementMetadataImpl implements SpectraMeasurementMetadat
     private double rmsFit;
 
     public SpectraMeasurementMetadataImpl() {
-        super();
     }
 
     public SpectraMeasurementMetadataImpl(SpectraMeasurement meas) {
@@ -95,52 +94,62 @@ public class SpectraMeasurementMetadataImpl implements SpectraMeasurementMetadat
         return rmsFit;
     }
 
+    @Override
     public SpectraMeasurementMetadataImpl setId(Long id) {
         this.id = id;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setVersion(Integer version) {
+    @Override
+    public SpectraMeasurementMetadata setVersion(Integer version) {
         this.version = version;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setWaveform(WaveformMetadata waveform) {
+    @Override
+    public SpectraMeasurementMetadata setWaveform(WaveformMetadata waveform) {
         this.waveform = waveform;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setRawAtStart(double rawAtStart) {
+    @Override
+    public SpectraMeasurementMetadata setRawAtStart(double rawAtStart) {
         this.rawAtStart = rawAtStart;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setRawAtMeasurementTime(double rawAtMeasurementTime) {
+    @Override
+    public SpectraMeasurementMetadata setRawAtMeasurementTime(double rawAtMeasurementTime) {
         this.rawAtMeasurementTime = rawAtMeasurementTime;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setPathCorrected(double pathCorrected) {
+    @Override
+    public SpectraMeasurementMetadata setPathCorrected(double pathCorrected) {
         this.pathCorrected = pathCorrected;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setPathAndSiteCorrected(double pathAndSiteCorrected) {
+    @Override
+    public SpectraMeasurementMetadata setPathAndSiteCorrected(double pathAndSiteCorrected) {
         this.pathAndSiteCorrected = pathAndSiteCorrected;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setStartCutSec(double startCutSec) {
+    @Override
+    public SpectraMeasurementMetadata setStartCutSec(double startCutSec) {
         this.startCutSec = startCutSec;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setEndCutSec(double endCutSec) {
+    @Override
+    public SpectraMeasurementMetadata setEndCutSec(double endCutSec) {
         this.endCutSec = endCutSec;
         return this;
     }
 
-    public SpectraMeasurementMetadataImpl setRmsFit(double rmsFit) {
+    @Override
+    public SpectraMeasurementMetadata setRmsFit(double rmsFit) {
         this.rmsFit = rmsFit;
         return this;
     }

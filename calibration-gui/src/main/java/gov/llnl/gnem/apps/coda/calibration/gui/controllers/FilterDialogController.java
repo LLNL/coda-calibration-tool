@@ -49,6 +49,18 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+/***
+ * This is a front end GUI controller used to display and manage the filter
+ * dialog that users will see when filtering table views. Used as a helper class
+ * for the DataFilterController, it handles the display and actions of the
+ * filter dialog.
+ *
+ * @see DataFilterController
+ *
+ * @author downie4
+ *
+ */
+
 @Component
 public class FilterDialogController {
 
@@ -83,6 +95,9 @@ public class FilterDialogController {
 
     private boolean useAndPredicate;
 
+    /***
+     * Instantiate the FilterDialogController.
+     */
     public FilterDialogController() {
         this.comboLists = new ArrayList<>();
         this.slidersList = new ArrayList<>();
@@ -141,18 +156,39 @@ public class FilterDialogController {
         });
     }
 
+    /***
+     * @return True if the user has selected the 'And' filter in the GUI,
+     *         otherwise false.
+     */
     public boolean useAndPredicate() {
         return useAndPredicate;
     }
 
+    /***
+     * Sets a handler for when the user clicks the 'Filter' button in the
+     * dialog.
+     *
+     * @param eventHandler
+     *            The event handler.
+     */
     public void setFilterAction(EventHandler<ActionEvent> eventHandler) {
         Platform.runLater(() -> filterBtn.setOnAction(eventHandler));
     }
 
+    /***
+     * Sets the handler for when the user cancels/clears the filter dialog.
+     *
+     * @param eventHandler
+     *            The event handler.
+     */
     public void setClearFiltersAction(EventHandler<ActionEvent> eventHandler) {
         Platform.runLater(() -> clearFiltersBtn.setOnAction(eventHandler));
     }
 
+    /***
+     * This will clear all the filter drop downs and deselect the filter fields
+     * in the filter dialog.
+     */
     public void clearControlSelections() {
         Platform.runLater(() -> {
             comboLists.forEach(combo -> {
@@ -162,6 +198,17 @@ public class FilterDialogController {
         });
     }
 
+    /***
+     * This will activate/deactivate a filter field and update the checkbox in
+     * the GUI to show whether the filter field is active.
+     *
+     * @param columnName
+     *            The string name of the column filter which should be
+     *            activated/deactivated.
+     * @param active
+     *            Set to true if the column filter should be active, false
+     *            otherwise.
+     */
     public void setFieldActiveState(final String columnName, final boolean active) {
         Control activeBox = fieldActiveControls.get(columnName);
         if (activeBox != null) {
@@ -174,6 +221,13 @@ public class FilterDialogController {
         }
     }
 
+    /***
+     * Convenience method that will deactivate all the filter fields in the
+     * specified list.
+     *
+     * @param fields
+     *            The list of filter controls to deactivate.
+     */
     public void deactivateFields(final List<Control> fields) {
         fields.forEach(field -> {
             if (field instanceof CheckBox) {
@@ -184,6 +238,27 @@ public class FilterDialogController {
         });
     }
 
+    /***
+     * Adds a filter field to the filter dialog so that users can filter the
+     * specified column. Creates a combo box to add to the filter dialog with
+     * the specified list items.
+     *
+     *
+     * @param columnName
+     *            The string name of the column which should be filtered
+     * @param items
+     *            An Observable list of valid items that can be selected for by
+     *            the combo box.
+     * @param toggleGroup
+     *            The toggle group to assign this filter to in the case where
+     *            only one filter in the toggle group should be active at a
+     *            time. If null, then it can be toggled active all the time.
+     * @param onComboSelection
+     *            The action to perform when a selection is made on the filter
+     *            combo.
+     * @param onComboValueChange
+     *            The action to perform.
+     */
     public void addFilterOption(final String columnName, final ObservableList<Object> items, ToggleGroup toggleGroup, ChangeListener<? super Boolean> onComboSelection,
             ChangeListener<? super Object> onComboValueChange) {
 
@@ -198,6 +273,27 @@ public class FilterDialogController {
         });
     }
 
+    /***
+     * Adds a filter field to the filter dialog so that users can filter the
+     * specified column. Creates a slider controller to add to the filter dialog
+     * with the specified valid values. The slider is helpful for numerical
+     * lists.
+     *
+     * @param columnName
+     *            The string name of the column which should be filtered.
+     * @param values
+     *            An Observable list of valid values that can be selected for by
+     *            the slider.
+     * @param toggleGroup
+     *            The toggle group to assign this filter to in the case where
+     *            only one filter in the toggle group should be active at a
+     *            time. If null, then it can be toggled active all the time.
+     * @param onSliderSelection
+     *            The action to perform when a selection is made on the filter
+     *            slider.
+     * @param onSliderValueChange
+     *            The action to perform
+     */
     public void addFilterSlider(final String columnName, final ObservableList<Object> values, ToggleGroup toggleGroup, ChangeListener<? super Boolean> onSliderSelection,
             ChangeListener<? super Object> onSliderValueChange) {
         Slider slider = new Slider(0.0, 10.0, 0.0);
@@ -234,6 +330,14 @@ public class FilterDialogController {
         });
     }
 
+    /***
+     * Updates the specified slider values that the user can select.
+     *
+     * @param sliderIdx
+     *            The index of the slider to update.
+     * @param values
+     *            The new values that the slider should display.
+     */
     public void updateSliders(int sliderIdx, ObservableList<Object> values) {
         final Slider slider = slidersList.get(sliderIdx);
         if (slider != null && !values.isEmpty()) {
@@ -246,18 +350,32 @@ public class FilterDialogController {
         }
     }
 
+    /***
+     * Hides the Filter Dialog GUI. For example when a filter is selected.
+     */
     public void hide() {
         Platform.runLater(() -> {
             stage.hide();
         });
     }
 
+    /***
+     * Shows the Filter Dialog GUI, for example when a filter dialog button is
+     * clicked.
+     */
     public void show() {
         Platform.runLater(() -> {
             stage.show();
         });
     }
 
+    /***
+     * Gives the option of what modality to use when starting up the filter
+     * dialog.
+     *
+     * @param modality
+     *            The modality to use.
+     */
     public void initModality(Modality modality) {
         Platform.runLater(() -> {
             stage.initModality(modality);
@@ -270,12 +388,35 @@ public class FilterDialogController {
         });
     }
 
+    /***
+     * Show the Filter Dialog above other windows. *
+     */
     public void toFront() {
         Platform.runLater(() -> {
             stage.toFront();
         });
     }
 
+    /***
+     * Depending on whether the control is a slider or a combo box, this will
+     * initialize the field in the filter dialog, so that it is a new row that
+     * can be added to the dialog.
+     *
+     * @param toggleGroup
+     *            The toggle group to attach this field to (or null for no
+     *            toggle group).
+     * @param selectionChanged
+     *            Action to perform when the selection of the field changes.
+     * @param columnName
+     *            The name of the column (which can then be referenced by other
+     *            methods in this class).
+     * @param fieldControl
+     *            The control object to use: a combo box or a slider control.
+     * @param endLabel
+     *            If not null, the end label will be shown at the end of the row
+     *            in the filter dialog. Useful for displaying the selected value
+     *            of the slider for example.
+     */
     private void createFieldRow(ToggleGroup toggleGroup, ChangeListener<? super Boolean> selectionChanged, String columnName, Control fieldControl, Label endLabel) {
         Control activeBox = null;
         if (toggleGroup != null) {

@@ -266,7 +266,7 @@ public class CalibrationCurveFitter {
             return sum;
         };
 
-        Function<Integer, PointValuePair> mapper = (i) -> optimizeCMAES(
+        Function<Integer, PointValuePair> mapper = i -> optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
                             ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
@@ -317,7 +317,7 @@ public class CalibrationCurveFitter {
             return sum;
         };
 
-        Function<Integer, PointValuePair> mapper = (i) -> optimizeCMAES(
+        Function<Integer, PointValuePair> mapper = i -> optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
                             ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
@@ -385,7 +385,7 @@ public class CalibrationCurveFitter {
 
         ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.005, 0.005, 100000);
 
-        Function<Integer, PointValuePair> mapper = (i) -> optimizeCMAES(
+        Function<Integer, PointValuePair> mapper = i -> optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), minP2, minP3 }),
                     new CMAESOptimizer.Sigma(new double[] { 1, 50, 50 }),
@@ -524,9 +524,9 @@ public class CalibrationCurveFitter {
      *
      * @param velocityDistancePairsFreqMap
      * @param freqBandMap
-     * @return Map<FrequencyBand, SharedFrequencyBandParameters> with updated
-     *         Velocity 0-2 values given the best available model fit for the
-     *         input velocityDistancePairsFreqMap
+     * @return Map&lt;FrequencyBand, SharedFrequencyBandParameters&gt; with
+     *         updated Velocity 0-2 values given the best available model fit
+     *         for the input velocityDistancePairsFreqMap
      */
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllVelocity(Map<FrequencyBand, List<PeakVelocityMeasurement>> velocityDistancePairsFreqMap,
             Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap, ShapeFitterConstraints constraints) {
@@ -552,9 +552,9 @@ public class CalibrationCurveFitter {
      *
      * @param betaDistancePairsFreqMap
      * @param freqBandMap
-     * @return Map<FrequencyBand, SharedFrequencyBandParameters> with updated
-     *         Beta 0-2 values given the best available model fit for the input
-     *         betaDistancePairsFreqMap
+     * @return Map&lt;FrequencyBand, SharedFrequencyBandParameters&gt; with
+     *         updated Beta 0-2 values given the best available model fit for
+     *         the input betaDistancePairsFreqMap
      */
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllBeta(Map<FrequencyBand, List<ShapeMeasurement>> betaDistancePairsFreqMap,
             Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap, ShapeFitterConstraints constraints) {
@@ -583,9 +583,9 @@ public class CalibrationCurveFitter {
      *
      * @param gammaDistancePairsFreqMap
      * @param freqBandMap
-     * @return Map<FrequencyBand, SharedFrequencyBandParameters> with updated
-     *         Gamma 0-2 values given the best available model fit for the input
-     *         gammaDistancePairsFreqMap
+     * @return Map&lt;FrequencyBand, SharedFrequencyBandParameters&gt; with
+     *         updated Gamma 0-2 values given the best available model fit for
+     *         the input gammaDistancePairsFreqMap
      */
     public Map<FrequencyBand, SharedFrequencyBandParameters> fitAllGamma(Map<FrequencyBand, List<ShapeMeasurement>> gammaDistancePairsFreqMap,
             Map<FrequencyBand, SharedFrequencyBandParameters> freqBandMap, ShapeFitterConstraints constraints) {

@@ -48,6 +48,7 @@ import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.SobolSequenceGenerator;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.SynchronizedMultivariateSummaryStatistics;
 import org.slf4j.Logger;
@@ -109,6 +110,8 @@ public class SpectraCalculator {
     private int suspectIterations = 50;
     @Value("${spectra-calc.suspect-mw-range:1.5}")
     private double suspectMwRange = 1.5;
+    @Value("${spectra-calc.suspect-energy-ratio:0.25}")
+    private double suspectEnergyRatio = 0.25;
 
     private static final int LOG10_M0 = 0;
     private static final int MW_FIT = 1;
@@ -199,8 +202,10 @@ public class SpectraCalculator {
             final TimeT originTime = new TimeT(event.getOriginTime());
 
             TimeT codaStart;
-            if (synth.getSourceWaveform().getMaxVelTime() != null) {
-                codaStart = new TimeT(synth.getSourceWaveform().getMaxVelTime());
+            if (synth.getSourceWaveform().getUserStartTime() != null) {
+                codaStart = new TimeT(synth.getSourceWaveform().getUserStartTime());
+            } else if (synth.getSourceWaveform().getCodaStartTime() != null) {
+                codaStart = new TimeT(synth.getSourceWaveform().getCodaStartTime());
             } else {
                 codaStart = originTime;
                 codaStart = codaStart.add(distance / vr);
@@ -464,12 +469,12 @@ public class SpectraCalculator {
                 return null;
             }
 
-            double max = 0.0;
+            DescriptiveStatistics aggregateSd = new DescriptiveStatistics();
             double sd;
             for (final Entry<FrequencyBand, SummaryStatistics> meas : measurements.entrySet()) {
                 sd = Math.sqrt(meas.getValue().getVariance());
-                if (Double.isFinite(sd) && (sd > max || max == 0.0)) {
-                    max = sd;
+                if (Double.isFinite(sd)) {
+                    aggregateSd.addValue(sd);
                 }
             }
 
@@ -480,8 +485,8 @@ public class SpectraCalculator {
                 // with what we can get
                 if (meas.getValue().getN() >= 5) {
                     sd = Math.sqrt(meas.getValue().getVariance());
-                } else if (max != 0.0) {
-                    sd = max;
+                } else if (aggregateSd != null && aggregateSd.getMean() != 0.0) {
+                    sd = aggregateSd.getPercentile(50.0);
                 } else {
                     sd = meas.getValue().getMean() / 4.0;
                     if (!Double.isFinite(sd)) {
@@ -496,12 +501,37 @@ public class SpectraCalculator {
                 high2Meas.put(meas.getKey(), meas.getValue().getMean() + 2 * sd);
             }
 
-            //TODO: Calc energy for each of the 5 spectra
-            EnergyInfo info = calcTotalEnergyInfo(mainMeas, MoMw[MW_FIT], MoMw[APP_STRESS], mdacFi);
-            EnergyInfo infoLow1 = calcTotalEnergyInfo(low1Meas, MoMw[MW_1_MIN], MoMw[APP_1_MIN], mdacFi);
-            EnergyInfo infoLow2 = calcTotalEnergyInfo(low2Meas, MoMw[MW_2_MIN], MoMw[APP_2_MIN], mdacFi);
-            EnergyInfo infoHigh1 = calcTotalEnergyInfo(high1Meas, MoMw[MW_1_MAX], MoMw[APP_1_MAX], mdacFi);
-            EnergyInfo infoHigh2 = calcTotalEnergyInfo(high2Meas, MoMw[MW_2_MAX], MoMw[APP_2_MAX], mdacFi);
+            //Calc energy for each of the 5 spectra
+            EnergyInfo info = calcTotalEnergyInfo(
+                    mainMeas,
+                        MoMw[MW_FIT],
+                        MoMw[APP_STRESS],
+                        mdacFi,
+                        computeSpecificSpectra(MoMw[MW_FIT], MoMw[APP_STRESS], null, measurements.keySet(), selectedPhase, SPECTRA_TYPES.FIT));
+            EnergyInfo infoLow1 = calcTotalEnergyInfo(
+                    low1Meas,
+                        MoMw[MW_1_MIN],
+                        MoMw[APP_1_MIN],
+                        mdacFi,
+                        computeSpecificSpectra(MoMw[MW_1_MIN], MoMw[APP_1_MIN], null, measurements.keySet(), selectedPhase, SPECTRA_TYPES.FIT));
+            EnergyInfo infoLow2 = calcTotalEnergyInfo(
+                    low2Meas,
+                        MoMw[MW_2_MIN],
+                        MoMw[APP_2_MIN],
+                        mdacFi,
+                        computeSpecificSpectra(MoMw[MW_2_MIN], MoMw[APP_2_MIN], null, measurements.keySet(), selectedPhase, SPECTRA_TYPES.FIT));
+            EnergyInfo infoHigh1 = calcTotalEnergyInfo(
+                    high1Meas,
+                        MoMw[MW_1_MAX],
+                        MoMw[APP_1_MAX],
+                        mdacFi,
+                        computeSpecificSpectra(MoMw[MW_1_MAX], MoMw[APP_1_MAX], null, measurements.keySet(), selectedPhase, SPECTRA_TYPES.FIT));
+            EnergyInfo infoHigh2 = calcTotalEnergyInfo(
+                    high2Meas,
+                        MoMw[MW_2_MAX],
+                        MoMw[APP_2_MAX],
+                        mdacFi,
+                        computeSpecificSpectra(MoMw[MW_2_MAX], MoMw[APP_2_MAX], null, measurements.keySet(), selectedPhase, SPECTRA_TYPES.FIT));
 
             boolean isLikelyPoorlyConstrained = (MoMw[ITR_COUNT] > suspectIterations
                     || MoMw[CORNER_FREQ] < measurements.firstKey().getLowFrequency() + (measurements.firstKey().getHighFrequency() - measurements.firstKey().getLowFrequency()) / 2.
@@ -573,8 +603,10 @@ public class SpectraCalculator {
      * source spectra of western United States earthquakes from regional coda
      * envelopes, J. Geophys. Res., 101( B5), 11195– 11208,
      * doi:10.1029/96JB00112.
+     *
+     * @param spec
      */
-    public EnergyInfo calcTotalEnergyInfo(final SortedMap<FrequencyBand, Double> measurements, double mwMDAC, double apparentStress, MdacParametersFI mdacFI) {
+    public EnergyInfo calcTotalEnergyInfo(final SortedMap<FrequencyBand, Double> measurements, double mwMDAC, double apparentStress, MdacParametersFI mdacFI, Spectra spec) {
 
         final int measCount = measurements.entrySet().size();
 
@@ -638,14 +670,18 @@ public class SpectraCalculator {
 
         double logMomentMDAC = 1.5 * (mwMDAC + energyConstMKS); // Log10(moment)
 
+        // Note we extrapolate from the fit spectra for this value to ensure
+        // we have the physics constraints in place and avoid flyer points causing
+        // wild fluctuations in the values measured.
+
         // Extrapolated low frequency energy
-        final double lowAmp = (Math.pow(10, logMoment)) * k;
+        final double lowAmp = (Math.pow(10, spec != null && spec.getSpectraXY().size() > 0 ? (spec.getSpectraXY().get(0).getY() - 7.0) : logAmplitudes[0])) * k;
 
         final double wF = 2.0 * Math.PI * lowFreq[0];
         final double eTotal_low = Math.pow(lowAmp, 2) * Math.pow(wF, 3.0) / 3.0;
 
         // We do the same thing for the high frequency extrapolation.
-        final double ahi = Math.pow(10.0, logAmplitudes[measCount - 1]) * k;
+        final double ahi = Math.pow(10.0, spec != null && spec.getSpectraXY().size() > 0 ? (spec.getSpectraXY().get(measCount - 1).getY() - 7.0) : logAmplitudes[measCount - 1]) * k;
         final double eTotal_hi = Math.pow(ahi, 2) * Math.pow(wN, 3.0);
 
         // This is the total energy of low, observed and high
@@ -848,10 +884,10 @@ public class SpectraCalculator {
 
         result[CORNER_FREQ] = mdacService.getCornerFrequency(
                 mdacService.getCalculateMdacSourceSpectraFunction(mdacPs, new MdacParametersFI(mdacFi).setPsi(0.0).setSigma(result[APP_STRESS]), result[MW_FIT]));
-        result[CORNER_FREQ_1_MIN] = cf1min;
-        result[CORNER_FREQ_1_MAX] = cf1max;
-        result[CORNER_FREQ_2_MIN] = cf2min;
-        result[CORNER_FREQ_2_MAX] = cf2max;
+        result[CORNER_FREQ_1_MIN] = Math.max(Math.min(cf1min, cf1max), Math.min(cf2min, cf2max));
+        result[CORNER_FREQ_1_MAX] = Math.min(Math.max(cf1min, cf1max), Math.max(cf2min, cf2max));
+        result[CORNER_FREQ_2_MIN] = Math.min(Math.min(cf1min, cf1max), Math.min(cf2min, cf2max));
+        result[CORNER_FREQ_2_MAX] = Math.max(Math.max(cf1min, cf1max), Math.max(cf2min, cf2max));
 
         result[ITR_COUNT] = iterations;
 

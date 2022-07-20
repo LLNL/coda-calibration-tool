@@ -42,10 +42,10 @@ public class WaveformUtils {
         List<SummaryStatistics> bins = dist.getBinStats();
         long lastCount = 0;
         double maxBinVal = noise;
-        for (int i = 0; i < bins.size(); i++) {
-            if (bins.get(i).getN() > lastCount) {
-                lastCount = bins.get(i).getN();
-                maxBinVal = bins.get(i).getMean();
+        for (SummaryStatistics bin : bins) {
+            if (bin.getN() > lastCount) {
+                lastCount = bin.getN();
+                maxBinVal = bin.getMean();
             }
         }
 
@@ -58,8 +58,8 @@ public class WaveformUtils {
     /**
      * This method mimics the getMaxTime method of SacSeismogram, which is
      * <b>NOT</b> purely the same as the methods in the TimeSeries chain. Trying
-     * to not use SacSeismogram directly as it will be moving out of Core > 1.1
-     * and will introduce an extra dependency.
+     * to not use SacSeismogram directly as it will be moving out of Core &gt;
+     * 1.1 and will introduce an extra dependency.
      *
      * @param waveform
      * @param originTime

@@ -38,6 +38,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
@@ -50,6 +52,8 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -73,21 +77,30 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import llnl.gnem.core.gui.plotting.api.Axis;
+import llnl.gnem.core.gui.plotting.api.AxisLimits;
+import llnl.gnem.core.gui.plotting.events.PlotAxisChange;
+import llnl.gnem.core.util.PairT;
+import llnl.gnem.core.util.seriesMathHelpers.MinMax;
 import reactor.core.scheduler.Schedulers;
 
 //TODO: Split this out into a few separate functional areas when time permits (i.e. CodaWaveformPlotGUI, CodaWaveformPlotManager, etc).
 // As it currently is this class is pretty entangled.
 public class CodaWaveformPlotManager {
 
+    private static final String WINDOW_LINE_LABEL = "Window";
     private static final String WINDOW_LINE_TOOLTIP = "Toggle Minimum and Maximum Window Lines";
     private static final String GROUP_VELOCITY_TOOLTIP = "Toggle Group Velocity";
-    private static final String WINDOW_LINE_LABEL = "Window";
     private static final String GROUP_VELOCITY_LABEL = "GV";
+    private static final String ZOOM_SYNC_LABEL = "SZ";
+    private static final String ZOOM_SYNC_TOOLTIP = "Synchronize Zoom between all plots.";
     private static final String TIME_SECONDS_FROM_ORIGIN = "Time (seconds from origin)";
     private static final String WAVEFORM_PREFIX = "Waveform_";
     private static final String CLICK_TO_PICK_TOOLTIP = "Toggle click-to-pick mode";
     private static final String CLICK_TO_PICK_ICON = "/click_picking_mode_icon.png";
     private static final String CLICK_TO_PICK_LABEL = "Picking";
+    private static final String MOVE_START_TOOLTIP = "Toggle move coda start mode";
+    private static final String MOVE_START = "MS";
 
     private static final Logger log = LoggerFactory.getLogger(CodaWaveformPlotManager.class);
     private final WaveformClient waveformClient;
@@ -103,6 +116,7 @@ public class CodaWaveformPlotManager {
     private Map<Long, Integer> orderedWaveformIDs = new HashMap<>();
     private final SortedMap<Integer, CodaWaveformPlot> orderedWaveformPlots = new TreeMap<>();
     private CodaWaveformPlot selectedSinglePlot;
+    private PairT<AxisLimits, AxisLimits> savedAxisLimits = null;
     private final Set<Long> allWaveformIDs = new LinkedHashSet<>();
     private static final Integer PAGE_SIZE = 5;
     private final Object bagLock = new Object();
@@ -122,6 +136,7 @@ public class CodaWaveformPlotManager {
 
     private final ContextMenu contextMenu;
     private final ToggleGroup includeToggleGroup = new ToggleGroup();
+    private final MenuItem clearUcsPick = new MenuItem("Clear UCS pick");
     private final RadioMenuItem radioIncludeBtn = new RadioMenuItem("Include");
     private final RadioMenuItem radioExcludeBtn = new RadioMenuItem("Exclude");
 
@@ -146,11 +161,23 @@ public class CodaWaveformPlotManager {
     final ToggleButton clickToPickMode = new ToggleButton();
     final ToggleButton clickToPickMode2 = new ToggleButton();
     final ToggleButton clickToPickMode3 = new ToggleButton();
+
+    final ToggleButton moveStartToggle = new ToggleButton(MOVE_START);
+    final ToggleButton moveStartToggle2 = new ToggleButton(MOVE_START);
+    final ToggleButton moveStartToggle3 = new ToggleButton(MOVE_START);
+
     private boolean clickToPickModeBoolean = false;
+
+    final ToggleButton syncZoomMode = new ToggleButton(ZOOM_SYNC_LABEL);
+    final ToggleButton syncZoomMode2 = new ToggleButton(ZOOM_SYNC_LABEL);
+    private boolean syncZoomModeBoolean = true;
 
     private final EventHandler<InputEvent> forwardAction = event -> {
         if ((currentPage + 1) < totalPages) {
             currentPage++;
+            if (!syncZoomModeBoolean) {
+                setSavedAxisLimits(null);
+            }
             loadWaveformsForPage(currentPage);
         }
     };
@@ -158,12 +185,14 @@ public class CodaWaveformPlotManager {
     private final EventHandler<InputEvent> backwardAction = event -> {
         if (currentPage > 0) {
             currentPage--;
+            if (!syncZoomModeBoolean) {
+                setSavedAxisLimits(null);
+            }
             loadWaveformsForPage(currentPage);
         }
     };
 
     private final EventHandler<InputEvent> nextAction = event -> {
-
         if (curEventStationWaveforms != null && curFreqIndex < curEventStationWaveforms.size() - 1) {
             curFreqIndex += 1;
             Waveform wave = curEventStationWaveforms.get(curFreqIndex);
@@ -178,6 +207,7 @@ public class CodaWaveformPlotManager {
         if (curEventStationWaveforms != null && curFreqIndex > 0) {
             curFreqIndex -= 1;
             Waveform wave = curEventStationWaveforms.get(curFreqIndex);
+
             if (wave != null) {
                 setFrequencyDisplayText(wave);
                 plotWaveform(wave.getId());
@@ -191,15 +221,22 @@ public class CodaWaveformPlotManager {
             groupVelToggle.setSelected(true);
             groupVelToggle2.setSelected(true);
             groupVelToggle3.setSelected(true);
+            groupVelToggle.setStyle("-fx-background-color: DarkSeaGreen");
+            groupVelToggle2.setStyle("-fx-background-color: DarkSeaGreen");
+            groupVelToggle3.setStyle("-fx-background-color: DarkSeaGreen");
         } else {
             groupVelToggle.setSelected(false);
             groupVelToggle2.setSelected(false);
             groupVelToggle3.setSelected(false);
+            groupVelToggle.setStyle(null);
+            groupVelToggle2.setStyle(null);
+            groupVelToggle3.setStyle(null);
         }
         if (orderedWaveformPlots.size() > 0) {
             orderedWaveformPlots.values().forEach(CodaWaveformPlot::setGroupVelocityVisbility);
         } else {
             selectedSinglePlot.setGroupVelocityVisbility();
+            selectedSinglePlot.getPlotLayoutJSON();
         }
     };
 
@@ -209,10 +246,16 @@ public class CodaWaveformPlotManager {
             windowLineToggle.setSelected(true);
             windowLineToggle2.setSelected(true);
             windowLineToggle3.setSelected(true);
+            windowLineToggle.setStyle("-fx-background-color: DarkSeaGreen");
+            windowLineToggle2.setStyle("-fx-background-color: DarkSeaGreen");
+            windowLineToggle3.setStyle("-fx-background-color: DarkSeaGreen");
         } else {
             windowLineToggle.setSelected(false);
             windowLineToggle2.setSelected(false);
             windowLineToggle3.setSelected(false);
+            windowLineToggle.setStyle(null);
+            windowLineToggle2.setStyle(null);
+            windowLineToggle3.setStyle(null);
         }
         if (orderedWaveformPlots.size() > 0) {
             orderedWaveformPlots.values().forEach(CodaWaveformPlot::setWindowLineVisbility);
@@ -243,6 +286,44 @@ public class CodaWaveformPlotManager {
         }
     };
 
+    private final EventHandler<InputEvent> syncZoomToggleAction = event -> {
+        syncZoomModeBoolean = !syncZoomModeBoolean;
+        syncZoomMode.setSelected(syncZoomModeBoolean);
+        syncZoomMode2.setSelected(syncZoomModeBoolean);
+        if (syncZoomModeBoolean) {
+            syncZoomMode.setStyle("-fx-background-color: DarkSeaGreen");
+            syncZoomMode2.setStyle("-fx-background-color: DarkSeaGreen");
+        } else {
+            syncZoomMode.setStyle(null);
+            syncZoomMode2.setStyle(null);
+        }
+    };
+
+    private final EventHandler<InputEvent> moveStartToggleAction = event -> {
+        ToggleButton btnClicked = (ToggleButton) event.getSource();
+        if (btnClicked != null && btnClicked.isSelected()) {
+            moveStartToggle.setSelected(true);
+            moveStartToggle2.setSelected(true);
+            moveStartToggle3.setSelected(true);
+            moveStartToggle.setStyle("-fx-background-color: DarkSeaGreen");
+            moveStartToggle2.setStyle("-fx-background-color: DarkSeaGreen");
+            moveStartToggle3.setStyle("-fx-background-color: DarkSeaGreen");
+        } else {
+            moveStartToggle.setSelected(false);
+            moveStartToggle2.setSelected(false);
+            moveStartToggle3.setSelected(false);
+            moveStartToggle.setStyle(null);
+            moveStartToggle2.setStyle(null);
+            moveStartToggle3.setStyle(null);
+        }
+
+        if (orderedWaveformPlots.size() > 0) {
+            orderedWaveformPlots.values().forEach(CodaWaveformPlot::setCodaStartLineVisbility);
+        } else {
+            selectedSinglePlot.setCodaStartLineVisbility();
+        }
+    };
+
     public CodaWaveformPlotManager(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
             final GeoMap map, final MapPlottingUtilities mapPlotUtils) {
         this.waveformClient = waveformClient;
@@ -262,6 +343,7 @@ public class CodaWaveformPlotManager {
         freqBandLabel = new Label("Frequency Band");
 
         contextMenu = new ContextMenu();
+        contextMenu.getItems().add(clearUcsPick);
         radioIncludeBtn.setToggleGroup(includeToggleGroup);
         radioExcludeBtn.setToggleGroup(includeToggleGroup);
         radioExcludeBtn.selectedProperty().set(true);
@@ -271,6 +353,31 @@ public class CodaWaveformPlotManager {
         contextMenu.getItems().add(addByStation);
         contextMenu.getItems().add(addByEvent);
         contextMenu.getItems().add(addByEventAndStation);
+
+        clearUcsPick.setOnAction(evt -> {
+            if (selectedWaveform != null) {
+                selectedWaveform.setAssociatedPicks(
+                        selectedWaveform.getAssociatedPicks().stream().filter(p -> !PICK_TYPES.UCS.getPhase().equalsIgnoreCase(p.getPickName())).collect(Collectors.toList()));
+                selectedWaveform.setUserStartTime(null);
+                try {
+                    waveformClient.postWaveform(selectedWaveform).subscribe(w -> {
+                        Integer plotIndex = orderedWaveformIDs.get(w.getId());
+                        if (plotIndex != null) {
+                            CodaWaveformPlot waveformPlot = orderedWaveformPlots.get(plotIndex);
+                            if (waveformPlot != null) {
+                                waveformPlot.setWaveform(w);
+                            } else {
+                                selectedSinglePlot.setWaveform(w);
+                            }
+                        } else {
+                            selectedSinglePlot.setWaveform(w);
+                        }
+                    });
+                } catch (JsonProcessingException e) {
+                    log.trace(e.getLocalizedMessage(), e);
+                }
+            }
+        });
 
         addByWaveformId.setOnAction(evt -> {
             setUsedForWaveformById(selectedWaveform, radioIncludeBtn.isSelected());
@@ -325,9 +432,27 @@ public class CodaWaveformPlotManager {
         clickToPickMode2.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
         clickToPickMode3.setTooltip(new Tooltip(CLICK_TO_PICK_TOOLTIP));
 
-        try (
+        moveStartToggle.addEventHandler(MouseEvent.MOUSE_CLICKED, moveStartToggleAction::handle);
+        moveStartToggle2.addEventHandler(MouseEvent.MOUSE_CLICKED, moveStartToggleAction::handle);
+        moveStartToggle3.addEventHandler(MouseEvent.MOUSE_CLICKED, moveStartToggleAction::handle);
+        moveStartToggle.setTooltip(new Tooltip(MOVE_START_TOOLTIP));
+        moveStartToggle2.setTooltip(new Tooltip(MOVE_START_TOOLTIP));
+        moveStartToggle3.setTooltip(new Tooltip(MOVE_START_TOOLTIP));
 
-                InputStream is = this.getClass().getResourceAsStream(CLICK_TO_PICK_ICON)) {
+        syncZoomMode.addEventHandler(MouseEvent.MOUSE_CLICKED, syncZoomToggleAction::handle);
+        syncZoomMode2.addEventHandler(MouseEvent.MOUSE_CLICKED, syncZoomToggleAction::handle);
+
+        syncZoomMode.setTooltip(new Tooltip(ZOOM_SYNC_TOOLTIP));
+        syncZoomMode2.setTooltip(new Tooltip(ZOOM_SYNC_TOOLTIP));
+
+        syncZoomMode.selectedProperty().set(syncZoomModeBoolean);
+        syncZoomMode2.selectedProperty().set(syncZoomModeBoolean);
+        if (syncZoomModeBoolean) {
+            syncZoomMode.setStyle("-fx-background-color: DarkSeaGreen");
+            syncZoomMode2.setStyle("-fx-background-color: DarkSeaGreen");
+        }
+
+        try (InputStream is = this.getClass().getResourceAsStream(CLICK_TO_PICK_ICON)) {
             Image clickPickingIcon = new Image(is);
             createPickingIcon(clickToPickMode, clickPickingIcon, windowLineToggle);
             createPickingIcon(clickToPickMode2, clickPickingIcon, windowLineToggle2);
@@ -342,8 +467,10 @@ public class CodaWaveformPlotManager {
         multiPageToolbar.getItems().add(pagingLabel);
         multiPageToolbar.getItems().add(forwardButton);
         multiPageToolbar.getItems().add(groupVelToggle);
+        multiPageToolbar.getItems().add(syncZoomMode);
         multiPageToolbar.getItems().add(windowLineToggle);
         multiPageToolbar.getItems().add(clickToPickMode);
+        multiPageToolbar.getItems().add(moveStartToggle);
 
         multiFrequencyToolbar.getItems().add(freqBandLabel);
         multiFrequencyToolbar.getItems().add(prevButton);
@@ -351,10 +478,13 @@ public class CodaWaveformPlotManager {
         multiFrequencyToolbar.getItems().add(groupVelToggle2);
         multiFrequencyToolbar.getItems().add(windowLineToggle2);
         multiFrequencyToolbar.getItems().add(clickToPickMode2);
+        multiFrequencyToolbar.getItems().add(moveStartToggle2);
 
         multiPlotToolbar.getItems().add(groupVelToggle3);
+        multiPlotToolbar.getItems().add(syncZoomMode2);
         multiPlotToolbar.getItems().add(windowLineToggle3);
         multiPlotToolbar.getItems().add(clickToPickMode3);
+        multiPlotToolbar.getItems().add(moveStartToggle3);
 
         final Font sizedFont = Font.font(forwardButton.getFont().getFamily(), 12f);
         forwardButton.setFont(sizedFont);
@@ -364,12 +494,17 @@ public class CodaWaveformPlotManager {
         groupVelToggle.setFont(sizedFont);
         groupVelToggle2.setFont(sizedFont);
         groupVelToggle3.setFont(sizedFont);
+        syncZoomMode.setFont(sizedFont);
+        syncZoomMode2.setFont(sizedFont);
         windowLineToggle.setFont(sizedFont);
         windowLineToggle2.setFont(sizedFont);
         windowLineToggle3.setFont(sizedFont);
         clickToPickMode.setFont(sizedFont);
         clickToPickMode2.setFont(sizedFont);
         clickToPickMode3.setFont(sizedFont);
+        moveStartToggle.setFont(sizedFont);
+        moveStartToggle2.setFont(sizedFont);
+        moveStartToggle3.setFont(sizedFont);
 
         forwardButton.setFocusTraversable(false);
         backwardButton.setFocusTraversable(false);
@@ -378,12 +513,17 @@ public class CodaWaveformPlotManager {
         groupVelToggle.setFocusTraversable(false);
         groupVelToggle2.setFocusTraversable(false);
         groupVelToggle3.setFocusTraversable(false);
+        syncZoomMode.setFocusTraversable(false);
+        syncZoomMode2.setFocusTraversable(false);
         windowLineToggle.setFocusTraversable(false);
         windowLineToggle2.setFocusTraversable(false);
         windowLineToggle3.setFocusTraversable(false);
         clickToPickMode.setFocusTraversable(false);
         clickToPickMode2.setFocusTraversable(false);
         clickToPickMode3.setFocusTraversable(false);
+        moveStartToggle.setFocusTraversable(false);
+        moveStartToggle2.setFocusTraversable(false);
+        moveStartToggle3.setFocusTraversable(false);
     }
 
     private void createPickingIcon(ToggleButton clickToPickButton, Image img, Region layoungBindingNode) {
@@ -413,8 +553,51 @@ public class CodaWaveformPlotManager {
         }
     }
 
+    private void updatePlotAxesInGroup(PlotAxisChange change) {
+
+        if (change.isReset()) {
+            this.setSavedAxisLimits(change.getAxisLimits());
+            if (selectedSinglePlot != null) {
+                Platform.runLater(() -> {
+                    selectedSinglePlot.replot();
+                });
+            }
+        } else {
+            this.setSavedAxisLimits(change.getAxisLimits());
+        }
+
+        if (!orderedWaveformPlots.isEmpty()) {
+
+            orderedWaveformPlots.values().forEach(plot -> {
+                if (syncZoomModeBoolean) {
+                    if (!change.isReset()) {
+                        // Get the min/max y values within the subsection of the xAxis
+                        final double xMin = this.getSavedAxisLimits().getFirst().getMin();
+                        final double xMax = this.getSavedAxisLimits().getFirst().getMax();
+
+                        // The y-axis min and max are adjusted with 10% relative padding
+                        final MinMax yzoomRange = plot.getMinMaxWithinSection(xMin, xMax);
+                        double min = yzoomRange.getMin();
+                        double max = yzoomRange.getMax();
+
+                        plot.setAxisLimits(
+                                new AxisLimits(Axis.Type.X, this.getSavedAxisLimits().getFirst().getMin(), this.getSavedAxisLimits().getFirst().getMax()),
+                                    new AxisLimits(Axis.Type.Y, min, max));
+                    } else {
+                        plot.resetAxisLimits();
+                    }
+                }
+                Platform.runLater(() -> {
+                    plot.replot();
+                });
+            });
+
+        }
+    }
+
     private void plotWaveform(long waveformId) {
         clear();
+
         final List<Pair<Waveform, CodaWaveformPlot>> results = new ArrayList<>();
         final SyntheticCoda synth = waveformClient.getSyntheticFromWaveformId(waveformId).publishOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(10));
         if (synth != null && synth.getId() != null) {
@@ -465,6 +648,7 @@ public class CodaWaveformPlotManager {
         map.removeIcons(oldIcons);
         synchronized (bagLock) {
             plotBag.addAll(orderedWaveformPlots.values().stream().filter(plot -> {
+                plot.setAxisChangeListener(null);
                 plot.clear();
                 return true;
             }).collect(Collectors.toList()));
@@ -579,9 +763,28 @@ public class CodaWaveformPlotManager {
             if (!plotBag.isEmpty()) {
                 plot = plotBag.pop();
             } else {
-                plot = new CodaWaveformPlot(waveformClient, shapeClient, paramsClient, peakVelocityClient, () -> groupVelToggle.isSelected(), () -> windowLineToggle.isSelected());
+                plot = new CodaWaveformPlot(waveformClient,
+                                            shapeClient,
+                                            paramsClient,
+                                            peakVelocityClient,
+                                            () -> groupVelToggle.isSelected(),
+                                            () -> windowLineToggle.isSelected(),
+                                            () -> moveStartToggle.isSelected());
             }
         }
+
+        plot.setAxisChangeListener(axisChange -> {
+            if (axisChange.getNewValue() instanceof PlotAxisChange) {
+                updatePlotAxesInGroup((PlotAxisChange) axisChange.getNewValue());
+            }
+        });
+
+        if (this.getSavedAxisLimits() != null) {
+            plot.setAxisLimits(this.getSavedAxisLimits().getFirst(), this.getSavedAxisLimits().getSecond());
+        } else {
+            plot.resetAxisLimits();
+        }
+
         return plot;
     }
 
@@ -605,6 +808,26 @@ public class CodaWaveformPlotManager {
         } else {
             map.removeIcons(mappedIcons);
         }
+    }
+
+    public void resetAllAxes() {
+        this.setSavedAxisLimits(null);
+        if (!orderedWaveformPlots.isEmpty()) {
+            orderedWaveformPlots.values().forEach(plot -> {
+                plot.resetAxisLimits();
+            });
+        }
+        if (selectedSinglePlot != null) {
+            selectedSinglePlot.resetAxisLimits();
+        }
+    }
+
+    public PairT<AxisLimits, AxisLimits> getSavedAxisLimits() {
+        return savedAxisLimits;
+    }
+
+    public void setSavedAxisLimits(PairT<AxisLimits, AxisLimits> axisLimits) {
+        this.savedAxisLimits = axisLimits;
     }
 
     public void setOrderedWaveformIDs(final List<Long> waveformIDs) {
@@ -643,6 +866,7 @@ public class CodaWaveformPlotManager {
 
     private void loadWaveformsForPage(final int pageNumber) {
         clear();
+
         final List<Pair<Waveform, CodaWaveformPlot>> results = new ArrayList<>();
         if (allWaveformIDs.size() == 1) {
             Optional<Long> firstElement = allWaveformIDs.stream().findFirst();

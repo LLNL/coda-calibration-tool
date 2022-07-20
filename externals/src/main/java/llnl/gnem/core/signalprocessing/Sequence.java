@@ -64,9 +64,9 @@ public class Sequence {
 
     public float min() {
         float smin = seqvalues[0];
-        for (int i = 0; i < seqvalues.length; i++) {
-            if (seqvalues[i] < smin) {
-                smin = seqvalues[i];
+        for (float seqvalue : seqvalues) {
+            if (seqvalue < smin) {
+                smin = seqvalue;
             }
         }
         return smin;
@@ -74,9 +74,9 @@ public class Sequence {
 
     public float max() {
         float smax = seqvalues[0];
-        for (int i = 0; i < seqvalues.length; i++) {
-            if (seqvalues[i] > smax) {
-                smax = seqvalues[i];
+        for (float seqvalue : seqvalues) {
+            if (seqvalue > smax) {
+                smax = seqvalue;
             }
         }
         return smax;
@@ -85,8 +85,8 @@ public class Sequence {
     public float extremum() {
         float smax = 0.0f;
         float sabs = 0.0f;
-        for (int i = 0; i < seqvalues.length; i++) {
-            sabs = Math.abs(seqvalues[i]);
+        for (float seqvalue : seqvalues) {
+            sabs = Math.abs(seqvalue);
             if (sabs > smax) {
                 smax = sabs;
             }
@@ -110,8 +110,8 @@ public class Sequence {
 
     public float mean() {
         float smean = 0.0f;
-        for (int i = 0; i < seqvalues.length; i++) {
-            smean += seqvalues[i];
+        for (float seqvalue : seqvalues) {
+            smean += seqvalue;
         }
         smean /= seqvalues.length;
         return smean;
@@ -125,9 +125,7 @@ public class Sequence {
     }
 
     public void zero() {
-        for (int i = 0; i < seqvalues.length; i++) {
-            seqvalues[i] = 0.0f;
-        }
+        Arrays.fill(seqvalues, 0.0f);
     }
 
     public void scaleBy(float a) {
@@ -252,14 +250,14 @@ public class Sequence {
     }
 
     public static void zshift(float[][] x, int shift) {
-        for (int i = 0; i < x.length; i++) {
-            zshift(x[i], shift);
+        for (float[] element : x) {
+            zshift(element, shift);
         }
     }
 
     public static void zshift(double[][] x, int shift) {
-        for (int i = 0; i < x.length; i++) {
-            zshift(x[i], shift);
+        for (double[] element : x) {
+            zshift(element, shift);
         }
     }
 
@@ -461,14 +459,14 @@ public class Sequence {
     }
 
     public static void cshift(float[][] x, int shift) {
-        for (int i = 0; i < x.length; i++) {
-            cshift(x[i], shift);
+        for (float[] element : x) {
+            cshift(element, shift);
         }
     }
 
     public static void cshift(double[][] x, int shift) {
-        for (int i = 0; i < x.length; i++) {
-            cshift(x[i], shift);
+        for (double[] element : x) {
+            cshift(element, shift);
         }
     }
 
@@ -621,8 +619,8 @@ public class Sequence {
     public Sequence alias(int N) {
         float[] newseqvalues = new float[N];
         int index = 0;
-        for (int i = 0; i < seqvalues.length; i++) {
-            newseqvalues[index++] += seqvalues[i];
+        for (float seqvalue : seqvalues) {
+            newseqvalues[index++] += seqvalue;
             if (index == N) {
                 index = 0;
             }
@@ -868,9 +866,9 @@ public class Sequence {
      * raise each of the values of the sequence to a power
      *
      * @param value
-     *            --> seq^value each element will be raised to the power (value)
-     *            e.g. value= 2 squares the sequence value = 0.5 takes a square
-     *            root
+     *            --&gt; seq^value each element will be raised to the power
+     *            (value) e.g. value= 2 squares the sequence value = 0.5 takes a
+     *            square root
      */
     public void power(double value) {
         for (int i = 0; i < seqvalues.length; i++) {
@@ -882,9 +880,9 @@ public class Sequence {
      * raise each of the values of the sequence to its
      *
      * @param value
-     *            --> seq^value each element will be raised to the power (value)
-     *            e.g. value= 2 squares the sequence value = 0.5 takes a square
-     *            root
+     *            --&gt; seq^value each element will be raised to the power
+     *            (value) e.g. value= 2 squares the sequence value = 0.5 takes a
+     *            square root
      */
     public void power(int value) {
         for (int i = 0; i < seqvalues.length; i++) {
@@ -1060,8 +1058,8 @@ public class Sequence {
     }
 
     public void print(PrintStream ps) {
-        for (int i = 0; i < seqvalues.length; i++) {
-            ps.println(seqvalues[i]);
+        for (float seqvalue : seqvalues) {
+            ps.println(seqvalue);
         }
     }
 
@@ -1072,9 +1070,7 @@ public class Sequence {
     }
 
     public void setConstant(float c) {
-        for (int i = 0; i < seqvalues.length; i++) {
-            seqvalues[i] = c;
-        }
+        Arrays.fill(seqvalues, c);
     }
 
     protected void zero(float[] s, int start, int duration) {
@@ -1094,14 +1090,14 @@ public class Sequence {
     }
 
     public static void zero(float[][] x) {
-        for (int i = 0; i < x.length; i++) {
-            Arrays.fill(x[i], 0.0f);
+        for (float[] element : x) {
+            Arrays.fill(element, 0.0f);
         }
     }
 
     public static void zero(double[][] x) {
-        for (int i = 0; i < x.length; i++) {
-            Arrays.fill(x[i], 0.0);
+        for (double[] element : x) {
+            Arrays.fill(element, 0.0);
         }
     }
 }

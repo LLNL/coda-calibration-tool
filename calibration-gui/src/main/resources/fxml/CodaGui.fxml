@@ -82,6 +82,11 @@
 								<MenuItem fx:id="envelopeTool" mnemonicParsing="false" onAction="#openEnvelopeTool" text="Create Envelopes" />
 							</items>
 						</Menu>
+                  <Menu mnemonicParsing="false" text="Help">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#openManual" text="Documentation" />
+                    </items>
+                  </Menu>
 					</menus>
 					<opaqueInsets>
 						<Insets />

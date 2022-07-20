@@ -81,15 +81,15 @@ public class SacExporter {
                     try {
                         WaveformPick pick = w.getAssociatedPicks().get(i);
                         if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.F.getPhase())) {
-                            header.f = pick.getPickTimeSecFromOrigin();
+                            header.f = pick.getPickTimeSecFromOrigin().floatValue();
                         } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.A.getPhase())) {
-                            header.a = pick.getPickTimeSecFromOrigin();
+                            header.a = pick.getPickTimeSecFromOrigin().floatValue();
                         } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.B.getPhase())) {
-                            header.b = pick.getPickTimeSecFromOrigin();
+                            header.b = pick.getPickTimeSecFromOrigin().floatValue();
                         } else if (pick.getPickType().equalsIgnoreCase(PICK_TYPES.O.getPhase())) {
-                            header.o = pick.getPickTimeSecFromOrigin();
+                            header.o = pick.getPickTimeSecFromOrigin().floatValue();
                         } else {
-                            header.setTimePick(i, pick.getPickTimeSecFromOrigin(), pick.getPickName());
+                            header.setTimePick(i, pick.getPickTimeSecFromOrigin().floatValue(), pick.getPickName());
                         }
                     } catch (RuntimeException e) {
                         log.error(e.getMessage(), e);

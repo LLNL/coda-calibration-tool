@@ -1,0 +1,9 @@
+site_name: Coda Calibration Tool Documentation
+nav:
+    - Home: index.md
+    - JavaDoc: javadoc/index.html
+    - REST API Docs: swagger/index.html
+    - Example Jupyter Notebook: https://github.com/LLNL/coda-calibration-tool/blob/master/example-notebooks/measure-mws/Mw-From-FDSN-waveforms.ipynb
+theme: readthedocs
+markdown_extensions:
+  - admonition

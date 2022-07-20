@@ -21,10 +21,28 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 
+/***
+ * An auto-complete combo box that incorporates a search feature so that as a
+ * user types within the field, the drop down list will update to show items
+ * containing the value typed in as suggestions, narrowing the list as the input
+ * gets specific.
+ *
+ * @author downie4
+ *
+ * @param <T>
+ *            The item type contained in the drop-down list.
+ */
 public class AutoCompleteCombo<T> extends ComboBox<T> {
 
     private ObservableList<T> originalItems;
 
+    /***
+     * Create an auto-complete combo box with specified items.
+     *
+     * @param items
+     *            The observable list of items to use within the auto complete
+     *            combo box.
+     */
     public AutoCompleteCombo(ObservableList<T> items) {
         this.originalItems = items;
         this.setEditable(true);
@@ -38,10 +56,23 @@ public class AutoCompleteCombo<T> extends ComboBox<T> {
         this.setItems(originalItems);
     };
 
+    /***
+     * Allows you to set the original items to use for the auto-complete. The
+     * original items list is the base list from which a smaller sublist of
+     * filtered items is made as the user types in the field.
+     *
+     * @param items
+     */
     public void setOriginalItems(ObservableList<T> items) {
         originalItems = items;
     }
 
+    /***
+     * Handler for when user types within the combo box field. This will update
+     * the combo box with filtered items as user types in the combo box.
+     *
+     * @param event
+     */
     private void handle(KeyEvent event) {
         TextField field = this.getEditor();
         if (field == null) {
@@ -61,6 +92,11 @@ public class AutoCompleteCombo<T> extends ComboBox<T> {
         this.show();
     }
 
+    /***
+     * @param text
+     *            The text used to filter the list.
+     * @return A list of filtered items that match the provided text.
+     */
     private ObservableList<T> filteredItems(String text) {
         if (StringUtils.isBlank(text)) {
             return originalItems;

@@ -39,6 +39,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.model.util.LightweightIllegalStateException;
+import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import llnl.gnem.core.io.SAC.SACFileReader;
 import llnl.gnem.core.io.SAC.SACHeader;
 import llnl.gnem.core.metadata.Channel;
@@ -227,8 +228,7 @@ public class SacLoader implements FileToWaveformConverter {
                 return exceptionalResult(e);
             }
 
-            return new Result<>(true,
-                                new Waveform().setBeginTime(beginTime)
+            Waveform waveform = new Waveform().setBeginTime(beginTime)
                                               .setEndTime(endTime)
                                               .setStream(
                                                       new Stream().setChannelName(chan)
@@ -250,7 +250,15 @@ public class SacLoader implements FileToWaveformConverter {
                                               .setSegmentType(dataType)
                                               .setSegmentUnits(dataUnits)
                                               .setSampleRate(sampleRate)
-                                              .setAssociatedPicks(getPicksFromHeader(header)));
+                                              .setAssociatedPicks(getPicksFromHeader(header));
+
+            for (WaveformPick pick : waveform.getAssociatedPicks()) {
+                if (PICK_TYPES.UCS.getPhase().equalsIgnoreCase(pick.getPickType())) {
+                    waveform.setUserStartTime(originTime.add(pick.getPickTimeSecFromOrigin()).getDate());
+                }
+            }
+
+            return new Result<>(true, waveform);
         } catch (NegativeArraySizeException | IllegalStateException | IOException e) {
             return exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable. %s", fileName, e.getMessage()), e));
         } finally {
@@ -263,16 +271,16 @@ public class SacLoader implements FileToWaveformConverter {
     private List<WaveformPick> getPicksFromHeader(SACHeader header) {
         List<WaveformPick> associatedPicks = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            if (!StringUtils.isBlank(header.kt[i]) && !SACHeader.isDefault(header.kt[i]) && header.t[i] != SACHeader.FLOATDEFAULT) {
-                associatedPicks.add(new WaveformPick().setPickName(header.kt[i]).setPickType(header.kt[i]).setPickTimeSecFromOrigin(header.t[i]));
+            if (header.kt[i] != null && !StringUtils.isBlank(header.kt[i].trim()) && !SACHeader.isDefault(header.kt[i]) && header.t[i] != SACHeader.FLOATDEFAULT) {
+                associatedPicks.add(new WaveformPick().setPickName(header.kt[i].trim()).setPickType(header.kt[i].trim()).setPickTimeSecFromOrigin((double) header.t[i]));
             }
         }
 
         if (header.a != SACHeader.FLOATDEFAULT) {
-            associatedPicks.add(new WaveformPick().setPickName("a").setPickType("a").setPickTimeSecFromOrigin(header.a));
+            associatedPicks.add(new WaveformPick().setPickName("a").setPickType("a").setPickTimeSecFromOrigin((double) header.a));
         }
         if (header.f != SACHeader.FLOATDEFAULT) {
-            associatedPicks.add(new WaveformPick().setPickName("f").setPickType("f").setPickTimeSecFromOrigin(header.f));
+            associatedPicks.add(new WaveformPick().setPickName("f").setPickType("f").setPickTimeSecFromOrigin((double) header.f));
         }
 
         return associatedPicks;

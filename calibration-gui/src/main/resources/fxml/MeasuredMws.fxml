@@ -19,9 +19,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css"
-	xmlns="http://javafx.com/javafx/16"
-	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
+<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
 	<children>
 		<VBox>
 			<children>
@@ -47,15 +45,15 @@
 														<StackPane fx:id="spectraPlotPane" pickOnBounds="false" prefHeight="160.0" prefWidth="200.0" />
 														<HBox pickOnBounds="false" prefWidth="200.0">
 															<children>
-																<Pane minWidth="15.0" prefWidth="15.0" />
-																<VBox>
+																<Pane minWidth="15.0" pickOnBounds="false" prefWidth="15.0" />
+																<VBox pickOnBounds="false">
 																	<children>
-																		<Label text="Event" />
-																		<ComboBox fx:id="evidCombo" minWidth="150.0" prefWidth="150.0" />
+																		<Label pickOnBounds="false" text="Event" />
+																		<ComboBox fx:id="evidCombo" minWidth="150.0" pickOnBounds="false" prefWidth="150.0" />
 																	</children>
 																</VBox>
-																<Pane minWidth="15.0" prefWidth="15.0" />
-																<VBox>
+																<Pane minWidth="15.0" pickOnBounds="false" prefWidth="15.0" />
+																<VBox pickOnBounds="false">
 																	<children>
 																		<Label />
 																		<Button minWidth="25.0" mnemonicParsing="false" fx:id="xAxisShrink">
@@ -65,7 +63,7 @@
 																		</Button>
 																	</children>
 																</VBox>
-																<VBox>
+																<VBox pickOnBounds="false">
 																	<children>
 																		<Label />
 																		<Button fx:id="yAxisShrink" minWidth="25.0" mnemonicParsing="false">
@@ -75,8 +73,8 @@
 																		</Button>
 																	</children>
 																</VBox>
-																<Pane minWidth="10.0" prefWidth="10.0" />
-																<VBox>
+																<Pane minWidth="10.0" pickOnBounds="false" prefWidth="10.0" />
+																<VBox pickOnBounds="false">
 																	<children>
 																		<Label />
 																		<Button fx:id="exportSpectraBtn" minWidth="25.0" mnemonicParsing="false" onAction="#exportSpectra">
@@ -256,8 +254,8 @@
 															<contextMenu>
 																<ContextMenu fx:id="paramTableContextMenu">
 																	<items>
-																		<MenuItem mnemonicParsing="false" onAction="#removeRefEvents" text="Remove Ref Events" />
-																		<MenuItem mnemonicParsing="false" onAction="#clearRefEvents" text="Clear Ref Events" />
+																		<MenuItem mnemonicParsing="false" onAction="#removeRefEvents" text="Remove Selected Ref" />
+																		<MenuItem mnemonicParsing="false" onAction="#clearRefEvents" text="Remove All Ref" />
 																		<MenuItem mnemonicParsing="false" onAction="#toggleValidationEvent" text="Toggle Validation" />
 																	</items>
 																</ContextMenu>

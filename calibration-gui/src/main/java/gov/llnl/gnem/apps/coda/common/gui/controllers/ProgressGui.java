@@ -27,7 +27,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -35,12 +34,7 @@ import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.util.Callback;
 
-/**
- * @throws IllegalStateException
- *             if the FXML sub-system is unable to initialize the display
- */
 public class ProgressGui {
 
     @FXML
@@ -62,7 +56,7 @@ public class ProgressGui {
         Platform.runLater(() -> {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/ProgressDisplay.fxml"));
             fxmlLoader.setController(this);
-            stage = new Stage(StageStyle.UTILITY);
+            stage = new Stage(StageStyle.DECORATED);
             Font.loadFont(getClass().getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
             Parent root;
             try {
@@ -73,27 +67,21 @@ public class ProgressGui {
                 taskColumn.setCellValueFactory(value -> Bindings.createStringBinding(() -> value.getValue().getDisplayableName()));
 
                 progressColumn.setCellValueFactory(value -> Bindings.createObjectBinding(() -> value.getValue()));
-                progressColumn.setCellFactory(new Callback<TableColumn<ProgressMonitor, Node>, TableCell<ProgressMonitor, Node>>() {
-
+                progressColumn.setCellFactory(param -> new TableCell<ProgressMonitor, Node>() {
                     @Override
-                    public TableCell<ProgressMonitor, Node> call(TableColumn<ProgressMonitor, Node> param) {
-                        return new TableCell<ProgressMonitor, Node>() {
-                            @Override
-                            protected void updateItem(Node item, boolean empty) {
-                                if (item == getItem()) {
-                                    return;
-                                }
-                                super.updateItem(item, empty);
+                    protected void updateItem(Node item, boolean empty) {
+                        if (item == getItem()) {
+                            return;
+                        }
+                        super.updateItem(item, empty);
 
-                                if (item == null) {
-                                    super.setText(null);
-                                    super.setGraphic(null);
-                                } else if (item instanceof Node) {
-                                    super.setText(null);
-                                    super.setGraphic(item);
-                                }
-                            }
-                        };
+                        if (item == null) {
+                            super.setText(null);
+                            super.setGraphic(null);
+                        } else if (item instanceof Node) {
+                            super.setText(null);
+                            super.setGraphic(item);
+                        }
                     }
                 });
 

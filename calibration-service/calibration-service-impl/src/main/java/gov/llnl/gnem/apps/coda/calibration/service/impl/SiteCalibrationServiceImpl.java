@@ -389,15 +389,16 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                 }
                 weightMap.put(frequency, weight);
             }
-            int lowestFrequencies = 2;
-            int i = 0;
-            for (final Double frequency : frequencies.keySet()) {
-                if (i >= lowestFrequencies) {
-                    break;
-                }
-                weightMap.put(frequency, 2 * maxWeight);
-                i++;
-            }
+            //FIXME: Temporarily removing this while we re-evaluate this kind of weighting (again)
+            //            int lowestFrequencies = 2;
+            //            int i = 0;
+            //            for (final Double frequency : frequencies.keySet()) {
+            //                if (i >= lowestFrequencies) {
+            //                    break;
+            //                }
+            //                weightMap.put(frequency, 2 * maxWeight);
+            //                i++;
+            //            }
             return weightMap;
         };
     }

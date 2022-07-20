@@ -280,7 +280,8 @@ public class SpectraCalculatorTest {
                                                                              .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue))),
                     testInput.mwMDAC,
                     testInput.apparentStress,
-                    mdacFi);
+                    mdacFi,
+                    null);
         double energyRatio = testResult.getLogTotalEnergy() / testInput.getEnergy();
         double errorPercent = Math.abs(energyRatio - 1) * 100;
 
@@ -331,7 +332,8 @@ public class SpectraCalculatorTest {
                                                                              .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue))),
                         input.mwMDAC,
                         input.apparentStress,
-                        mdacFi);
+                        mdacFi,
+                        null);
             double energyRatio = testResult.getLogTotalEnergy() / input.getEnergy();
             double errorPercent = Math.abs(energyRatio - 1) * 100;
             if (errorPercent > maxDiff) {

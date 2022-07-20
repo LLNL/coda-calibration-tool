@@ -23,6 +23,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -31,26 +33,54 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurementMetadata;
+import gov.llnl.gnem.apps.coda.calibration.repository.SharedFrequencyBandParametersRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.SiteFrequencyBandParametersRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.SpectraMeasurementRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.SyntheticRepository;
+import gov.llnl.gnem.apps.coda.calibration.repository.VelocityConfigurationRepository;
+import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
+import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.PassFailEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.messaging.SpectraMeasurementChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import gov.llnl.gnem.apps.coda.common.repository.WaveformRepository;
 import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
+import gov.llnl.gnem.apps.coda.common.service.util.MetadataUtils;
 
 @Service
 public class WaveformServiceImpl implements WaveformService {
 
+    private Logger log = LoggerFactory.getLogger(WaveformServiceImpl.class);
+
     private WaveformRepository waveformRepository;
+    private SpectraMeasurementRepository spectraMeasurementRepository;
+    private SpectraCalculator spectraCalc;
+    private SyntheticRepository syntheticRepository;
     private NotificationService notificationService;
     private ExampleMatcher ignoreStandardFieldsMatcher = ExampleMatcher.matching().withIgnoreNullValues().withIgnoreCase().withIgnorePaths("id", "version", "associatedPicks", "segment");
+    private SharedFrequencyBandParametersRepository sfbRepository;
+    private VelocityConfigurationRepository velocityConfigRepository;
+
+    private SiteFrequencyBandParametersRepository siteParamsRepository;
 
     @Autowired
-    public WaveformServiceImpl(WaveformRepository waveformRepository, NotificationService notificationService) {
+    public WaveformServiceImpl(WaveformRepository waveformRepository, SpectraMeasurementRepository spectraMeasurementRepository, SpectraCalculator spectraCalc, SyntheticRepository syntheticRepository,
+            SharedFrequencyBandParametersRepository sfbRepository, SiteFrequencyBandParametersRepository siteParamsRepository, VelocityConfigurationRepository velocityConfigRepository,
+            NotificationService notificationService) {
         this.waveformRepository = waveformRepository;
+        this.spectraMeasurementRepository = spectraMeasurementRepository;
+        this.spectraCalc = spectraCalc;
+        this.syntheticRepository = syntheticRepository;
+        this.sfbRepository = sfbRepository;
+        this.siteParamsRepository = siteParamsRepository;
+        this.velocityConfigRepository = velocityConfigRepository;
         this.notificationService = notificationService;
     }
 
@@ -141,6 +171,37 @@ public class WaveformServiceImpl implements WaveformService {
     @Override
     public Waveform update(Waveform entry) {
         Waveform mergedEntry = waveformRepository.saveAndFlush(attachIfAvailableInRepository(entry));
+        try {
+            SpectraMeasurementMetadata measurementMetadata = spectraMeasurementRepository.findByWaveformId(mergedEntry.getId());
+            if (measurementMetadata != null) {
+                SpectraMeasurement measurement = spectraMeasurementRepository.findById(measurementMetadata.getId()).orElseGet(() -> null);
+                if (measurement != null) {
+                    SyntheticCoda synthetic = syntheticRepository.findByWaveformId(mergedEntry.getId());
+                    if (synthetic != null) {
+                        List<SyntheticCoda> synthetics = new ArrayList<SyntheticCoda>();
+                        synthetics.add(synthetic);
+                        List<SpectraMeasurement> spectraMeasurements = spectraCalc.measureAmplitudes(
+                                synthetics,
+                                    MetadataUtils.mapSharedParamsToFrequencyBands(sfbRepository.findAll()),
+                                    velocityConfigRepository.findFirstByOrderById(),
+                                    MetadataUtils.mapSiteParamsToFrequencyBands(siteParamsRepository.findAll()));
+                        if (spectraMeasurements != null && !spectraMeasurements.isEmpty()) {
+                            measurement.setPathAndSiteCorrected(spectraMeasurements.get(0).getPathAndSiteCorrected());
+                            measurement.setRawAtMeasurementTime(spectraMeasurements.get(0).getRawAtMeasurementTime());
+                            measurement.setRawAtStart(spectraMeasurements.get(0).getRawAtStart());
+
+                            measurement = spectraMeasurementRepository.save(measurement);
+
+                            List<Long> ids = new ArrayList<>();
+                            ids.add(measurement.getId());
+                            notificationService.post(new SpectraMeasurementChangeEvent(ids).setAddOrUpdate(true));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug(e.getLocalizedMessage(), e);
+        }
         notificationService.post(new WaveformChangeEvent(getIds(mergedEntry)).setAddOrUpdate(true));
         return mergedEntry;
     }
