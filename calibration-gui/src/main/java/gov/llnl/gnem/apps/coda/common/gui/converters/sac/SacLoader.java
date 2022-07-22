@@ -179,9 +179,7 @@ public class SacLoader implements FileToWaveformConverter {
             if (SACHeader.isDefault(header.evdp)) {
                 eventDepth = 0;
             } else {
-                //Just going to assume they are following the SAC header standard
-                // and using meters for this field and we want Km
-                eventDepth = header.evdp / 1000.0;
+                eventDepth = header.evdp;
             }
 
             String dataType = StringUtils.trimToEmpty((String) header.getVariableMap().get("depvariabletype")).toLowerCase(Locale.ENGLISH);
