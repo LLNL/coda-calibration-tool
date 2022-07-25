@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>coda-calibration</artifactId>
-	<version>1.0.18</version>
+	<version>1.0.18.1</version>
 	<name>coda-calibration</name>
 
 	<packaging>pom</packaging>

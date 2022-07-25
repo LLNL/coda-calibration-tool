@@ -1,4 +1,4 @@
-FROM registry1.dso.mil/ironbank/redhat/ubi/ubi8:8.4
+FROM registry1.dso.mil/ironbank/redhat/ubi/ubi8:8.6
 ARG USER=1001
 ARG JAVA_OPTS="-XX:MaxRAMPercentage=80"
 ENV JAVA_OPTS=${JAVA_OPTS}

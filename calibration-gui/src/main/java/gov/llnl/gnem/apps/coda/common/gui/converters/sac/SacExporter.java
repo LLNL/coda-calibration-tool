@@ -106,9 +106,7 @@ public class SacExporter {
             header.kevnm = w.getEvent().getEventId();
             header.evla = (float) w.getEvent().getLatitude();
             header.evlo = (float) w.getEvent().getLongitude();
-            //Evdp in meters and we expect Event->Depth to be km so need to convert
-            // back when we save
-            header.evdp = (float) (w.getEvent().getDepth() * 1000.0);
+            header.evdp = (float) (w.getEvent().getDepth());
             String depType = w.getSegmentType();
             if (depType != null && !depType.trim().isEmpty()) {
                 if (depType.toLowerCase(Locale.ENGLISH).startsWith("dis")) {
