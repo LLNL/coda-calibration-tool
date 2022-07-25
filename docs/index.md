@@ -41,7 +41,7 @@ The standalone CCT jar file is calibration-standalone-1.0.18-runnable.jar while 
 #### Downloading SF Bay Area example tarfile
 
 The complete SF Bay Area calibration which includes SAC waveforms, stacked envelopes and JavaScript
-Object Notation (JSON) parameter files can be [downloaded here](https://drive.google.com/file/d/1c1-mmBofJRhNjAChFxunWq3MpbNFO0x8/view?usp=sharing)
+Object Notation (JSON) parameter files can be [downloaded here](https://doi.org/10.5281/zenodo.6902890)
 
 #### Running CCT
 
@@ -213,7 +213,7 @@ Adjusted picks can either be written out to a new folder or to the existing fold
 
 #### Sorting & Re-Picking Events 
 
-In the data table, under the requency column heading, you can click on the low heading tab and this will sort the bands from lowest to highest frequency based on the low end of the frequency band. 
+In the data table, under the frequency column heading, you can click on the low heading tab and this will sort the bands from lowest to highest frequency based on the low end of the frequency band. 
 
 Similarly, by clicking on the station column heading you can sort by station in alphabetical order or the event column heading and it will sort by event ID.
 
@@ -245,7 +245,7 @@ You can zoom into the envelope figure by dragging a box around the area you want
 
 To select a large number of envelopes (see next figure) you can click the upper bound and then while depressing the ‘shift’ button use your mouse to select then ‘single click’ the lower bound that you desire (see highlighted blue area). This allows reviewing lots of data to look for trends (e.g., aftershocks, noise bursts) across stations, bands or events. I select a single band and methodically review all events and stations. 
 
-![img](img/multiple_waveform.png) <figcaption align = "center">Figure. 12, Viewing multiple waveforms at once in a paginated display.</figcaption> <br/>
+![img](img/multiple_waveform.png) <figcaption align = "center">Figure. 12, Viewing multiple waveforms at once in a paginated display. This display also supports synchronized zooming of all waveforms by toggling into the 'Sync Zoom (SZ)' mode.</figcaption> <br/>
 
 CCT will display five envelopes at a time, and you can use left and right arrow keys or the associated buttons (top left) to page through all the envelopes in your selection. Once you’re done, export the waveforms; otherwise all your manual picking will be lost! 
 
@@ -310,7 +310,7 @@ On the left hand side of the moment-rate source spectra are associated metadata 
 * **Observed Apparent Stress** 
     * Apparent stress derived only from observed measurements
 
-* **Model Fit **M<sub>w</sub>**** 
+* **Model Fit M<sub>w</sub>** 
     * **M<sub>w</sub>** derived from omega-square fitting to observed data
 
 * **Model Fit Apparent Stress** 
@@ -319,8 +319,8 @@ On the left hand side of the moment-rate source spectra are associated metadata 
 * **Model Fit Energy** 
     * Integrated energy from 0 to infinity
 
-* **Reference **M<sub>w</sub>**** 
-    * Independent **M<sub>w</sub>** derived a priori, preferably from waveform modeling. 
+* **Reference M<sub>w</sub>**
+    * Independent **M<sub>w</sub>** derived *a priori*, preferably from waveform modeling. 
 
 ![img](img/site.png) <figcaption align = "center">Figure. 16, Site correction and final results plots showing the end spectra for each event after all corrections have been made.</figcaption> <br/>
 
