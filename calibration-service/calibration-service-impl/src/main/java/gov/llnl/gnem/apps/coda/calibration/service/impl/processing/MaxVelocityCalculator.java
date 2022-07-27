@@ -57,6 +57,18 @@ public class MaxVelocityCalculator {
         this.pickService = pickService;
     }
 
+    public List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, VelocityConfiguration velocityConfiguration, boolean persistResults) {
+        return computeMaximumVelocity(
+                waveforms,
+                    getFrequencyBandMap(),
+                    velocityConfiguration.getGroupVelocity1InKmsGtDistance(),
+                    velocityConfiguration.getGroupVelocity2InKmsGtDistance(),
+                    velocityConfiguration.getGroupVelocity1InKmsLtDistance(),
+                    velocityConfiguration.getGroupVelocity2InKmsLtDistance(),
+                    velocityConfiguration.getDistanceThresholdInKm(),
+                    persistResults);
+    }
+
     public List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms) {
         return computeMaximumVelocity(
                 waveforms,
@@ -65,7 +77,8 @@ public class MaxVelocityCalculator {
                     velConf.getGroupVelocity2InKmsGtDistance(),
                     velConf.getGroupVelocity1InKmsLtDistance(),
                     velConf.getGroupVelocity2InKmsLtDistance(),
-                    velConf.getDistanceThresholdInKm());
+                    velConf.getDistanceThresholdInKm(),
+                    true);
     }
 
     public List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, VelocityConfiguration velocityConfiguration) {
@@ -77,7 +90,8 @@ public class MaxVelocityCalculator {
                         velocityConfiguration.getGroupVelocity2InKmsGtDistance(),
                         velocityConfiguration.getGroupVelocity1InKmsLtDistance(),
                         velocityConfiguration.getGroupVelocity2InKmsLtDistance(),
-                        velocityConfiguration.getDistanceThresholdInKm());
+                        velocityConfiguration.getDistanceThresholdInKm(),
+                        true);
         } else {
             return computeMaximumVelocity(waveforms);
         }
@@ -88,7 +102,7 @@ public class MaxVelocityCalculator {
     }
 
     private List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBands, double gv1GtDistanceThreshold,
-            double gv2GtDistanceThreshold, double gv1LtDistanceThreshold, double gv2LtDistanceThreshold, double thresholdInKm) {
+            double gv2GtDistanceThreshold, double gv1LtDistanceThreshold, double gv2LtDistanceThreshold, double thresholdInKm, boolean savePicks) {
         return waveforms.stream().parallel().map(rawWaveform -> {
             if (Thread.currentThread().isInterrupted()) {
                 return null;
@@ -156,7 +170,7 @@ public class MaxVelocityCalculator {
                     //Drop old CS picks if there are any
                     rawWaveform.setAssociatedPicks(rawWaveform.getAssociatedPicks().stream().filter(p -> !PICK_TYPES.CS.getPhase().equals(p.getPickName())).collect(Collectors.toList()));
 
-                    if (!hasUserStartPick) {
+                    if (savePicks && !hasUserStartPick) {
                         WaveformPick startPick = new WaveformPick().setPickType(PICK_TYPES.CS.name())
                                                                    .setPickName(PICK_TYPES.CS.getPhase())
                                                                    .setWaveform(rawWaveform)

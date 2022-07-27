@@ -26,7 +26,10 @@ public interface PeakVelocityMeasurementService extends BaseService<PeakVelocity
 
     public List<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks, VelocityConfiguration velocityConfig);
 
+    public List<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks, VelocityConfiguration velocityConfig, boolean persistResults);
+
     public List<PeakVelocityMeasurementMetadata> findAllMetadataOnly();
 
     public PeakVelocityMeasurementMetadata findByWaveformIdMetadataOnly(Long id);
+
 }

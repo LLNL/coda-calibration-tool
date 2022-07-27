@@ -279,7 +279,7 @@ public class CalibrationServiceImpl implements CalibrationService {
             Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = MetadataUtils.mapSharedParamsToFrequencyBands(sharedParametersService.findAll());
 
             List<Waveform> measStacks = stacks;
-            List<PeakVelocityMeasurement> velocityMeasured = Optional.ofNullable(peakVelocityMeasurementsService.measureVelocities(measStacks, velocityConfig)).orElseGet(ArrayList::new);
+            List<PeakVelocityMeasurement> velocityMeasured = Optional.ofNullable(peakVelocityMeasurementsService.measureVelocities(measStacks, velocityConfig, persistResults)).orElseGet(ArrayList::new);
 
             //Offset the coda start picks to the model velocity from the individual peak velocity estimate
             velocityMeasured = offsetCodaStarts(velocityMeasured, frequencyBandParameterMap);

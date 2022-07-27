@@ -106,7 +106,12 @@ public class PeakVelocityMeasurementServiceImpl implements PeakVelocityMeasureme
 
     @Override
     public List<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks, VelocityConfiguration velocityConfiguration) {
-        return velocityCalc.computeMaximumVelocity(allStacks, velocityConfiguration);
+        return measureVelocities(allStacks, velocityConfiguration, true);
+    }
+
+    @Override
+    public List<PeakVelocityMeasurement> measureVelocities(List<Waveform> allStacks, VelocityConfiguration velocityConfiguration, boolean persistResults) {
+        return velocityCalc.computeMaximumVelocity(allStacks, velocityConfiguration, persistResults);
     }
 
     @Override
