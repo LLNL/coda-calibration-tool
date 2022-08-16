@@ -430,6 +430,13 @@ public class Waveform {
                     p.setWaveform(null);
                 }
             }
+
+            if (!waveformOverlay.getAssociatedPicks().stream().anyMatch(p -> PICK_TYPES.AP.getPhase().equals(p.getPickName()))) {
+                WaveformPick p = picksByName.remove(PICK_TYPES.AP.getPhase());
+                if (p != null) {
+                    p.setWaveform(null);
+                }
+            }
             this.setAssociatedPicks(new ArrayList<>(picksByName.values()));
         }
         if (waveformOverlay.isActive() != null) {
