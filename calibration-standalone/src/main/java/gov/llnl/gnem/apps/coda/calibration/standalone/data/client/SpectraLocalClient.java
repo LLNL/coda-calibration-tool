@@ -80,4 +80,9 @@ public class SpectraLocalClient implements SpectraClient {
                    .onErrorReturn(new ArrayList<>());
     }
 
+    @Override
+    public Mono<Spectra> getSpecificSpectra(double moment, double apparentStress, double start, double stop, int count) {
+        return Mono.just(service.getSpecificSpectra(moment, apparentStress, start, stop, count));
+    }
+
 }

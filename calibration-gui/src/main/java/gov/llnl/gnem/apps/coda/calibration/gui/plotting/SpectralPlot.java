@@ -187,7 +187,7 @@ public class SpectralPlot extends Pane implements Serializable {
      *            calibration spectra
      *            </p>
      */
-    public void plotXYdata(final List<PlotPoint> plots, final List<Spectra> spectra) {
+    public void plotXYdata(final List<PlotPoint> plots, final List<Spectra> spectra, final String label) {
         plot.clear();
 
         if (plots.size() > 1) {
@@ -203,7 +203,11 @@ public class SpectralPlot extends Pane implements Serializable {
             }
 
             final Line line = plotFactory.line(x, y, Color.BLACK, LineStyles.SOLID, 2);
-            line.setName(AVG_MW_LEGEND_LABEL);
+            String lineLabel = AVG_MW_LEGEND_LABEL;
+            if (label != null) {
+                lineLabel = label;
+            }
+            line.setName(lineLabel);
             plot.addPlotObject(line);
         }
 
@@ -264,7 +268,7 @@ public class SpectralPlot extends Pane implements Serializable {
                     line.setName(dfmt.format(y[0]));
                     line.showInLegend(false);
 
-                    jsubplot.addPlotObject(PlottingUtils.legendOnlyLine("UQ2", plotFactory, Color.LIGHTGRAY, LineStyles.DASH));
+                    jsubplot.addPlotObject(PlottingUtils.legendOnlyLine("UQ2", plotFactory, Color.LIGHTGRAY, LineStyles.DOT));
                 }
                 break;
             case FIT:

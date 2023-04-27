@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.common.model.domain;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -90,10 +91,7 @@ public class Station implements Serializable {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((stationName == null) ? 0 : stationName.hashCode());
-        return result;
+        return Objects.hash(stationName);
     }
 
     @Override

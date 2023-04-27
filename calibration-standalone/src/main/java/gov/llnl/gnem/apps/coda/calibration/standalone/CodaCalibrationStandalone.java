@@ -38,6 +38,7 @@ import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.CalibrationApplication;
 import gov.llnl.gnem.apps.coda.calibration.gui.GuiApplication;
+import gov.llnl.gnem.apps.coda.calibration.gui.GuiApplication.ApplicationMode;
 import gov.llnl.gnem.apps.coda.common.gui.SimpleGuiPreloader;
 import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import javafx.application.Application;
@@ -106,7 +107,7 @@ public class CodaCalibrationStandalone extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         CommonGuiUtils.setIcon(this.getClass(), "/coda_256x256.png");
-        new GuiApplication(springContext, bus).start(primaryStage);
+        new GuiApplication(springContext, bus, ApplicationMode.CCT).start(primaryStage);
     }
 
     @Override

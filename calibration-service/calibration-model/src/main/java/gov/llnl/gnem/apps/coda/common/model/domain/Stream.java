@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.common.model.domain;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -93,11 +94,7 @@ public class Stream implements Serializable {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((channelName == null) ? 0 : channelName.hashCode());
-        result = prime * result + ((station == null) ? 0 : station.hashCode());
-        return result;
+        return Objects.hash(channelName, station);
     }
 
     @Override
@@ -112,18 +109,10 @@ public class Stream implements Serializable {
             return false;
         }
         Stream other = (Stream) obj;
-        if (channelName == null) {
-            if (other.channelName != null) {
-                return false;
-            }
-        } else if (!channelName.equals(other.channelName)) {
+        if (!Objects.equals(channelName, other.channelName)) {
             return false;
         }
-        if (station == null) {
-            if (other.station != null) {
-                return false;
-            }
-        } else if (!station.equals(other.station)) {
+        if (!Objects.equals(station, other.station)) {
             return false;
         }
         return true;

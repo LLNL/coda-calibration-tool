@@ -20,6 +20,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -95,6 +96,25 @@ public class SpectraWebClient implements SpectraClient {
                      .bodyToMono(new ParameterizedTypeReference<List<Spectra>>() {
                      })
                      .onErrorReturn(new ArrayList<Spectra>());
+    }
+
+    @Override
+    public Mono<Spectra> getSpecificSpectra(double moment, double apparentStress, double start, double stop, int count) {
+        MultipartBodyBuilder mbb = new MultipartBodyBuilder();
+        mbb.part("moment", moment, MediaType.APPLICATION_JSON);
+        mbb.part("apparentStress", apparentStress, MediaType.APPLICATION_JSON);
+        mbb.part("start", start, MediaType.APPLICATION_JSON);
+        mbb.part("stop", stop, MediaType.APPLICATION_JSON);
+        mbb.part("count", count, MediaType.APPLICATION_JSON);
+
+        return client.post()
+                     .uri("/spectra-measurements/compute-spectra")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .accept(MediaType.APPLICATION_JSON)
+                     .bodyValue(mbb.build())
+                     .retrieve()
+                     .bodyToMono(Spectra.class)
+                     .onErrorReturn(new Spectra());
     }
 
 }

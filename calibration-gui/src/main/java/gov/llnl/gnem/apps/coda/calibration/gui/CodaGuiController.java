@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import javax.annotation.PreDestroy;
 import javax.net.ssl.HostnameVerifier;
@@ -40,15 +39,16 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.GuiApplication.ApplicationMode;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.CodaParamLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.DataController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.EnvelopeLoadingController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.EventTabController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MapListeningController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.PathController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ReferenceEventLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController;
-import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ScreenshotEnabledController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController;
@@ -59,19 +59,23 @@ import gov.llnl.gnem.apps.coda.calibration.gui.events.CalibrationStageShownEvent
 import gov.llnl.gnem.apps.coda.calibration.gui.events.MapIconActivationCallback;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.MapPolygonChangeHandler;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.UpdateMapPolygonEvent;
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.CertLeafletMapController;
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.LeafletMapController;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.WaveformGui;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.CalibrationProgressListener;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.FileDialogs;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent.Status;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioStatusEvent;
 import gov.llnl.gnem.apps.coda.common.gui.controllers.ProgressGui;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
-import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.envelope.gui.EnvelopeGuiController;
+import gov.llnl.gnem.apps.coda.spectra.gui.RatioStatusProgressListener;
+import gov.llnl.gnem.apps.coda.spectra.gui.SpectraRatioGuiController;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
@@ -99,15 +103,21 @@ public class CodaGuiController {
 
     private static final Logger log = LoggerFactory.getLogger(CodaGuiController.class);
 
+    private static final String SCREENSHOT_TITLE = "CERT_Screenshot";
+
     @FXML
     private Node rootElement;
 
+    private LeafletMapController cctMapController;
+    private CertLeafletMapController certMapController;
     private WaveformGui waveformGui;
     private DataController data;
     private ParametersController param;
     private ShapeController shape;
     private PathController path;
     private SiteController site;
+    private EventTabController eventTableController;
+    private SpectraRatioGuiController spectraGui;
     private MeasuredMwsController measuredMws;
 
     @FXML
@@ -131,9 +141,6 @@ public class CodaGuiController {
     @FXML
     private Tab measuredMwsTab;
 
-    private Runnable activeTabRefresh;
-    private Consumer<File> activeTabScreenshot;
-
     @FXML
     private Button showMapButton;
 
@@ -141,18 +148,21 @@ public class CodaGuiController {
     private Button refreshButton;
 
     @FXML
+    private Button centerMapBtn;
+
+    @FXML
     private Button snapshotButton;
 
     @FXML
     private CheckMenuItem waveformFocus;
+
+    private Runnable activeTabRefresh;
 
     private EnvelopeGuiController envelopeGui;
 
     private Label activeMapIcon;
 
     private Label showMapIcon;
-
-    private GeoMap mapController;
 
     private WaveformClient waveformClient;
 
@@ -185,7 +195,8 @@ public class CodaGuiController {
 
     private ProgressGui loadingGui;
 
-    private Map<Long, ProgressMonitor> monitors = new HashMap<>();
+    private Map<Long, ProgressMonitor> calibrationMonitors = new HashMap<>();
+    private Map<Long, ProgressMonitor> ratioMonitors = new HashMap<>();
 
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread thread = new Thread(r);
@@ -205,12 +216,14 @@ public class CodaGuiController {
     private SSLContext sslContext;
 
     @Autowired
-    public CodaGuiController(GeoMap mapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController, CodaParamLoadingController codaParamLoadingController,
-            ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter, WaveformGui waveformGui, DataController data,
-            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient,
-            EnvelopeGuiController envelopeGui, HostnameVerifier hostnameVerifier, SSLContext sslContext, Environment env, EventBus bus) {
-        this.mapController = mapController;
+    public CodaGuiController(LeafletMapController cctMapController, CertLeafletMapController certMapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController,
+            CodaParamLoadingController codaParamLoadingController, ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter,
+            WaveformGui waveformGui, DataController data, ParametersController param, ShapeController shape, PathController path, SiteController site, EventTabController certEventTab,
+            MeasuredMwsController measuredMws, ParameterClient configClient, EnvelopeGuiController envelopeGui, SpectraRatioGuiController spectraGui, HostnameVerifier hostnameVerifier,
+            SSLContext sslContext, Environment env, EventBus bus) {
         this.waveformClient = waveformClient;
+        this.cctMapController = cctMapController;
+        this.certMapController = certMapController;
         this.envelopeLoadingController = waveformLoadingController;
         this.codaParamLoadingController = codaParamLoadingController;
         this.refEventLoadingController = refEventLoadingController;
@@ -222,10 +235,11 @@ public class CodaGuiController {
         this.shape = shape;
         this.path = path;
         this.site = site;
+        this.eventTableController = certEventTab;
         this.measuredMws = measuredMws;
         this.configClient = configClient;
         this.envelopeGui = envelopeGui;
-        this.sslContext = sslContext;
+        this.spectraGui = spectraGui;
         this.env = env;
         this.bus = bus;
         bus.register(this);
@@ -259,6 +273,36 @@ public class CodaGuiController {
     }
 
     @FXML
+    private void changeAppMode() {
+        GuiApplication.changeApplicationMode();
+
+        if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
+            addEnabledTabListeners(shapeTab, shape);
+            addEnabledTabListeners(pathTab, path);
+            addEnabledTabListeners(siteTab, site);
+            addEnabledTabListeners(measuredMwsTab, measuredMws);
+            Platform.runLater(() -> {
+                showMapButton.setGraphic(activeMapIcon);
+            });
+        } else {
+            spectraGui.loadEnvelopes();
+            siteTab.setOnSelectionChanged(e -> {
+                if (siteTab.isSelected()) {
+                    activeTabRefresh = ((RefreshableController) eventTableController).getRefreshFunction();
+                } else {
+                    siteTab.setGraphic(null);
+                }
+            });
+
+            Platform.runLater(() -> {
+                mainTabPane.getTabs().remove(shapeTab);
+                mainTabPane.getTabs().remove(pathTab);
+                mainTabPane.getTabs().remove(measuredMwsTab);
+            });
+        }
+    }
+
+    @FXML
     private void openWaveformLoadingWindow() {
         Optional.ofNullable(sacFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(envelopeLoadingController::loadFiles);
     }
@@ -266,9 +310,24 @@ public class CodaGuiController {
     @FXML
     private void showMapWindow() {
         Platform.runLater(() -> {
-            if (mapController != null) {
-                mapController.show();
-                mapController.fitViewToActiveShapes();
+            if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
+                if (cctMapController != null) {
+                    cctMapController.show();
+                    cctMapController.fitViewToActiveShapes();
+                }
+            } else if (certMapController != null) {
+                certMapController.show();
+                certMapController.fitViewToActiveShapes();
+            }
+        });
+    }
+
+    @FXML
+    private void centerMap() {
+        Platform.runLater(() -> {
+            if (GuiApplication.getStartupMode() == ApplicationMode.CERT && certMapController != null) {
+                certMapController.show();
+                certMapController.fitViewToActiveShapes();
             }
         });
     }
@@ -334,8 +393,8 @@ public class CodaGuiController {
                         Files.move(exportArchive.toPath(), selectedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     }
                 }
-            } catch (IOException e1) {
-                FileDialogs.fileIoErrorAlert(e1);
+            } catch (IOException ex) {
+                FileDialogs.fileIoErrorAlert(ex);
             }
         }
     }
@@ -394,6 +453,8 @@ public class CodaGuiController {
     private void clearData() {
         calibrationClient.clearData().subscribe(val -> {
         }, err -> log.trace(err.getMessage(), err), () -> data.getRefreshFunction().run());
+        spectraGui.loadEnvelopes();
+        activeTabRefresh.run();
     }
 
     @FXML
@@ -413,8 +474,11 @@ public class CodaGuiController {
 
         waveformFocus.selectedProperty().bindBidirectional(waveformGui.focusProperty());
 
-        mapController.registerEventCallback(new MapIconActivationCallback(waveformClient));
-        mapController.registerEventCallback(new MapPolygonChangeHandler(configClient));
+        certMapController.registerEventCallback(new MapIconActivationCallback(waveformClient));
+        certMapController.registerEventCallback(new MapPolygonChangeHandler(configClient));
+
+        cctMapController.registerEventCallback(new MapIconActivationCallback(waveformClient));
+        cctMapController.registerEventCallback(new MapPolygonChangeHandler(configClient));
 
         activeMapIcon = makeMapLabel();
         showMapIcon = makeMapLabel();
@@ -423,21 +487,36 @@ public class CodaGuiController {
         snapshotButton.setContentDisplay(ContentDisplay.CENTER);
 
         addEnabledTabListeners(dataTab, data);
-        activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(dataTab.getText(), dataTab.getContent()));
+
         data.setVisible(true);
 
         paramTab.setOnSelectionChanged(e -> {
             if (paramTab.isSelected()) {
-                mapController.clearIcons();
+                cctMapController.clearIcons();
+                certMapController.clearIcons();
                 activeTabRefresh = param.getRefreshFunction();
-                activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(paramTab.getText(), paramTab.getContent()));
             }
         });
 
-        addEnabledTabListeners(shapeTab, shape);
-        addEnabledTabListeners(pathTab, path);
-        addEnabledTabListeners(siteTab, site);
-        addEnabledTabListeners(measuredMwsTab, measuredMws);
+        if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
+            addEnabledTabListeners(shapeTab, shape);
+            addEnabledTabListeners(pathTab, path);
+            addEnabledTabListeners(siteTab, site);
+            addEnabledTabListeners(measuredMwsTab, measuredMws);
+        } else {
+            siteTab.setOnSelectionChanged(e -> {
+                if (siteTab.isSelected()) {
+                    activeTabRefresh = ((RefreshableController) eventTableController).getRefreshFunction();
+                } else {
+                    siteTab.setGraphic(null);
+                }
+            });
+            Platform.runLater(() -> {
+                mainTabPane.getTabs().remove(shapeTab);
+                mainTabPane.getTabs().remove(pathTab);
+                mainTabPane.getTabs().remove(measuredMwsTab);
+            });
+        }
 
         rootElement.setOnDragOver(event -> {
             if (event.getGestureSource() != rootElement && event.getDragboard().hasFiles()) {
@@ -450,6 +529,17 @@ public class CodaGuiController {
             boolean success = false;
             if (event.getGestureSource() != rootElement && event.getDragboard().hasFiles()) {
                 envelopeLoadingController.loadFiles(event.getDragboard().getFiles());
+
+                if (GuiApplication.getStartupMode() == ApplicationMode.CERT) {
+                    envelopeLoadingController.setCompletionCallback(() -> {
+                        spectraGui.loadEnvelopes();
+                        if (certMapController != null) {
+                            certMapController.show();
+                            certMapController.fitViewToActiveShapes();
+                        }
+                    });
+                }
+
                 codaParamLoadingController.loadFiles(event.getDragboard().getFiles());
                 success = true;
             }
@@ -458,7 +548,7 @@ public class CodaGuiController {
         });
 
         try {
-            loadingGui = new ProgressGui();
+            loadingGui = ProgressGui.getInstance();
         } catch (IllegalStateException e) {
             log.error("Unable to instantiate loading display {}", e.getMessage(), e);
         }
@@ -472,14 +562,12 @@ public class CodaGuiController {
                 controller.refreshView();
                 tab.setGraphic(activeMapIcon);
                 if (controller instanceof RefreshableController) {
-                    activeTabRefresh = ((RefreshableController) controller).getRefreshFunction();
+                    activeTabRefresh = () -> {
+                        ((RefreshableController) controller).getRefreshFunction().run();
+                        ((RefreshableController) eventTableController).getRefreshFunction().run();
+                    };
                 } else {
                     activeTabRefresh = () -> controller.refreshView();
-                }
-                if (controller instanceof ScreenshotEnabledController) {
-                    activeTabScreenshot = ((ScreenshotEnabledController) controller).getScreenshotFunction();
-                } else {
-                    activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(tab.getText(), tab.getContent()));
                 }
             } else {
                 tab.setGraphic(null);
@@ -504,7 +592,7 @@ public class CodaGuiController {
         try {
             if (folder != null && folder.exists() && folder.isDirectory() && folder.canWrite()) {
                 screenshotFolderChooser.setInitialDirectory(folder);
-                Platform.runLater(() -> activeTabScreenshot.accept(folder));
+                SnapshotUtils.writePng(folder, new Pair<>(SCREENSHOT_TITLE + SnapshotUtils.getTimestampWithLeadingSeparator(), rootElement));
             }
         } catch (SecurityException ex) {
             log.warn("Exception trying to write screenshots to folder {} : {}", folder, ex.getLocalizedMessage(), ex);
@@ -537,32 +625,37 @@ public class CodaGuiController {
 
     @Subscribe
     private void listener(UpdateMapPolygonEvent event) {
-        if (mapController != null && event != null && event.getGeoJSON() != null && !event.getGeoJSON().isEmpty()) {
-            mapController.setPolygonGeoJSON(event.getGeoJSON());
+        if (event != null && event.getGeoJSON() != null && !event.getGeoJSON().isEmpty()) {
+            if (certMapController != null) {
+                certMapController.setPolygonGeoJSON(event.getGeoJSON());
+            }
+            if (cctMapController != null) {
+                cctMapController.setPolygonGeoJSON(event.getGeoJSON());
+            }
         }
     }
 
     //TODO: Move this to a controller
     @Subscribe
     private void listener(CalibrationStatusEvent event) {
-        if (!monitors.containsKey(event.getId()) && event.getStatus() == Status.STARTING) {
+        if (!calibrationMonitors.containsKey(event.getId()) && event.getStatus() == Status.STARTING) {
             CalibrationProgressListener eventMonitor = new CalibrationProgressListener(bus, event);
             ProgressMonitor monitor = new ProgressMonitor("Calibration Progress " + event.getId(), eventMonitor);
             monitor.addCancelCallback(() -> calibrationClient.cancelCalibration(event.getId()).subscribe());
-            monitors.put(event.getId(), monitor);
+            calibrationMonitors.put(event.getId(), monitor);
             loadingGui.addProgressMonitor(monitor);
             loadingGui.show();
         }
 
         if (event.getStatus() == Status.COMPLETE || event.getStatus() == Status.ERROR) {
-            final ProgressMonitor monitor = monitors.remove(event.getId());
+            final ProgressMonitor monitor = calibrationMonitors.remove(event.getId());
             if (monitor != null) {
                 monitor.setProgressStage("Finished");
                 monitor.clearCancelCallbacks();
                 service.schedule(() -> loadingGui.removeProgressMonitor(monitor), 15, TimeUnit.MINUTES);
             }
         } else {
-            ProgressMonitor monitor = monitors.get(event.getId());
+            ProgressMonitor monitor = calibrationMonitors.get(event.getId());
             if (monitor != null) {
                 switch (event.getStatus()) {
                 case PEAK_STARTING:
@@ -580,6 +673,37 @@ public class CodaGuiController {
                 default:
                     break;
                 }
+            }
+        }
+    }
+
+    @Subscribe
+    private void listener(RatioStatusEvent event) {
+
+        ProgressMonitor monitor = ratioMonitors.get(event.getId());
+
+        if (monitor == null && event.getStatus() == RatioStatusEvent.Status.STARTING) {
+            RatioStatusProgressListener eventMonitor = new RatioStatusProgressListener(bus, event);
+            ProgressMonitor newMonitor = new ProgressMonitor("Ratio Measurement Progress " + event.getId(), eventMonitor);
+            loadingGui.addProgressMonitor(newMonitor);
+            ratioMonitors.put(event.getId(), newMonitor);
+            service.schedule(() -> loadingGui.removeProgressMonitor(monitor), 15, TimeUnit.MINUTES);
+            loadingGui.show();
+        }
+
+        if (monitor != null && (event.getStatus() == RatioStatusEvent.Status.COMPLETE || event.getStatus() == RatioStatusEvent.Status.ERROR)) {
+            monitor.setProgressStage("Finished");
+            service.schedule(() -> loadingGui.removeProgressMonitor(monitor), 15, TimeUnit.MINUTES);
+        } else if (monitor != null) {
+            switch (event.getStatus()) {
+            case STARTING:
+                monitor.setProgressStage("Starting...");
+                break;
+            case PROCESSING:
+                monitor.setProgressStage("Processing...");
+                break;
+            default:
+                break;
             }
         }
     }

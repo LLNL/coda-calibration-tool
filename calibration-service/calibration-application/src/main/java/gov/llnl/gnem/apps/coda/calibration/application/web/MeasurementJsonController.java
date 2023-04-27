@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,21 +44,16 @@ public class MeasurementJsonController {
 
     private static final Logger log = LoggerFactory.getLogger(MeasurementJsonController.class);
 
-    private CalibrationService service;
+    private CalibrationService calibrationService;
 
     @Autowired
     public MeasurementJsonController(CalibrationService service) {
-        this.service = service;
+        this.calibrationService = service;
     }
 
     @PostMapping(value = "/measure-mws", name = "measureMws")
     public ResponseEntity<?> measureMws(@RequestBody MeasurementJob job) {
         return measureMw(job.getAutopickingEnabled(), job.getPersistResults(), job.getEventIds(), job.getStacks());
-    }
-
-    @GetMapping(value = "/measure-mws", name = "measureMws")
-    public ResponseEntity<?> measureMws() {
-        return measureMw(true, false, null, null);
     }
 
     private ResponseEntity<?> measureMw(Boolean autoPickingEnabled, Boolean persistResults, List<String> evids, List<Waveform> stacks) {
@@ -74,11 +68,11 @@ public class MeasurementJsonController {
         try {
             Result<MeasuredMwReportByEvent> measuredMws;
             if (evids != null && !evids.isEmpty()) {
-                measuredMws = service.makeMwMeasurements(autoPickingEnabled, persistResults, new HashSet<>(evids)).get(4, TimeUnit.HOURS);
+                measuredMws = calibrationService.makeMwMeasurements(autoPickingEnabled, persistResults, new HashSet<>(evids)).get(4, TimeUnit.HOURS);
             } else if (stacks != null && !stacks.isEmpty()) {
-                measuredMws = service.makeMwMeasurements(autoPickingEnabled, persistResults, stacks).get(4, TimeUnit.HOURS);
+                measuredMws = calibrationService.makeMwMeasurements(autoPickingEnabled, persistResults, stacks).get(4, TimeUnit.HOURS);
             } else {
-                measuredMws = service.makeMwMeasurements(autoPickingEnabled, persistResults).get(4, TimeUnit.HOURS);
+                measuredMws = calibrationService.makeMwMeasurements(autoPickingEnabled, persistResults).get(4, TimeUnit.HOURS);
             }
             if (measuredMws != null) {
                 if (measuredMws.isSuccess()) {
@@ -102,5 +96,4 @@ public class MeasurementJsonController {
         }
         return resp == null ? ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build() : resp;
     }
-
 }

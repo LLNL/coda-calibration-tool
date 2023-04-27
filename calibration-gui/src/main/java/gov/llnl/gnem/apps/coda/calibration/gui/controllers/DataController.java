@@ -38,14 +38,15 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.LeafletMapController;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.CertLeafletMapController;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
-import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
@@ -117,7 +118,8 @@ public class DataController implements MapListeningController, RefreshableContro
 
     private ObservableList<Waveform> listData = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
 
-    private GeoMap mapImpl;
+    private LeafletMapController cctMapImpl;
+    private CertLeafletMapController certMapImpl;
 
     private MapPlottingUtilities iconFactory;
 
@@ -147,9 +149,10 @@ public class DataController implements MapListeningController, RefreshableContro
     private boolean isVisible = false;
 
     @Autowired
-    public DataController(WaveformClient client, GeoMap mapImpl, MapPlottingUtilities iconFactory, EventBus bus) {
+    public DataController(WaveformClient client, CertLeafletMapController certMapImpl, LeafletMapController cctMapImpl, MapPlottingUtilities iconFactory, EventBus bus) {
         this.client = client;
-        this.mapImpl = mapImpl;
+        this.cctMapImpl = cctMapImpl;
+        this.certMapImpl = certMapImpl;
         this.iconFactory = iconFactory;
         this.bus = bus;
         bus.register(this);
@@ -317,10 +320,15 @@ public class DataController implements MapListeningController, RefreshableContro
 
     private void refreshMap() {
         if (isVisible) {
-            mapImpl.clearIcons();
+            cctMapImpl.clearIcons();
             synchronized (listData) {
-                mapImpl.addIcons(iconFactory.genIconsFromWaveforms(eventSelectionCallback, stationSelectionCallback, listData));
+                cctMapImpl.addIcons(iconFactory.genIconsFromWaveforms(eventSelectionCallback, stationSelectionCallback, listData));
             }
+            certMapImpl.clearIcons();
+            synchronized (listData) {
+                certMapImpl.addIcons(iconFactory.genIconsFromWaveforms(eventSelectionCallback, stationSelectionCallback, listData));
+            }
+
         }
     }
 
@@ -333,7 +341,8 @@ public class DataController implements MapListeningController, RefreshableContro
         synchronized (listData) {
             listData.clear();
         }
-        mapImpl.clearIcons();
+        cctMapImpl.clearIcons();
+        certMapImpl.clearIcons();
         client.getUniqueEventStationMetadataForStacks().filter(Objects::nonNull).doOnComplete(() -> {
             tableView.sort();
             refreshView();

@@ -64,7 +64,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.StackPane;
-import javafx.stage.Modality;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.Axis.TickFormat;
 import llnl.gnem.core.gui.plotting.api.PlotFactory;
@@ -85,6 +84,7 @@ public class MeasuredMwsController extends AbstractMeasurementController {
 
     private final Map<String, List<Spectra>> fitSpectra = new HashMap<>();
     private ProgressGui progressGui;
+    private ProgressMonitor pm;
 
     private final ThreadPoolExecutor exec = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
         final Thread thread = new Thread(r);
@@ -118,26 +118,16 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         spectraPlotPanel = measuredMws;
         super.initialize();
 
-        final ProgressMonitor pm = new ProgressMonitor("Measuring Mws", new ProgressListener() {
-            @Override
-            public double getProgress() {
-                return -1d;
-            }
-        });
-        progressGui = new ProgressGui();
-        progressGui.addProgressMonitor(pm);
-
-        progressGui.initModality(Modality.NONE);
-        progressGui.setAlwaysOnTop(true);
+        progressGui = ProgressGui.getInstance();
 
         final SpectraPlotController spectra = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
         final SpectralPlot plot = spectra.getSpectralPlot();
-        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(spectra::getSpectraMeasurementMap));
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(spectra::getSpectraDataMap));
         plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(N-m)");
         plot.getSubplot().setMargin(65, 40, 50, null);
         final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
         rightAxis.setTickFormat(TickFormat.LOG10_DYNE_CM_TO_MW);
-        
+
         plot.getSubplot().addAxes(rightAxis);
         spectra.setShowCornerFrequencies(true);
         spectra.setYAxisResizable(true);
@@ -168,10 +158,18 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         spectralMeasurements.clear();
         fitSpectra.clear();
         mwDetails.clear();
-        mfs = calibrationClient.makeMwMeasurements(Boolean.TRUE)
-                               .doOnError(err -> log.trace(err.getMessage(), err))
-                               .doFinally(s -> Platform.runLater(() -> progressGui.hide()))
-                               .block(Duration.of(1000l, ChronoUnit.SECONDS));
+
+        this.pm = new ProgressMonitor("Measuring Mws", new ProgressListener() {
+            @Override
+            public double getProgress() {
+                return -1d;
+            }
+        });
+        progressGui.addProgressMonitor(this.pm);
+        mfs = calibrationClient.makeMwMeasurements(Boolean.TRUE).doOnError(err -> log.trace(err.getMessage(), err)).doFinally(s -> Platform.runLater(() -> {
+            pm.getProgressBar().setProgress(100.0);
+            pm.clearCancelCallbacks();
+        })).block(Duration.of(1000l, ChronoUnit.SECONDS));
         if (mfs != null) {
             fitSpectra.putAll(mfs.getFitSpectra());
 

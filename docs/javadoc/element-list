@@ -56,6 +56,12 @@ gov.llnl.gnem.apps.coda.envelope.service.api
 gov.llnl.gnem.apps.coda.envelope.service.impl
 gov.llnl.gnem.apps.coda.envelope.standalone.data.client
 gov.llnl.gnem.apps.coda.envelope.util
+gov.llnl.gnem.apps.coda.spectra
+gov.llnl.gnem.apps.coda.spectra.gui
+gov.llnl.gnem.apps.coda.spectra.model.domain
+gov.llnl.gnem.apps.coda.spectra.model.domain.messaging
+gov.llnl.gnem.apps.coda.spectra.model.domain.util
+gov.llnl.gnem.apps.coda.spectra.standalone
 llnl.gnem.core.geom
 llnl.gnem.core.gui.plotting.api
 llnl.gnem.core.gui.plotting.events

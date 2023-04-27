@@ -27,6 +27,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -49,10 +50,15 @@ public class ProgressGui {
     @FXML
     private TableColumn<ProgressMonitor, String> taskColumn;
 
+    @FXML
+    private Button clearAllBtn;
+
     private Stage stage;
     private ObservableList<ProgressMonitor> monitors = FXCollections.observableArrayList();
 
-    public ProgressGui() {
+    private static ProgressGui progressGui;
+
+    private ProgressGui() {
         Platform.runLater(() -> {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/ProgressDisplay.fxml"));
             fxmlLoader.setController(this);
@@ -97,6 +103,22 @@ public class ProgressGui {
                 throw new IllegalStateException(e);
             }
         });
+    }
+
+    @FXML
+    public void clearAllProgressMonitors() {
+        if (progressGui != null && progressGui.monitors != null) {
+            progressGui.monitors.clear();
+        }
+    }
+
+    public static ProgressGui getInstance() {
+        if (progressGui == null) {
+            progressGui = new ProgressGui();
+            progressGui.setAlwaysOnTop(true);
+        }
+
+        return progressGui;
     }
 
     public void addProgressMonitor(ProgressMonitor monitor) {

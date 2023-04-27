@@ -277,6 +277,8 @@ public class LeafletMapController implements GeoMap {
     private void writePng(String filename) {
         mapImpl.setShowOverlay(false);
         CompletableFuture.runAsync(() -> {
+            //TODO: Look into option to export .ps or equivalent with merged raster and vector layer.
+
             //This is really dumb and subject to nasty race conditions but, as of writing (Jan 2020), I can find no good way to get a notification from the JavaFX renderer that it actually executed a render pass.
             //There is a pre/post pulse callback on Scene proposed but is not available in Java 8 and we need to maintain compatibility for the moment.
             //Thus we have to do this song and dance to have a reasonable assumption a pulse has happened on the FX thread.

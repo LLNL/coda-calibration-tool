@@ -148,11 +148,10 @@ class DataFilterController<T> {
 
         // Create a label that wraps the checkbox so that the column text
         // is displayed to the left of the checkbox
-        Label buttonWrapper = new Label(columnName);
+        Label buttonWrapper = new Label();
         buttonWrapper.setGraphic(filterBtn);
         buttonWrapper.setContentDisplay(ContentDisplay.RIGHT);
         column.setGraphic(buttonWrapper);
-        column.setText("");
 
         // Create handler for when active state changes
         ChangeListener<? super Boolean> updateActive = (options, oldValue, newValue) -> {

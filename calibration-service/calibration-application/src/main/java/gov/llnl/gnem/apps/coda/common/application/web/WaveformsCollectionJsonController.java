@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -42,21 +42,13 @@ import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 @RequestMapping(value = "/api/v1/waveforms", name = "WaveformsCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class WaveformsCollectionJsonController {
 
-    /**
-     *
-     * @param waveformService
-     */
+    private WaveformService waveformService;
+
     @Autowired
     public WaveformsCollectionJsonController(WaveformService waveformService) {
         this.waveformService = waveformService;
     }
 
-    /**
-     *
-     * @param waveform
-     * @param result
-     * @return ResponseEntity
-     */
     @PostMapping(value = "/query/all", name = "getByExampleAllMatching")
     public ResponseEntity<?> getByExampleAllMatching(@RequestBody Waveform waveform, BindingResult result) {
         List<Waveform> waveforms = getWaveformService().getByExampleAllDistinctMatching(waveform);
@@ -126,11 +118,6 @@ public class WaveformsCollectionJsonController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     *
-     * @param ids
-     * @return ResponseEntity
-     */
     @GetMapping(value = "/metadata/batch/{ids}", name = "getBatchMetadata")
     public ResponseEntity<?> getBatchMetadata(@PathVariable("ids") List<Long> ids) {
         List<Waveform> data = getWaveformService().findAllMetadata(ids);
@@ -141,11 +128,6 @@ public class WaveformsCollectionJsonController {
         }
     }
 
-    /**
-     *
-     * @param ids
-     * @return ResponseEntity
-     */
     @GetMapping(value = "/batch/{ids}", name = "getBatch")
     public ResponseEntity<?> getBatch(@PathVariable("ids") Collection<Long> ids) {
         List<Waveform> data = getWaveformService().findAll(ids);
@@ -156,12 +138,6 @@ public class WaveformsCollectionJsonController {
         }
     }
 
-    /**
-     *
-     * @param waveforms
-     * @param result
-     * @return ResponseEntity
-     */
     @PostMapping(value = "/batch/{sessionId}", name = "createBatch")
     public ResponseEntity<?> createBatch(@PathVariable Long sessionId, @Valid @RequestBody Set<Waveform> waveforms, BindingResult result) {
         if (result.hasErrors()) {
@@ -171,12 +147,6 @@ public class WaveformsCollectionJsonController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     *
-     * @param waveforms
-     * @param result
-     * @return ResponseEntity
-     */
     @PutMapping(value = "/batch/{sessionId}", name = "updateBatch")
     public ResponseEntity<?> updateBatch(@PathVariable Long sessionId, @Valid @RequestBody Set<Waveform> waveforms, BindingResult result) {
         if (result.hasErrors()) {
@@ -186,34 +156,16 @@ public class WaveformsCollectionJsonController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     *
-     * @param ids
-     * @return ResponseEntity
-     */
     @DeleteMapping(value = "/batch/{ids}", name = "deleteBatch")
     public ResponseEntity<?> deleteBatch(@PathVariable("ids") Collection<Long> ids) {
         getWaveformService().delete(ids);
         return ResponseEntity.ok().build();
     }
 
-    /**
-     *
-     */
-    private WaveformService waveformService;
-
-    /**
-     *
-     * @return WaveformService
-     */
     public WaveformService getWaveformService() {
         return waveformService;
     }
 
-    /**
-     *
-     * @param waveformService
-     */
     public void setWaveformService(WaveformService waveformService) {
         this.waveformService = waveformService;
     }

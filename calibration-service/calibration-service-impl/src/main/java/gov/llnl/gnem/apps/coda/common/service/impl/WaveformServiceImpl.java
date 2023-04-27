@@ -344,4 +344,9 @@ public class WaveformServiceImpl implements WaveformService {
         }
         return ids;
     }
+
+    @Override
+    public List<String> getUniqueEventIds() {
+        return waveformRepository.getUniqueEventIds();
+    }
 }

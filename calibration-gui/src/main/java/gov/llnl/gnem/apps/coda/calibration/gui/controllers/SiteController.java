@@ -14,7 +14,11 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -25,8 +29,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +53,9 @@ import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
+import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -55,6 +64,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -70,11 +80,16 @@ import reactor.core.scheduler.Schedulers;
 @Component
 public class SiteController extends AbstractMeasurementController {
 
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     private static final String AVERAGE_LABEL = "Average";
 
     private static final String X_AXIS_LABEL = "center freq (Hz)";
 
     private static final String DISPLAY_NAME = "Site";
+
+    @FXML
+    private Tab siteTermsTab;
 
     @FXML
     private StackPane sitePane;
@@ -120,14 +135,14 @@ public class SiteController extends AbstractMeasurementController {
 
         final SpectraPlotController raw = new SpectraPlotController(SpectraMeasurement::getRawAtMeasurementTime);
         SpectralPlot plot = raw.getSpectralPlot();
-        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(raw::getSpectraMeasurementMap));
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(raw::getSpectraDataMap));
         plot.setLabels("Raw Plot", X_AXIS_LABEL, "log10(non-dim)");
         plot.setAutoCalculateYaxisRange(true);
         rawPlotNode.getChildren().add(plot);
 
         final SpectraPlotController site = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
         plot = site.getSpectralPlot();
-        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(site::getSpectraMeasurementMap));
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(site::getSpectraDataMap));
         plot.setLabels("Moment Rate Spectra", X_AXIS_LABEL, "log10(N-m)");
         plot.getSubplot().setMargin(60, 40, 50, null);
         final Axis rightAxis = new BasicAxis(Axis.Type.Y_RIGHT, "Mw");
@@ -410,5 +425,26 @@ public class SiteController extends AbstractMeasurementController {
                                    .collect(Collectors.toList())
                                    .subscribeOn(Schedulers.boundedElastic())
                                    .block(Duration.ofSeconds(10l));
+    }
+
+    @Override
+    public Consumer<File> getScreenshotFunction() {
+        return folder -> {
+            if (siteTermsTab.isSelected() && siteTermStationCombo.getValue() != null) {
+                final String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
+                SnapshotUtils.writePng(folder, new Pair<>(getDisplayName(), siteTermsTab.getContent()), timestamp);
+                try {
+                    Files.write(Paths.get(folder + File.separator + getDisplayName() + "_Site-Transfer_" + siteTermStationCombo.getValue() + timestamp + ".svg"), siteTermsPlot.getSVG().getBytes());
+
+                    Files.write(
+                            Paths.get(folder + File.separator + getDisplayName() + "_Relative-Site_" + siteTermStationCombo.getValue() + timestamp + ".svg"),
+                                relativeSiteTermsPlot.getSVG().getBytes());
+                } catch (final IOException e) {
+                    log.error("Error attempting to write plots for controller : {}", e.getLocalizedMessage(), e);
+                }
+            } else {
+                super.getScreenshotFunction().accept(folder);
+            }
+        };
     }
 }

@@ -17,7 +17,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
+<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
 	<children>
 		<GridPane VBox.vgrow="NEVER">
 			<columnConstraints>
@@ -80,6 +80,7 @@
 						<Menu mnemonicParsing="false" text="Tools">
 							<items>
 								<MenuItem fx:id="envelopeTool" mnemonicParsing="false" onAction="#openEnvelopeTool" text="Create Envelopes" />
+                        <MenuItem fx:id="changeAppModeBtn" mnemonicParsing="false" onAction="#changeAppMode" text="Change to CERT Mode" />
 							</items>
 						</Menu>
                   <Menu mnemonicParsing="false" text="Help">

@@ -16,9 +16,11 @@ package llnl.gnem.core.gui.plotting.api;
 
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
+import java.util.Map;
 
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import llnl.gnem.core.gui.plotting.plotly.PlotObjectData;
 
 public interface BasicPlot extends Serializable {
 
@@ -57,5 +59,9 @@ public interface BasicPlot extends Serializable {
     public void setMargin(Integer top, Integer bottom, Integer left, Integer right);
 
     public void setUseHorizontalBottomLegend(boolean useHorizontalBottomLegend);
+
+    public Map<String, PlotObjectData> getPlotTypes();
+
+    public void fullReplot();
 
 }

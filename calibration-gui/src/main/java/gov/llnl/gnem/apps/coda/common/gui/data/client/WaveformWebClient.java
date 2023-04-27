@@ -73,7 +73,7 @@ public class WaveformWebClient implements WaveformClient {
                      .accept(MediaType.APPLICATION_JSON)
                      .retrieve()
                      .bodyToFlux(Waveform.class)
-                     .doOnError(e -> log.error(e.getMessage(), e))
+                     .doOnError(e -> log.debug(e.getMessage(), e))
                      .onErrorReturn(new Waveform());
     }
 
@@ -84,7 +84,7 @@ public class WaveformWebClient implements WaveformClient {
                      .accept(MediaType.APPLICATION_JSON)
                      .retrieve()
                      .bodyToFlux(Waveform.class)
-                     .doOnError(e -> log.error(e.getMessage(), e))
+                     .doOnError(e -> log.debug(e.getMessage(), e))
                      .onErrorReturn(new Waveform());
     }
 

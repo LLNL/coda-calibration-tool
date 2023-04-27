@@ -13,71 +13,17 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
-import gov.llnl.gnem.apps.coda.calibration.gui.plotting.SpectralPlot;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
-import javafx.geometry.Point2D;
-import llnl.gnem.core.gui.plotting.api.Symbol;
 
-public class SpectraPlotController {
-    private final SpectralPlot spectraPlot = new SpectralPlot();
-    private boolean isYaxisResizble = false;
-    private final Function<SpectraMeasurement, Double> dataFunction;
-    private boolean shouldShowFits = false;
-    private final Map<Point2D, SpectraMeasurement> spectraMeasurementMap = new HashMap<>();
+public class SpectraPlotController extends BaseSpectraPlotController<SpectraMeasurement> {
 
     public SpectraPlotController(final Function<SpectraMeasurement, Double> dataFunction) {
-        this.dataFunction = dataFunction;
-    }
-
-    public SpectralPlot getSpectralPlot() {
-        return spectraPlot;
-    }
-
-    public Map<Point2D, SpectraMeasurement> getSpectraMeasurementMap() {
-        return spectraMeasurementMap;
-    }
-
-    public Map<Point2D, List<Symbol>> getSymbolMap() {
-        return spectraPlot.getSymbolMap();
-    }
-
-    public void setYAxisResize(final boolean shouldYAxisShrink, final double minY, final double maxY) {
-        if (isYaxisResizble) {
-            spectraPlot.setAutoCalculateYaxisRange(shouldYAxisShrink);
-            if (shouldYAxisShrink) {
-                spectraPlot.setAllYlimits(minY, maxY);
-            } else {
-                spectraPlot.setAllYlimits();
-            }
-        }
-    }
-
-    public void setYAxisResizable(final boolean isYaxisResizble) {
-        this.isYaxisResizble = isYaxisResizble;
-    }
-
-    public Function<SpectraMeasurement, Double> getDataFunc() {
-        return dataFunction;
-    }
-
-    public void setShowCornerFrequencies(final boolean showCornerFrequencies) {
-        this.spectraPlot.showCornerFrequency(showCornerFrequencies);
-    }
-
-    public boolean shouldShowFits() {
-        return shouldShowFits;
-    }
-
-    public void setShouldShowFits(final boolean shouldShowFits) {
-        this.shouldShowFits = shouldShowFits;
+        super(dataFunction);
     }
 
     public void showConstraintWarningBanner(boolean visible) {
-        spectraPlot.showConstraintWarningBanner(visible);
+        this.getSpectralPlot().showConstraintWarningBanner(visible);
     }
 }

@@ -56,4 +56,6 @@ public interface SpectraMeasurementService {
 
     public List<Spectra> getFitSpectraForEventId(String eventId, List<FrequencyBand> frequencyBands, PICK_TYPES selectedPhase);
 
+    public Spectra getSpecificSpectra(double moment, double apparentStress, double start, double stop, int count);
+
 }

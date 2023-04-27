@@ -23,13 +23,13 @@ public class PlotObjectData {
     private final List<Double[]> zData;
     private final List<Double> cData;
     private final List<String> textData;
-    private PlotlyTrace traceStyle;
+    private PlotTrace traceStyle;
 
     public PlotObjectData() {
         this(null);
     }
 
-    public PlotObjectData(final PlotlyTrace traceStyle) {
+    public PlotObjectData(final PlotTrace traceStyle) {
         xData = new ArrayList<>(0);
         yData = new ArrayList<>(0);
         zData = new ArrayList<>(0);
@@ -58,12 +58,20 @@ public class PlotObjectData {
         return textData;
     }
 
-    public PlotlyTrace getTraceStyle() {
+    public PlotTrace getTraceStyle() {
         return traceStyle;
     }
 
-    public void setTraceStyle(final PlotlyTrace traceStyle) {
+    public void setTraceStyle(final PlotTrace traceStyle) {
         this.traceStyle = traceStyle;
+    }
+
+    public void clear() {
+        xData.clear();
+        yData.clear();
+        zData.clear();
+        cData.clear();
+        textData.clear();
     }
 
 }

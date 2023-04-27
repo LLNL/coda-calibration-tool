@@ -40,6 +40,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonCo
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.MeasuredMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraRatioTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ValidationMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.EventSpectraReport;
@@ -61,14 +62,16 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ValidationMwParam
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
 
 @Component
-public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter, ValidationMwTempFileWriter {
+public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter, ValidationMwTempFileWriter, SpectraRatioTempFileWriter {
 
     private static final Logger log = LoggerFactory.getLogger(JsonTempFileWriter.class);
 
     private static final String CALIBRATION_JSON_NAME = "Calibration_Parameters.json";
     private static final String MW_JSON_NAME = "Measured_Events.json";
+    private static final String RATIO_JSON_NAME = "Spectra_Ratio_Pair_Details.json";
 
     private ObjectMapper mapper;
 
@@ -139,6 +142,21 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
     }
 
     @Override
+    public void writeSpectraRatioDetails(Path folder, List<SpectraRatioPairDetails> spectraRatioPairDetails) {
+        writeSpectraRatioDetails(folder, RATIO_JSON_NAME, spectraRatioPairDetails);
+    }
+
+    @Override
+    public void writeSpectraRatioDetails(Path folder, String filename, List<SpectraRatioPairDetails> spectraRatioPairDetails) {
+        try {
+            JsonNode document = createOrGetDocument(folder, filename);
+            writeSpectraRatioEvents(createOrGetFile(folder, filename), document, spectraRatioPairDetails);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void writeSpectraValues(Path folder, String filename, List<EventSpectraReport> measurements) {
         try {
             JsonNode document = createOrGetDocument(folder, filename);
@@ -195,6 +213,10 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
 
     private void writeMeasuredEvents(File file, JsonNode document, List<MeasuredMwDetails> measuredMwsDetails) throws IOException {
         writeArrayNodeToFile(file, document, measuredMwsDetails, CalibrationJsonConstants.MEASURED_EVENTS_FIELD);
+    }
+
+    private void writeSpectraRatioEvents(File file, JsonNode document, List<SpectraRatioPairDetails> spectraRatioPairDetails) throws IOException {
+        writeArrayNodeToFile(file, document, spectraRatioPairDetails, "spectra-ratio-pair-details");
     }
 
     private <T> void writeArrayNodeToFile(File file, JsonNode document, Collection<T> values, String field) throws IllegalArgumentException, IOException {

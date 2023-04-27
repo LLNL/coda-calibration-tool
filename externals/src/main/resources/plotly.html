@@ -5,6 +5,12 @@
 	<title>Plot</title>
 	<script src='plotly.min.js'></script>
 	<link rel='stylesheet' href='plotly.css' />
+	<style>
+		body {
+			overflow-x: hidden;
+			overflow-y: hidden;
+		}
+	</style>
 </head>
 
 <body>
@@ -496,21 +502,14 @@
 
 		var getSvg = function () {
 			let gd = document.getElementById("plot");
-			let oldWidth = gd._fullLayout.width;
-			let oldHeight = gd._fullLayout.height;
-			layout.width = oldWidth * 2;
-			layout.height = oldHeight * 2;
-			layout.autosize = false;
-			Plotly.react(gd, data, layout, config);
 			let svg = Plotly.Snapshot.toSVG(gd, {
 				format: 'svg'
 			});
-			layout.width = oldWidth;
-			layout.height = oldHeight;
-			layout.autosize = true;
-			Plotly.react(gd, data, layout, config).then(attach);
+			Plotly.newPlot("plot", data, layout, config).then(attach);
+			attachPlotDivHandlers();
 			return svg;
 		};
+
 	</script>
 </body>
 

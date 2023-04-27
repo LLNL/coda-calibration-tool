@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -49,43 +49,52 @@ public class MeasuredMwsServiceImpl implements MeasuredMwsService {
         this.eventRepository = eventRepository;
     }
 
+    @Override
     @Transactional
     public void delete(MeasuredMwParameters MeasuredMwParameters) {
         measuredMwsRepository.delete(MeasuredMwParameters);
     }
 
+    @Override
     @Transactional
     public List<MeasuredMwParameters> save(Iterable<MeasuredMwParameters> entities) {
         return measuredMwsRepository.saveAll(entities);
     }
 
+    @Override
     @Transactional
     public void delete(Iterable<Long> ids) {
         List<MeasuredMwParameters> toDelete = measuredMwsRepository.findAllById(ids);
         measuredMwsRepository.deleteAllInBatch(toDelete);
     }
 
+    @Override
     @Transactional
     public MeasuredMwParameters save(MeasuredMwParameters entity) {
         return measuredMwsRepository.save(entity);
     }
 
+    @Override
     public MeasuredMwParameters findOne(Long id) {
         return measuredMwsRepository.findOneDetached(id);
     }
 
+    @Override
     public MeasuredMwParameters findOneForUpdate(Long id) {
         return measuredMwsRepository.findOneDetached(id);
     }
 
+    @Override
     public List<MeasuredMwParameters> findAll(Iterable<Long> ids) {
         return measuredMwsRepository.findAllById(ids);
     }
 
+    @Override
     public List<MeasuredMwParameters> findAll() {
         return measuredMwsRepository.findAll();
     }
 
+    @Override
     public long count() {
         return measuredMwsRepository.count();
     }
@@ -115,25 +124,32 @@ public class MeasuredMwsServiceImpl implements MeasuredMwsService {
         }).collect(Collectors.toList());
 
         //Ref v Meas
-        details.addAll(reference.stream()
-                                .filter(ref -> measured.stream().noneMatch(meas -> ref.getEventId().equals(meas.getEventId())))
-                                .map(ref -> new MeasuredMwDetails(null, ref, null, eventRepository.findEventById(ref.getEventId())))
-                                .map(ref -> {
-                                    validation.stream().filter(val -> ref.getEventId().equals(val.getEventId())).findFirst().ifPresent(v -> {
-                                        ref.setValMw(v.getMw());
-                                        ref.setValApparentStressInMpa(v.getApparentStressInMpa());
-                                    });
-                                    return ref;
-                                })
-                                .collect(Collectors.toList()));
+        details.addAll(
+                reference.stream()
+                         .filter(ref -> measured.stream().noneMatch(meas -> ref.getEventId().equals(meas.getEventId())))
+                         .map(ref -> new MeasuredMwDetails(null, ref, null, eventRepository.findEventById(ref.getEventId())))
+                         .map(ref -> {
+                             validation.stream().filter(val -> ref.getEventId().equals(val.getEventId())).findFirst().ifPresent(v -> {
+                                 ref.setValMw(v.getMw());
+                                 ref.setValApparentStressInMpa(v.getApparentStressInMpa());
+                             });
+                             return ref;
+                         })
+                         .collect(Collectors.toList()));
 
         //Val ^ (Ref v Meas)
-        details.addAll(validation.stream()
-                                 .filter(val -> measured.stream().noneMatch(meas -> val.getEventId().equals(meas.getEventId())))
-                                 .filter(val -> reference.stream().noneMatch(ref -> val.getEventId().equals(ref.getEventId())))
-                                 .map(val -> new MeasuredMwDetails(null, null, val, eventRepository.findEventById(val.getEventId())))
-                                 .collect(Collectors.toList()));
+        details.addAll(
+                validation.stream()
+                          .filter(val -> measured.stream().noneMatch(meas -> val.getEventId().equals(meas.getEventId())))
+                          .filter(val -> reference.stream().noneMatch(ref -> val.getEventId().equals(ref.getEventId())))
+                          .map(val -> new MeasuredMwDetails(null, null, val, eventRepository.findEventById(val.getEventId())))
+                          .collect(Collectors.toList()));
 
         return details;
+    }
+
+    @Override
+    public MeasuredMwParameters findByEventId(String eventId) {
+        return measuredMwsRepository.findOneByEventId(eventId);
     }
 }

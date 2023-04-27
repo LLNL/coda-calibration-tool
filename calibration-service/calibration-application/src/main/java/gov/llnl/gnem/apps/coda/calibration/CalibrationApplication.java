@@ -34,8 +34,8 @@ import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepoImpl;
 @ComponentScan("gov.llnl.gnem.apps.coda.common.service")
 @ComponentScan("gov.llnl.gnem.apps.coda.envelope")
 @ComponentScan("gov.llnl.gnem.apps.coda.calibration")
-@EntityScan(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.envelope.model.domain", "gov.llnl.gnem.apps.coda.common" })
-@EnableJpaRepositories(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.envelope", "gov.llnl.gnem.apps.coda.common" }, repositoryBaseClass = DetachableJpaRepoImpl.class)
+@EntityScan(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.envelope", "gov.llnl.gnem.apps.coda.spectra", "gov.llnl.gnem.apps.coda.common" })
+@EnableJpaRepositories(basePackages = { "gov.llnl.gnem.apps.coda.calibration", "gov.llnl.gnem.apps.coda.envelope", "gov.llnl.gnem.apps.coda.spectra", "gov.llnl.gnem.apps.coda.common" }, repositoryBaseClass = DetachableJpaRepoImpl.class)
 public class CalibrationApplication {
     @PostConstruct
     void started() {

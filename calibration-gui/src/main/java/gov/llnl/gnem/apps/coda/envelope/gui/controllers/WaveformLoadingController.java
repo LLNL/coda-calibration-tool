@@ -50,6 +50,7 @@ import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacExporter;
 import gov.llnl.gnem.apps.coda.common.gui.converters.sac.SacLoader;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressEventProgressListener;
 import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Progress;
 import gov.llnl.gnem.apps.coda.common.model.messaging.ProgressEvent;
@@ -108,7 +109,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
         List<File> files = new ArrayList<>();
         if (path != null) {
             try (Stream<Path> fs = Files.walk(path)) {
-                files = fs.map(p -> p.toFile()).filter(f -> f.isFile() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".env")).collect(Collectors.toList());
+                files = fs.map(Path::toFile).filter(f -> f.isFile() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".env")).collect(Collectors.toList());
             } catch (IOException e) {
                 log.warn(e.getMessage(), e);
             }
@@ -144,12 +145,10 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                             String evid = null;
                             if (header.kevnm != null && !header.kevnm.trim().isEmpty() && header.kevnm.trim().matches("[0-9]*")) {
                                 evid = header.kevnm.trim();
+                            } else if (header.nevid != 0) {
+                                evid = Integer.toString(header.nevid).trim();
                             } else {
-                                if (header.nevid != 0) {
-                                    evid = Integer.toString(header.nevid).trim();
-                                } else {
-                                    evid = sacLoader.getOrCreateEvid(header).trim();
-                                }
+                                evid = sacLoader.getOrCreateEvid(header).trim();
                             }
                             if (evid != null) {
                                 String evidStaFreq = evid + SEP + header.kstnm.trim() + SEP + info.getLowFrequency() + SEP + info.getHighFrequency();
@@ -303,7 +302,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
             throw new IllegalStateException("Unable to export waveform, waveform was null");
         }
 
-        String station = Optional.ofNullable(w.getStream()).map(stream -> stream.getStation()).map(sta -> sta.getStationName()).orElse("");
+        String station = Optional.ofNullable(w.getStream()).map(gov.llnl.gnem.apps.coda.common.model.domain.Stream::getStation).map(Station::getStationName).orElse("");
         TimeT time = w.getEvent() != null ? new TimeT(w.getEvent().getOriginTime()) : new TimeT(w.getBeginTime());
         if (time != null) {
             String evid = sacLoader.getOrCreateEvid(w);

@@ -52,4 +52,6 @@ public interface WaveformService extends BaseService<Waveform, Long> {
     public List<Waveform> getSharedEventStationStacksById(Long id);
 
     public List<Waveform> getActiveSharedEventStationStacksById(Long id);
+
+    public List<String> getUniqueEventIds();
 }

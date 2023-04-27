@@ -95,7 +95,7 @@ public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeis
                     ProgressMonitor processingMonitor = new ProgressMonitor("Exporting", new ProgressEventProgressListener(bus, processingProgressEvent));
 
                     try {
-                        ProgressGui progressGui = new ProgressGui();
+                        ProgressGui progressGui = ProgressGui.getInstance();
                         progressGui.show();
                         progressGui.addProgressMonitor(processingMonitor);
                         fileProcessingProgress.setTotal(1l);
@@ -147,7 +147,7 @@ public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeis
                     Platform.runLater(() -> processingFailedMonitor.getProgressBar().getStyleClass().add("red-bar"));
 
                     try {
-                        ProgressGui progressGui = new ProgressGui();
+                        ProgressGui progressGui = ProgressGui.getInstance();
                         progressGui.show();
                         progressGui.addProgressMonitor(processingMonitor);
                         progressGui.addProgressMonitor(processingFailedMonitor);

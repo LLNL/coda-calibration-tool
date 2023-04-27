@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+
+<GridPane pickOnBounds="false" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="0.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints minHeight="0.0" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <AnchorPane pickOnBounds="false" prefHeight="600.0" prefWidth="800.0">
+         <children>
+            <StackPane fx:id="ratioPlotNode" pickOnBounds="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <BorderPane fx:id="borderPane" prefHeight="200.0" prefWidth="200.0">
+                     <center>
+                        <SplitPane fx:id="ratioSplitPane" dividerPositions="0.7" orientation="VERTICAL" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                          <items>
+                            <AnchorPane fx:id="waveformsPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                                 <children>
+                                    <Button fx:id="snapshotButton" mnemonicParsing="false" onAction="#screenshotPlots" pickOnBounds="false" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0" />
+                                    <Button fx:id="showRatioOnMapButton" alignment="CENTER_RIGHT" maxWidth="70.0" minHeight="25.0" minWidth="70.0" mnemonicParsing="false" onAction="#showRatioOnMap" pickOnBounds="false" prefWidth="70.0" text="Map" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0" />
+                                 </children>
+                              </AnchorPane>
+                            <AnchorPane fx:id="ratioWaveformPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0" />
+                          </items>
+                        </SplitPane>
+                     </center>
+                     <top>
+                        <ToolBar fx:id="topToolbar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                     </top>
+                  </BorderPane>
+               </children>
+            </StackPane>
+         </children>
+      </AnchorPane>
+   </children>
+</GridPane>

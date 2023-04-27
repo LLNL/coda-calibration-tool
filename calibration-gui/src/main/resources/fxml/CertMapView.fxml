@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane fx:id="mapPane" prefHeight="150.0" prefWidth="200.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.plotting.CertLeafletMapController">
+   <children>
+      <BorderPane>
+         <center>
+            <ScrollPane fx:id="viewScroll" fitToHeight="true" fitToWidth="true" BorderPane.alignment="CENTER">
+               <content>
+                  <StackPane fx:id="mapView" />
+               </content>
+            </ScrollPane>
+         </center>
+      </BorderPane>
+      <Button fx:id="mapSnapshotButton" mnemonicParsing="false" onAction="#showMapSnapshotDialog" StackPane.alignment="BOTTOM_LEFT">
+         <StackPane.margin>
+            <Insets bottom="10.0" left="5.0" />
+         </StackPane.margin>
+         <tooltip>
+            <Tooltip text="Save screenshot of the map" />
+         </tooltip>
+      </Button>
+   </children>
+</StackPane>

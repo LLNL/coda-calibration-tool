@@ -120,4 +120,7 @@ public interface WaveformRepository extends DetachableJpaRepository<Waveform, Lo
             + "and w.event.eventId in (select ev.event.eventId from Waveform ev where ev.id = :id) "
             + "and w.stream.station.stationName in (select sta.stream.station.stationName from Waveform sta where sta.id = :id)")
     public List<Waveform> findAllSharedEventStationStacksById(@Param("id") Long id);
+
+    @Query("select distinct w.event.eventId from Waveform w")
+    public List<String> getUniqueEventIds();
 }

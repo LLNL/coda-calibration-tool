@@ -75,6 +75,13 @@ public class SpectraMeasurementJsonController {
         return ResponseEntity.ok(theoreticalSpectra);
     }
 
+    @PostMapping(value = "/compute-spectra", name = "computeSpectra")
+    public ResponseEntity<?> computeSpectra(@RequestBody Double moment, @RequestBody Double apparentStress, @RequestBody Double start, @RequestBody Double stop, @RequestBody Integer count,
+            BindingResult result) {
+        Spectra theoreticalSpectra = service.getSpecificSpectra(moment, apparentStress, start, stop, count);
+        return ResponseEntity.ok(theoreticalSpectra);
+    }
+
     @PostMapping(value = "/fit-spectra", name = "getFitSpectraForEventId")
     public ResponseEntity<?> getFitSpectraForEventId(@RequestBody String eventId, BindingResult result) {
         //FIXME: Accept a phase to use!

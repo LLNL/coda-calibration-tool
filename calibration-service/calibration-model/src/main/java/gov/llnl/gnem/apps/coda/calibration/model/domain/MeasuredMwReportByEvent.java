@@ -25,7 +25,6 @@ public class MeasuredMwReportByEvent {
     private Map<String, List<SpectraMeasurementMetadata>> spectraMeasurements;
 
     public MeasuredMwReportByEvent(Map<String, MeasuredMwDetails> measuredMwDetails, Map<String, List<Spectra>> fitSpectra, Map<String, List<SpectraMeasurementMetadata>> spectraMeasurements) {
-        super();
         this.measuredMwDetails = measuredMwDetails;
         this.fitSpectra = fitSpectra;
         this.spectraMeasurements = spectraMeasurements;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 *
@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -84,7 +83,6 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.SpectraMeasurementChangeEv
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -98,9 +96,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -164,159 +160,6 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
     @FXML
     protected ComboBox<String> evidCombo;
-
-    @FXML
-    protected TableView<MeasuredMwDetails> eventTable;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> evidCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> dateCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> mwCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> obsEnergyCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq1LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq1HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq2LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyUq2HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq1LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq1HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq2LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> totalEnergyMDACUq2HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> energyRatioCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> energyStressCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> energyStressUq1LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> energyStressUq1HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> energyStressUq2LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> energyStressUq2HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> stressCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMwCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMeCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredStressCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> valMwCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> valStressCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> mistfitCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMwUq1LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMwUq1HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMwUq2LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMwUq2HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMeUq1LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMeUq1HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMeUq2LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredMeUq2HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredStressUq1LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredStressUq1HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredStressUq2LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredStressUq2HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq1LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq1HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq2LowCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> measuredCornerFreqUq2HighCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, Integer> iterationsCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, Integer> dataCountCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, Integer> stationCountCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> bandCoverageCol;
-
-    @FXML
-    protected TableColumn<MeasuredMwDetails, String> likelyPoorlyConstrainedCol;
-
-    @FXML
-    protected TableColumn<LabeledPlotPoint, String> stationCol;
 
     @FXML
     protected HiddenHeaderTableView<Pair<String, String>> summaryTable;
@@ -514,74 +357,6 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             }
         });
 
-        CellBindingUtils.attachTextCellFactoriesString(evidCol, MeasuredMwDetails::getEventId);
-        evidCol.comparatorProperty().set(new MaybeNumericStringComparator());
-
-        CellBindingUtils.attachTextCellFactoriesString(dateCol, MeasuredMwDetails::getDatetime);
-
-        CellBindingUtils.attachTextCellFactories(mwCol, MeasuredMwDetails::getRefMw, dfmt4);
-        CellBindingUtils.attachTextCellFactories(stressCol, MeasuredMwDetails::getRefApparentStressInMpa, dfmt4);
-        CellBindingUtils.attachTextCellFactories(valMwCol, MeasuredMwDetails::getValMw, dfmt4);
-        CellBindingUtils.attachTextCellFactories(valStressCol, MeasuredMwDetails::getValApparentStressInMpa, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(measuredMwCol, MeasuredMwDetails::getMw, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMwUq1LowCol, MeasuredMwDetails::getMw1Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMwUq1HighCol, MeasuredMwDetails::getMw1Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMwUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMwUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMeCol, MeasuredMwDetails::getMe, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMeUq1LowCol, MeasuredMwDetails::getMw1Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMeUq1HighCol, MeasuredMwDetails::getMw1Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMeUq2LowCol, MeasuredMwDetails::getMw2Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredMeUq2HighCol, MeasuredMwDetails::getMw2Max, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(obsEnergyCol, MeasuredMwDetails::getObsEnergy, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyCol, MeasuredMwDetails::getTotalEnergy, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyUq1LowCol, MeasuredMwDetails::getLogTotalEnergy1Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyUq1HighCol, MeasuredMwDetails::getLogTotalEnergy1Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyUq2LowCol, MeasuredMwDetails::getLogTotalEnergy2Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyUq2HighCol, MeasuredMwDetails::getLogTotalEnergy2Max, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(totalEnergyMDACCol, MeasuredMwDetails::getTotalEnergyMDAC, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq1LowCol, MeasuredMwDetails::getLogTotalEnergyMDAC1Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq1HighCol, MeasuredMwDetails::getLogTotalEnergyMDAC1Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq2LowCol, MeasuredMwDetails::getLogTotalEnergyMDAC2Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(totalEnergyMDACUq2HighCol, MeasuredMwDetails::getLogTotalEnergyMDAC2Max, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(energyRatioCol, MeasuredMwDetails::getEnergyRatio, dfmt4);
-        CellBindingUtils.attachTextCellFactories(energyStressCol, MeasuredMwDetails::getEnergyStress, dfmt4);
-        CellBindingUtils.attachTextCellFactories(energyStressUq1LowCol, MeasuredMwDetails::getObsAppStress1Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(energyStressUq1HighCol, MeasuredMwDetails::getObsAppStress1Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(energyStressUq2LowCol, MeasuredMwDetails::getObsAppStress2Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(energyStressUq2HighCol, MeasuredMwDetails::getObsAppStress2Max, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(measuredStressCol, MeasuredMwDetails::getApparentStressInMpa, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredStressUq1LowCol, MeasuredMwDetails::getApparentStress1Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredStressUq1HighCol, MeasuredMwDetails::getApparentStress1Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredStressUq2LowCol, MeasuredMwDetails::getApparentStress2Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredStressUq2HighCol, MeasuredMwDetails::getApparentStress2Max, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(measuredCornerFreqCol, MeasuredMwDetails::getCornerFreq, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq1LowCol, MeasuredMwDetails::getCornerFreq1Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq1HighCol, MeasuredMwDetails::getCornerFreq1Max, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq2LowCol, MeasuredMwDetails::getCornerFreq2Min, dfmt4);
-        CellBindingUtils.attachTextCellFactories(measuredCornerFreqUq2HighCol, MeasuredMwDetails::getCornerFreq2Max, dfmt4);
-
-        CellBindingUtils.attachTextCellFactories(mistfitCol, MeasuredMwDetails::getMisfit, dfmt4);
-        CellBindingUtils.attachTextCellFactories(bandCoverageCol, MeasuredMwDetails::getBandCoverage, dfmt4);
-        CellBindingUtils.attachTextCellFactoriesString(likelyPoorlyConstrainedCol, mw -> mw.isLikelyPoorlyConstrained().toString());
-
-        stationCountCol.setCellValueFactory(
-                x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getStationCount).orElseGet(() -> 0)).asObject());
-
-        iterationsCol.setCellValueFactory(
-                x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getIterations).orElseGet(() -> 0)).asObject());
-
-        dataCountCol.setCellValueFactory(
-                x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getDataCount).orElseGet(() -> 0)).asObject());
-
-        eventTable.setItems(mwParameters);
-
         menu = new ContextMenu();
         include = new MenuItem("Include Selected");
         menu.getItems().add(include);
@@ -615,7 +390,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
     private void plotSpectra() {
         clearSpectraPlots();
         spectraControllers.forEach(spc -> {
-            spc.getSpectraMeasurementMap().clear();
+            spc.getSpectraDataMap().clear();
             spc.getSymbolMap().clear();
         });
         plotPointMap.clear();
@@ -663,7 +438,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 filteredMeasurements = Collections.emptyList();
             }
 
-            if (mwDetails.getEventId() != null) {
+            if (mwDetails != null && mwDetails.getEventId() != null) {
                 final Spectra fitSpectra = fittingSpectra.get(0);
                 summaryValues.add(
                         new Pair<>("Mw (Model Fit)",
@@ -765,11 +540,11 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
         spectraControllers.forEach(spc -> {
             if (fittingSpectra != null && spc.shouldShowFits()) {
-                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), fittingSpectra);
+                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), fittingSpectra, null);
             } else {
-                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), null);
+                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), null, null);
             }
-            spc.getSpectraMeasurementMap().putAll(mapSpectraToPoint(selectedEventMeasurements, spc.getDataFunc()));
+            spc.getSpectraDataMap().putAll(mapSpectraToPoint(selectedEventMeasurements, spc.getDataFunc()));
 
             spc.showConstraintWarningBanner(showPoorlyConstrainedBanner);
         });
@@ -1131,7 +906,6 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                                     .distinct()
                                                     .sorted(new MaybeNumericStringComparator())
                                                     .collect(Collectors.toList()));
-                        eventTable.sort();
                     });
 
                     final Map<String, Map<Double, SummaryStatistics>> evidStats = new HashMap<>();
@@ -1533,36 +1307,5 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 handlePlotObjectClicked((PlotObjectClick) po, point -> symbolMapSupplier.get().get(point));
             }
         };
-    }
-
-    @FXML
-    private void clearRefEvents() {
-        removeRefEvents(mwParameters);
-    }
-
-    @FXML
-    private void removeRefEvents() {
-        final List<MeasuredMwDetails> evs = new ArrayList<>(eventTable.getSelectionModel().getSelectedIndices().size());
-        eventTable.getSelectionModel().getSelectedIndices().forEach(i -> evs.add(mwParameters.get(i)));
-        removeRefEvents(evs);
-    }
-
-    @FXML
-    private void toggleValidationEvent() {
-        final List<MeasuredMwDetails> evs = new ArrayList<>(eventTable.getSelectionModel().getSelectedIndices().size());
-        eventTable.getSelectionModel().getSelectedIndices().forEach(i -> evs.add(mwParameters.get(i)));
-        if (!evs.isEmpty()) {
-            referenceEventClient.toggleValidationEventsByEventId(evs.stream().map(MeasuredMwDetails::getEventId).distinct().collect(Collectors.toList()))
-                                .doOnComplete(() -> Platform.runLater(this::reloadData))
-                                .subscribe();
-        }
-    }
-
-    private void removeRefEvents(final List<MeasuredMwDetails> evs) {
-        if (evs != null && !evs.isEmpty()) {
-            referenceEventClient.removeReferenceEventsByEventId(evs.stream().map(MeasuredMwDetails::getEventId).distinct().collect(Collectors.toList()))
-                                .doOnSuccess(v -> Platform.runLater(this::reloadData))
-                                .subscribe();
-        }
     }
 }

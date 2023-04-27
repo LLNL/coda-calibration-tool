@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2022, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -142,6 +142,7 @@ public class CalibrationServiceImpl implements CalibrationService {
         thread.setDaemon(true);
         return thread;
     });
+
     private final ExecutorService measureService;
 
     private Map<Long, Future<?>> runningJobs = new ConcurrentHashMap<>(2);
@@ -279,7 +280,8 @@ public class CalibrationServiceImpl implements CalibrationService {
             Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = MetadataUtils.mapSharedParamsToFrequencyBands(sharedParametersService.findAll());
 
             List<Waveform> measStacks = stacks;
-            List<PeakVelocityMeasurement> velocityMeasured = Optional.ofNullable(peakVelocityMeasurementsService.measureVelocities(measStacks, velocityConfig, persistResults)).orElseGet(ArrayList::new);
+            List<PeakVelocityMeasurement> velocityMeasured = Optional.ofNullable(peakVelocityMeasurementsService.measureVelocities(measStacks, velocityConfig, persistResults))
+                                                                     .orElseGet(ArrayList::new);
 
             //Offset the coda start picks to the model velocity from the individual peak velocity estimate
             velocityMeasured = offsetCodaStarts(velocityMeasured, frequencyBandParameterMap);
@@ -289,10 +291,10 @@ public class CalibrationServiceImpl implements CalibrationService {
             }
 
             final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap = new HashMap<>(frequencyBandParameterMap);
-            velocityMeasured = filterVelocityBySnr(snrFilterMap, velocityMeasured);
+            velocityMeasured = MetadataUtils.filterVelocityBySnr(snrFilterMap, velocityMeasured);
 
             measStacks = velocityMeasured.stream().map(PeakVelocityMeasurement::getWaveform).filter(Objects::nonNull).collect(Collectors.toList());
-            measStacks = filterToEndPicked(measStacks);
+            measStacks = MetadataUtils.filterToEndPicked(measStacks);
 
             List<SyntheticCoda> synthetics = syntheticGenerationService.generateSynthetics(measStacks, frequencyBandParameterMap);
 
@@ -310,7 +312,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                 }
 
                 measStacks = velocityMeasured.stream().map(PeakVelocityMeasurement::getWaveform).collect(Collectors.toList());
-                measStacks = filterToEndPicked(measStacks);
+                measStacks = MetadataUtils.filterToEndPicked(measStacks);
 
                 synthetics = syntheticGenerationService.generateSynthetics(measStacks, frequencyBandParameterMap);
             }
@@ -427,7 +429,7 @@ public class CalibrationServiceImpl implements CalibrationService {
 
                     // We want to filter out the ones that don't pass the user's
                     // SNR threshold
-                    List<PeakVelocityMeasurement> snrFilteredVelocity = filterVelocityBySnr(snrFilterMap, velocityMeasurements);
+                    List<PeakVelocityMeasurement> snrFilteredVelocity = MetadataUtils.filterVelocityBySnr(snrFilterMap, velocityMeasurements);
 
                     // Now save the new ones we just calculated
                     snrFilteredVelocity = peakVelocityMeasurementsService.save(snrFilteredVelocity);
@@ -460,7 +462,7 @@ public class CalibrationServiceImpl implements CalibrationService {
                     // service and get raw at start and raw at measurement time
                     // values back
                     stacks = snrFilteredVelocity.stream().map(PeakVelocityMeasurement::getWaveform).filter(Objects::nonNull).collect(Collectors.toList());
-                    stacks = filterToEndPicked(stacks);
+                    stacks = MetadataUtils.filterToEndPicked(stacks);
 
                     List<SyntheticCoda> synthetics = syntheticGenerationService.generateSynthetics(stacks, frequencyBandParameterMap);
                     List<SpectraMeasurement> spectra = spectraMeasurementService.measureSpectra(synthetics, frequencyBandParameterMap, velocityConfig);
@@ -553,29 +555,6 @@ public class CalibrationServiceImpl implements CalibrationService {
             cancelled = true;
         }
         return cancelled;
-    }
-
-    private List<Waveform> filterToEndPicked(List<Waveform> stacks) {
-        return stacks.parallelStream().filter(wave -> wave.getAssociatedPicks() != null).map(wave -> {
-            Optional<WaveformPick> pick = wave.getAssociatedPicks().stream().filter(p -> p.getPickType() != null && PICK_TYPES.F.name().equalsIgnoreCase(p.getPickType().trim())).findFirst();
-            if (pick.isPresent() && pick.get().getPickTimeSecFromOrigin() > 0) {
-                return wave;
-            } else {
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-    }
-
-    private List<PeakVelocityMeasurement> filterVelocityBySnr(final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap, List<PeakVelocityMeasurement> velocityMeasurements) {
-        return velocityMeasurements.stream().parallel().filter(vel -> {
-            boolean valid = false;
-            if (vel.getWaveform() != null) {
-                FrequencyBand fb = new FrequencyBand(vel.getWaveform().getLowFrequency(), vel.getWaveform().getHighFrequency());
-                SharedFrequencyBandParameters params = snrFilterMap.get(fb);
-                valid = params != null && vel.getSnr() >= params.getMinSnr();
-            }
-            return valid;
-        }).collect(Collectors.toList());
     }
 
     private Map<String, List<ReferenceMwParameters>> collectByEvid(List<ReferenceMwParameters> refMws) {
@@ -684,4 +663,5 @@ public class CalibrationServiceImpl implements CalibrationService {
         }
         return velocityMeasurements;
     }
+
 }

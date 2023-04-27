@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
@@ -16,25 +16,17 @@ package gov.llnl.gnem.apps.coda.calibration.gui.data.exporters;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveOutputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +48,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -79,7 +72,6 @@ public class ParamExporter {
             List<ReferenceMwTempFileWriter> referenceMwWriters, List<ValidationMwTempFileWriter> validationMwWriters, List<SpectraTempFileWriter> spectraWriters) {
         this.paramClient = paramClient;
         this.paramWriters = paramWriters;
-
         this.eventClient = eventClient;
         this.mwWriters = mwWriters;
         this.referenceMwWriters = referenceMwWriters;
@@ -151,34 +143,7 @@ public class ParamExporter {
             }
         }
 
-        File zipDir = File.createTempFile("zip-dir", "tmp");
-        zipDir.deleteOnExit();
-
-        try (Stream<Path> fileStream = Files.walk(tmpFolder, 5)) {
-            List<File> files = fileStream.map(Path::toFile).filter(File::isFile).collect(Collectors.toList());
-            try (ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("zip", Files.newOutputStream(zipDir.toPath()))) {
-                for (File file : files) {
-                    os.putArchiveEntry(new ZipArchiveEntry(file, file.getName()));
-                    try (InputStream fis = Files.newInputStream(file.toPath())) {
-                        IOUtils.copy(fis, os);
-                    }
-                    os.closeArchiveEntry();
-                }
-                os.flush();
-            } catch (ArchiveException e) {
-                throw new IOException(e);
-            }
-            try (Stream<Path> tmpFileStream = Files.walk(tmpFolder)) {
-                tmpFileStream.sorted(Comparator.reverseOrder()).forEach(t -> {
-                    try {
-                        Files.deleteIfExists(t);
-                    } catch (IOException e) {
-                        log.trace("Unable to delete temporary file {}", e.getMessage(), e);
-                    }
-                });
-            }
-        }
-        return zipDir;
+        return CommonGuiUtils.zipDirectory(tmpFolder);
     }
 
     public void writeMeasuredMws(Path path, String filename, List<MeasuredMwDetails> mws) {

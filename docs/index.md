@@ -9,7 +9,7 @@ osti_url: https://www.osti.gov/doecode/biblio/8964
 version: 1.0
 ---
 
-# Coda Calibration Tool (CCT) 1.0.18 documentation
+# Coda Calibration Tool (CCT) 1.0.19 documentation
 <sub>2022-07-31; Version 1.0; Authors Barno, Justin | Mayeda, Kevin</sub>
 
 ## About CCT
@@ -36,7 +36,7 @@ Overwriting the Envelope directory during the initial QA of the data is common. 
 
 The latest version of the Coda Calibration Tool (CCT) can be found on the [release page](https://github.com/LLNL/coda-calibration-tool/releases/)
 
-The standalone CCT jar file is calibration-standalone-1.0.18-runnable.jar while the REST services only are available in calibration-application-1.0.18-runnable.jar.
+The standalone CCT jar file is calibration-standalone-1.0.19-runnable.jar while the REST services only are available in calibration-application-1.0.19-runnable.jar.
 
 #### Downloading SF Bay Area example tarfile
 
@@ -47,11 +47,11 @@ Object Notation (JSON) parameter files can be [downloaded here](https://doi.org/
 
 You can launch CCT by executing Java from the command line as:
 
-``` java -Xmx12g -jar calibration-standalone-1.0.18-runnable.jar ```
+``` java -Xmx12g -jar calibration-standalone-1.0.19-runnable.jar ```
 
 Or, if you have Java 11+ as:
 
-``` java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.18-runnable.jar ```
+``` java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.19-runnable.jar ```
 
 Generally your -Xmx flag should be set to, at most, ~70% of the physical RAM available on the machine.
 

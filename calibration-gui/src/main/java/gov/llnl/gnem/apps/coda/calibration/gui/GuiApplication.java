@@ -59,15 +59,25 @@ import reactor.core.publisher.Hooks;
 @ComponentScan("gov.llnl.gnem.apps.coda.envelope.model")
 @ComponentScan("gov.llnl.gnem.apps.coda.envelope.gui")
 @ComponentScan("gov.llnl.gnem.apps.coda.calibration.gui")
+@ComponentScan("gov.llnl.gnem.apps.coda.spectra.gui")
 public class GuiApplication extends Application {
+
+    public enum ApplicationMode {
+        CERT, CCT
+    }
+
+    static final String CERT_TITLE = "Coda Envelope Ratio Tool";
+    static final String CCT_TITLE = "Coda Calibration Tool";
 
     private static final Logger log = LoggerFactory.getLogger(GuiApplication.class);
 
-    private ConfigurableApplicationContext springContext;
+    private static ConfigurableApplicationContext springContext;
 
-    private Stage primaryStage;
+    private static Stage primaryStage;
 
     private EventBus bus;
+
+    private static ApplicationMode startupMode;
 
     @PostConstruct
     void started() {
@@ -78,9 +88,10 @@ public class GuiApplication extends Application {
     public GuiApplication() {
     }
 
-    public GuiApplication(ConfigurableApplicationContext springContext, EventBus bus) {
+    public GuiApplication(ConfigurableApplicationContext springContext, EventBus bus, ApplicationMode mode) {
         this.springContext = springContext;
         this.bus = bus;
+        GuiApplication.startupMode = mode;
     }
 
     public static void main(String[] args) {
@@ -130,13 +141,20 @@ public class GuiApplication extends Application {
             Class<GuiApplication> clazz = GuiApplication.class;
             String className = clazz.getSimpleName() + ".class";
             String classPath = clazz.getResource(className).toString();
-            String baseTitle = props.getBaseTitle();
+            String baseTitle = "";
+
+            if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
+                baseTitle = CCT_TITLE;
+            } else {
+                baseTitle = CERT_TITLE;
+            }
+
             if (classPath.startsWith("jar")) {
                 String manifestPath = classPath.substring(0, classPath.indexOf('!') + 1) + "/META-INF/MANIFEST.MF";
                 Manifest mf = new Manifest(new URL(manifestPath).openStream());
                 Attributes atts = mf.getMainAttributes();
                 // Put this info in the log to help with analysis
-                log.info(
+                log.debug(
                         "Version:{} Commit:{} Branch:{} By:{} at {}",
                             atts.getValue("Implementation-Version"),
                             atts.getValue("Implementation-Build"),
@@ -147,7 +165,7 @@ public class GuiApplication extends Application {
                 baseTitle += " Built at " + atts.getValue("Build-Timestamp");
             } else {
                 // Class not from JAR
-                log.info("{} not running from a jar.", baseTitle);
+                log.debug("{} not running from a jar.", baseTitle);
             }
             props.setBaseTitle(baseTitle);
         } catch (IOException e) {
@@ -156,11 +174,54 @@ public class GuiApplication extends Application {
         }
 
         Platform.setImplicitExit(true);
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/CodaGui.fxml"));
+        FXMLLoader fxmlLoader = null;
+
+        if (startupMode == ApplicationMode.CERT) {
+            fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/CertGui.fxml"));
+        } else {
+            fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/CodaGui.fxml"));
+        }
         fxmlLoader.setControllerFactory(springContext::getBean);
 
         try {
             Font.loadFont(getClass().getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
+            Parent root = fxmlLoader.load();
+            Platform.runLater(() -> {
+                primaryStage.setTitle(props.getBaseTitle());
+                Scene scene = new Scene(root, props.getHeight(), props.getWidth());
+                primaryStage.setScene(scene);
+                primaryStage.show();
+            });
+        } catch (IllegalStateException | IOException e) {
+            log.error("Unable to load main panel FXML file, terminating. {}", e.getMessage(), e);
+            Platform.exit();
+        }
+    }
+
+    static public void changeApplicationMode() {
+
+        if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
+            GuiApplication.startupMode = ApplicationMode.CERT;
+        } else {
+            GuiApplication.startupMode = ApplicationMode.CCT;
+        }
+
+        Platform.runLater(() -> {
+            primaryStage.close();
+        });
+
+        AppProperties props = springContext.getBean(AppProperties.class);
+        FXMLLoader fxmlLoader = null;
+        if (GuiApplication.startupMode == ApplicationMode.CERT) {
+            props.setBaseTitle(CERT_TITLE);
+            fxmlLoader = new FXMLLoader(GuiApplication.class.getResource("/fxml/CertGui.fxml"));
+        } else {
+            props.setBaseTitle(CCT_TITLE);
+            fxmlLoader = new FXMLLoader(GuiApplication.class.getResource("/fxml/CodaGui.fxml"));
+        }
+        fxmlLoader.setControllerFactory(springContext::getBean);
+
+        try {
             Parent root = fxmlLoader.load();
             Platform.runLater(() -> {
                 primaryStage.setTitle(props.getBaseTitle());
@@ -185,6 +246,14 @@ public class GuiApplication extends Application {
         }
         Platform.exit();
         System.exit(0);
+    }
+
+    public static ApplicationMode getStartupMode() {
+        return startupMode;
+    }
+
+    public static void setStartupMode(ApplicationMode startupMode) {
+        GuiApplication.startupMode = startupMode;
     }
 
     public Stage getPrimaryStage() {

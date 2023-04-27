@@ -67,13 +67,13 @@ public class EModel {
         return new ENUCoordinate(other.getyEastKm() * 1000, other.getxNorthKm() * 1000, -other.getzDownKm() * 1000);
     }
 
-    static double getSeparationMeters(GeodeticCoordinate c1, GeodeticCoordinate c2) {
+    public static double getSeparationMeters(GeodeticCoordinate c1, GeodeticCoordinate c2) {
         ECEFCoordinate ec1 = geodetic2ecef(c1);
         ECEFCoordinate ec2 = geodetic2ecef(c2);
         return ec1.getSeparationMeters(ec2);
     }
 
-    static double getDistance(GeodeticCoordinate pt1, GeodeticCoordinate pt2) {
+    public static double getDistance(GeodeticCoordinate pt1, GeodeticCoordinate pt2) {
         return Geodesic.WGS84.Inverse(pt1.getLat(), pt1.getLon(), pt2.getLat(), pt2.getLon()).s12 / 1000;
     }
 
@@ -124,11 +124,13 @@ public class EModel {
         double dif;
         int nsta = az.size();
         for (int i = 1; i < nsta; ++i) {
-            if ((dif = az.get(i) - az.get(i - 1)) > maxGap) {
+            dif = az.get(i) - az.get(i - 1);
+            if (dif > maxGap) {
                 maxGap = dif;
             }
         }
-        if ((dif = az.get(0) + 360 - az.get(nsta - 1)) > maxGap) {
+        dif = az.get(0) + 360 - az.get(nsta - 1);
+        if (dif > maxGap) {
             maxGap = dif;
         }
         return maxGap;
@@ -716,7 +718,7 @@ public class EModel {
      *            The number of desired points in the track.
      * @return The Vector of Vertex objects that define the track.
      */
-    public static ArrayList<Vertex> track(double startLat, double startLon, double endLat, double endLon, int npts) {
+    public static List<Vertex> track(double startLat, double startLon, double endLat, double endLon, int npts) {
         if (npts < 3) {
             npts = 3;
         }

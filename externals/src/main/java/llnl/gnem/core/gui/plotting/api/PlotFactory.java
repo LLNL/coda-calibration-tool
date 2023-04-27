@@ -26,7 +26,11 @@ public interface PlotFactory {
 
     public Line line(double[] xVals, double[] yVals, Color color, LineStyles style, int pxThickness);
 
+    public Line lineX(String label, double startingX, double xIncrement, float[] xData, Color color, LineStyles style, int pxThickness);
+
     public VerticalLine verticalLine(double x, double yRatio, String label);
+
+    public Rectangle rectangle(final double x1, final double x2, final double yRatio, final String label, final Color color);
 
     public Symbol createSymbol(SymbolStyles style, String name, double x, double y, Color color, Color edgeColor, Color textColor, String text, boolean textVisible);
 

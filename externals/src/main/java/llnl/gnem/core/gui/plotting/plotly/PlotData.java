@@ -25,10 +25,10 @@ import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.Title;
 
-public class PlotlyPlotData implements Serializable {
+public class PlotData implements Serializable {
     private static final long serialVersionUID = 1L;
     private AtomicBoolean plotReady;
-    private PlotlyTrace defaultTraceStyle;
+    private PlotTrace defaultTraceStyle;
     private List<Axis> axes;
     private Map<String, PlotObjectData> defaultTypePlots;
     private Color backgroundColor;
@@ -40,7 +40,7 @@ public class PlotlyPlotData implements Serializable {
     private boolean showCodaStartLine;
     private boolean useHorizontalBottomLegend;
 
-    public PlotlyPlotData(final PlotlyTrace defaultTraceStyle, final Color backgroundColor, final Title plotTitle) {
+    public PlotData(final PlotTrace defaultTraceStyle, final Color backgroundColor, final Title plotTitle) {
         this.defaultTraceStyle = defaultTraceStyle;
         this.backgroundColor = backgroundColor;
         this.plotTitle = plotTitle;
@@ -54,11 +54,11 @@ public class PlotlyPlotData implements Serializable {
         this.plotReady = plotReady;
     }
 
-    public PlotlyTrace getDefaultTraceStyle() {
+    public PlotTrace getDefaultTraceStyle() {
         return defaultTraceStyle;
     }
 
-    public void setDefaultTraceStyle(final PlotlyTrace defaultTraceStyle) {
+    public void setDefaultTraceStyle(final PlotTrace defaultTraceStyle) {
         this.defaultTraceStyle = defaultTraceStyle;
     }
 

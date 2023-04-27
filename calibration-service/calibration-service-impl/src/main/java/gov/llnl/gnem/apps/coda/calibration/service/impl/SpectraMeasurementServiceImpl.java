@@ -171,4 +171,9 @@ public class SpectraMeasurementServiceImpl implements SpectraMeasurementService 
         return spectra;
     }
 
+    @Override
+    public Spectra getSpecificSpectra(double moment, double apparentStress, double start, double stop, int count) {
+        return spectraCalc.computeSpecificSpectraFromM0(moment, apparentStress, start, stop, count);
+    }
+
 }

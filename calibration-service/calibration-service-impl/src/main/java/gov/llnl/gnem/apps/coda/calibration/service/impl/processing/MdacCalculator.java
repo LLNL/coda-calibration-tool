@@ -60,6 +60,7 @@ public class MdacCalculator {
     private double radpatP;
     private double radpatS;
     private double m0_ref;
+    private double K;
 
     public MdacCalculator(double sigma, double M0ref, double Psi, double Zeta, double AlphaS, double BetaS, double RadpatP, double RadpatS, double M0) {
         sigmaA = getApparentStress(MPA_TO_PA * sigma, M0, M0ref, Psi);
@@ -70,6 +71,7 @@ public class MdacCalculator {
         this.radpatP = RadpatP;
         this.radpatS = RadpatS;
         this.m0_ref = M0ref;
+        this.K = calculateK(zeta, alphaS, betaS, radpatP, radpatS);
     }
 
     /**
@@ -114,8 +116,6 @@ public class MdacCalculator {
      * @return the Moment rate spectra at frequency f, M0(f)
      */
     public double calculateMomentRateSpectra(double frequency, double m0, double sigma, double psi, PICK_TYPES phase) {
-        double K = calculateK(zeta, alphaS, betaS, radpatP, radpatS);
-
         // Note the default is for shear velocity "Sn" or "Lg"
         double cornerFrequency = calculateAngularCornerFrequency(K, MPA_TO_PA * sigma, m0, m0_ref, psi);
         if (PICK_TYPES.PN.equals(phase) || PICK_TYPES.PG.equals(phase)) {
@@ -304,14 +304,35 @@ public class MdacCalculator {
     }
 
     public static double mwToM0(double Mw) {
-        return Math.pow(10.0, (1.5 * Mw + 9.10));
+        return Math.pow(10.0, mwToLogM0(Mw));
+    }
+
+    public static double mwToLogM0(double Mw) {
+        return 1.5 * Mw + 9.10;
+    }
+
+    public static double logM0ToMw(double logM0) {
+        return (logM0 - 9.1) / 1.5;
+    }
+
+    public double getK() {
+        return K;
     }
 
     public double apparentStressFromMwFc(Double mw, Double fc) {
-        double K = calculateK(zeta, alphaS, betaS, radpatP, radpatS);
         double M0 = mwToM0(mw);
+        return apparentStressFromM0Fc(M0, fc);
+    }
+
+    public double apparentStressFromM0Fc(Double M0, Double fc) {
         double wfc3 = Math.pow(Math.PI * 2.0 * fc, 3.0);
         double appStress = ((wfc3 * M0) / K) / MPA_TO_PA;
         return appStress;
+    }
+
+    public double cornerFreqFromApparentStressM0(Double M0, Double appStress) {
+        double sigma = appStress * MPA_TO_PA;
+        double corner = Math.pow((sigma * K) / M0, 1.0 / 3.0) / (Math.PI * 2.0);
+        return corner;
     }
 }

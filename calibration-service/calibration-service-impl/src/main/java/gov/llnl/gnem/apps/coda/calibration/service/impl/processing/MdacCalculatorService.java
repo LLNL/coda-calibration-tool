@@ -129,6 +129,23 @@ public class MdacCalculatorService {
         return getCornerFrequency(getCalculateMdacSourceSpectraFunction(mdacPs, stress, mw));
     }
 
+    public double getApparentStressMpaFromMwFc(double Mw, double Fc, final MdacParametersPS psEntry, final MdacParametersFI fiEntry) {
+        // M0 in N-m units
+        final double M0 = MdacCalculator.mwToM0(Mw);
+        final MdacCalculator mdc = new MdacCalculator(fiEntry.getSigma(),
+                                                      fiEntry.getM0ref(),
+                                                      fiEntry.getPsi(),
+                                                      fiEntry.getZeta(),
+                                                      fiEntry.getAlphas(),
+                                                      fiEntry.getBetas(),
+                                                      fiEntry.getRadPatP(),
+                                                      fiEntry.getRadPatS(),
+                                                      M0);
+        mdc.initializePhaseSpecificVariables(psEntry, fiEntry, M0);
+
+        return mdc.apparentStressFromMwFc(Mw, Fc);
+    }
+
     public double getEnergy(double Mw, double appStressMpa, final MdacParametersPS psEntry, final MdacParametersFI fiEntry) {
         // M0 in N-m units
         final double M0 = MdacCalculator.mwToM0(Mw);
@@ -144,5 +161,23 @@ public class MdacCalculatorService {
         mdc.initializePhaseSpecificVariables(psEntry, fiEntry, M0);
 
         return mdc.calculateEnergy(M0, appStressMpa, psEntry, fiEntry);
+    }
+
+    public double logM0ToMw(double logM0) {
+        return MdacCalculator.logM0ToMw(logM0);
+    }
+
+    public MdacCalculator getMdacCalculator(final MdacParametersPS psEntry, final MdacParametersFI fiEntry, final double M0) {
+        final MdacCalculator mdc = new MdacCalculator(fiEntry.getSigma(),
+                                                      fiEntry.getM0ref(),
+                                                      fiEntry.getPsi(),
+                                                      fiEntry.getZeta(),
+                                                      fiEntry.getAlphas(),
+                                                      fiEntry.getBetas(),
+                                                      fiEntry.getRadPatP(),
+                                                      fiEntry.getRadPatS(),
+                                                      M0);
+        mdc.initializePhaseSpecificVariables(psEntry, fiEntry, M0);
+        return mdc;
     }
 }

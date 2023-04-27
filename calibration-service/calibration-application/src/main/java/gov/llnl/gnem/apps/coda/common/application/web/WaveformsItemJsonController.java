@@ -37,20 +37,11 @@ import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 @RequestMapping(value = "/api/v1/single-waveform", name = "WaveformsItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class WaveformsItemJsonController {
 
-    /**
-     *
-     * @param waveformService
-     */
     @Autowired
     public WaveformsItemJsonController(WaveformService waveformService) {
         this.waveformService = waveformService;
     }
 
-    /**
-     *
-     * @param id
-     * @return Waveform
-     */
     @GetMapping(value = "{id}", name = "getWaveform")
     public Waveform getWaveform(@PathVariable("id") Long id) {
         Waveform waveform = waveformService.findOne(id);
@@ -60,12 +51,6 @@ public class WaveformsItemJsonController {
         return waveform;
     }
 
-    /**
-     *
-     * @param waveform
-     * @param result
-     * @return ResponseEntity
-     */
     @PostMapping(name = "update")
     public ResponseEntity<?> update(@Valid @RequestBody Waveform waveform, BindingResult result) {
         if (result.hasErrors()) {

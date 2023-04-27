@@ -19,12 +19,26 @@ import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.SwingUtilities;
 
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +69,7 @@ public class CommonGuiUtils {
                     //Java < 9 macos support
                     Class<?> util = Class.forName("com.apple.eawt.Application");
                     try {
-                        Method getApplication = util.getMethod("getApplication", new Class[0]);
+                        Method getApplication = util.getMethod("getApplication");
                         Object application = getApplication.invoke(util);
                         Method setDockIconImage = util.getMethod("setDockIconImage", java.awt.Image.class);
                         setDockIconImage.invoke(application, image);
@@ -99,5 +113,38 @@ public class CommonGuiUtils {
             }
         }
         return point;
+    }
+
+    public static File zipDirectory(Path zipFolder) throws IOException {
+        File zipDir;
+        zipDir = File.createTempFile("zip-dir", "tmp");
+
+        zipDir.deleteOnExit();
+
+        try (Stream<Path> fileStream = Files.walk(zipFolder, 5)) {
+            List<File> files = fileStream.map(Path::toFile).filter(File::isFile).collect(Collectors.toList());
+            try (ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("zip", Files.newOutputStream(zipDir.toPath()))) {
+                for (File file : files) {
+                    os.putArchiveEntry(new ZipArchiveEntry(file, file.getName()));
+                    try (InputStream fis = Files.newInputStream(file.toPath())) {
+                        IOUtils.copy(fis, os);
+                    }
+                    os.closeArchiveEntry();
+                }
+                os.flush();
+            } catch (ArchiveException e) {
+                throw new IOException(e);
+            }
+            try (Stream<Path> tmpFileStream = Files.walk(zipFolder)) {
+                tmpFileStream.sorted(Comparator.reverseOrder()).forEach(t -> {
+                    try {
+                        Files.deleteIfExists(t);
+                    } catch (IOException e) {
+                        log.trace("Unable to delete temporary file {}", e.getMessage(), e);
+                    }
+                });
+            }
+        }
+        return zipDir;
     }
 }

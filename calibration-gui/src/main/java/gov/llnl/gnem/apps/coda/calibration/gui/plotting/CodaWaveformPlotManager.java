@@ -170,7 +170,7 @@ public class CodaWaveformPlotManager {
 
     final ToggleButton syncZoomMode = new ToggleButton(ZOOM_SYNC_LABEL);
     final ToggleButton syncZoomMode2 = new ToggleButton(ZOOM_SYNC_LABEL);
-    private boolean syncZoomModeBoolean = true;
+    private boolean syncZoomModeBoolean = false;
 
     private final EventHandler<InputEvent> forwardAction = event -> {
         if ((currentPage + 1) < totalPages) {
@@ -553,11 +553,10 @@ public class CodaWaveformPlotManager {
         }
     }
 
-    private void updatePlotAxesInGroup(PlotAxisChange change) {
-
-        if (change.isReset()) {
+    private void updatePlotAxes(PlotAxisChange change) {
+        if (selectedSinglePlot != null) {
             this.setSavedAxisLimits(change.getAxisLimits());
-            if (selectedSinglePlot != null) {
+            if (change.isReset()) {
                 Platform.runLater(() -> {
                     selectedSinglePlot.replot();
                 });
@@ -567,7 +566,6 @@ public class CodaWaveformPlotManager {
         }
 
         if (!orderedWaveformPlots.isEmpty()) {
-
             orderedWaveformPlots.values().forEach(plot -> {
                 if (syncZoomModeBoolean) {
                     if (!change.isReset()) {
@@ -591,7 +589,6 @@ public class CodaWaveformPlotManager {
                     plot.replot();
                 });
             });
-
         }
     }
 
@@ -775,7 +772,7 @@ public class CodaWaveformPlotManager {
 
         plot.setAxisChangeListener(axisChange -> {
             if (axisChange.getNewValue() instanceof PlotAxisChange) {
-                updatePlotAxesInGroup((PlotAxisChange) axisChange.getNewValue());
+                updatePlotAxes((PlotAxisChange) axisChange.getNewValue());
             }
         });
 

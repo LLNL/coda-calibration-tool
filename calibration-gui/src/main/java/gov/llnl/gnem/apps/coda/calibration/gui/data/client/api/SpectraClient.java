@@ -35,4 +35,6 @@ public interface SpectraClient {
 
     public Mono<List<Spectra>> getFitSpectra(String eventId);
 
+    public Mono<Spectra> getSpecificSpectra(double moment, double apparentStress, double start, double stop, int count);
+
 }

@@ -475,7 +475,7 @@ public class PathController implements MapListeningController, RefreshableContro
 
     private void plotPaths() {
         mapImpl.clearIcons();
-        if (!measurementsFreqBandMap.isEmpty()) {
+        if (!measurementsFreqBandMap.isEmpty() && (frequencyBandComboBox.getSelectionModel() != null && frequencyBandComboBox.getSelectionModel().getSelectedItem() != null)) {
             final List<SpectraMeasurement> measurements = measurementsFreqBandMap.get(frequencyBandComboBox.getSelectionModel().getSelectedItem());
             if (measurements != null) {
                 final Map<Station, List<Event>> stationToEvents = measurements.parallelStream()
@@ -514,7 +514,7 @@ public class PathController implements MapListeningController, RefreshableContro
     }
 
     private void plotSd() {
-        if (!measurementsFreqBandMap.isEmpty()) {
+        if (frequencyBandComboBox.getSelectionModel() != null && frequencyBandComboBox.getSelectionModel().getSelectedItem() != null && !measurementsFreqBandMap.isEmpty()) {
             sdSymbolMap.clear();
             sdPlot.clear();
             Double xmin = null;

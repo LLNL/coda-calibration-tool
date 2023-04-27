@@ -102,7 +102,7 @@ public class SharedFrequencyBandParameters {
 
     @Column(name = "MEASURE_TIME")
     @NumberFormat
-    private double measurementTime = 100d;
+    private double measurementTime = 0d;
 
     @NumberFormat
     private double codaStartOffset = 0d;

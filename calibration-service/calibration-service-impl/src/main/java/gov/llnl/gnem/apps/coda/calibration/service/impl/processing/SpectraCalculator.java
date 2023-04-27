@@ -403,6 +403,16 @@ public class SpectraCalculator {
         return computeSpecificSpectra(event.getMw(), event.getApparentStressInMpa(), eInfo, bands, selectedPhase, SPECTRA_TYPES.FIT);
     }
 
+    public Spectra computeSpecificSpectraFromM0(double moment, double apparentStress, double startBand, double stopBand, int bandCount) {
+        List<FrequencyBand> bands = new ArrayList<>();
+        double stepSize = (Math.log10(stopBand) - Math.log10(startBand)) / (bandCount - 1.0);
+        for (int i = 0; i < bandCount; i++) {
+            double freq = Math.pow(10, Math.log10(startBand) + i * stepSize);
+            bands.add(new FrequencyBand(freq, freq));
+        }
+        return computeSpecificSpectra(MdacCalculator.logM0ToMw(moment), apparentStress, null, bands, PICK_TYPES.LG, SPECTRA_TYPES.FIT);
+    }
+
     public Spectra computeSpecificSpectra(final Double mw, final Double apparentStress, final EnergyInfo energyInfo, final Collection<FrequencyBand> bands, final PICK_TYPES selectedPhase,
             final SPECTRA_TYPES type) {
 
@@ -922,4 +932,5 @@ public class SpectraCalculator {
         }
         return FitnessCriteria.CVRMSD(dataMap);
     }
+
 }

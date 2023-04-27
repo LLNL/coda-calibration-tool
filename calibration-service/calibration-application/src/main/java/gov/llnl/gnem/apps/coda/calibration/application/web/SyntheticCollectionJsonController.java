@@ -36,8 +36,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
-import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticCodaGenerationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticService;
@@ -59,11 +57,15 @@ public class SyntheticCollectionJsonController {
         this.genService = genService;
     }
 
-    /**
-     *
-     * @param ids
-     * @return ResponseEntity
-     */
+    @GetMapping(value = "/all", name = "getAll")
+    public ResponseEntity<?> getAll() {
+        List<SyntheticCoda> data = syntheticService.findAll();
+        if (data == null) {
+            data = new ArrayList<>(0);
+        }
+        return ResponseEntity.ok().body(data);
+    }
+
     @GetMapping(value = "/batch/{ids}", name = "getBatch")
     public ResponseEntity<?> getBatch(@PathVariable("ids") Collection<Long> ids) {
         List<SyntheticCoda> data = new ArrayList<>(ids.size());
@@ -91,15 +93,6 @@ public class SyntheticCollectionJsonController {
             }
         }
         return ResponseEntity.ok().body(synthetic);
-    }
-
-    @GetMapping(name = "show")
-    public ResponseEntity<?> show(@ModelAttribute SyntheticCoda synthetic) {
-        return ResponseEntity.ok(synthetic);
-    }
-
-    public static UriComponents showURI(SyntheticCoda synthetic) {
-        return MvcUriComponentsBuilder.fromMethodCall(MvcUriComponentsBuilder.on(SyntheticCollectionJsonController.class).show(synthetic)).buildAndExpand(synthetic.getId()).encode();
     }
 
     @PutMapping(name = "update")

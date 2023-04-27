@@ -22,6 +22,7 @@ import llnl.gnem.core.gui.plotting.api.BasicPlot;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
 import llnl.gnem.core.gui.plotting.api.PlotFactory;
+import llnl.gnem.core.gui.plotting.api.Rectangle;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.SymbolStyles;
 import llnl.gnem.core.gui.plotting.api.VerticalLine;
@@ -30,8 +31,8 @@ import llnl.gnem.core.gui.plotting.plotly.BasicLine;
 import llnl.gnem.core.gui.plotting.plotly.BasicSymbol;
 import llnl.gnem.core.gui.plotting.plotly.BasicTitle;
 import llnl.gnem.core.gui.plotting.plotly.PlotlyPlot;
-import llnl.gnem.core.gui.plotting.plotly.PlotlyPlotData;
-import llnl.gnem.core.gui.plotting.plotly.PlotlyTrace;
+import llnl.gnem.core.gui.plotting.plotly.PlotData;
+import llnl.gnem.core.gui.plotting.plotly.PlotTrace;
 
 @Service
 public class PlotlyPlotFactory implements PlotFactory {
@@ -43,7 +44,7 @@ public class PlotlyPlotFactory implements PlotFactory {
 
     @Override
     public BasicPlot lineAndMarkerScatterPlot() {
-        return new PlotlyPlot(false, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER_AND_LINE), Color.WHITE, new BasicTitle()));
+        return new PlotlyPlot(false, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER_AND_LINE), Color.WHITE, new BasicTitle()));
     }
 
     @Override
@@ -57,8 +58,18 @@ public class PlotlyPlotFactory implements PlotFactory {
     }
 
     @Override
+    public Line lineX(String label, double startingX, double xIncrement, float[] xData, Color color, LineStyles style, int pxThickness) {
+        return new BasicLine(label, startingX, xIncrement, xData, color, style, pxThickness);
+    }
+
+    @Override
     public VerticalLine verticalLine(final double x, final double yRatio, final String label) {
         return new VerticalLine(x, yRatio, label);
+    }
+
+    @Override
+    public Rectangle rectangle(final double x1, final double x2, final double yRatio, final String label, final Color color) {
+        return new Rectangle(x1, x2, yRatio, label, color);
     }
 
     @Override

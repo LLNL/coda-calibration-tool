@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +59,7 @@ import llnl.gnem.core.gui.plotting.api.BasicPlot;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
 import llnl.gnem.core.gui.plotting.api.PlotObject;
+import llnl.gnem.core.gui.plotting.api.Rectangle;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.Title;
 import llnl.gnem.core.gui.plotting.api.VerticalLine;
@@ -66,7 +68,7 @@ import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
 import llnl.gnem.core.gui.plotting.events.PlotShapeMove;
 import llnl.gnem.core.gui.plotting.fx.utils.FxUtils;
 import llnl.gnem.core.gui.plotting.fx.utils.MouseEventHelpers;
-import llnl.gnem.core.gui.plotting.plotly.PlotlyTrace.Style;
+import llnl.gnem.core.gui.plotting.plotly.PlotTrace.Style;
 
 public class PlotlyPlot implements BasicPlot {
 
@@ -78,7 +80,7 @@ public class PlotlyPlot implements BasicPlot {
     protected transient WebEngine engine;
     private transient StackPane view;
     private static final String SHAPES = "shapes";
-    protected final PlotlyPlotData plotData;
+    protected final PlotData plotData;
     private final List<PlotlyPlot> subPlots = new ArrayList<>(0);
     private Integer subplotId;
     private Integer topMargin;
@@ -101,14 +103,14 @@ public class PlotlyPlot implements BasicPlot {
     private static final Object fileChooserLock = new Object();
 
     public PlotlyPlot() {
-        this(false, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
+        this(false, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
     }
 
     public PlotlyPlot(boolean isSubPlot) {
-        this(isSubPlot, new PlotlyPlotData(new PlotlyTrace(PlotlyTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
+        this(isSubPlot, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
     }
 
-    public PlotlyPlot(boolean isSubPlot, PlotlyPlotData plotData) {
+    public PlotlyPlot(boolean isSubPlot, PlotData plotData) {
         this.plotData = plotData;
         this.isSubPlot = isSubPlot;
         //TODO: Accept other plot types
@@ -288,6 +290,13 @@ public class PlotlyPlot implements BasicPlot {
     }
 
     @Override
+    public void fullReplot() {
+        hasChanges.set(true);
+        hasPersistentChanges.set(true);
+        replot();
+    }
+
+    @Override
     public void addAxes(Axis... axes) {
         plotData.getAxes().addAll(Arrays.asList(axes));
         hasPersistentChanges.set(true);
@@ -297,6 +306,11 @@ public class PlotlyPlot implements BasicPlot {
     public void clearAxes() {
         plotData.getAxes().clear();
         hasPersistentChanges.set(true);
+    }
+
+    @Override
+    public Map<String, PlotObjectData> getPlotTypes() {
+        return plotData.getDefaultTypePlots();
     }
 
     @Override
@@ -364,7 +378,7 @@ public class PlotlyPlot implements BasicPlot {
         plotData.setUseHorizontalBottomLegend(useHorizontalBottomLegend);
     }
 
-    protected synchronized void addPlotObject(final PlotObject object, final PlotlyPlotData plot) {
+    protected synchronized void addPlotObject(final PlotObject object, final PlotData plot) {
         final PlotObjectData data = plot.getDefaultTypePlots().computeIfAbsent(object.getSeriesIdentifier(), k -> new PlotObjectData());
         if (object instanceof VerticalLine) {
             final VerticalLine vline = (VerticalLine) object;
@@ -381,12 +395,35 @@ public class PlotlyPlot implements BasicPlot {
             xdata.add(vline.getX());
 
             if (data.getTraceStyle() == null) {
-                final PlotlyTrace traceStyle = populateStyle(vline, Style.VERTICAL_LINE, plot);
+                final PlotTrace traceStyle = populateStyle(vline, Style.VERTICAL_LINE, plot);
                 traceStyle.setPxSize(vline.getPxWidth());
                 traceStyle.setStyleName(LineStyles.SOLID.getStyleName());
                 traceStyle.setDraggable(vline.isDraggable());
                 traceStyle.setSeriesName(vline.getText());
                 traceStyle.setAnnotationLogX(vline.isLogScaleX());
+                data.setTraceStyle(traceStyle);
+            }
+        } else if (object instanceof Rectangle) {
+            final Rectangle rect = (Rectangle) object;
+            final List<Double> ydata = data.getYdata();
+
+            final double delta = (1.0 - (rect.getRatioY() / 100.0)) / 2.0;
+            ydata.clear();
+            ydata.add(1.0 - delta);
+            ydata.add(delta);
+
+            final List<Double> xdata = data.getXdata();
+            xdata.clear();
+            xdata.add(rect.getX1());
+            xdata.add(rect.getX2());
+
+            if (data.getTraceStyle() == null) {
+                final PlotTrace traceStyle = populateStyle(rect, Style.VERTICAL_LINE, plot);
+                traceStyle.setPxSize(rect.getPxWidth());
+                traceStyle.setStyleName(LineStyles.SOLID.getStyleName());
+                traceStyle.setDraggable(rect.isDraggable());
+                traceStyle.setSeriesName(rect.getText());
+                traceStyle.setAnnotationLogX(rect.isLogScaleX());
                 data.setTraceStyle(traceStyle);
             }
         } else if (object instanceof Line) {
@@ -404,7 +441,7 @@ public class PlotlyPlot implements BasicPlot {
             cdata.addAll(Arrays.stream(line.getColor()).boxed().collect(Collectors.toList()));
 
             if (data.getTraceStyle() == null) {
-                final PlotlyTrace traceStyle = populateStyle(line, Style.LINE, plot);
+                final PlotTrace traceStyle = populateStyle(line, Style.LINE, plot);
                 traceStyle.setPxSize(line.getPxThickness());
                 traceStyle.setStyleName(line.getStyle().getStyleName());
                 traceStyle.setColorMap(line.getColorMap());
@@ -421,7 +458,7 @@ public class PlotlyPlot implements BasicPlot {
                 data.getColorData().add(symbol.getColorationValue());
             }
             if (data.getTraceStyle() == null) {
-                final PlotlyTrace traceStyle = populateStyle(symbol, plot.getDefaultTraceStyle().getType(), plot);
+                final PlotTrace traceStyle = populateStyle(symbol, plot.getDefaultTraceStyle().getType(), plot);
                 traceStyle.setPxSize(plot.getDefaultTraceStyle().getPxSize());
                 traceStyle.setStyleName(symbol.getStyle().getStyleName());
                 traceStyle.setColorMap(symbol.getColorMap());
@@ -431,8 +468,8 @@ public class PlotlyPlot implements BasicPlot {
         hasChanges.set(true);
     }
 
-    private PlotlyTrace populateStyle(final PlotObject object, final Style style, final PlotlyPlotData plot) {
-        final PlotlyTrace traceStyle = new PlotlyTrace(style);
+    private PlotTrace populateStyle(final PlotObject object, final Style style, final PlotData plot) {
+        final PlotTrace traceStyle = new PlotTrace(style);
         traceStyle.setColorMap(plot.getDefaultTraceStyle().getColorMap());
         traceStyle.setLegendOnly(object.getLegendOnly());
         traceStyle.setLegendGroup(object.getLegendGrouping());
@@ -449,9 +486,9 @@ public class PlotlyPlot implements BasicPlot {
         removePlotObject(object, plotData);
     }
 
-    protected synchronized void removePlotObject(PlotObject object, PlotlyPlotData plot) {
+    protected synchronized void removePlotObject(PlotObject object, PlotData plot) {
         final PlotObjectData data = plot.getDefaultTypePlots().computeIfAbsent(object.getSeriesIdentifier(), k -> new PlotObjectData());
-        if (object instanceof VerticalLine || object instanceof Line) {
+        if (object instanceof VerticalLine || object instanceof Rectangle || object instanceof Line) {
             plot.getDefaultTypePlots().remove(object.getSeriesIdentifier());
         } else if (object instanceof Symbol) {
             Symbol sym = (Symbol) object;
@@ -587,6 +624,10 @@ public class PlotlyPlot implements BasicPlot {
                         zNode.add(zNode2);
                     });
                     trace.set("z", zNode);
+                }
+
+                if (data.getTraceStyle().getType().equals(Style.CONTOUR)) {
+                    trace.put("connectgaps", true);
                 }
 
                 final List<Double> cData = data.getColorData();
@@ -748,7 +789,7 @@ public class PlotlyPlot implements BasicPlot {
 
             for (final PlotObjectData data : orderedPlots) {
                 if (data.getTraceStyle() != null && data.getTraceStyle().getType() != null && data.getTraceStyle().getType().getType().equals(SHAPES)) {
-                    final PlotlyTrace style = data.getTraceStyle();
+                    final PlotTrace style = data.getTraceStyle();
                     final ObjectNode shapeNode = style.getJSONObject();
                     final ObjectNode annotationNode = plotData.getMapper().createObjectNode();
 
@@ -824,4 +865,5 @@ public class PlotlyPlot implements BasicPlot {
         this.rightMargin = right;
         hasPersistentChanges.set(true);
     }
+
 }

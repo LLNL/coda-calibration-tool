@@ -25,7 +25,7 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 public interface CalibrationService {
 
     public boolean startCalibration(boolean autoPickingEnabled);
-    
+
     public boolean cancelCalibration(Long id);
 
     public boolean clearData();
