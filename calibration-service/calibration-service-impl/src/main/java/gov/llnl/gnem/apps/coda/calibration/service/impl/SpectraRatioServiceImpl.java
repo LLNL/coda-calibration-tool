@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,6 +98,9 @@ import llnl.gnem.core.waveform.seismogram.TimeSeries;
 @Service
 @Transactional
 public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
+
+    @Value(value = "${ratio-inversion.moment-error-range:0.1}")
+    private double momentErrorRange;
 
     private Logger log = LoggerFactory.getLogger(SpectraRatioServiceImpl.class);
 
@@ -320,7 +324,7 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
     private Map<EventPair, SpectraRatioPairInversionResult> invertEventRatioPairs(Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData) {
         final MdacParametersFI mdacFiEntry = new MdacParametersFI(mdacFiService.findFirst());
         final MdacParametersPS psRows = mdacPsService.findMatchingPhase(PICK_TYPES.LG.getPhase());
-        SpectraRatioInversionCalculator inversion = new SpectraRatioInversionCalculator(mdacService, mdacFiEntry, psRows, fitMwService, refMwService);
+        SpectraRatioInversionCalculator inversion = new SpectraRatioInversionCalculator(mdacService, mdacFiEntry, psRows, fitMwService, refMwService, momentErrorRange);
         Map<EventPair, SpectraRatioPairInversionResult> inversionResults = inversion.cmaesRegressionPerPair(ratioData);
         return inversionResults;
     }
@@ -328,7 +332,7 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
     private Map<EventPair, SpectraRatioPairInversionResultJoint> invertEventRatios(Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData) {
         final MdacParametersFI mdacFiEntry = new MdacParametersFI(mdacFiService.findFirst());
         final MdacParametersPS psRows = mdacPsService.findMatchingPhase(PICK_TYPES.LG.getPhase());
-        SpectraRatioInversionCalculator inversion = new SpectraRatioInversionCalculator(mdacService, mdacFiEntry, psRows, fitMwService, refMwService);
+        SpectraRatioInversionCalculator inversion = new SpectraRatioInversionCalculator(mdacService, mdacFiEntry, psRows, fitMwService, refMwService, momentErrorRange);
         Map<EventPair, SpectraRatioPairInversionResultJoint> inversionResults = inversion.cmaesRegressionJoint(ratioData);
         return inversionResults;
     }

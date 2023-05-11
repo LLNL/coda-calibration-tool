@@ -65,7 +65,7 @@ public class SpectraRatioInversionCalculator {
 
     private static final int PARAM_COUNT = 2;
 
-    private final double DEFAULT_MOMENT_ERROR = 1.0;
+    private double momentErrorRange;
     private final double DEFAULT_LOW_MOMENT = 1.0;
     private final double DEFAULT_HIGH_MOMENT = 25.0;
     private final double testMomentIncrement = 0.25;
@@ -79,11 +79,12 @@ public class SpectraRatioInversionCalculator {
     private MdacCalculator mdacCalculator;
 
     public SpectraRatioInversionCalculator(MdacCalculatorService mdacService, MdacParametersFI mdacFiEntry, MdacParametersPS psRows, MeasuredMwsService fitMwService,
-            ReferenceMwParametersService refMwService) {
+            ReferenceMwParametersService refMwService, double momentErrorRange) {
         this.fitMwService = fitMwService;
         this.refMwService = refMwService;
         //We just want the K constant for the given MDAC model so no need for a real moment here
         this.mdacCalculator = mdacService.getMdacCalculator(psRows, mdacFiEntry, DEFAULT_HIGH_MOMENT);
+        this.momentErrorRange = momentErrorRange;
     }
 
     public Map<EventPair, List<MomentCornerEstimate>> gridSearchPerPair(Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData) {
@@ -115,6 +116,8 @@ public class SpectraRatioInversionCalculator {
 
             if (lowTestMomentEventA == null) {
                 lowTestMomentEventA = DEFAULT_LOW_MOMENT;
+            }
+            if (highTestMomentEventA == null) {
                 highTestMomentEventA = DEFAULT_HIGH_MOMENT;
             }
 
@@ -131,6 +134,8 @@ public class SpectraRatioInversionCalculator {
 
             if (lowTestMomentEventB == null) {
                 lowTestMomentEventB = DEFAULT_LOW_MOMENT;
+            }
+            if (highTestMomentEventB == null) {
                 highTestMomentEventB = DEFAULT_HIGH_MOMENT;
             }
 
@@ -168,6 +173,7 @@ public class SpectraRatioInversionCalculator {
         });
 
         return estimatedMomentCorners;
+
     }
 
     public Map<EventPair, SpectraRatioPairInversionResult> cmaesRegressionPerPair(Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData) {
@@ -187,15 +193,17 @@ public class SpectraRatioInversionCalculator {
             ReferenceMwParameters refMoment = refMwService.findByEventId(eventPair.getY().getEventId());
 
             if (fitMoment != null) {
-                lowTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) - momentErrorRange;
+                highTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) + momentErrorRange;
             } else if (refMoment != null) {
-                lowTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - momentErrorRange;
+                highTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + momentErrorRange;
             }
 
             if (lowTestMomentEventA == null) {
                 lowTestMomentEventA = DEFAULT_LOW_MOMENT;
+            }
+            if (highTestMomentEventA == null) {
                 highTestMomentEventA = DEFAULT_HIGH_MOMENT;
             }
 
@@ -203,15 +211,17 @@ public class SpectraRatioInversionCalculator {
             refMoment = refMwService.findByEventId(eventPair.getX().getEventId());
 
             if (fitMoment != null) {
-                lowTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) - momentErrorRange;
+                highTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) + momentErrorRange;
             } else if (refMoment != null) {
-                lowTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - momentErrorRange;
+                highTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + momentErrorRange;
             }
 
             if (lowTestMomentEventB == null) {
                 lowTestMomentEventB = DEFAULT_LOW_MOMENT;
+            }
+            if (highTestMomentEventB == null) {
                 highTestMomentEventB = DEFAULT_HIGH_MOMENT;
             }
 
@@ -352,15 +362,17 @@ public class SpectraRatioInversionCalculator {
             ReferenceMwParameters refMoment = refMwService.findByEventId(eventPair.getY().getEventId());
 
             if (fitMoment != null) {
-                lowTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) - momentErrorRange;
+                highTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw()) + momentErrorRange;
             } else if (refMoment != null) {
-                lowTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - momentErrorRange;
+                highTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + momentErrorRange;
             }
 
             if (lowTestMomentEventA == null) {
                 lowTestMomentEventA = DEFAULT_LOW_MOMENT;
+            }
+            if (highTestMomentEventA == null) {
                 highTestMomentEventA = DEFAULT_HIGH_MOMENT;
             }
 
@@ -368,15 +380,17 @@ public class SpectraRatioInversionCalculator {
             refMoment = refMwService.findByEventId(eventPair.getX().getEventId());
 
             if (fitMoment != null) {
-                lowTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) - momentErrorRange;
+                highTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw()) + momentErrorRange;
             } else if (refMoment != null) {
-                lowTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - DEFAULT_MOMENT_ERROR;
-                highTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + DEFAULT_MOMENT_ERROR;
+                lowTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) - momentErrorRange;
+                highTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw()) + momentErrorRange;
             }
 
             if (lowTestMomentEventB == null) {
                 lowTestMomentEventB = DEFAULT_LOW_MOMENT;
+            }
+            if (highTestMomentEventB == null) {
                 highTestMomentEventB = DEFAULT_HIGH_MOMENT;
             }
 
