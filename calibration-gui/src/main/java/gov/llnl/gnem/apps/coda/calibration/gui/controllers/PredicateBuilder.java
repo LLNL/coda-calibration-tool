@@ -17,8 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.apache.commons.lang3.StringUtils;
-
 /***
  * The predicate builder is used by the filter controller to manage predicates
  * used for filtering the table view results in the DataFilterController. With
@@ -34,7 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 class PredicateBuilder<T> {
 
     public interface ValueComparer<T> {
-        boolean areEqual(T data, String item);
+        boolean equatesTrue(T data, Object item);
     }
 
     private HashMap<String, Predicate<T>> predicates;
@@ -58,7 +56,15 @@ class PredicateBuilder<T> {
      *            The value which will be compared with in the predicate.
      */
     public void setPredicate(String name, ValueComparer<T> comparer, Object item) {
-        Predicate<T> predicate = createPredicate(comparer, item.toString());
+        Predicate<T> predicate = createPredicate(comparer, item);
+        if (predicate != null) {
+            predicates.put(name, predicate);
+        } else {
+            predicates.remove(name);
+        }
+    }
+
+    public void setPredicate(String name, Predicate<T> predicate) {
         if (predicate != null) {
             predicates.put(name, predicate);
         } else {
@@ -79,7 +85,7 @@ class PredicateBuilder<T> {
     public void setPredicateActiveState(String name, Boolean active) {
         Predicate<T> predicate = predicates.get(name);
         if (predicate != null) {
-            if (active) {
+            if (Boolean.TRUE.equals(active)) {
                 activePredicates.put(name, predicate);
             } else {
                 activePredicates.remove(name);
@@ -132,10 +138,10 @@ class PredicateBuilder<T> {
      * @return A new predicate that will evaluate true if comparer determines
      *         item and incoming value are equal
      */
-    private Predicate<T> createPredicate(ValueComparer<T> comparer, String item) {
-        if (comparer == null || item == null || StringUtils.isBlank(item)) {
+    private Predicate<T> createPredicate(ValueComparer<T> comparer, Object item) {
+        if (comparer == null || item == null) {
             return null;
         }
-        return data -> comparer.areEqual(data, item);
+        return data -> comparer.equatesTrue(data, item);
     }
 }

@@ -79,18 +79,16 @@ public class LinearBandGenerator implements BandGenerator {
 
     @Override
     public List<EnvelopeBandParameters> generateTable(Double minFreq, Double maxFreq, Double overlap, Double spacing) {
-        double delta = maxFreq - minFreq;
-        int reqBands = (int) ((delta / spacing) + 0.5);
-        double max;
-        double min;
-        double step;
+        double max = 0.0;
+        double min = 0.0;
+
         List<EnvelopeBandParameters> bands = new ArrayList<>();
-        for (int i = 0; i < reqBands; i++) {
-            step = (((double) i / reqBands) * delta);
-            min = minFreq + delta - (spacing * overlap / 2) + step;
-            max = Math.min(min + (spacing * overlap) + spacing, maxFreq + delta);
-            min = Math.max(min, minFreq + delta);
-            bands.add(new EnvelopeBandParameters(Precision.round(min - delta, 4, RoundingMode.HALF_DOWN.ordinal()), Precision.round(max - delta, 4, RoundingMode.CEILING.ordinal())));
+        double lastStop = minFreq;
+        while (max < maxFreq) {
+            min = lastStop;
+            max = Math.min(min + spacing, maxFreq);
+            lastStop = Precision.round(max - (spacing * overlap), 4, RoundingMode.HALF_DOWN.ordinal());
+            bands.add(new EnvelopeBandParameters(Precision.round(min, 4, RoundingMode.CEILING.ordinal()), Precision.round(max, 4, RoundingMode.HALF_DOWN.ordinal())));
         }
         return bands;
     }

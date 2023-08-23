@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.spectra.model.domain;
 
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,18 +25,19 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 public class SpectraRatioMeasurementJob {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private List<String> smallEventIds = null;
-    private List<String> largeEventIds = null;
+    private Set<String> smallEventIds = null;
+    private Set<String> largeEventIds = null;
     private List<Waveform> smallStacks = null;
     private List<Waveform> largeStacks = null;
-    private Boolean autopickingEnabled = Boolean.FALSE;
+    private List<RatioEventData> ratioEventData = null;
+    private Boolean autoPickingEnabled = Boolean.FALSE;
     private Boolean persistResults = Boolean.FALSE;
 
-    public List<String> getSmallEventIds() {
+    public Set<String> getSmallEventIds() {
         return smallEventIds;
     }
 
-    public SpectraRatioMeasurementJob setSmallEventIds(List<String> eventIds) {
+    public SpectraRatioMeasurementJob setSmallEventIds(Set<String> eventIds) {
         this.smallEventIds = eventIds;
         return this;
     }
@@ -49,11 +51,11 @@ public class SpectraRatioMeasurementJob {
         return this;
     }
 
-    public List<String> getLargeEventIds() {
+    public Set<String> getLargeEventIds() {
         return largeEventIds;
     }
 
-    public SpectraRatioMeasurementJob setLargeEventIds(List<String> eventIds) {
+    public SpectraRatioMeasurementJob setLargeEventIds(Set<String> eventIds) {
         this.largeEventIds = eventIds;
         return this;
     }
@@ -67,12 +69,21 @@ public class SpectraRatioMeasurementJob {
         return this;
     }
 
-    public Boolean getAutopickingEnabled() {
-        return autopickingEnabled;
+    public List<RatioEventData> getRatioEventData() {
+        return ratioEventData;
     }
 
-    public SpectraRatioMeasurementJob setAutopickingEnabled(Boolean autopickingEnabled) {
-        this.autopickingEnabled = autopickingEnabled;
+    public SpectraRatioMeasurementJob setRatioEventData(List<RatioEventData> ratioEventData) {
+        this.ratioEventData = ratioEventData;
+        return this;
+    }
+
+    public Boolean getAutoPickingEnabled() {
+        return autoPickingEnabled;
+    }
+
+    public SpectraRatioMeasurementJob setAutoPickingEnabled(Boolean autoPickingEnabled) {
+        this.autoPickingEnabled = autoPickingEnabled;
         return this;
     }
 
@@ -84,5 +95,4 @@ public class SpectraRatioMeasurementJob {
         this.persistResults = persistResults;
         return this;
     }
-
 }

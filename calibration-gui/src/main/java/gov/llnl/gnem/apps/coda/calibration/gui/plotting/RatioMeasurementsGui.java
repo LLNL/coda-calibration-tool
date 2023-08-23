@@ -28,6 +28,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraRatioClien
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.SpectraRatioExporter;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioMeasurementEvent;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
 import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -41,77 +42,68 @@ import javafx.stage.StageStyle;
 @Controller
 public class RatioMeasurementsGui {
 
-    private Parent root;
-    private Scene scene;
-    private Stage stage;
-
+    private final CertLeafletMapController mapImpl;
+    private final MapPlottingUtilities iconFactory;
+    private SpectraClient spectraClient;
+    private SpectraRatioExporter spectraRatioExporter;
     private final SymbolStyleMapFactory symbolStyleFactory;
-    private RatioMeasurementSpectraPlotManager ratioPlotManager;
+
     private final Property<Boolean> shouldFocus = new SimpleBooleanProperty(false);
 
     @Autowired
     public RatioMeasurementsGui(final EventBus bus, final SymbolStyleMapFactory styleFactory, final CertLeafletMapController mapImpl, final MapPlottingUtilities iconFactory,
             SpectraClient spectraClient, SpectraRatioClient spectraRatioClient, SpectraRatioExporter spectraRatioExporter) {
         bus.register(this);
+        this.mapImpl = mapImpl;
+        this.iconFactory = iconFactory;
+        this.spectraClient = spectraClient;
+        this.spectraRatioExporter = spectraRatioExporter;
         this.symbolStyleFactory = styleFactory;
-        this.ratioPlotManager = new RatioMeasurementSpectraPlotManager(symbolStyleFactory, mapImpl, iconFactory, spectraClient, spectraRatioExporter);
-        Platform.runLater(() -> {
-            final FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/SpectraRatioPlotGui.fxml"));
-            fxmlLoader.setController(this.ratioPlotManager);
-            stage = new Stage(StageStyle.DECORATED);
-            Font.loadFont(getClass().getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
-            try {
-                root = fxmlLoader.load();
-                scene = new Scene(root);
-                stage.setScene(scene);
+    }
 
-                stage.setOnHiding(e -> {
-                    hide();
-                });
+    private void createSpectraPlotPopup(SpectraRatiosReportByEventPair ratioReport) {
+        RatioMeasurementSpectraPlotManager spectraRatioPlotManager = new RatioMeasurementSpectraPlotManager(symbolStyleFactory, mapImpl, iconFactory, spectraClient, spectraRatioExporter);
+        spectraRatioPlotManager.setRatioMeasurements(ratioReport);
 
-                stage.setOnShowing(e -> {
-                    show();
-                });
+        final FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/SpectraRatioPlotGui.fxml"));
+        fxmlLoader.setController(spectraRatioPlotManager);
+        final Stage stage = new Stage(StageStyle.DECORATED);
+        Parent root;
+        Scene scene;
 
-            } catch (final IOException e) {
-                throw new IllegalStateException(e);
-            }
-        });
+        Font.loadFont(getClass().getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
+        try {
+            root = fxmlLoader.load();
+            scene = new Scene(root);
+            stage.setScene(scene);
+
+            stage.setOnHiding(e -> {
+                stage.hide();
+            });
+
+            stage.setOnShowing(e -> {
+                final boolean showing = stage.isShowing();
+                stage.show();
+                if (!showing || Boolean.TRUE.equals(shouldFocus.getValue())) {
+                    stage.toFront();
+                }
+            });
+
+            stage.show();
+        } catch (final IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Subscribe
     private void listener(final RatioMeasurementEvent event) {
-        if (ratioPlotManager != null && event != null && event.getRatioMeasurements() != null) {
+        if (event != null && event.getRatioMeasurements() != null && !event.getRatioMeasurements().getReport().getData().isEmpty()) {
             CompletableFuture.runAsync(() -> {
-                ratioPlotManager.setRatioMeasurements(event.getRatioMeasurements());
                 Platform.runLater(() -> {
-                    this.show();
+                    createSpectraPlotPopup(event.getRatioMeasurements());
                 });
             });
         }
-    }
-
-    public void hide() {
-        Platform.runLater(() -> {
-            stage.hide();
-        });
-    }
-
-    public void show() {
-        final boolean showing = stage.isShowing();
-        Platform.runLater(() -> {
-            stage.show();
-            if (!showing || Boolean.TRUE.equals(shouldFocus.getValue())) {
-                stage.toFront();
-            }
-        });
-    }
-
-    public void toFront() {
-        show();
-        Platform.runLater(() -> {
-            stage.toFront();
-        });
     }
 
     public Property<Boolean> focusProperty() {

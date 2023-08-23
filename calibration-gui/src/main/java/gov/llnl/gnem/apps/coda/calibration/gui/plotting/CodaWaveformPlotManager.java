@@ -958,6 +958,9 @@ public class CodaWaveformPlotManager {
     public void exportScreenshots(final File folder) {
         String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
         SnapshotUtils.writePng(folder, new Pair<>(WAVEFORM_PREFIX, waveformPanel), timestamp);
+        if (selectedSinglePlot != null) {
+            exportSVG(selectedSinglePlot, folder + File.separator + WAVEFORM_PREFIX + selectedSinglePlot.getPlotIdentifier() + "_" + timestamp + ".svg");
+        }
         for (CodaWaveformPlot wp : orderedWaveformPlots.values()) {
             String plotId = wp.getPlotIdentifier();
             if (plotId != null && !plotId.isEmpty()) {

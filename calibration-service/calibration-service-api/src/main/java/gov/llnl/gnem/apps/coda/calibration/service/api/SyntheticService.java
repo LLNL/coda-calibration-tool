@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
 import java.util.Collection;
+import java.util.List;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.service.api.BaseService;
@@ -28,4 +29,6 @@ public interface SyntheticService extends BaseService<SyntheticCoda, Long> {
     public SyntheticCoda findOneByWaveformId(Long id);
 
     public Collection<SyntheticCoda> findAllByWaveformId(Collection<Long> ids);
+
+    public List<SyntheticCoda> amplitudeCorrectedSyntheticsQuery(String eventId, String stationName, Double lowFreq, Double highFreq, Double sampleRate);
 }

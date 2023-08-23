@@ -138,7 +138,7 @@ public class RatioMeasurementWaveformPlotManager {
             curFreqIndex += 1;
             SpectraRatioPairDetails ratioWave = curEventStationRatios.get(curFrequencies.get(curFreqIndex));
             if (ratioWave != null) {
-                createPlotRatio(ratioWave, alignPeaksModeBoolean);
+                createRatioWaveformPlot(ratioWave, alignPeaksModeBoolean);
             }
         }
     };
@@ -148,7 +148,7 @@ public class RatioMeasurementWaveformPlotManager {
             curFreqIndex -= 1;
             SpectraRatioPairDetails ratioDetails = curEventStationRatios.get(curFrequencies.get(curFreqIndex));
             if (ratioDetails != null) {
-                createPlotRatio(ratioDetails, alignPeaksModeBoolean);
+                createRatioWaveformPlot(ratioDetails, alignPeaksModeBoolean);
             }
         }
     };
@@ -188,7 +188,7 @@ public class RatioMeasurementWaveformPlotManager {
         } else {
             SpectraRatioPairDetails ratioDetails = curEventStationRatios.get(curFrequencies.get(curFreqIndex));
             if (ratioDetails != null) {
-                createPlotRatio(ratioDetails, alignPeaksModeBoolean);
+                createRatioWaveformPlot(ratioDetails, alignPeaksModeBoolean);
             }
         }
     };
@@ -260,7 +260,7 @@ public class RatioMeasurementWaveformPlotManager {
                 curFreqIndex = curFrequencies.size() - 1;
             }
 
-            createPlotRatio(curEventStationRatios.get(curFrequencies.get(curFreqIndex)), alignPeaksModeBoolean);
+            createRatioWaveformPlot(curEventStationRatios.get(curFrequencies.get(curFreqIndex)), alignPeaksModeBoolean);
         }
     }
 
@@ -286,7 +286,7 @@ public class RatioMeasurementWaveformPlotManager {
             if (curStationIndex < 0) {
                 curStationIndex = 0;
             }
-            createPlotRatio(curEventStationRatios.get(curFrequencies.get(curFreqIndex)), alignPeaksModeBoolean);
+            createRatioWaveformPlot(curEventStationRatios.get(curFrequencies.get(curFreqIndex)), alignPeaksModeBoolean);
         }
     }
 
@@ -488,8 +488,8 @@ public class RatioMeasurementWaveformPlotManager {
         }
     }
 
-    private void createPlotRatio(SpectraRatioPairDetails spectraRatioPairDetails, boolean alignPeaks) {
-        if (spectraRatioPairDetails != null) {
+    private void createRatioWaveformPlot(SpectraRatioPairDetails spectraRatioPairDetails, boolean alignPeaks) {
+        if (spectraRatioPairDetails != null && !spectraRatioPairDetails.isLoadedFromJson()) {
 
             waveformsPane.getChildren().clear();
             ratioWaveformPane.getChildren().clear();

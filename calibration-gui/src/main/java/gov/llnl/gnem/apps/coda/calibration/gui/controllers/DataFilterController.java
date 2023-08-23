@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javafx.beans.value.ChangeListener;
@@ -29,9 +32,11 @@ import javafx.collections.transformation.SortedList;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleGroup;
+import javafx.util.StringConverter;
 
 /***
  *
@@ -63,7 +68,7 @@ class DataFilterController<T> {
      * button that is placed in the column header of a filterable table column,
      * and when clicked it will open a filter dialog. Note: You must specify
      * which columns you'd like to filter in the table by calling the
-     * {@link DataFilterController#addFilterToColumn(boolean, ToggleGroup, TableColumn, gov.llnl.gnem.apps.coda.calibration.gui.controllers.PredicateBuilder.ValueComparer)}
+     * {@link DataFilterController#addFilterForColumn(boolean, ToggleGroup, TableColumn, gov.llnl.gnem.apps.coda.calibration.gui.controllers.PredicateBuilder.ValueComparer)}
      * method of the DataFilterController.
      *
      * @param tableView
@@ -112,6 +117,34 @@ class DataFilterController<T> {
         });
     }
 
+    public void addFilterBtnToColumn(TableColumn<T, ?> column) {
+        // Create the checkbox that opens the filter panel/dialog
+        Button filterBtn = new Button();
+        filterBtn.setDisable(true);
+        Label label = new Label("\uEF4F");
+        label.getStyleClass().add("material-icons-medium");
+        label.setMaxHeight(16);
+        label.setMinWidth(16);
+        filterBtn.setGraphic(label);
+        filterBtn.setOnMouseClicked(e -> filterDialog.show());
+        buttons.add(filterBtn);
+
+        // Create a label that wraps the checkbox so that the column text
+        // is displayed to the left of the checkbox
+        Label buttonWrapper = new Label();
+        buttonWrapper.setGraphic(filterBtn);
+        buttonWrapper.setContentDisplay(ContentDisplay.RIGHT);
+        column.setGraphic(buttonWrapper);
+    }
+
+    public void addFilterBtnToColumns(List<TableColumn<T, ?>> columns) {
+        if (columns != null) {
+            columns.forEach(column -> {
+                addFilterBtnToColumn(column);
+            });
+        }
+    }
+
     /***
      * This method tells the filter controller to add a filter button for the
      * specified column in the table. Appropriate handlers and predicates are
@@ -129,34 +162,38 @@ class DataFilterController<T> {
      *            Used to compare values between items of the column for sorting
      *            and filtering purposes.
      */
-    public void addFilterToColumn(boolean slider, ToggleGroup toggleGroup, TableColumn<T, ?> column, PredicateBuilder.ValueComparer<T> converter) {
-
-        // Create the checkbox that opens the filter panel/dialog
-        Button filterBtn = new Button();
-        filterBtn.setDisable(true);
-        Label label = new Label("\uEF4F");
-        label.getStyleClass().add("material-icons-medium");
-        label.setMaxHeight(16);
-        label.setMinWidth(16);
-        filterBtn.setGraphic(label);
-        filterBtn.setOnMouseClicked(e -> filterDialog.show());
-        buttons.add(filterBtn);
-
+    public void addFilterForColumn(boolean slider, ToggleGroup toggleGroup, TableColumn<T, ?> column, PredicateBuilder.ValueComparer<T> converter) {
         String columnName = column.getText();
+        addFilterForColumn(slider, toggleGroup, columnName, column, converter);
+    }
+
+    /***
+     * This method tells the filter controller to add a filter button for the
+     * specified column in the table. Appropriate handlers and predicates are
+     * then generated for the column.
+     *
+     * @param slider
+     *            Set true if the column should display a slider and each column
+     *            element has a list of values to use for the slider.
+     * @param toggleGroup
+     *            This allows the filter to be added to a toggle group so that
+     *            only one filter in the group can be applied at a time.
+     * @param filterName
+     *            The specific name to use for the filter in the filter dialog
+     * @param column
+     *            The column to add the filter to.
+     * @param converter
+     *            Used to compare values between items of the column for sorting
+     *            and filtering purposes.
+     */
+    public void addFilterForColumn(boolean slider, ToggleGroup toggleGroup, String filterName, TableColumn<T, ?> column, PredicateBuilder.ValueComparer<T> converter) {
         ObservableList<Object> filterItemsList = FXCollections.observableList(new ArrayList<>());
         columnFilterLists.put(column, filterItemsList);
-
-        // Create a label that wraps the checkbox so that the column text
-        // is displayed to the left of the checkbox
-        Label buttonWrapper = new Label();
-        buttonWrapper.setGraphic(filterBtn);
-        buttonWrapper.setContentDisplay(ContentDisplay.RIGHT);
-        column.setGraphic(buttonWrapper);
 
         // Create handler for when active state changes
         ChangeListener<? super Boolean> updateActive = (options, oldValue, newValue) -> {
             if (oldValue != newValue) {
-                predicateBuilder.setPredicateActiveState(columnName, newValue);
+                predicateBuilder.setPredicateActiveState(filterName, newValue);
             }
         };
 
@@ -164,19 +201,124 @@ class DataFilterController<T> {
         ChangeListener<? super Object> updateValue = (options, oldValue, newValue) -> {
             String txtValue = newValue != null ? newValue.toString() : "";
             if (!txtValue.equals("")) {
-                predicateBuilder.setPredicate(columnName, converter, txtValue);
-                predicateBuilder.setPredicateActiveState(columnName, true);
-                filterDialog.setFieldActiveState(columnName, true);
+                predicateBuilder.setPredicate(filterName, converter, txtValue);
+                predicateBuilder.setPredicateActiveState(filterName, true);
+                filterDialog.setFieldActiveState(filterName, true);
             }
         };
 
         // Update the filter dialog to include new filter options
         if (slider) {
             sliderValues.add(filterItemsList);
-            filterDialog.addFilterSlider(columnName, filterItemsList, toggleGroup, updateActive, updateValue);
+            filterDialog.addFilterSlider(filterName, filterItemsList, toggleGroup, updateActive, updateValue);
         } else {
-            filterDialog.addFilterOption(columnName, filterItemsList, toggleGroup, updateActive, updateValue);
+            filterDialog.addFilterOption(filterName, filterItemsList, toggleGroup, updateActive, updateValue);
         }
+    }
+
+    /***
+     * This method tells the filter controller to add a filter button for the
+     * specified column in the table. Appropriate handlers are then generated
+     * for the column. The predicates are added as a map, and a dropdown is
+     * created where each predicate is listed.
+     *
+     * @param slider
+     *            Set true if the column should display a slider and each column
+     *            element has a list of values to use for the slider.
+     * @param toggleGroup
+     *            This allows the filter to be added to a toggle group so that
+     *            only one filter in the group can be applied at a time.
+     * @param filterName
+     *            The specific name to use for the filter in the filter dialog
+     * @param column
+     *            The column to add the filter to.
+     * @param predicateMap
+     *            A map of filter names and predicates used to generate a drop
+     *            down in the filter dialog where user can select from a list of
+     *            predicates to filter from
+     */
+    public void addFilterForColumn(boolean slider, ToggleGroup toggleGroup, String filterName, TableColumn<T, ?> column, Map<String, Predicate<T>> predicateMap) {
+
+        ObservableList<Object> predicateNameList = FXCollections.observableList(new ArrayList<>());
+        predicateNameList.addAll(predicateMap.keySet());
+        columnFilterLists.put(column, predicateNameList);
+
+        Slider customSlider = new Slider(0.0, predicateNameList.size(), 0.0);
+        customSlider.setMinorTickCount(0);
+        customSlider.setMajorTickUnit(1.0);
+        customSlider.setShowTickMarks(true);
+        customSlider.setShowTickLabels(true);
+        customSlider.setSnapToTicks(true);
+        customSlider.setLabelFormatter(new StringConverter<Double>() {
+            @Override
+            public Double fromString(String string) {
+                return Double.valueOf(predicateNameList.indexOf(string));
+            }
+
+            @Override
+            public String toString(Double tickValue) {
+                return predicateNameList.get(tickValue.intValue()).toString();
+            }
+        });
+
+        // Create handler for when active state changes
+        ChangeListener<? super Boolean> updateActive = (options, oldValue, newValue) -> {
+            if (!oldValue.equals(newValue)) {
+                predicateBuilder.setPredicateActiveState(filterName, newValue);
+            }
+        };
+
+        // Create handler for when field control updates value
+        ChangeListener<? super Object> updateValue = (options, oldValue, newValue) -> {
+            String txtValue = newValue != null ? newValue.toString() : "";
+            if (!txtValue.equals("")) {
+                final Predicate<T> predicate = predicateMap.get(txtValue);
+                predicateBuilder.setPredicate(filterName, predicate);
+                predicateBuilder.setPredicateActiveState(filterName, true);
+                filterDialog.setFieldActiveState(filterName, true);
+            }
+        };
+
+        Consumer<String> valueSelected = value -> {
+            if (!value.equals("")) {
+                final Predicate<T> predicate = predicateMap.get(value);
+                predicateBuilder.setPredicate(filterName, predicate);
+                predicateBuilder.setPredicateActiveState(filterName, true);
+                filterDialog.setFieldActiveState(filterName, true);
+            }
+        };
+
+        // Update the filter dialog to include new filter options
+        if (slider) {
+            sliderValues.add(predicateNameList);
+            filterDialog.addFilterSlider(customSlider, filterName, predicateNameList, toggleGroup, updateActive, valueSelected);
+        } else {
+            filterDialog.addFilterOption(filterName, predicateNameList, toggleGroup, updateActive, updateValue);
+        }
+    }
+
+    /***
+     * Creates a filter range field in the filter dialog. The custom filter
+     * range is used to filter along a range of values. It can filter across
+     * various values using the specified map of filternames and values. It has
+     * build in drop-down for use to select what comparison they wish to
+     * perform. The filter predicate is created dynamically based on selected
+     * values that user selects.
+     *
+     * @param filterName
+     *            The name to display in the filter dialog for this filter row
+     * @param valuesFunctions
+     *            A map of names and corresponding functions which will be used
+     *            as options for the custom range filter. The keys in the map
+     *            are names to use in the field drop-down, the values are
+     *            functions that return the desired number used to compare with
+     *            the number the user entered.
+     * @param columns
+     *            A list of columns to add a filter button to (or null if not
+     *            adding the button to any columns)
+     */
+    public void addCustomFilter(String filterName, Map<String, Function<T, Double>> valuesFunctions) {
+        filterDialog.addCustomRangeFilter(filterName, valuesFunctions, predicateBuilder);
     }
 
     /***

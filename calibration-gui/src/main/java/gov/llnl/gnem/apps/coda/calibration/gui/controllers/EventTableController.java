@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.RefreshEventTableAction;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
@@ -59,6 +60,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
@@ -261,7 +263,6 @@ public class EventTableController implements RefreshableController {
     @Value("${show-energy-uq-summary:false}")
     private boolean showEnergyUQ = false;
 
-    // TODO: Break this up into components so this isn't so incredibly huge.
     protected EventTableController(final SpectraClient spectraClient, final ParameterClient paramClient, final EventClient referenceEventClient, final WaveformClient waveformClient,
             final SymbolStyleMapFactory styleFactory, final PlotFactory plotFactory, final EventBus bus) {
         this.spectraClient = spectraClient;
@@ -356,6 +357,8 @@ public class EventTableController implements RefreshableController {
                 x -> Bindings.createIntegerBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(MeasuredMwDetails::getDataCount).orElseGet(() -> 0)).asObject());
 
         eventTable.setItems(mwParameters);
+
+        eventTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         menu = new ContextMenu();
         MenuItem include = new MenuItem("Include Selected");
@@ -542,7 +545,9 @@ public class EventTableController implements RefreshableController {
                                                     .distinct()
                                                     .sorted(new MaybeNumericStringComparator())
                                                     .collect(Collectors.toList()));
-                        eventTable.sort();
+                        if (eventTable != null) {
+                            eventTable.sort();
+                        }
                     });
 
                     final Map<String, Map<Double, SummaryStatistics>> evidStats = new HashMap<>();
@@ -631,6 +636,11 @@ public class EventTableController implements RefreshableController {
     }
 
     @Subscribe
+    private void listener(final RefreshEventTableAction refresh) {
+        reloadData();
+    }
+
+    @Subscribe
     private void listener(final WaveformChangeEvent wce) {
         final List<Long> nonNull = wce.getIds().stream().filter(Objects::nonNull).collect(Collectors.toList());
         synchronized (spectralMeasurements) {
@@ -702,7 +712,7 @@ public class EventTableController implements RefreshableController {
         eventTable.getSelectionModel().getSelectedIndices().forEach(i -> evs.add(mwParameters.get(i)));
         if (!evs.isEmpty()) {
             referenceEventClient.toggleValidationEventsByEventId(evs.stream().map(MeasuredMwDetails::getEventId).distinct().collect(Collectors.toList()))
-                                .doOnComplete(() -> Platform.runLater(this::reloadData))
+                                .doOnComplete(() -> bus.post(new RefreshEventTableAction()))
                                 .subscribe();
         }
     }
@@ -710,7 +720,7 @@ public class EventTableController implements RefreshableController {
     private void removeRefEvents(final List<MeasuredMwDetails> evs) {
         if (evs != null && !evs.isEmpty()) {
             referenceEventClient.removeReferenceEventsByEventId(evs.stream().map(MeasuredMwDetails::getEventId).distinct().collect(Collectors.toList()))
-                                .doOnSuccess(v -> Platform.runLater(this::reloadData))
+                                .doOnSuccess(v -> bus.post(new RefreshEventTableAction()))
                                 .subscribe();
         }
     }

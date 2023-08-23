@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -286,16 +287,16 @@ public class SpectraRatioGuiController implements RefreshableController {
             return;
         }
 
-        List<String> smallEventIds = this.listData.stream().filter(SpectraEvent::isDenominator).map(SpectraEvent::getEventID).collect(Collectors.toList());
+        Set<String> smallEventIds = this.listData.stream().filter(SpectraEvent::isDenominator).map(SpectraEvent::getEventID).collect(Collectors.toSet());
 
-        List<String> largeEventIds = this.listData.stream().filter(SpectraEvent::isNumerator).map(SpectraEvent::getEventID).collect(Collectors.toList());
+        Set<String> largeEventIds = this.listData.stream().filter(SpectraEvent::isNumerator).map(SpectraEvent::getEventID).collect(Collectors.toSet());
 
         if (smallEventIds.size() > 0 && largeEventIds.size() > 0) {
 
             calculationProcessing = true;
             Platform.runLater(() -> calcRatioBtn.setDisable(true));
 
-            spectraRatioClient.makeSpectraRatioMeasurements(true, true, smallEventIds, largeEventIds).doOnError(err -> {
+            spectraRatioClient.makeSpectraRatioMeasurementsFromWaveforms(true, true, smallEventIds, largeEventIds).doOnError(err -> {
                 bus.post(new RatioStatusEvent(currentRatioStatusEventId, Status.ERROR));
                 log.error(err.getMessage());
             }).subscribe(mwRatioReportByEventPair -> bus.post(new RatioMeasurementEvent(currentRatioStatusEventId, new Result<>(true, mwRatioReportByEventPair))));

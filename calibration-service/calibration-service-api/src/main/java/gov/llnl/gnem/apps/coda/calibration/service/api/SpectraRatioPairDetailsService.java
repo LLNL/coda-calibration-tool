@@ -14,16 +14,20 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.service.api.BaseService;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatiosReport;
 
 public interface SpectraRatioPairDetailsService extends BaseService<SpectraRatioPairDetails, Long> {
 
-    public Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurements(boolean autoPickingEnabled, boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds);
+    public Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurementsFromRatioData(Set<String> smallEventIds, Set<String> largeEventIds, List<RatioEventData> ratioEventData);
+
+    public Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurementsFromWaveforms(Boolean autoPickingEnabled, Boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds);
 
 }

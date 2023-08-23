@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import javax.annotation.PreDestroy;
 import javax.net.ssl.HostnameVerifier;
@@ -43,12 +44,13 @@ import gov.llnl.gnem.apps.coda.calibration.gui.GuiApplication.ApplicationMode;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.CodaParamLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.DataController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.EnvelopeLoadingController;
-import gov.llnl.gnem.apps.coda.calibration.gui.controllers.EventTabController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.EventTableController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MapListeningController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.PathController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ReferenceEventLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ScreenshotEnabledController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController;
@@ -74,6 +76,7 @@ import gov.llnl.gnem.apps.coda.common.gui.util.ProgressMonitor;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.envelope.gui.EnvelopeGuiController;
+import gov.llnl.gnem.apps.coda.envelope.gui.LoadRatioEventsGuiController;
 import gov.llnl.gnem.apps.coda.spectra.gui.RatioStatusProgressListener;
 import gov.llnl.gnem.apps.coda.spectra.gui.SpectraRatioGuiController;
 import javafx.application.Platform;
@@ -83,11 +86,14 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
@@ -105,18 +111,20 @@ public class CodaGuiController {
 
     private static final String SCREENSHOT_TITLE = "CERT_Screenshot";
 
+    private static final String ABOUT_TEXT = "Version 1.0.20";
+
     @FXML
     private Node rootElement;
 
     private LeafletMapController cctMapController;
     private CertLeafletMapController certMapController;
     private WaveformGui waveformGui;
+    private LoadRatioEventsGuiController ratioLoadGui;
     private DataController data;
     private ParametersController param;
     private ShapeController shape;
     private PathController path;
     private SiteController site;
-    private EventTabController eventTableController;
     private SpectraRatioGuiController spectraGui;
     private MeasuredMwsController measuredMws;
 
@@ -156,6 +164,8 @@ public class CodaGuiController {
     @FXML
     private CheckMenuItem waveformFocus;
 
+    private Consumer<File> activeTabScreenshot;
+
     private Runnable activeTabRefresh;
 
     private EnvelopeGuiController envelopeGui;
@@ -163,6 +173,8 @@ public class CodaGuiController {
     private Label activeMapIcon;
 
     private Label showMapIcon;
+
+    private Label refreshLabel;
 
     private WaveformClient waveformClient;
 
@@ -191,8 +203,6 @@ public class CodaGuiController {
 
     private EventBus bus;
 
-    private boolean initialized = false;
-
     private ProgressGui loadingGui;
 
     private Map<Long, ProgressMonitor> calibrationMonitors = new HashMap<>();
@@ -207,20 +217,22 @@ public class CodaGuiController {
 
     private Stage manualStage;
 
+    private Dialog<Void> aboutDialog;
+
     private Environment env;
 
     private WebView manualWebview;
 
     private HostnameVerifier hostnameVerifier;
 
-    private SSLContext sslContext;
+    private Runnable eventTableRefreshFunction;
 
     @Autowired
     public CodaGuiController(LeafletMapController cctMapController, CertLeafletMapController certMapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController,
             CodaParamLoadingController codaParamLoadingController, ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter,
-            WaveformGui waveformGui, DataController data, ParametersController param, ShapeController shape, PathController path, SiteController site, EventTabController certEventTab,
-            MeasuredMwsController measuredMws, ParameterClient configClient, EnvelopeGuiController envelopeGui, SpectraRatioGuiController spectraGui, HostnameVerifier hostnameVerifier,
-            SSLContext sslContext, Environment env, EventBus bus) {
+            LoadRatioEventsGuiController ratioLoadGui, WaveformGui waveformGui, DataController data, EventTableController eventTable, ParametersController param, ShapeController shape,
+            PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient, EnvelopeGuiController envelopeGui, SpectraRatioGuiController spectraGui,
+            HostnameVerifier hostnameVerifier, SSLContext sslContext, Environment env, EventBus bus) {
         this.waveformClient = waveformClient;
         this.cctMapController = cctMapController;
         this.certMapController = certMapController;
@@ -230,16 +242,16 @@ public class CodaGuiController {
         this.calibrationClient = calibrationClient;
         this.paramExporter = paramExporter;
         this.waveformGui = waveformGui;
+        this.ratioLoadGui = ratioLoadGui;
+        this.spectraGui = spectraGui;
         this.data = data;
         this.param = param;
         this.shape = shape;
         this.path = path;
         this.site = site;
-        this.eventTableController = certEventTab;
         this.measuredMws = measuredMws;
         this.configClient = configClient;
         this.envelopeGui = envelopeGui;
-        this.spectraGui = spectraGui;
         this.env = env;
         this.bus = bus;
         bus.register(this);
@@ -270,6 +282,8 @@ public class CodaGuiController {
 
         referenceEventFileChooser.getExtensionFilters().add(new ExtensionFilter("Reference Event Files (.txt,.dat)", "*.txt", "*.dat"));
         referenceEventFileChooser.getExtensionFilters().add(allFilesFilter);
+
+        eventTableRefreshFunction = () -> this.bus.post(new RefreshEventTableAction());
     }
 
     @FXML
@@ -282,13 +296,16 @@ public class CodaGuiController {
             addEnabledTabListeners(siteTab, site);
             addEnabledTabListeners(measuredMwsTab, measuredMws);
             Platform.runLater(() -> {
-                showMapButton.setGraphic(activeMapIcon);
+                dataTab.setGraphic(activeMapIcon);
+                showMapButton.setGraphic(showMapIcon);
+                refreshButton.setGraphic(refreshLabel);
             });
         } else {
             spectraGui.loadEnvelopes();
             siteTab.setOnSelectionChanged(e -> {
                 if (siteTab.isSelected()) {
-                    activeTabRefresh = ((RefreshableController) eventTableController).getRefreshFunction();
+                    activeTabRefresh = eventTableRefreshFunction;
+                    activeTabScreenshot = basicPngScreenshot(siteTab);
                 } else {
                     siteTab.setGraphic(null);
                 }
@@ -330,6 +347,30 @@ public class CodaGuiController {
                 certMapController.fitViewToActiveShapes();
             }
         });
+    }
+
+    @FXML
+    private void openRatioSpectraFileTool(ActionEvent e) {
+        ratioLoadGui.toFront();
+    }
+
+    @FXML
+    private void openAbout(ActionEvent e) {
+        if (aboutDialog == null) {
+            Dialog<Void> aboutDialog = new Dialog<>();
+            aboutDialog.getDialogPane().setPrefWidth(800);
+            aboutDialog.getDialogPane().setPrefHeight(500);
+            aboutDialog.setTitle("About");
+            aboutDialog.setHeaderText(ABOUT_TEXT);
+
+            TextArea licenses = new TextArea();
+
+            licenses.setEditable(false);
+            licenses.setText(AboutText.LICENSE_INFO);
+            aboutDialog.getDialogPane().setContent(licenses);
+            aboutDialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+            aboutDialog.show();
+        }
     }
 
     @FXML
@@ -482,11 +523,14 @@ public class CodaGuiController {
 
         activeMapIcon = makeMapLabel();
         showMapIcon = makeMapLabel();
+        refreshLabel = makeRefreshLabel();
 
         snapshotButton.setGraphic(makeSnapshotLabel());
         snapshotButton.setContentDisplay(ContentDisplay.CENTER);
 
         addEnabledTabListeners(dataTab, data);
+
+        activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(dataTab.getText(), dataTab.getContent()));
 
         data.setVisible(true);
 
@@ -495,10 +539,12 @@ public class CodaGuiController {
                 cctMapController.clearIcons();
                 certMapController.clearIcons();
                 activeTabRefresh = param.getRefreshFunction();
+                activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(paramTab.getText(), paramTab.getContent()));
             }
         });
 
         if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
+            dataTab.setGraphic(activeMapIcon);
             addEnabledTabListeners(shapeTab, shape);
             addEnabledTabListeners(pathTab, path);
             addEnabledTabListeners(siteTab, site);
@@ -506,7 +552,8 @@ public class CodaGuiController {
         } else {
             siteTab.setOnSelectionChanged(e -> {
                 if (siteTab.isSelected()) {
-                    activeTabRefresh = ((RefreshableController) eventTableController).getRefreshFunction();
+                    activeTabRefresh = eventTableRefreshFunction;
+                    activeTabScreenshot = basicPngScreenshot(siteTab);
                 } else {
                     siteTab.setGraphic(null);
                 }
@@ -564,16 +611,25 @@ public class CodaGuiController {
                 if (controller instanceof RefreshableController) {
                     activeTabRefresh = () -> {
                         ((RefreshableController) controller).getRefreshFunction().run();
-                        ((RefreshableController) eventTableController).getRefreshFunction().run();
+                        eventTableRefreshFunction.run();
                     };
                 } else {
                     activeTabRefresh = () -> controller.refreshView();
+                }
+                if (controller instanceof ScreenshotEnabledController) {
+                    activeTabScreenshot = ((ScreenshotEnabledController) controller).getScreenshotFunction();
+                } else {
+                    activeTabScreenshot = basicPngScreenshot(tab);
                 }
             } else {
                 tab.setGraphic(null);
                 controller.setVisible(false);
             }
         });
+    }
+
+    private Consumer<File> basicPngScreenshot(Tab tab) {
+        return folder -> SnapshotUtils.writePng(folder, new Pair<>(tab.getText(), tab.getContent()));
     }
 
     @FXML
@@ -592,7 +648,10 @@ public class CodaGuiController {
         try {
             if (folder != null && folder.exists() && folder.isDirectory() && folder.canWrite()) {
                 screenshotFolderChooser.setInitialDirectory(folder);
-                SnapshotUtils.writePng(folder, new Pair<>(SCREENSHOT_TITLE + SnapshotUtils.getTimestampWithLeadingSeparator(), rootElement));
+                if (GuiApplication.getStartupMode() == ApplicationMode.CERT) {
+                    SnapshotUtils.writePng(folder, new Pair<>(SCREENSHOT_TITLE + SnapshotUtils.getTimestampWithLeadingSeparator(), rootElement));
+                }
+                Platform.runLater(() -> activeTabScreenshot.accept(folder));
             }
         } catch (SecurityException ex) {
             log.warn("Exception trying to write screenshots to folder {} : {}", folder, ex.getLocalizedMessage(), ex);
@@ -710,18 +769,14 @@ public class CodaGuiController {
 
     @Subscribe
     private void listener(CalibrationStageShownEvent evt) {
-        if (!initialized) {
-            Platform.runLater(() -> {
-                dataTab.setGraphic(activeMapIcon);
-                if (showMapButton.getGraphic() == null) {
-                    showMapButton.setGraphic(showMapIcon);
-                }
-                if (refreshButton.getGraphic() == null) {
-                    refreshButton.setGraphic(makeRefreshLabel());
-                }
-                initialized = true;
-            });
-        }
+        Platform.runLater(() -> {
+            if (showMapButton.getGraphic() == null) {
+                showMapButton.setGraphic(showMapIcon);
+            }
+            if (refreshButton.getGraphic() == null) {
+                refreshButton.setGraphic(refreshLabel);
+            }
+        });
     }
 
     @PreDestroy

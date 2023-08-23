@@ -17,7 +17,9 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
+<StackPane fx:id="measuredMws" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css"
+	xmlns="http://javafx.com/javafx/19"
+	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.MeasuredMwsController">
 	<children>
 		<VBox>
 			<children>
@@ -165,9 +167,9 @@
 											</items>
 											<items>
 												<ScrollPane fitToHeight="true" fitToWidth="true">
-                                       <content>
-                                          <fx:include fx:id="site" source="EventsTableGui.fxml" />
-                                       </content>
+													<content>
+														<fx:include fx:id="eventTableController" source="EventsTableGui.fxml" />
+													</content>
 												</ScrollPane>
 											</items>
 										</SplitPane>

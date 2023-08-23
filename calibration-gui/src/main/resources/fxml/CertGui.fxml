@@ -81,11 +81,13 @@
                   <Menu mnemonicParsing="false" text="Tools">
                      <items>
                         <MenuItem fx:id="envelopeTool1" mnemonicParsing="false" onAction="#openEnvelopeTool" text="Create Envelopes" />
+                        <MenuItem mnemonicParsing="false" onAction="#openRatioSpectraFileTool" text="Ratio Spectra Files" />
                         <MenuItem fx:id="changeAppModeBtn" mnemonicParsing="false" onAction="#changeAppMode" text="Change to CCT Mode" />
                      </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="Help">
                     <items>
+                        <MenuItem mnemonicParsing="false" onAction="#openAbout" text="About" />
                       <MenuItem mnemonicParsing="false" onAction="#openManual" text="Documentation" />
                     </items>
                   </Menu>
@@ -154,7 +156,7 @@
                         						</Tab>
                                           <Tab fx:id="siteTab" closable="false" text="Events">
                                              <content>
-                                                <fx:include fx:id="site" source="EventsTableGui.fxml" />
+                                                <fx:include fx:id="eventTableController" source="EventsTableGui.fxml" />
                                              </content>
                                           </Tab>
                         						<Tab fx:id="paramTab" closable="false" text="Parameters">

@@ -2,11 +2,11 @@
 * Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.repository;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -40,4 +41,11 @@ public interface SyntheticRepository extends DetachableJpaRepository<SyntheticCo
     @Modifying
     @Query("delete from SyntheticCoda synth where synth.sourceModel.id in :ids")
     public void deleteInBatchBySharedFrequencyBandParametersIds(@Param("ids") Collection<Long> ids);
+
+    @Query("select synth from SyntheticCoda synth where "
+            + "(:eventId is null or synth.sourceWaveform.event.eventId = :eventId)"
+            + " and (:stationName is null or synth.sourceWaveform.stream.station.stationName = :stationName)"
+            + " and (:lowFreq is null or synth.sourceWaveform.lowFrequency = :lowFreq)"
+            + " and (:highFreq is null or synth.sourceWaveform.highFrequency = :highFreq)")
+    public List<SyntheticCoda> findMatchingSelection(@Param("eventId") String eventId, @Param("stationName") String stationName, @Param("lowFreq") Double lowFreq, @Param("highFreq") Double highFreq);
 }

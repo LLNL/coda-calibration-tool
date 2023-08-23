@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -33,17 +36,21 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Spinner;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -331,6 +338,167 @@ public class FilterDialogController {
     }
 
     /***
+     * Adds a filter field to the filter dialog so that users can filter the
+     * specified column. Creates a slider controller to add to the filter dialog
+     * with the specified valid values. The slider is helpful for numerical
+     * lists.
+     *
+     * @param columnName
+     *            The string name of the column which should be filtered.
+     * @param values
+     *            An Observable list of valid values that can be selected for by
+     *            the slider.
+     * @param toggleGroup
+     *            The toggle group to assign this filter to in the case where
+     *            only one filter in the toggle group should be active at a
+     *            time. If null, then it can be toggled active all the time.
+     * @param onSliderSelection
+     *            The action to perform when a selection is made on the filter
+     *            slider.
+     * @param sliderValueChangeAction
+     *            The action to perform when the slider value changes
+     */
+    public void addFilterSlider(final Slider customSlider, final String columnName, final ObservableList<Object> values, ToggleGroup toggleGroup, ChangeListener<? super Boolean> onSliderSelection,
+            Consumer<String> sliderValueChangeAction) {
+
+        final Label sliderLabel = new Label("");
+
+        customSlider.valueProperty().addListener((o, ov, nv) -> {
+            Platform.runLater(() -> {
+                sliderValueChangeAction.accept(values.get(nv.intValue()).toString());
+                setFieldActiveState(columnName, true);
+            });
+        });
+
+        Platform.runLater(() -> {
+            createFieldRow(toggleGroup, onSliderSelection, columnName, customSlider, sliderLabel);
+            slidersList.add(customSlider);
+        });
+    }
+
+    public <T> Predicate<T> getCustomPredicate(Double selectedValue, Function<T, Double> valueFunction, String operation) {
+        Predicate<T> predicate = data -> true;
+
+        if (selectedValue == null || valueFunction == null || operation == null) {
+            return predicate;
+        }
+
+        switch (operation) {
+        case ">=":
+            predicate = data -> {
+                if (data != null) {
+                    return valueFunction.apply(data) >= selectedValue;
+                }
+                return true;
+            };
+            break;
+        case ">":
+            predicate = data -> {
+                if (data != null) {
+                    return valueFunction.apply(data) > selectedValue;
+                }
+                return true;
+            };
+            break;
+        case "<=":
+            predicate = data -> {
+                if (data != null) {
+                    return valueFunction.apply(data) <= selectedValue;
+                }
+                return true;
+            };
+            break;
+        case "<":
+            predicate = data -> {
+                if (data != null) {
+                    return valueFunction.apply(data) < selectedValue;
+                }
+                return true;
+            };
+            break;
+        case "==":
+            predicate = data -> {
+                if (data != null) {
+                    return valueFunction.apply(data).equals(selectedValue);
+                }
+                return true;
+            };
+            break;
+        }
+        return predicate;
+    }
+
+    private <T> void setPredicateForCustomRangeFilter(PredicateBuilder<T> predicateBuilder, final String filterName, Double selectedNumber, Function<T, Double> valueFunction, String operation) {
+        Predicate<T> predicate = getCustomPredicate(selectedNumber, valueFunction, operation);
+        predicateBuilder.setPredicate(filterName, predicate);
+        predicateBuilder.setPredicateActiveState(filterName, true);
+        setFieldActiveState(filterName, true);
+    }
+
+    public <T> void addCustomRangeFilter(final String filterName, final Map<String, Function<T, Double>> valuesFunctions, PredicateBuilder<T> predicateBuilder) {
+
+        HBox hbox = new HBox();
+
+        ChoiceBox<String> filterItemBox = new ChoiceBox<>();
+        filterItemBox.getItems().addAll(valuesFunctions.keySet());
+        filterItemBox.getSelectionModel().selectFirst();
+
+        Spinner<Double> valueSpinner = new Spinner<>(-100.0, 100.0, 0.0, 0.1);
+        valueSpinner.editableProperty().set(true);
+        valueSpinner.getValueFactory().setValue(0.0);
+
+        ChoiceBox<String> operatorBox = new ChoiceBox<>();
+        operatorBox.getItems().add("==");
+        operatorBox.getItems().add(">");
+        operatorBox.getItems().add(">=");
+        operatorBox.getItems().add("<");
+        operatorBox.getItems().add("<=");
+        operatorBox.getSelectionModel().selectFirst();
+
+        // Create handler for when active state changes
+        ChangeListener<? super Boolean> updateActive = (options, oldValue, newValue) -> {
+            if (!oldValue.equals(newValue)) {
+                if (newValue) {
+                    Function<T, Double> function = valuesFunctions.get(filterItemBox.getValue());
+                    String operator = operatorBox.getValue();
+                    Double selectedNumber = valueSpinner.getValue();
+                    setPredicateForCustomRangeFilter(predicateBuilder, filterName, selectedNumber, function, operator);
+                } else {
+                    predicateBuilder.setPredicateActiveState(filterName, newValue);
+                }
+            }
+        };
+
+        filterItemBox.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
+            Function<T, Double> function = valuesFunctions.get(n);
+            String operator = operatorBox.getValue();
+            Double selectedNumber = valueSpinner.getValue();
+            setPredicateForCustomRangeFilter(predicateBuilder, filterName, selectedNumber, function, operator);
+        });
+
+        valueSpinner.valueProperty().addListener((v, o, n) -> {
+            Function<T, Double> function = valuesFunctions.get(filterItemBox.getValue());
+            String operator = operatorBox.getValue();
+            setPredicateForCustomRangeFilter(predicateBuilder, filterName, n, function, operator);
+        });
+
+        operatorBox.getSelectionModel().selectedItemProperty().addListener((v, o, n) -> {
+            Function<T, Double> function = valuesFunctions.get(filterItemBox.getValue());
+            Double selectedNumber = valueSpinner.getValue();
+            setPredicateForCustomRangeFilter(predicateBuilder, filterName, selectedNumber, function, n);
+        });
+
+        hbox.getChildren().add(filterItemBox);
+        hbox.getChildren().add(operatorBox);
+        hbox.getChildren().add(valueSpinner);
+        hbox.setSpacing(10);
+
+        Platform.runLater(() -> {
+            createCustomFieldRow(hbox, null, updateActive, filterName, new Label(""));
+        });
+    }
+
+    /***
      * Updates the specified slider values that the user can select.
      *
      * @param sliderIdx
@@ -462,6 +630,56 @@ public class FilterDialogController {
         } else {
             GridPane.setColumnSpan(fieldControl, 2);
             fieldRowGrid.addRow(fieldCount, activeBox, fieldLabel, fieldControl);
+        }
+
+        fieldCount++;
+    }
+
+    private void createCustomFieldRow(Node customField, ToggleGroup toggleGroup, ChangeListener<? super Boolean> selectionChanged, String columnName, Label endLabel) {
+        Control activeBox = null;
+        if (toggleGroup != null) {
+            ToggleButton onBox = new ToggleButton();
+            onBox.setText(" ");
+            onBox.setSelected(false);
+            onBox.setPadding(new Insets(0, 4, 0, 4));
+            onBox.selectedProperty().addListener(selectionChanged);
+            onBox.selectedProperty().addListener((o, nv, ov) -> {
+                if (nv) {
+                    onBox.setPadding(new Insets(0, 8, 0, 8));
+                    onBox.setText("");
+                } else {
+                    onBox.setPadding(new Insets(0, 2, 0, 2));
+                    onBox.setText("\u2713");
+                }
+            });
+            onBox.setToggleGroup(toggleGroup);
+            List<ToggleButton> togglesList = toggleGroups.get(toggleGroup);
+            if (togglesList != null) {
+                togglesList.add(onBox);
+            } else {
+                togglesList = new ArrayList<>();
+                togglesList.add(onBox);
+                toggleGroups.put(toggleGroup, togglesList);
+            }
+
+            activeBox = onBox;
+        } else {
+            CheckBox onBox = new CheckBox();
+            onBox.setSelected(false);
+            onBox.selectedProperty().addListener(selectionChanged);
+            activeBox = onBox;
+        }
+
+        fieldActiveControls.put(columnName, activeBox);
+
+        Label fieldLabel = new Label(columnName);
+        fieldLabel.setPrefHeight(25);
+
+        if (endLabel != null) {
+            fieldRowGrid.addRow(fieldCount, activeBox, fieldLabel, customField, endLabel);
+        } else {
+            GridPane.setColumnSpan(customField, 2);
+            fieldRowGrid.addRow(fieldCount, activeBox, fieldLabel, customField);
         }
 
         fieldCount++;

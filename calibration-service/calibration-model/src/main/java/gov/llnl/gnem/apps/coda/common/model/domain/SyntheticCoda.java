@@ -16,6 +16,7 @@ package gov.llnl.gnem.apps.coda.common.model.domain;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
@@ -81,6 +82,7 @@ public class SyntheticCoda implements Serializable {
     private SharedFrequencyBandParameters sourceModel;
 
     private Double measuredV;
+
     private Double measuredB;
 
     private Double measuredG;
@@ -210,20 +212,7 @@ public class SyntheticCoda implements Serializable {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((beginTime == null) ? 0 : beginTime.hashCode());
-        result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
-        result = prime * result + ((measuredB == null) ? 0 : measuredB.hashCode());
-        result = prime * result + ((measuredG == null) ? 0 : measuredG.hashCode());
-        result = prime * result + ((measuredV == null) ? 0 : measuredV.hashCode());
-        result = prime * result + ((sampleRate == null) ? 0 : sampleRate.hashCode());
-        result = prime * result + ((segment == null) ? 0 : segment.hashCode());
-        result = prime * result + ((sourceModel == null) ? 0 : sourceModel.hashCode());
-        result = prime * result + ((sourceWaveform == null) ? 0 : sourceWaveform.hashCode());
-        result = prime * result + ((version == null) ? 0 : version.hashCode());
-        return result;
+        return Objects.hash(beginTime, endTime, id, measuredB, measuredG, measuredV, sampleRate, segment, sourceModel, sourceWaveform, version);
     }
 
     @Override
@@ -238,81 +227,37 @@ public class SyntheticCoda implements Serializable {
             return false;
         }
         SyntheticCoda other = (SyntheticCoda) obj;
-        if (beginTime == null) {
-            if (other.beginTime != null) {
-                return false;
-            }
-        } else if (!beginTime.equals(other.beginTime)) {
+        if (!Objects.equals(beginTime, other.beginTime)) {
             return false;
         }
-        if (endTime == null) {
-            if (other.endTime != null) {
-                return false;
-            }
-        } else if (!endTime.equals(other.endTime)) {
+        if (!Objects.equals(endTime, other.endTime)) {
             return false;
         }
-        if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.id)) {
+        if (!Objects.equals(id, other.id)) {
             return false;
         }
-        if (measuredB == null) {
-            if (other.measuredB != null) {
-                return false;
-            }
-        } else if (!measuredB.equals(other.measuredB)) {
+        if (!Objects.equals(measuredB, other.measuredB)) {
             return false;
         }
-        if (measuredG == null) {
-            if (other.measuredG != null) {
-                return false;
-            }
-        } else if (!measuredG.equals(other.measuredG)) {
+        if (!Objects.equals(measuredG, other.measuredG)) {
             return false;
         }
-        if (measuredV == null) {
-            if (other.measuredV != null) {
-                return false;
-            }
-        } else if (!measuredV.equals(other.measuredV)) {
+        if (!Objects.equals(measuredV, other.measuredV)) {
             return false;
         }
-        if (sampleRate == null) {
-            if (other.sampleRate != null) {
-                return false;
-            }
-        } else if (!sampleRate.equals(other.sampleRate)) {
+        if (!Objects.equals(sampleRate, other.sampleRate)) {
             return false;
         }
-        if (segment == null) {
-            if (other.segment != null) {
-                return false;
-            }
-        } else if (!segment.equals(other.segment)) {
+        if (!Objects.equals(segment, other.segment)) {
             return false;
         }
-        if (sourceModel == null) {
-            if (other.sourceModel != null) {
-                return false;
-            }
-        } else if (!sourceModel.equals(other.sourceModel)) {
+        if (!Objects.equals(sourceModel, other.sourceModel)) {
             return false;
         }
-        if (sourceWaveform == null) {
-            if (other.sourceWaveform != null) {
-                return false;
-            }
-        } else if (!sourceWaveform.equals(other.sourceWaveform)) {
+        if (!Objects.equals(sourceWaveform, other.sourceWaveform)) {
             return false;
         }
-        if (version == null) {
-            if (other.version != null) {
-                return false;
-            }
-        } else if (!version.equals(other.version)) {
+        if (!Objects.equals(version, other.version)) {
             return false;
         }
         return true;
@@ -362,6 +307,18 @@ public class SyntheticCoda implements Serializable {
 
         if (overlay.getSourceWaveform() != null) {
             this.setSourceWaveform(overlay.getSourceWaveform());
+        }
+
+        if (overlay.getMeasuredV() != null) {
+            this.setMeasuredV(overlay.getMeasuredV());
+        }
+
+        if (overlay.getMeasuredB() != null) {
+            this.setMeasuredB(overlay.getMeasuredB());
+        }
+
+        if (overlay.getMeasuredG() != null) {
+            this.setMeasuredG(overlay.getMeasuredG());
         }
 
         return this;

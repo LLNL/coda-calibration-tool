@@ -17,9 +17,12 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,9 +41,9 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.CertLeafletMapController;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.LeafletMapController;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
-import gov.llnl.gnem.apps.coda.calibration.gui.plotting.CertLeafletMapController;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
@@ -67,7 +70,6 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
@@ -290,16 +292,37 @@ public class DataController implements MapListeningController, RefreshableContro
             }
         });
 
+        HashMap<String, Function<Waveform, Double>> valueMap = new HashMap<>();
+
+        valueMap.put("Low Freq", Waveform::getLowFrequency);
+        valueMap.put("High Freq", Waveform::getHighFrequency);
+        valueMap.put("Depth", data -> Double.valueOf(data.getEvent().getDepth()));
+        valueMap.put("Station Count", data -> {
+            Set<String> stations = new HashSet<>();
+            listData.filtered(waveform -> waveform.getEvent().equals(data.getEvent())).forEach(waveform -> {
+                stations.add(waveform.getStream().getStation().getStationName());
+            });
+            return Double.valueOf(stations.size());
+        });
+        valueMap.put("Event Count", data -> {
+            Set<Event> events = new HashSet<>();
+            listData.filtered(waveform -> waveform.getStream().getStation().equals(data.getStream().getStation())).forEach(waveform -> {
+                events.add(waveform.getEvent());
+            });
+            return Double.valueOf(events.size());
+        });
+
         //The filter controller will manage the list so don't add the listData directly
         //to the table, otherwise the event handlers will trip over themselves
         DataFilterController<Waveform> filterController = new DataFilterController<>(tableView, listData);
-        ToggleGroup freqFieldsToggle = new ToggleGroup(); //The toggle group will prevent freqFields from both being active during the 'And' filter.
-        filterController.addFilterToColumn(false, null, eventCol, (data, value) -> data.getEvent().getEventId().equals(value));
-        filterController.addFilterToColumn(false, null, depthCol, (data, value) -> dfmt2.format(data.getEvent().getDepth()).equals(value));
-        filterController.addFilterToColumn(true, freqFieldsToggle, lowFreqCol, (data, value) -> data.getLowFrequency().toString().equals(value));
-        filterController.addFilterToColumn(true, freqFieldsToggle, highFreqCol, (data, value) -> data.getHighFrequency().toString().equals(value));
-        filterController.addFilterToColumn(false, null, stationCol, (data, value) -> data.getStream().getStation().getStationName().equals(value));
-        filterController.addFilterToColumn(false, null, networkCol, (data, value) -> data.getStream().getStation().getNetworkName().equals(value));
+        filterController.addCustomFilter("Range 1", valueMap);
+        filterController.addCustomFilter("Range 2", valueMap);
+        filterController.addCustomFilter("Range 3", valueMap);
+        filterController.addCustomFilter("Range 4", valueMap);
+        filterController.addFilterForColumn(false, null, eventCol, (data, value) -> data.getEvent().getEventId().equals(value));
+        filterController.addFilterForColumn(false, null, stationCol, (data, value) -> data.getStream().getStation().getStationName().equals(value));
+        filterController.addFilterForColumn(false, null, networkCol, (data, value) -> data.getStream().getStation().getNetworkName().equals(value));
+        filterController.addFilterBtnToColumns(new ArrayList<>(List.of(depthCol, lowFreqCol, highFreqCol, eventCol, stationCol, networkCol)));
     }
 
     @Override

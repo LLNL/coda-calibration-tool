@@ -1,4 +1,4 @@
-FROM registry1.dso.mil/ironbank/redhat/ubi/ubi8:8.4
+FROM registry1.dso.mil/ironbank/redhat/ubi/ubi8:8.6-fips
 ARG USER=1001
 ARG JAVA_OPTS="-XX:MaxRAMPercentage=80"
 ENV JAVA_OPTS=${JAVA_OPTS}
@@ -7,7 +7,7 @@ USER root
 
 RUN dnf upgrade -y && \
     rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm && \
-    rpm -ivh http://mirrors.ocf.berkeley.edu/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-4.el8.noarch.rpm http://mirrors.ocf.berkeley.edu/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-4.el8.noarch.rpm && \
+    rpm -ivh http://mirrors.ocf.berkeley.edu/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm http://mirrors.ocf.berkeley.edu/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm && \
     dnf install --nodocs -y glibc-langpack-en && \
     dnf install --disablerepo=ubi-8-appstream --nodocs -y \
     java-17-openjdk \

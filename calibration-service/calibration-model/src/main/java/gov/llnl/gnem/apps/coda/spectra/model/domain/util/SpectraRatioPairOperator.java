@@ -210,6 +210,14 @@ public class SpectraRatioPairOperator {
         return ratio.equals(obj);
     }
 
+    public boolean isLoadedFromJson() {
+        return ratio.isLoadedFromJson();
+    }
+
+    public void setLoadedFromJson(boolean isloadedFromJson) {
+        ratio.setLoadedFromJson(isloadedFromJson);
+    }
+
     public Double getDiffAvg() {
         return ratio.getDiffAvg();
     }

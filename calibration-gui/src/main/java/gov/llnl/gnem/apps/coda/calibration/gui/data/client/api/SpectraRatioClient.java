@@ -15,12 +15,16 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client.api;
 
 import java.util.List;
+import java.util.Set;
 
+import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
 import reactor.core.publisher.Mono;
 
 public interface SpectraRatioClient {
 
-    public Mono<SpectraRatiosReportByEventPair> makeSpectraRatioMeasurements(boolean autoPickingEnabled, boolean persistResults, List<String> smallEventIds, List<String> largeEventIds);
+    public Mono<SpectraRatiosReportByEventPair> makeSpectraRatioMeasurementsFromWaveforms(Boolean autoPickingEnabled, Boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds);
+
+    public Mono<SpectraRatiosReportByEventPair> makeSpectraRatioMeasurementsFromRatioData(Set<String> smallEventIds, Set<String> largeEventIds, List<RatioEventData> ratioEventData);
 
 }

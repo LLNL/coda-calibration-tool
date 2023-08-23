@@ -46,6 +46,8 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
+import gov.llnl.gnem.apps.coda.common.gui.util.CellBindingUtils;
+import gov.llnl.gnem.apps.coda.common.gui.util.HiddenHeaderTableView;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
@@ -78,6 +80,8 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableColumn;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -103,14 +107,15 @@ import llnl.gnem.core.util.Geometry.GeodeticCoordinate;
 
 public class RatioMeasurementSpectraPlotManager {
 
-    private static final String CONTOUR_COLOR_MAP = ColorMaps.VIRIDIS.getColorMap();
+    private static final String CONTOUR_COLOR_MAP = ColorMaps.BATLOW.getColorMap();
     private static final String X_AXIS_LABEL = "center freq (Hz)";
+    private static final String Y_AXIS_LABEL = "Ratio Avg";
     private static final String SPECTRA_RATIO_PREFIX = "Spectra_Ratio_";
+    private static final String ALL_PLOTS_PREFIX = "All_Plots_";
     private static final String PAIR_MOMENT_PREFIX = "Pair_Moment_";
     private static final String PAIR_STRESS_PREFIX = "Pair_Stress_";
     private static final String JOINT_MOMENT_PREFIX = "Joint_Moment_";
     private static final String JOINT_STRESS_PREFIX = "Joint_Stress_";
-    private final String RATIO_AVG_LABEL = "Ratio Avg";
     private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
     private final NumberFormat dfmt2 = NumberFormatFactory.twoDecimalOneLeadingZero();
     private static final Logger log = LoggerFactory.getLogger(RatioMeasurementSpectraPlotManager.class);
@@ -118,6 +123,7 @@ public class RatioMeasurementSpectraPlotManager {
     private final DirectoryChooser screenshotFolderChooser = new DirectoryChooser();
 
     private SpectraRatiosReportByEventPair ratioMeasurementReport = new SpectraRatiosReportByEventPair();
+
     private final SymbolStyleMapFactory symbolStyleMapFactory;
     private MapPlottingUtilities iconFactory;
     private CertLeafletMapController mapImpl;
@@ -136,6 +142,9 @@ public class RatioMeasurementSpectraPlotManager {
 
     private final BiConsumer<Boolean, String> eventSelectionCallback;
     private final BiConsumer<Boolean, String> stationSelectionCallback;
+
+    @FXML
+    private SplitPane mainSplitPane;
 
     @FXML
     private StackPane borderPane;
@@ -165,10 +174,24 @@ public class RatioMeasurementSpectraPlotManager {
     private Button showMapButton;
 
     @FXML
+    private Button viewRawSpectraBtn;
+
+    @FXML
     private ComboBox<EventPair> eventPairComboBox;
 
     @FXML
     private Label topTitleLabel;
+
+    @FXML
+    protected HiddenHeaderTableView<Pair<String, String>> ratioSummaryTable;
+
+    @FXML
+    protected TableColumn<Pair<String, String>, String> ratioSummaryNameCol;
+
+    @FXML
+    protected TableColumn<Pair<String, String>, String> ratioSummaryValueCol;
+
+    private final ObservableList<Pair<String, String>> ratioSummaryValues = FXCollections.observableArrayList();
 
     private PlotFactory plotFactory;
 
@@ -215,6 +238,7 @@ public class RatioMeasurementSpectraPlotManager {
         this.spectraClient = spectraClient;
         this.spectraRatioExporter = spectraRatioExporter;
         this.ratioSpectralPlotController = new SpectraRatioPlotController(SpectraRatioPairOperator::getDiffAvg);
+
         plotFactory = new PlotlyPlotFactory();
 
         eventSelectionCallback = (selected, eventId) -> {
@@ -265,6 +289,7 @@ public class RatioMeasurementSpectraPlotManager {
         });
 
         eventPairComboBox.setItems(sortedEventPairList);
+
         eventPairComboBox.setCellFactory(lv -> new ListCell<EventPair>() {
             @Override
             protected void updateItem(EventPair pair, boolean empty) {
@@ -272,6 +297,7 @@ public class RatioMeasurementSpectraPlotManager {
                 setText(pair == null ? null : pair.getY().getEventId() + " / " + pair.getX().getEventId());
             }
         });
+
         eventPairComboBox.setButtonCell(new ListCell<EventPair>() {
             @Override
             protected void updateItem(EventPair pair, boolean empty) {
@@ -294,7 +320,7 @@ public class RatioMeasurementSpectraPlotManager {
         ratioSpectralPlotController.setShouldShowFits(true);
 
         SpectralPlot plot = getRatioSpectraPlot();
-        plot.setLabels("Seismic Envelope Ratio Spectra", X_AXIS_LABEL, RATIO_AVG_LABEL);
+        plot.setLabels("Seismic Envelope Ratio Spectra", X_AXIS_LABEL, Y_AXIS_LABEL);
         plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(ratioSpectralPlotController::getSpectraDataMap));
         plot.getSubplot().setMargin(65, 40, 50, null);
         plot.getSubplot().attachToDisplayNode(spectraRatioPlotNode);
@@ -418,6 +444,11 @@ public class RatioMeasurementSpectraPlotManager {
         momentContourPlot.addAxes(momentXaxis);
         momentContourPlot.addAxes(momentYaxis);
         momentContourPlot.attachToDisplayNode(pairMomentPlotNode);
+
+        ratioSummaryTable.setItems(ratioSummaryValues);
+
+        CellBindingUtils.attachTextCellFactoriesString(ratioSummaryNameCol, Pair::getX);
+        CellBindingUtils.attachTextCellFactoriesString(ratioSummaryValueCol, Pair::getY);
     }
 
     @FXML
@@ -436,9 +467,22 @@ public class RatioMeasurementSpectraPlotManager {
     }
 
     @FXML
+    public void viewSpectraPopup(final ActionEvent e) {
+        try {
+            runGuiUpdate(() -> {
+                createSpectraPlotPopup();
+            });
+        } catch (InvocationTargetException e1) {
+            e1.printStackTrace();
+        } catch (InterruptedException e2) {
+            e2.printStackTrace();
+        }
+    }
+
+    @FXML
     public void showMapWindow(final ActionEvent e) {
         SpectraRatioPairDetails ratioDetails = getCurrentFirstRatio();
-        if (mapImpl != null && ratioDetails != null) {
+        if (mapImpl != null && ratioDetails != null && !ratioDetails.isLoadedFromJson()) {
             List<Waveform> listData = new ArrayList<>();
             listData.add(ratioDetails.getNumerWaveform());
             listData.add(ratioDetails.getDenomWaveform());
@@ -489,22 +533,28 @@ public class RatioMeasurementSpectraPlotManager {
         symbolStyleMap = symbolStyleMapFactory.build(new ArrayList<>(ratioMeasurementReport.getReport().getData().get(eventPair).keySet()), Station::getStationName);
         spectraRatioPairOperatorList = ratiosByEventPair.stream().map(SpectraRatioPairOperator::new).collect(Collectors.toList());
         symbolMap.clear();
-        symbolMap.putAll(mapRatioToPoint(spectraRatioPairOperatorList, SpectraRatioPairOperator::getDiffAvg));
+        symbolMap.putAll(mapFunctionToPoint(spectraRatioPairOperatorList, SpectraRatioPairOperator::getDiffAvg));
+
         ratioSpectralPlotController.getSpectraDataMap().clear();
         getRatioSpectraPlot().clearPlot();
-
         ratioSpectralPlotController.getSpectraDataMap().putAll(symbolMap);
-        getRatioSpectraPlot().plotXYdata(toPlotPoints(), null, RATIO_AVG_LABEL);
-        topTitleLabel.setText(getEventPairInfoForTitle());
+        getRatioSpectraPlot().plotXYdata(toPlotPoints(SpectraRatioPairOperator::getDiffAvg), null, Y_AXIS_LABEL);
 
         Map<EventPair, SpectraRatioPairInversionResult> inversionData = ratioMeasurementReport.getReport().getInversionEstimates();
+        ratioSummaryValues.clear();
+        ratioSummaryTable.getItems().clear();
+
+        addEventDataToTable("Event Pair Data", eventPair);
+
         if (inversionData != null) {
             plotInversionPairData(inversionData, eventPair);
+            addInversionDataToTable(inversionData.get(eventPair), "Pair Inversion Data");
         }
 
         Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionData = ratioMeasurementReport.getReport().getJointInversionEstimates();
         if (jointInversionData != null) {
             plotJointInversionData(jointInversionData, eventPair);
+            addInversionDataToTable(jointInversionData.get(eventPair), "Joint Inversion Data");
         }
 
         updateMomentRatioLines();
@@ -540,38 +590,40 @@ public class RatioMeasurementSpectraPlotManager {
                     Color.BLUE);
     }
 
+    private SpectraRatioPairInversionResult mapJointInversionResultToInversionResult(SpectraRatioPairInversionResultJoint eventRecord) {
+        return new SpectraRatioPairInversionResult().setEventIdA(eventRecord.getEventIdA())
+                                                    .setEventIdB(eventRecord.getEventIdB())
+                                                    .setMomentEstimateA(eventRecord.getMomentEstimateA())
+                                                    .setMomentEstimateB(eventRecord.getMomentEstimateB())
+                                                    .setApparentStressEstimateA(eventRecord.getApparentStressEstimateA())
+                                                    .setApparentStressEstimateB(eventRecord.getApparentStressEstimateB())
+                                                    .setCornerEstimateA(eventRecord.getCornerEstimateA())
+                                                    .setCornerEstimateB(eventRecord.getCornerEstimateB())
+                                                    .setId(eventRecord.getId())
+                                                    .setMisfit(eventRecord.getMisfit())
+                                                    .setM0minX(eventRecord.getM0minX())
+                                                    .setM0maxX(eventRecord.getM0maxX())
+                                                    .setM0minY(eventRecord.getM0minY())
+                                                    .setM0maxY(eventRecord.getM0maxY())
+                                                    .setAppStressMin(eventRecord.getAppStressMin())
+                                                    .setAppStressMax(eventRecord.getAppStressMax())
+                                                    .setM0XIndex(eventRecord.getM0XIndex())
+                                                    .setM0Xdim(eventRecord.getM0Xdim())
+                                                    .setM0YIndex(eventRecord.getM0YIndex())
+                                                    .setM0Ydim(eventRecord.getM0Ydim())
+                                                    .setM0samples(eventRecord.getM0samples())
+                                                    .setStressXIndex(eventRecord.getStressXIndex())
+                                                    .setAppStressXdim(eventRecord.getAppStressXdim())
+                                                    .setStressYIndex(eventRecord.getStressYIndex())
+                                                    .setAppStressYdim(eventRecord.getAppStressYdim())
+                                                    .setStressSamples(eventRecord.getStressSamples());
+    }
+
     private void plotJointInversionData(Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionData, EventPair eventPair) {
         SpectraRatioPairInversionResultJoint eventRecord = jointInversionData.get(eventPair);
         if (eventRecord != null) {
             Map<EventPair, SpectraRatioPairInversionResult> wrappedInversionData = new HashMap<>(1);
-            wrappedInversionData.put(
-                    eventPair,
-                        new SpectraRatioPairInversionResult().setEventIdA(eventRecord.getEventIdA())
-                                                             .setEventIdB(eventRecord.getEventIdB())
-                                                             .setMomentEstimateA(eventRecord.getMomentEstimateA())
-                                                             .setMomentEstimateB(eventRecord.getMomentEstimateB())
-                                                             .setApparentStressEstimateA(eventRecord.getApparentStressEstimateA())
-                                                             .setApparentStressEstimateB(eventRecord.getApparentStressEstimateB())
-                                                             .setCornerEstimateA(eventRecord.getCornerEstimateA())
-                                                             .setCornerEstimateB(eventRecord.getCornerEstimateB())
-                                                             .setId(eventRecord.getId())
-                                                             .setMisfit(eventRecord.getMisfit())
-                                                             .setM0minX(eventRecord.getM0minX())
-                                                             .setM0maxX(eventRecord.getM0maxX())
-                                                             .setM0minY(eventRecord.getM0minY())
-                                                             .setM0maxY(eventRecord.getM0maxY())
-                                                             .setAppStressMin(eventRecord.getAppStressMin())
-                                                             .setAppStressMax(eventRecord.getAppStressMax())
-                                                             .setM0XIndex(eventRecord.getM0XIndex())
-                                                             .setM0Xdim(eventRecord.getM0Xdim())
-                                                             .setM0YIndex(eventRecord.getM0YIndex())
-                                                             .setM0Ydim(eventRecord.getM0Ydim())
-                                                             .setM0samples(eventRecord.getM0samples())
-                                                             .setStressXIndex(eventRecord.getStressXIndex())
-                                                             .setAppStressXdim(eventRecord.getAppStressXdim())
-                                                             .setStressYIndex(eventRecord.getStressYIndex())
-                                                             .setAppStressYdim(eventRecord.getAppStressYdim())
-                                                             .setStressSamples(eventRecord.getStressSamples()));
+            wrappedInversionData.put(eventPair, mapJointInversionResultToInversionResult(eventRecord));
             plotInversionData(
                     "Joint",
                         wrappedInversionData,
@@ -591,6 +643,41 @@ public class RatioMeasurementSpectraPlotManager {
                         Color.RED);
         }
 
+    }
+
+    private void addEventDataToTable(String dataHeader, EventPair eventPair) {
+        Double eventDistance = getEventPairDistanceKm();
+        Double hypocentralEventDistance = getHypocentralEventPairDistanceKm();
+        Double eventDepth = getEventPairDepthKm();
+
+        ratioSummaryValues.add(new Pair<>(dataHeader, ""));
+        ratioSummaryValues.add(new Pair<>("Numerator Event [A]", eventPair.getY().getEventId()));
+        ratioSummaryValues.add(new Pair<>("Denominator Event [B]", eventPair.getX().getEventId()));
+
+        if (eventDistance != null) {
+            ratioSummaryValues.add(new Pair<>("Distance (Km)", dfmt2.format(eventDistance.doubleValue())));
+        }
+        if (hypocentralEventDistance != null) {
+            ratioSummaryValues.add(new Pair<>("Hypocentral Dist (Km)", dfmt2.format(hypocentralEventDistance.doubleValue())));
+        }
+        if (eventDepth != null) {
+            ratioSummaryValues.add(new Pair<>("Depth Diff (Km)", dfmt2.format(eventDepth.doubleValue())));
+        }
+    }
+
+    private void addInversionDataToTable(SpectraRatioPairInversionResult data, String dataHeader) {
+        ratioSummaryValues.add(new Pair<>(dataHeader, ""));
+        ratioSummaryValues.add(new Pair<>("App Stress [A] (MPa)", dfmt4.format(data.getApparentStressEstimateA())));
+        ratioSummaryValues.add(new Pair<>("App Stress [B] (MPa)", dfmt4.format(data.getApparentStressEstimateB())));
+
+        ratioSummaryValues.add(new Pair<>("log10M0 / Mw [A]", String.format("%s / %s", dfmt2.format(data.getMomentEstimateA()), dfmt2.format((data.getMomentEstimateA() - 9.1) / 1.5))));
+        ratioSummaryValues.add(new Pair<>("log10M0 / Mw [B]", String.format("%s / %s", dfmt2.format(data.getMomentEstimateB()), dfmt2.format((data.getMomentEstimateB() - 9.1) / 1.5))));
+        ratioSummaryValues.add(new Pair<>("Err", dfmt4.format(data.getMisfit())));
+    }
+
+    private void addInversionDataToTable(SpectraRatioPairInversionResultJoint jointData, String dataHeader) {
+        SpectraRatioPairInversionResult data = mapJointInversionResultToInversionResult(jointData);
+        addInversionDataToTable(data, dataHeader);
     }
 
     private void plotInversionData(String dataLabelPrefix, Map<EventPair, SpectraRatioPairInversionResult> inversionData, EventPair eventPair, BasicPlot stressContourPlot, BasicPlot momentContourPlot,
@@ -720,13 +807,7 @@ public class RatioMeasurementSpectraPlotManager {
                 plotData.put(stressPointPlotData.getTraceStyle().getSeriesName(), stressPointPlotData);
                 plotData.put(bestStressPointPlotData.getTraceStyle().getSeriesName(), bestStressPointPlotData);
 
-                stressContourPlot.getTitle()
-                                 .setText(
-                                         String.format(
-                                                 dataLabelPrefix + " App StressA: %s, App StressB: %s, Err: %s",
-                                                     dfmt4.format(bestFit.getApparentStressEstimateA()),
-                                                     dfmt4.format(bestFit.getApparentStressEstimateB()),
-                                                     dfmt2.format(bestFit.getMisfit())));
+                stressContourPlot.getTitle().setText(dataLabelPrefix + " Stress Plot");
                 stressContourPlot.replot();
 
                 plotData = momentContourPlot.getPlotTypes();
@@ -734,15 +815,7 @@ public class RatioMeasurementSpectraPlotManager {
                 plotData.put(momentPointPlotData.getTraceStyle().getSeriesName(), momentPointPlotData);
                 plotData.put(bestMomentPointPlotData.getTraceStyle().getSeriesName(), bestMomentPointPlotData);
 
-                momentContourPlot.getTitle()
-                                 .setText(
-                                         String.format(
-                                                 dataLabelPrefix + " log10M0/MwA: %s/%s, log10M0/MwB: %s/%s, Err: %s",
-                                                     dfmt2.format(bestFit.getMomentEstimateA()),
-                                                     dfmt2.format((bestFit.getMomentEstimateA() - 9.1) / 1.5),
-                                                     dfmt2.format(bestFit.getMomentEstimateB()),
-                                                     dfmt2.format((bestFit.getMomentEstimateB() - 9.1) / 1.5),
-                                                     dfmt2.format(bestFit.getMisfit())));
+                momentContourPlot.getTitle().setText(dataLabelPrefix + " Moment Plot");
                 momentContourPlot.replot();
             } catch (Exception e) {
                 log.error(e.getLocalizedMessage(), e);
@@ -762,22 +835,7 @@ public class RatioMeasurementSpectraPlotManager {
         });
     }
 
-    public String getEventPairInfoForTitle() {
-        StringBuilder sb = new StringBuilder();
-        Double eventDistance = getEventPairDistanceKm();
-        Double hypocentralEventDistance = getHypocentralEventPairDistanceKm();
-        Double eventDepth = getEventPairDepthKm();
-        if (eventDistance != null) {
-            sb.append(String.format("Event Pair Distance: %s Km / %s Km", dfmt2.format(eventDistance.doubleValue()), dfmt2.format(hypocentralEventDistance.doubleValue())));
-        }
-        if (eventDepth != null) {
-            sb.append(String.format(", Depth Diff: %s Km", dfmt2.format(eventDepth.doubleValue())));
-        }
-
-        return sb.toString();
-    }
-
-    public Map<Point2D, SpectraRatioPairOperator> mapRatioToPoint(final List<SpectraRatioPairOperator> ratioDetails, final Function<SpectraRatioPairOperator, Double> func) {
+    public Map<Point2D, SpectraRatioPairOperator> mapFunctionToPoint(final List<SpectraRatioPairOperator> ratioDetails, final Function<SpectraRatioPairOperator, Double> func) {
         return ratioDetails.stream()
                            .collect(
                                    Collectors.toMap(
@@ -788,7 +846,7 @@ public class RatioMeasurementSpectraPlotManager {
                                                HashMap::new));
     }
 
-    private List<PlotPoint> toPlotPoints() {
+    private List<PlotPoint> toPlotPoints(final Function<SpectraRatioPairOperator, Double> func) {
         List<PlotPoint> allPlotPoints = new ArrayList<>();
 
         spectraRatioPairOperatorList.forEach(ratioDetails -> {
@@ -796,7 +854,7 @@ public class RatioMeasurementSpectraPlotManager {
             PlotPoint pp = symbolStyleMap.get(ratioDetails.getDenomWaveform().getStream().getStation().getStationName());
             if (pp != null) {
                 pp.setX(centerFreq(freqValue.getLowFrequency(), freqValue.getHighFrequency()));
-                pp.setY(ratioDetails.getDiffAvg());
+                pp.setY(func.apply(ratioDetails));
 
                 final LabeledPlotPoint point = new LabeledPlotPoint(ratioDetails.getStation().getStationName(), pp);
                 allPlotPoints.add(point);
@@ -1042,7 +1100,7 @@ public class RatioMeasurementSpectraPlotManager {
         return new Result<>(ratio != null, ratio);
     }
 
-    private void createPlotPopup(SpectraRatioPairOperator ratioDetails) {
+    private void createRatioWaveformPlotPopup(SpectraRatioPairOperator ratioDetails) {
 
         RatioMeasurementWaveformPlotManager ratioWaveformPlots = new RatioMeasurementWaveformPlotManager(mapImpl, iconFactory);
         ratioWaveformPlots.setParentSpectra(this);
@@ -1080,15 +1138,54 @@ public class RatioMeasurementSpectraPlotManager {
         }
     }
 
+    private void createSpectraPlotPopup() {
+        List<PlotPoint> numerPoints = new ArrayList<>(toPlotPoints(SpectraRatioPairOperator::getNumerAvg));
+        List<PlotPoint> denomPoints = new ArrayList<>(toPlotPoints(SpectraRatioPairOperator::getDenomAvg));
+        SpectraPlotManager spectraPlotManager = new SpectraPlotManager(getEventPair(), numerPoints, denomPoints);
+
+        final FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/SpectraPlotGui.fxml"));
+        fxmlLoader.setController(spectraPlotManager);
+        final Stage stage = new Stage(StageStyle.DECORATED);
+        Parent root;
+        Scene scene;
+
+        Font.loadFont(getClass().getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
+        try {
+            root = fxmlLoader.load();
+            scene = new Scene(root);
+            stage.setScene(scene);
+
+            stage.setOnHiding(e -> {
+                stage.hide();
+            });
+
+            stage.setOnShowing(e -> {
+                final boolean showing = stage.isShowing();
+                stage.show();
+                if (!showing || Boolean.TRUE.equals(shouldFocus.getValue())) {
+                    stage.toFront();
+                }
+            });
+
+            stage.show();
+        } catch (final IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private void handlePlotObjectClicked(final PlotObjectClick poc, final Function<Point2D, SpectraRatioPairOperator> measurementFunc) {
 
         Point2D point = poc.getPlotPoints().get(0);
         SpectraRatioPairOperator ratioDetails = measurementFunc.apply(point);
 
+        if (ratioDetails.isLoadedFromJson()) {
+            return;
+        }
+
         if (poc.getMouseEvent().isPrimaryButtonDown() && ratioDetails != null) {
             try {
                 runGuiUpdate(() -> {
-                    createPlotPopup(ratioDetails);
+                    createRatioWaveformPlotPopup(ratioDetails);
                 });
             } catch (InvocationTargetException e) {
                 e.printStackTrace();
@@ -1103,16 +1200,17 @@ public class RatioMeasurementSpectraPlotManager {
     }
 
     protected void updatePlotPoint() {
-        symbolMap = mapRatioToPoint(spectraRatioPairOperatorList, SpectraRatioPairOperator::getDiffAvg);
+        symbolMap = mapFunctionToPoint(spectraRatioPairOperatorList, SpectraRatioPairOperator::getDiffAvg);
         ratioSpectralPlotController.getSpectraDataMap().clear();
         ratioSpectralPlotController.getSpectraDataMap().putAll(symbolMap);
-        ratioSpectralPlotController.getSpectralPlot().plotXYdata(toPlotPoints(), null, RATIO_AVG_LABEL);
+        ratioSpectralPlotController.getSpectralPlot().plotXYdata(toPlotPoints(SpectraRatioPairOperator::getDiffAvg), null, Y_AXIS_LABEL);
 
         updateMomentRatioLines();
     }
 
     public void exportScreenshots(final File folder) {
         String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
+        SnapshotUtils.writePng(folder, new Pair<>(ALL_PLOTS_PREFIX, mainSplitPane), timestamp);
         SnapshotUtils.writePng(folder, new Pair<>(SPECTRA_RATIO_PREFIX, spectraRatioPlotNode), timestamp);
         SnapshotUtils.writePng(folder, new Pair<>(JOINT_MOMENT_PREFIX, jointMomentPlotNode), timestamp);
         SnapshotUtils.writePng(folder, new Pair<>(JOINT_STRESS_PREFIX, jointStressPlotNode), timestamp);
@@ -1125,8 +1223,12 @@ public class RatioMeasurementSpectraPlotManager {
             plotExportSuffix = plotId + "_" + timestamp + ".svg";
         }
 
+        exportSVG(jointMomentContourPlot, folder + File.separator + JOINT_MOMENT_PREFIX + plotExportSuffix);
+        exportSVG(jointStressContourPlot, folder + File.separator + JOINT_STRESS_PREFIX + plotExportSuffix);
         exportSVG(momentContourPlot, folder + File.separator + PAIR_MOMENT_PREFIX + plotExportSuffix);
         exportSVG(stressContourPlot, folder + File.separator + PAIR_STRESS_PREFIX + plotExportSuffix);
+        exportSVG(jointMomentContourPlot, folder + File.separator + JOINT_MOMENT_PREFIX + plotExportSuffix);
+        exportSVG(jointStressContourPlot, folder + File.separator + JOINT_STRESS_PREFIX + plotExportSuffix);
         exportSVG(ratioSpectralPlotController.getSpectralPlot().getSubplot(), folder + File.separator + SPECTRA_RATIO_PREFIX + plotExportSuffix);
     }
 

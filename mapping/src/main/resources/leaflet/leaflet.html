@@ -4,11 +4,9 @@
 <head>
 <title>Map</title>
 <link rel="stylesheet" href="leaflet.css" />
-<link rel="stylesheet" href="leaflet-measure.css" />
 <link rel="stylesheet" href="leaflet-geoman.css" />
 <script type='text/javascript' src="leaflet.js"></script>
 <script type='text/javascript' src="leaflet-svg-shape-markers.min.js"></script>
-<script type='text/javascript' src="leaflet-measure.js"></script>
 <script type='text/javascript' src="leaflet-geoman.min.js"></script>
 <script type='text/javascript' src="countries.js"></script>
 <meta charset="UTF-8">
@@ -63,16 +61,6 @@
         	  snappingOption: false,
         	  cutPolygon: false,
         	});
-        
-		//Path measurement library controls
-		var measureControl = L.control.measure({
-			position: 'topleft', primaryLengthUnit: 'kilometers', 
-			primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'sqmiles',
-			captureZIndex: 2000000,
-			activeColor: '#086972',
-			completedColor: '#342b38'
-		});
-		measureControl.addTo(map);
 
 		//Add the scale bar to the bottom right
 		L.control.scale({position: 'bottomright'}).addTo(map);   

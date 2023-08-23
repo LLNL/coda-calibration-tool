@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticCodaGenerationService;
@@ -95,9 +96,19 @@ public class SyntheticCollectionJsonController {
         return ResponseEntity.ok().body(synthetic);
     }
 
+    @PostMapping(value = "/amplitude-corrected/query", name = "amplitudeCorrectedSyntheticsQuery")
+    public ResponseEntity<?> amplitudeCorrectedSyntheticsQuery(@RequestParam(required = false) String eventId, @RequestParam(required = false) String stationName,
+            @RequestParam(required = false) Double lowFreq, @RequestParam(required = false) Double highFreq, @RequestParam(required = false) Double sampleRate) {
+        List<SyntheticCoda> synthetics = syntheticService.amplitudeCorrectedSyntheticsQuery(eventId, stationName, lowFreq, highFreq, sampleRate);
+        if (synthetics != null) {
+            return ResponseEntity.ok(synthetics);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Service does not recognize that frequency band, did you load the correct parameters?");
+        }
+    }
+
     @PutMapping(name = "update")
     public ResponseEntity<?> update(@ModelAttribute SyntheticCoda storedSyntheticCoda, @Valid @RequestBody SyntheticCoda synthetic, BindingResult result) {
-
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }

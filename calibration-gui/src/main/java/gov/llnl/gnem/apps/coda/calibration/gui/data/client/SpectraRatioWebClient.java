@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.data.client;
 
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraRatioClient;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioMeasurementJob;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.SpectraRatiosReportDTO;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
@@ -41,15 +43,28 @@ public class SpectraRatioWebClient implements SpectraRatioClient {
     }
 
     @Override
-    public Mono<SpectraRatiosReportByEventPair> makeSpectraRatioMeasurements(boolean autoPickingEnabled, boolean persistResults, List<String> smallEventIds, List<String> largeEventIds) {
+    public Mono<SpectraRatiosReportByEventPair> makeSpectraRatioMeasurementsFromWaveforms(Boolean autoPickingEnabled, Boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds) {
         return client.post()
-                     .uri("/spectra-ratios/measure-spectra-ratio")
+                     .uri("/spectra-ratios/measure-spectra-ratio-from-waveforms")
                      .bodyValue(
-                             new SpectraRatioMeasurementJob().setAutopickingEnabled(autoPickingEnabled).setPersistResults(Boolean.TRUE).setSmallEventIds(smallEventIds).setLargeEventIds(largeEventIds))
+                             new SpectraRatioMeasurementJob().setAutoPickingEnabled(autoPickingEnabled)
+                                                             .setPersistResults(persistResults)
+                                                             .setSmallEventIds(smallEventIds)
+                                                             .setLargeEventIds(largeEventIds))
                      .retrieve()
                      .bodyToMono(SpectraRatiosReportDTO.class)
                      .map(SpectraRatiosReportDTO::getReport)
                      .map(SpectraRatiosReportByEventPair::new);
     }
 
+    @Override
+    public Mono<SpectraRatiosReportByEventPair> makeSpectraRatioMeasurementsFromRatioData(Set<String> smallEventIds, Set<String> largeEventIds, List<RatioEventData> ratioEventData) {
+        return client.post()
+                     .uri("/spectra-ratios/measure-spectra-ratio-from-ratios-data")
+                     .bodyValue(new SpectraRatioMeasurementJob().setSmallEventIds(smallEventIds).setLargeEventIds(largeEventIds).setRatioEventData(ratioEventData))
+                     .retrieve()
+                     .bodyToMono(SpectraRatiosReportDTO.class)
+                     .map(SpectraRatiosReportDTO::getReport)
+                     .map(SpectraRatiosReportByEventPair::new);
+    }
 }

@@ -51,19 +51,19 @@ mvn clean install
 #### **As a single runnable JAR**
 
 ```shell
-java -jar coda-calibration/calibration-standalone/target/calibration-standalone-1.0.19-runnable.jar
+java -jar coda-calibration/calibration-standalone/target/calibration-standalone-1.0.20-runnable.jar
 ```
 
 #### **GUI alone**
 
 ```shell
-java -jar coda-calibration/calibration-gui/target/calibration-gui-1.0.19-runnable.jar
+java -jar coda-calibration/calibration-gui/target/calibration-gui-1.0.20-runnable.jar
 ```
 
 #### **Calibration REST service alone**
 
 ```shell
-java -jar coda-calibration/calibration-service/application/target/application-1.0.19-runnable.jar
+java -jar coda-calibration/calibration-service/application/target/application-1.0.20-runnable.jar
 ```
 
 #### A note about HTTPS

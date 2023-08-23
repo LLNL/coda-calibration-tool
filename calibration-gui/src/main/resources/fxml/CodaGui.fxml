@@ -17,7 +17,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
+<VBox fx:id="rootElement" prefHeight="600.0" prefWidth="900.0" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiController">
 	<children>
 		<GridPane VBox.vgrow="NEVER">
 			<columnConstraints>
@@ -85,6 +85,7 @@
 						</Menu>
                   <Menu mnemonicParsing="false" text="Help">
                     <items>
+                        <MenuItem mnemonicParsing="false" onAction="#openAbout" text="About" />
                       <MenuItem mnemonicParsing="false" onAction="#openManual" text="Documentation" />
                     </items>
                   </Menu>

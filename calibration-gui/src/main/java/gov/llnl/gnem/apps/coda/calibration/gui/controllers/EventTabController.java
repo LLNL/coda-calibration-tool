@@ -14,7 +14,6 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.controllers;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -25,10 +24,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
@@ -42,24 +42,19 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
-import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
-import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.Tab;
 import llnl.gnem.core.gui.plotting.api.PlotFactory;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import reactor.core.scheduler.Schedulers;
 
 @Component
+@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class EventTabController extends EventTableController {
 
     private static final String AVERAGE_LABEL = "Average";
     private static final String DISPLAY_NAME = "Event_Table";
-
-    /* @FXML
-    private StackPane sitePane;*/
 
     @Autowired
     private EventTabController(final SpectraClient spectraClient, final ParameterClient paramClient, final EventClient referenceEventClient, final WaveformClient waveformClient,
@@ -156,13 +151,6 @@ public class EventTabController extends EventTableController {
                                    .collect(Collectors.toList())
                                    .subscribeOn(Schedulers.boundedElastic())
                                    .block(Duration.ofSeconds(10l));
-    }
-
-    public Consumer<File> getScreenshotFunction(Tab tab) {
-        return folder -> {
-            final String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
-            SnapshotUtils.writePng(folder, new Pair<>(getDisplayName(), tab.getContent()), timestamp);
-        };
     }
 
     protected String getDisplayName() {

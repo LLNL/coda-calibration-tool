@@ -491,47 +491,51 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             }
 
             try {
-                synthSeriesBeforeEndMarker.cut(startTime, endTime);
-                if (synthSeriesBeforeEndMarker.getLength() > 1) {
-                    final TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
-                    final int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
-                    final double median = diffSeis.getMedian();
-
-                    float[] cutSegment = synthSeriesBeforeEndMarker.getData();
-                    for (int i = 0; i < cutSegment.length; i++) {
-                        if (i > 0 && cutSegment[i] + median < minWaveformValue) {
-                            synthSeriesBeforeEndMarker.cut(0, i);
-                            break;
-                        }
-                    }
-
-                    if (synthSeriesBeforeStartMarker.getLength() > 1) {
-                        addPlotObject(
-                                createLine(
-                                        (int) (new TimeT(synthSeriesBeforeStartMarker.getTime()).subtractD(beginTime) + 0.5),
-                                            median,
-                                            synthSeriesBeforeStartMarker,
-                                            Color.GREEN,
-                                            DEFAULT_LINE_WIDTH,
-                                            LineStyles.DOT),
-                                    PLOT_ORDERING.MODEL_FIT.getZOrder());
-                    }
-
+                if (startTime.lt(endTime)) {
+                    synthSeriesBeforeEndMarker.cut(startTime, endTime);
                     if (synthSeriesBeforeEndMarker.getLength() > 1) {
-                        addPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                        final TimeSeries diffSeis = interpolatedSeries.subtract(synthSeriesBeforeEndMarker);
+                        final int synthStartTimeShift = (int) (startTime.subtractD(beginTime) + 0.5);
+                        final double median = diffSeis.getMedian();
 
-                        if (endTime.lt(synthSeriesRemaining.getEndtime())) {
-                            synthSeriesRemaining.cutBefore(endTime);
-                            final int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
-                            cutSegment = synthSeriesRemaining.getData();
-                            for (int i = 0; i < cutSegment.length; i++) {
-                                if (i > 0 && cutSegment[i] + median < minWaveformValue) {
-                                    synthSeriesRemaining.cut(0, i);
-                                    break;
-                                }
+                        float[] cutSegment = synthSeriesBeforeEndMarker.getData();
+                        for (int i = 0; i < cutSegment.length; i++) {
+                            if (i > 0 && cutSegment[i] + median < minWaveformValue) {
+                                synthSeriesBeforeEndMarker.cut(0, i);
+                                break;
                             }
-                            if (synthSeriesRemaining.getLength() > 1) {
-                                addPlotObject(createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, LineStyles.DASH), PLOT_ORDERING.MODEL_FIT.getZOrder());
+                        }
+
+                        if (synthSeriesBeforeStartMarker.getLength() > 1) {
+                            addPlotObject(
+                                    createLine(
+                                            (int) (new TimeT(synthSeriesBeforeStartMarker.getTime()).subtractD(beginTime) + 0.5),
+                                                median,
+                                                synthSeriesBeforeStartMarker,
+                                                Color.GREEN,
+                                                DEFAULT_LINE_WIDTH,
+                                                LineStyles.DOT),
+                                        PLOT_ORDERING.MODEL_FIT.getZOrder());
+                        }
+
+                        if (synthSeriesBeforeEndMarker.getLength() > 1) {
+                            addPlotObject(createLine(synthStartTimeShift, median, synthSeriesBeforeEndMarker, Color.GREEN), PLOT_ORDERING.MODEL_FIT.getZOrder());
+
+                            if (endTime.lt(synthSeriesRemaining.getEndtime())) {
+                                synthSeriesRemaining.cutBefore(endTime);
+                                final int remainingStartTimeShift = (int) (endTime.subtractD(beginTime) + 0.5);
+                                cutSegment = synthSeriesRemaining.getData();
+                                for (int i = 0; i < cutSegment.length; i++) {
+                                    if (i > 0 && cutSegment[i] + median < minWaveformValue) {
+                                        synthSeriesRemaining.cut(0, i);
+                                        break;
+                                    }
+                                }
+                                if (synthSeriesRemaining.getLength() > 1) {
+                                    addPlotObject(
+                                            createLine(remainingStartTimeShift, median, synthSeriesRemaining, Color.GREEN, DEFAULT_LINE_WIDTH, LineStyles.DASH),
+                                                PLOT_ORDERING.MODEL_FIT.getZOrder());
+                                }
                             }
                         }
                     }

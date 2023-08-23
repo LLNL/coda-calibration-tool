@@ -165,7 +165,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
 
-              <h1 id="coda-calibration-tool-cct-1018-documentation">Coda Calibration Tool (CCT) 1.0.19 documentation
+              <h1 id="coda-calibration-tool-cct-1020-documentation">Coda Calibration Tool (CCT) 1.0.20 documentation
               </h1>
               <p><sub>2022-07-31; Version 1.0; Authors Barno, Justin | Mayeda, Kevin</sub></p>
               <h2 id="about-cct">About CCT</h2>
@@ -204,18 +204,17 @@
               <h4 id="downloading-cct">Downloading CCT</h4>
               <p>The latest version of the Coda Calibration Tool (CCT) can be found on the <a
                   href="https://github.com/LLNL/coda-calibration-tool/releases/">release page</a></p>
-              <p>The standalone CCT jar file is calibration-standalone-1.0.19-runnable.jar while the REST services only
-                are available in calibration-application-1.0.19-runnable.jar.</p>
+              <p>The standalone CCT jar file is calibration-standalone-1.0.20-runnable.jar while the REST services only
+                are available in calibration-application-1.0.20-runnable.jar.</p>
               <h4 id="downloading-sf-bay-area-example-tarfile">Downloading SF Bay Area example tarfile</h4>
               <p>The complete SF Bay Area calibration which includes SAC waveforms, stacked envelopes and JavaScript
                 Object Notation (JSON) parameter files can be <a
-                  href="https://drive.google.com/file/d/1c1-mmBofJRhNjAChFxunWq3MpbNFO0x8/view?usp=sharing">downloaded
-                  here</a></p>
+                  href="https://doi.org/10.5281/zenodo.6902890">downloaded here</a></p>
               <h4 id="running-cct">Running CCT</h4>
               <p>You can launch CCT by executing Java from the command line as:</p>
-              <p><code>java -Xmx12g -jar calibration-standalone-1.0.19-runnable.jar</code></p>
+              <p><code>java -Xmx12g -jar calibration-standalone-1.0.20-runnable.jar</code></p>
               <p>Or, if you have Java 11+ as:</p>
-              <p><code>java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.19-runnable.jar</code></p>
+              <p><code>java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.20-runnable.jar</code></p>
               <p>Generally your -Xmx flag should be set to, at most, ~70% of the physical RAM available on the machine.
               </p>
               <p>You can add the <code>--spring.profiles.active=file</code> flag to the Java call if your dataset is
@@ -458,7 +457,7 @@
               <p>Adjusted picks can either be written out to a new folder or to the existing folder (see below for more
                 details).</p>
               <h4 id="sorting-re-picking-events">Sorting &amp; Re-Picking Events</h4>
-              <p>In the data table, under the requency column heading, you can click on the low heading tab and this
+              <p>In the data table, under the frequency column heading, you can click on the low heading tab and this
                 will sort the bands from lowest to highest frequency based on the low end of the frequency band. </p>
               <p>Similarly, by clicking on the station column heading you can sort by station in alphabetical order or
                 the event column heading and it will sort by event ID.</p>
@@ -514,7 +513,8 @@
                 aftershocks, noise bursts) across stations, bands or events. I select a single band and methodically
                 review all events and stations. </p>
               <p><img alt="img" src="img/multiple_waveform.png" />
-              <figcaption align="center">Figure. 12, Viewing multiple waveforms at once in a paginated display.
+              <figcaption align="center">Figure. 12, Viewing multiple waveforms at once in a paginated display. This
+                display also supports synchronized zooming of all waveforms by toggling into the 'Sync Zoom (SZ)' mode.
               </figcaption> <br /></p>
               <p>CCT will display five envelopes at a time, and you can use left and right arrow keys or the associated
                 buttons (top left) to page through all the envelopes in your selection. Once you’re done, export the
@@ -642,8 +642,8 @@
                 <li>
                   <p><strong>Reference </strong>M<sub>w</sub>**** </p>
                   <ul>
-                    <li>Independent <strong>M<sub>w</sub></strong> derived a priori, preferably from waveform modeling.
-                    </li>
+                    <li>Independent <strong>M<sub>w</sub></strong> derived <em>a priori</em>, preferably from waveform
+                      modeling. </li>
                   </ul>
                 </li>
               </ul>
@@ -1348,5 +1348,5 @@
 
 <!--
 MkDocs version : 1.3.0
-Build Date UTC : 2022-07-13 16:20:52.921109+00:00
+Build Date UTC : 2023-08-22 16:42:16.630924+00:00
 -->

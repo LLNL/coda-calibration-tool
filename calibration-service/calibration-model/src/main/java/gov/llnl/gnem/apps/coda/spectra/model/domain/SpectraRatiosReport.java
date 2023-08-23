@@ -29,11 +29,20 @@ public class SpectraRatiosReport {
     private Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> data;
     private Map<EventPair, SpectraRatioPairInversionResult> inversionEstimates;
     private Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionEstimates;
+    private boolean isLoadedFromJson;
 
     public SpectraRatiosReport() {
         data = new HashMap<>(0);
         inversionEstimates = new HashMap<>(0);
         jointInversionEstimates = new HashMap<>(0);
+    }
+
+    public boolean isLoadedFromJson() {
+        return isLoadedFromJson;
+    }
+
+    public void setLoadedFromJson(boolean isLoadedFromJson) {
+        this.isLoadedFromJson = isLoadedFromJson;
     }
 
     public Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> getData() {

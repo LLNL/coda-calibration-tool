@@ -64,6 +64,9 @@ public class SpectraRatioPairDetails {
     private Waveform denomWaveform;
 
     @Column
+    private boolean loadedFromJson;
+
+    @Column
     @NumberFormat
     private int cutSegmentLength;
 
@@ -148,6 +151,7 @@ public class SpectraRatioPairDetails {
         this.denomEndCutIdx = 0;
         this.cutSegmentLength = 0;
         this.cutTimeLength = 0.0;
+        this.loadedFromJson = false;
     }
 
     public SpectraRatioPairDetails(SpectraRatioPairDetails ratioDetails) {
@@ -171,6 +175,7 @@ public class SpectraRatioPairDetails {
         this.denomEndCutIdx = ratioDetails.denomEndCutIdx;
         this.cutSegmentLength = ratioDetails.cutSegmentLength;
         this.cutTimeLength = ratioDetails.cutTimeLength;
+        this.loadedFromJson = ratioDetails.loadedFromJson;
     }
 
     public SpectraRatioPairDetails(Waveform numeratorWaveform, Waveform denominatorWaveform) {
@@ -201,6 +206,7 @@ public class SpectraRatioPairDetails {
             this.numerWaveEndSec = null;
             this.denomWaveEndSec = null;
         }
+        this.loadedFromJson = false;
     }
 
     private double getTimeMinusOriginSec(Date time, boolean isNumerator) {
@@ -236,6 +242,14 @@ public class SpectraRatioPairDetails {
 
     public void setDiffAvg(Double diffAvg) {
         this.diffAvg = diffAvg;
+    }
+
+    public boolean isLoadedFromJson() {
+        return loadedFromJson;
+    }
+
+    public void setLoadedFromJson(boolean loadedFromJson) {
+        this.loadedFromJson = loadedFromJson;
     }
 
     public Double getNumerAvg() {
@@ -287,6 +301,9 @@ public class SpectraRatioPairDetails {
     }
 
     public double[] getDiffSegment() {
+        if (diffSegment == null) {
+            return null;
+        }
         return diffSegment.toArray();
     }
 
@@ -440,6 +457,7 @@ public class SpectraRatioPairDetails {
                     diffAvg,
                     diffSegment,
                     id,
+                    loadedFromJson,
                     numerAvg,
                     numerEndCutIdx,
                     numerEndCutSec,
@@ -477,6 +495,7 @@ public class SpectraRatioPairDetails {
                 && Objects.equals(diffAvg, other.diffAvg)
                 && Objects.equals(diffSegment, other.diffSegment)
                 && Objects.equals(id, other.id)
+                && loadedFromJson == other.loadedFromJson
                 && Objects.equals(numerAvg, other.numerAvg)
                 && numerEndCutIdx == other.numerEndCutIdx
                 && Objects.equals(numerEndCutSec, other.numerEndCutSec)
@@ -545,6 +564,8 @@ public class SpectraRatioPairDetails {
                .append(numerEndCutIdx)
                .append(", denomEndCutIdx=")
                .append(denomEndCutIdx)
+               .append(", loadedFromJson=")
+               .append(loadedFromJson)
                .append("]");
         return builder.toString();
     }

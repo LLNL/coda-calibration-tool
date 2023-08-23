@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -75,6 +77,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
+import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
@@ -83,7 +86,7 @@ import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 import gov.llnl.gnem.apps.coda.common.service.util.MetadataUtils;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
-import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResult;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResultJoint;
@@ -99,7 +102,7 @@ import llnl.gnem.core.waveform.seismogram.TimeSeries;
 @Transactional
 public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
 
-    @Value(value = "${ratio-inversion.moment-error-range:0.1}")
+    @Value(value = "${ratio-inversion.moment-error-range:0.001}")
     private double momentErrorRange;
 
     private Logger log = LoggerFactory.getLogger(SpectraRatioServiceImpl.class);
@@ -233,13 +236,30 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
 
     @Override
     @Transactional
-    public Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurements(boolean autoPickingEnabled, boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds) {
+    public Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurementsFromRatioData(Set<String> smallEventIds, Set<String> largeEventIds, List<RatioEventData> ratioEventData) {
+        return makeSpectraRatioMeasurementsBase(false, smallEventIds, largeEventIds, eventIds -> getSpectraListFromRatioEventData(eventIds, ratioEventData), this::calcFreqRatioEmptyWaveform);
+    }
+
+    @Override
+    @Transactional
+    public Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurementsFromWaveforms(Boolean autoPickingEnabled, Boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds) {
+        return makeSpectraRatioMeasurementsBase(
+                persistResults,
+                    smallEventIds,
+                    largeEventIds,
+                    eventIDs -> getSpectraListFromWaveforms(eventIDs, autoPickingEnabled, persistResults),
+                    this::calcFreqRatio);
+    }
+
+    private Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurementsBase(Boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds,
+            Function<Set<String>, List<SpectraMeasurement>> spectraListFunc, BiFunction<SpectraMeasurement, SpectraMeasurement, Result<SpectraRatioPairDetails>> calcRatioFunc) {
         log.debug("Starting spectra ratio calculation at {}", LocalDateTime.now());
         final Long id = atomicLong.getAndIncrement();
 
         Supplier<SpectraRatiosReport> ratioCalcFunc = () -> {
-            Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> spectraSmallEventData = getSpectraMeasurementForEvent(smallEventIds, autoPickingEnabled, persistResults);
-            Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> spectraLargeEventData = getSpectraMeasurementForEvent(largeEventIds, autoPickingEnabled, persistResults);
+
+            Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> spectraSmallEventData = getSpectraMeasurementsMap(smallEventIds, spectraListFunc);
+            Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> spectraLargeEventData = getSpectraMeasurementsMap(largeEventIds, spectraListFunc);
 
             Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData = new HashMap<>();
 
@@ -276,7 +296,7 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
                                             SpectraMeasurement smallSpectra = smallDataAtFreq;
                                             SpectraMeasurement largeSpectra = largeDataAtFreq;
 
-                                            Result<SpectraRatioPairDetails> ratioDetails = calcFreqRatio(smallSpectra, largeSpectra);
+                                            Result<SpectraRatioPairDetails> ratioDetails = calcRatioFunc.apply(smallSpectra, largeSpectra);
                                             if (ratioDetails.isSuccess()) {
                                                 ratioDataList.add(ratioDetails.getResultPayload().get());
 
@@ -304,18 +324,29 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
                     }
                 }
             }
+            if (ratioDataList.isEmpty()) {
+                return new SpectraRatiosReportByEventPair().getReport();
+            }
 
             Map<EventPair, SpectraRatioPairInversionResult> inversionEstimates = invertEventRatioPairs(ratioData);
             Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionEstimates = invertEventRatios(ratioData);
 
-            if (persistResults) {
+            if (persistResults.booleanValue()) {
                 spectraRatioPairDetailsRepository.saveAll(ratioDataList);
                 spectraRatioPairInversionSampleRepository.deleteAll();
                 spectraRatioJontInversionSampleRepository.deleteAll();
                 spectraRatioPairInversionSampleRepository.saveAll(inversionEstimates.values());
                 spectraRatioJontInversionSampleRepository.saveAll(jointInversionEstimates.values());
             }
-            return new SpectraRatiosReportByEventPair().setRatiosReportByEventPair(ratioData).setInversionResults(inversionEstimates).setJointInversionResults(jointInversionEstimates).getReport();
+            SpectraRatiosReport finalReport = new SpectraRatiosReportByEventPair().setRatiosReportByEventPair(ratioData)
+                                                                                  .setInversionResults(inversionEstimates)
+                                                                                  .setJointInversionResults(jointInversionEstimates)
+                                                                                  .getReport();
+            if (ratioDataList.size() > 0 && ratioDataList.get(0).isLoadedFromJson()) {
+                finalReport.setLoadedFromJson(true);
+            }
+
+            return finalReport;
         };
 
         return getRatioCalcFuture(id, ratioCalcFunc);
@@ -341,12 +372,51 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
         return lowFrequency + (highFrequency - lowFrequency) / 2.;
     }
 
-    private Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> getSpectraMeasurementForEvent(Set<String> eventIDs, boolean autoPickingEnabled, boolean persistResults) {
-        log.trace("Getting spectra measurement for {}", eventIDs.toArray().toString());
-        final Long id = atomicLong.getAndIncrement();
+    private List<SpectraMeasurement> getSpectraListFromRatioEventData(Set<String> eventIds, List<RatioEventData> ratioEventData) {
+        List<SpectraMeasurement> spectraMeasurements = new ArrayList<>();
 
+        List<RatioEventData> eventDataToUse = new ArrayList<>();
+
+        eventIds.forEach(eventId -> {
+            Optional<RatioEventData> ratioDataOption = ratioEventData.stream().filter(ratioEvent -> ratioEvent.getEventId().equals(eventId)).findFirst();
+            if (ratioDataOption.isPresent()) {
+                eventDataToUse.add(ratioDataOption.get());
+            }
+        });
+
+        eventDataToUse.forEach(ratioData -> {
+            Event event = new Event();
+            event.setEventId(ratioData.getEventId());
+            event.setOriginTime(ratioData.getDate());
+
+            ratioData.getStationData().forEach(stationData -> {
+                Station station = new Station();
+                station.setStationName(stationData.getStationName());
+                for (int idx = 0; idx < stationData.getFrequencyData().size(); idx++) {
+                    double freq = stationData.getFrequencyData().get(idx);
+                    double amp = stationData.getAmplitudeData().get(idx);
+                    double[] dataSegment = { amp };
+
+                    Waveform wave = new Waveform();
+                    Stream waveformStream = new Stream();
+                    waveformStream.setStation(station);
+                    wave.setEvent(event);
+                    wave.setLowFrequency(freq);
+                    wave.setHighFrequency(freq);
+                    wave.setStream(waveformStream);
+                    wave.setSegment(dataSegment);
+                    SpectraMeasurement spectra = new SpectraMeasurement();
+                    spectra.setWaveform(wave);
+                    spectraMeasurements.add(spectra);
+                }
+            });
+        });
+
+        return spectraMeasurements;
+    }
+
+    private List<SpectraMeasurement> getSpectraListFromWaveforms(Set<String> eventIDs, boolean autoPickingEnabled, boolean persistResults) {
         List<Waveform> stacks = filterWaveforms(waveformService.getAllActiveStacks(), eventIDs);
-        Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> spectraDataMap = new HashMap<>();
         if (stacks != null) {
             VelocityConfiguration velocityConfig = configService.getVelocityConfiguration();
             Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandMap = MetadataUtils.mapSiteParamsToFrequencyBands(siteParamsService.findAll());
@@ -381,17 +451,30 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
                 synthetics = syntheticGenerationService.generateSynthetics(measStacks, frequencyBandParameterMap);
             }
 
-            List<SpectraMeasurement> spectra = spectraCalc.measureAmplitudes(synthetics, frequencyBandParameterMap, velocityConfig, stationFrequencyBandMap);
-
-            spectraDataMap = mapToEventAndStation(spectraByStation(spectra));
-            log.trace("Spectra Data Map created...");
-
-            return spectraDataMap;
+            return spectraCalc.measureAmplitudes(synthetics, frequencyBandParameterMap, velocityConfig, stationFrequencyBandMap);
         } else {
-            log.info("Unable to measure Spectra Ratios, no waveforms were provided.");
+            log.info("Unable to measure Spectra Ratios, no waveforms were found.");
         }
-        notificationService.post(new MeasurementStatusEvent(id, MeasurementStatusEvent.Status.COMPLETE));
-        log.info("Spectra Ratio Measurement complete at {}", LocalDateTime.now());
+        return new ArrayList<>();
+    }
+
+    public Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> getSpectraMeasurementsMap(Set<String> eventIDs, Function<Set<String>, List<SpectraMeasurement>> spectraListFunc) {
+
+        Map<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> spectraDataMap = new HashMap<>();
+        final Long id = atomicLong.getAndIncrement();
+
+        List<SpectraMeasurement> spectra = spectraListFunc.apply(eventIDs);
+
+        if (spectra.isEmpty()) {
+            log.info("Unable to measure Spectra Ratios, no waveforms were provided.");
+            notificationService.post(new MeasurementStatusEvent(id, MeasurementStatusEvent.Status.COMPLETE));
+            return spectraDataMap;
+        }
+
+        log.trace("Getting spectra measurement for {}", eventIDs.toArray().toString());
+        spectraDataMap = mapToEventAndStation(spectraByStation(spectra));
+        log.trace("Spectra Data Map created...");
+
         return spectraDataMap;
     }
 
@@ -453,6 +536,24 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
         return new Result<>(false, null);
     }
 
+    private Result<SpectraRatioPairDetails> calcFreqRatioEmptyWaveform(SpectraMeasurement smallSpectra, SpectraMeasurement largeSpectra) {
+
+        if (smallSpectra == null || largeSpectra == null) {
+            return new Result<>(false, null);
+        }
+
+        SpectraRatioPairDetails ratioDetails = new SpectraRatioPairDetails();
+        ratioDetails.setLoadedFromJson(true);
+        double largeAmp = largeSpectra.getWaveform().getData().getFirst();
+        double smallAmp = smallSpectra.getWaveform().getData().getFirst();
+        ratioDetails.setNumerWaveform(largeSpectra.getWaveform());
+        ratioDetails.setDenomWaveform(smallSpectra.getWaveform());
+        ratioDetails.setNumerAvg(largeAmp);
+        ratioDetails.setDenomAvg(smallAmp);
+        ratioDetails.setDiffAvg(largeAmp - smallAmp);
+        return new Result<>(true, ratioDetails);
+    }
+
     private Map<Station, List<SpectraMeasurement>> spectraByStation(List<SpectraMeasurement> spectra) {
         return spectra.stream().filter(Objects::nonNull).filter(s -> s.getWaveform() != null).collect(Collectors.groupingBy(s -> s.getWaveform().getStream().getStation()));
     }
@@ -473,21 +574,19 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
             for (Entry<Station, List<SpectraMeasurement>> stationMeasurements : dataByStation.entrySet()) {
                 if (stationMeasurements.getValue() != null && !stationMeasurements.getValue().isEmpty()) {
                     for (SpectraMeasurement spectraMeas : stationMeasurements.getValue()) {
-                        if (WaveformUtils.isValidWaveform(spectraMeas.getWaveform())) {
-                            Event event = spectraMeas.getWaveform().getEvent();
-                            Station station = spectraMeas.getWaveform().getStream().getStation();
-                            if (!data.containsKey(event)) {
-                                data.put(event, new HashMap<>());
-                            }
-                            Map<Station, Map<FrequencyBand, SpectraMeasurement>> stationFrequencyMap = data.get(event);
-                            if (!stationFrequencyMap.containsKey(station)) {
-                                stationFrequencyMap.put(station, new HashMap<>());
-                            }
-                            Map<FrequencyBand, SpectraMeasurement> frequencyMap = stationFrequencyMap.get(station);
-
-                            FrequencyBand frequencyBand = new FrequencyBand(spectraMeas.getWaveform().getLowFrequency(), spectraMeas.getWaveform().getHighFrequency());
-                            frequencyMap.put(frequencyBand, spectraMeas);
+                        Event event = spectraMeas.getWaveform().getEvent();
+                        Station station = spectraMeas.getWaveform().getStream().getStation();
+                        if (!data.containsKey(event)) {
+                            data.put(event, new HashMap<>());
                         }
+                        Map<Station, Map<FrequencyBand, SpectraMeasurement>> stationFrequencyMap = data.get(event);
+                        if (!stationFrequencyMap.containsKey(station)) {
+                            stationFrequencyMap.put(station, new HashMap<>());
+                        }
+                        Map<FrequencyBand, SpectraMeasurement> frequencyMap = stationFrequencyMap.get(station);
+
+                        FrequencyBand frequencyBand = new FrequencyBand(spectraMeas.getWaveform().getLowFrequency(), spectraMeas.getWaveform().getHighFrequency());
+                        frequencyMap.put(frequencyBand, spectraMeas);
                     }
                 }
             }
@@ -503,8 +602,11 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
             future = measureService.submit(() -> {
                 try {
                     SpectraRatiosReport ratioByStationReport = ratioCalcFunc.get();
-                    Result<SpectraRatiosReport> finalReport = new Result<>(true, ratioByStationReport);
-                    return finalReport;
+                    if (ratioByStationReport.getData().isEmpty()) {
+                        log.info("There was no data from the report.");
+                        return new Result<>(false, null);
+                    }
+                    return new Result<>(true, ratioByStationReport);
                 } catch (Exception ex) {
                     log.error(ex.getMessage(), ex);
                     notificationService.post(new RatioStatusEvent(id, RatioStatusEvent.Status.ERROR));
