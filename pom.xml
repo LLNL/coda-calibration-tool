@@ -19,6 +19,14 @@
 		<module>calibration-standalone</module>
 	</modules>
 
+	<distributionManagement>
+	 <repository>
+	  <id>github</id>
+	  <name>GitHub Maven Packages</name>
+	  <url>https://maven.pkg.github.com/LLNL/coda-calibration-tool</url>
+	 </repository>
+	</distributionManagement>
+
 	<profiles>
 		<profile>
 			<id>full</id>
