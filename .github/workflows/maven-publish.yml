@@ -54,7 +54,8 @@ jobs:
         overwrite: true
         file_glob: true
 
-    - name: Publish to GitHub Packages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: mvn deploy
+
+    # - name: Publish to GitHub Packages
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: mvn deploy
