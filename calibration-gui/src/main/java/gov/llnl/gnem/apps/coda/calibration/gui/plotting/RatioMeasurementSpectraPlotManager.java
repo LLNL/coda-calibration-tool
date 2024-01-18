@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -25,6 +25,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.SpectraRatioPlotController;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
@@ -58,6 +61,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadataImpl;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResult;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResultJoint;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.EventPair;
@@ -98,7 +102,6 @@ import llnl.gnem.core.gui.plotting.api.LineStyles;
 import llnl.gnem.core.gui.plotting.api.PlotFactory;
 import llnl.gnem.core.gui.plotting.api.PlotObject;
 import llnl.gnem.core.gui.plotting.api.SymbolStyles;
-import llnl.gnem.core.gui.plotting.api.VerticalLine;
 import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
 import llnl.gnem.core.gui.plotting.plotly.PlotObjectData;
 import llnl.gnem.core.gui.plotting.plotly.PlotTrace;
@@ -130,7 +133,7 @@ public class RatioMeasurementSpectraPlotManager {
 
     private Map<Point2D, SpectraRatioPairOperator> symbolMap;
     private List<SpectraRatioPairOperator> spectraRatioPairOperatorList;
-    private Map<String, PlotPoint> symbolStyleMap;
+    private Map<EventPair, Map<String, PlotPoint>> symbolStyleMap;
     private SpectraClient spectraClient;
 
     private final Property<Boolean> shouldFocus = new SimpleBooleanProperty(false);
@@ -228,9 +231,11 @@ public class RatioMeasurementSpectraPlotManager {
     private PlotObjectData bestMomentPointPlotData;
 
     private SpectraRatioExporter spectraRatioExporter;
+    private EventBus bus;
 
-    public RatioMeasurementSpectraPlotManager(final SymbolStyleMapFactory styleFactory, CertLeafletMapController mapImpl, MapPlottingUtilities iconFactory, SpectraClient spectraClient,
+    public RatioMeasurementSpectraPlotManager(EventBus bus, final SymbolStyleMapFactory styleFactory, CertLeafletMapController mapImpl, MapPlottingUtilities iconFactory, SpectraClient spectraClient,
             SpectraRatioExporter spectraRatioExporter) {
+        this.bus = bus;
         this.symbolStyleMapFactory = styleFactory;
         this.mapImpl = mapImpl;
         this.iconFactory = iconFactory;
@@ -318,6 +323,9 @@ public class RatioMeasurementSpectraPlotManager {
         ratioSpectralPlotController.setShowCornerFrequencies(true);
         ratioSpectralPlotController.setYAxisResizable(true);
         ratioSpectralPlotController.setShouldShowFits(true);
+
+        // Map to store styles for each event pair
+        symbolStyleMap = new HashMap<>();
 
         SpectralPlot plot = getRatioSpectraPlot();
         plot.setLabels("Seismic Envelope Ratio Spectra", X_AXIS_LABEL, Y_AXIS_LABEL);
@@ -516,7 +524,7 @@ public class RatioMeasurementSpectraPlotManager {
                     Path tmpFolder = Files.createTempDirectory(Long.toString(System.currentTimeMillis()));
                     tmpFolder.toFile().deleteOnExit();
                     exportScreenshots(tmpFolder.toFile());
-                    exportArchive = spectraRatioExporter.createExportArchive(ratiosByEventPair, tmpFolder);
+                    exportArchive = spectraRatioExporter.createExportArchive(ratiosByEventPair.stream().map(SpectraRatioPairDetailsMetadataImpl::new).collect(Collectors.toList()), tmpFolder);
                     if (exportArchive != null) {
                         Files.move(exportArchive.toPath(), selectedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     }
@@ -530,44 +538,22 @@ public class RatioMeasurementSpectraPlotManager {
 
     private void plotStationData(EventPair eventPair) {
         List<SpectraRatioPairDetails> ratiosByEventPair = ratioMeasurementReport.getRatiosList(getEventPair());
-        symbolStyleMap = symbolStyleMapFactory.build(new ArrayList<>(ratioMeasurementReport.getReport().getData().get(eventPair).keySet()), Station::getStationName);
+
+        // Create new spectra style map if none exists for the specified event pair
+        if (symbolStyleMap.get(eventPair) == null) {
+            Map<String, PlotPoint> symbolMapStyle = symbolStyleMapFactory.build(new ArrayList<>(ratioMeasurementReport.getReport().getData().get(eventPair).keySet()), Station::getStationName);
+            symbolStyleMap.put(eventPair, symbolMapStyle);
+        }
+
         spectraRatioPairOperatorList = ratiosByEventPair.stream().map(SpectraRatioPairOperator::new).collect(Collectors.toList());
+
         symbolMap.clear();
         symbolMap.putAll(mapFunctionToPoint(spectraRatioPairOperatorList, SpectraRatioPairOperator::getDiffAvg));
 
         ratioSpectralPlotController.getSpectraDataMap().clear();
-        getRatioSpectraPlot().clearPlot();
         ratioSpectralPlotController.getSpectraDataMap().putAll(symbolMap);
-        getRatioSpectraPlot().plotXYdata(toPlotPoints(SpectraRatioPairOperator::getDiffAvg), null, Y_AXIS_LABEL);
 
-        Map<EventPair, SpectraRatioPairInversionResult> inversionData = ratioMeasurementReport.getReport().getInversionEstimates();
-        ratioSummaryValues.clear();
-        ratioSummaryTable.getItems().clear();
-
-        addEventDataToTable("Event Pair Data", eventPair);
-
-        if (inversionData != null) {
-            plotInversionPairData(inversionData, eventPair);
-            addInversionDataToTable(inversionData.get(eventPair), "Pair Inversion Data");
-        }
-
-        Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionData = ratioMeasurementReport.getReport().getJointInversionEstimates();
-        if (jointInversionData != null) {
-            plotJointInversionData(jointInversionData, eventPair);
-            addInversionDataToTable(jointInversionData.get(eventPair), "Joint Inversion Data");
-        }
-
-        updateMomentRatioLines();
-
-        try {
-            runGuiUpdate(() -> {
-                getRatioSpectraPlot().getSubplot().fullReplot();
-            });
-        } catch (InvocationTargetException e) {
-            log.debug(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            log.debug(e.getMessage(), e);
-        }
+        updateSpectraPlot(eventPair);
     }
 
     private void plotInversionPairData(Map<EventPair, SpectraRatioPairInversionResult> inversionData, EventPair eventPair) {
@@ -595,6 +581,14 @@ public class RatioMeasurementSpectraPlotManager {
                                                     .setEventIdB(eventRecord.getEventIdB())
                                                     .setMomentEstimateA(eventRecord.getMomentEstimateA())
                                                     .setMomentEstimateB(eventRecord.getMomentEstimateB())
+                                                    .setCornerEstimateA1Max(eventRecord.getCornerEstimateA1Max())
+                                                    .setCornerEstimateA1Min(eventRecord.getCornerEstimateA1Min())
+                                                    .setCornerEstimateB1Max(eventRecord.getCornerEstimateB1Max())
+                                                    .setCornerEstimateB1Min(eventRecord.getCornerEstimateB1Min())
+                                                    .setCornerEstimateA2Max(eventRecord.getCornerEstimateA2Max())
+                                                    .setCornerEstimateA2Min(eventRecord.getCornerEstimateA2Min())
+                                                    .setCornerEstimateB2Max(eventRecord.getCornerEstimateB2Max())
+                                                    .setCornerEstimateB2Min(eventRecord.getCornerEstimateB2Min())
                                                     .setApparentStressEstimateA(eventRecord.getApparentStressEstimateA())
                                                     .setApparentStressEstimateB(eventRecord.getApparentStressEstimateB())
                                                     .setCornerEstimateA(eventRecord.getCornerEstimateA())
@@ -706,7 +700,24 @@ public class RatioMeasurementSpectraPlotManager {
                 bestMomentPointPlotData.getXdata().add(Double.valueOf(bestFit.getMomentEstimateB()));
                 bestMomentPointPlotData.getYdata().add(Double.valueOf(bestFit.getMomentEstimateA()));
 
-                setCornerFrequencyLines(bestFit.getCornerEstimateA(), bestFit.getCornerEstimateB(), ratioShapeColor);
+                // Calculate min and max ratio values to set the position of the corner frequency error bars
+                List<Double> avgRatioPoints = toPlotPoints(eventPair, SpectraRatioPairOperator::getDiffAvg).stream().map(PlotPoint::getY).collect(Collectors.toList());
+                Double minY = Collections.min(avgRatioPoints);
+                Double maxY = Collections.max(avgRatioPoints);
+
+                // Make Pair inversion corner frequency lines smaller than joint
+                double offset = (maxY - minY) * 0.1;
+                if (dataLabelPrefix.equals("Pair")) {
+                    minY += offset;
+                    maxY -= offset;
+                }
+
+                double errorA = bestFit.getCornerEstimateA1Max();
+                double errorB = bestFit.getCornerEstimateB1Max();
+                double errorMinusA = bestFit.getCornerEstimateA1Min();
+                double errorMinusB = bestFit.getCornerEstimateB1Min();
+
+                setCornerFrequencyLines(bestFit.getCornerEstimateA(), bestFit.getCornerEstimateB(), errorA, errorB, errorMinusA, errorMinusB, ratioShapeColor, maxY, minY);
 
                 Line fitRatioShape = plotMomentRatioShape(
                         spectraClient.getSpecificSpectra(bestFit.getMomentEstimateA(), bestFit.getApparentStressEstimateA(), 0.001, 30.0, 100).block(Duration.ofMinutes(10l)),
@@ -846,12 +857,13 @@ public class RatioMeasurementSpectraPlotManager {
                                                HashMap::new));
     }
 
-    private List<PlotPoint> toPlotPoints(final Function<SpectraRatioPairOperator, Double> func) {
+    private List<PlotPoint> toPlotPoints(final EventPair eventPair, final Function<SpectraRatioPairOperator, Double> func) {
         List<PlotPoint> allPlotPoints = new ArrayList<>();
 
+        Map<String, PlotPoint> symbolStyles = symbolStyleMap.get(eventPair);
         spectraRatioPairOperatorList.forEach(ratioDetails -> {
             FrequencyBand freqValue = ratioDetails.getFrequency();
-            PlotPoint pp = symbolStyleMap.get(ratioDetails.getDenomWaveform().getStream().getStation().getStationName());
+            PlotPoint pp = symbolStyles.get(ratioDetails.getDenomWaveform().getStream().getStation().getStationName());
             if (pp != null) {
                 pp.setX(centerFreq(freqValue.getLowFrequency(), freqValue.getHighFrequency()));
                 pp.setY(func.apply(ratioDetails));
@@ -974,18 +986,10 @@ public class RatioMeasurementSpectraPlotManager {
         getRatioSpectraPlot().getSubplot().addPlotObject(refLine);
     }
 
-    private void setCornerFrequencyLines(double cornerEstimateA, double cornerEstimateB, Color lineColor) {
-
-        VerticalLine lineA = plotFactory.verticalLine(cornerEstimateA, 50.0, dfmt2.format(cornerEstimateA));
-        lineA.setFillColor(lineColor);
-        VerticalLine lineB = plotFactory.verticalLine(cornerEstimateB, 50.0, dfmt2.format(cornerEstimateB));
-        lineB.setFillColor(lineColor);
-
-        lineA.setLogScaleX(true);
-        lineB.setLogScaleX(true);
-
-        getRatioSpectraPlot().getSubplot().addPlotObject(lineA);
-        getRatioSpectraPlot().getSubplot().addPlotObject(lineB);
+    private void setCornerFrequencyLines(double cornerEstimateA, double cornerEstimateB, double errorA, double errorB, double errorMinusA, double errorMinusB, Color lineColor, Double yTop,
+            Double yBottom) {
+        getRatioSpectraPlot().plotCornerFrequency("~Fc Low", cornerEstimateA, errorA, errorMinusA, yTop, yBottom, lineColor);
+        getRatioSpectraPlot().plotCornerFrequency("~Fc High", cornerEstimateB, errorB, errorMinusB, yTop, yBottom, lineColor);
     }
 
     protected void runGuiUpdate(final Runnable runnable) throws InvocationTargetException, InterruptedException {
@@ -1102,7 +1106,7 @@ public class RatioMeasurementSpectraPlotManager {
 
     private void createRatioWaveformPlotPopup(SpectraRatioPairOperator ratioDetails) {
 
-        RatioMeasurementWaveformPlotManager ratioWaveformPlots = new RatioMeasurementWaveformPlotManager(mapImpl, iconFactory);
+        RatioMeasurementWaveformPlotManager ratioWaveformPlots = new RatioMeasurementWaveformPlotManager(bus, mapImpl, iconFactory);
         ratioWaveformPlots.setParentSpectra(this);
         ratioWaveformPlots.setCurrentEvent(ratioMeasurementReport.getStationsForEventPair(getEventPair()));
 
@@ -1139,8 +1143,9 @@ public class RatioMeasurementSpectraPlotManager {
     }
 
     private void createSpectraPlotPopup() {
-        List<PlotPoint> numerPoints = new ArrayList<>(toPlotPoints(SpectraRatioPairOperator::getNumerAvg));
-        List<PlotPoint> denomPoints = new ArrayList<>(toPlotPoints(SpectraRatioPairOperator::getDenomAvg));
+        EventPair eventPair = getEventPair();
+        List<PlotPoint> numerPoints = new ArrayList<>(toPlotPoints(eventPair, SpectraRatioPairOperator::getNumerAvg));
+        List<PlotPoint> denomPoints = new ArrayList<>(toPlotPoints(eventPair, SpectraRatioPairOperator::getDenomAvg));
         SpectraPlotManager spectraPlotManager = new SpectraPlotManager(getEventPair(), numerPoints, denomPoints);
 
         final FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/SpectraPlotGui.fxml"));
@@ -1199,13 +1204,48 @@ public class RatioMeasurementSpectraPlotManager {
         log.trace("Key Pressed on Ratio Spectra Plot");
     }
 
-    protected void updatePlotPoint() {
+    protected void updatePlotPoint(EventPair eventPair) {
+        EventPair currentPair = getEventPair();
         symbolMap = mapFunctionToPoint(spectraRatioPairOperatorList, SpectraRatioPairOperator::getDiffAvg);
-        ratioSpectralPlotController.getSpectraDataMap().clear();
-        ratioSpectralPlotController.getSpectraDataMap().putAll(symbolMap);
-        ratioSpectralPlotController.getSpectralPlot().plotXYdata(toPlotPoints(SpectraRatioPairOperator::getDiffAvg), null, Y_AXIS_LABEL);
+
+        if (eventPair.getX().getEventId() == currentPair.getX().getEventId() && eventPair.getY().getEventId() == currentPair.getY().getEventId()) {
+            updateSpectraPlot(eventPair);
+        }
+    }
+
+    protected void updateSpectraPlot(EventPair eventPair) {
+
+        getRatioSpectraPlot().clearPlot();
+        getRatioSpectraPlot().plotXYdata(toPlotPoints(eventPair, SpectraRatioPairOperator::getDiffAvg), null, null, Y_AXIS_LABEL);
+
+        Map<EventPair, SpectraRatioPairInversionResult> inversionData = ratioMeasurementReport.getReport().getInversionEstimates();
+        ratioSummaryValues.clear();
+        ratioSummaryTable.getItems().clear();
+
+        addEventDataToTable("Event Pair Data", eventPair);
+
+        if (inversionData != null) {
+            plotInversionPairData(inversionData, eventPair);
+            addInversionDataToTable(inversionData.get(eventPair), "Pair Inversion Data");
+        }
+
+        Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionData = ratioMeasurementReport.getReport().getJointInversionEstimates();
+        if (jointInversionData != null) {
+            plotJointInversionData(jointInversionData, eventPair);
+            addInversionDataToTable(jointInversionData.get(eventPair), "Joint Inversion Data");
+        }
 
         updateMomentRatioLines();
+
+        try {
+            runGuiUpdate(() -> {
+                getRatioSpectraPlot().getSubplot().fullReplot();
+            });
+        } catch (InvocationTargetException e) {
+            log.debug(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            log.debug(e.getMessage(), e);
+        }
     }
 
     public void exportScreenshots(final File folder) {

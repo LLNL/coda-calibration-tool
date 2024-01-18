@@ -80,6 +80,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.domain.WaveformMetadata;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
@@ -88,6 +89,7 @@ import gov.llnl.gnem.apps.coda.common.service.util.MetadataUtils;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResult;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResultJoint;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatiosReport;
@@ -193,6 +195,27 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
         return value;
     }
 
+    @Transactional
+    @Override
+    public SpectraRatioPairDetails update(SpectraRatioPairDetails entity) {
+        SpectraRatioPairDetails update = null;
+        if (entity.getId() != null) {
+            update = findOneForUpdate(entity.getId());
+        } else {
+            update = spectraRatioPairDetailsRepository.findByWaveformIds(entity.getNumerWaveform().getId(), entity.getDenomWaveform().getId());
+        }
+        if (update != null) {
+            update.mergeNonNullFields(entity);
+            entity = update;
+        }
+
+        SpectraRatioPairOperator op = new SpectraRatioPairOperator(entity);
+        op.updateDiffSegment();
+        entity = save(entity);
+
+        return entity;
+    }
+
     @Override
     public SpectraRatioPairDetails findOne(Long id) {
         return spectraRatioPairDetailsRepository.findOneDetached(id);
@@ -200,7 +223,7 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
 
     @Override
     public SpectraRatioPairDetails findOneForUpdate(Long id) {
-        return spectraRatioPairDetailsRepository.findOneDetached(id);
+        return spectraRatioPairDetailsRepository.findById(id).orElse(new SpectraRatioPairDetails());
     }
 
     @Override
@@ -265,6 +288,9 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
 
             List<SpectraRatioPairDetails> ratioDataList = new ArrayList<>();
 
+            List<SpectraRatioPairDetails> userEdited = spectraRatioPairDetailsRepository.findByUserEditedTrue();
+            Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> userEditedRatios = mapRatioDataToEvents(userEdited);
+
             // Loop through Events
             for (Entry<Event, Map<Station, Map<FrequencyBand, SpectraMeasurement>>> eventEntry : spectraSmallEventData.entrySet()) {
                 Event curEvent = eventEntry.getKey();
@@ -296,25 +322,40 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
                                             SpectraMeasurement smallSpectra = smallDataAtFreq;
                                             SpectraMeasurement largeSpectra = largeDataAtFreq;
 
-                                            Result<SpectraRatioPairDetails> ratioDetails = calcRatioFunc.apply(smallSpectra, largeSpectra);
-                                            if (ratioDetails.isSuccess()) {
-                                                ratioDataList.add(ratioDetails.getResultPayload().get());
+                                            EventPair eventPair = new EventPair();
+                                            eventPair.setX(curEvent);
+                                            eventPair.setY(largeDataAtFreq.getWaveform().getEvent());
 
-                                                EventPair eventPair = new EventPair();
-                                                eventPair.setX(curEvent);
-                                                eventPair.setY(largeDataAtFreq.getWaveform().getEvent());
-                                                if (!ratioData.containsKey(eventPair)) {
-                                                    ratioData.put(eventPair, new HashMap<>());
+                                            SpectraRatioPairDetails userRatio = null;
+                                            if (userEditedRatios != null && userEditedRatios.containsKey(eventPair) && userEditedRatios.get(eventPair).containsKey(curStation)) {
+                                                userRatio = userEditedRatios.get(eventPair).get(curStation).get(freqBand);
+                                            }
+
+                                            if (userRatio == null) {
+                                                Result<SpectraRatioPairDetails> ratioDetails = calcRatioFunc.apply(smallSpectra, largeSpectra);
+                                                if (ratioDetails.isSuccess()) {
+                                                    ratioDataList.add(ratioDetails.getResultPayload().get());
+
+                                                    if (!ratioData.containsKey(eventPair)) {
+                                                        ratioData.put(eventPair, new HashMap<>());
+                                                    }
+
+                                                    Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>> ratiosForPair = ratioData.get(eventPair);
+                                                    if (!ratiosForPair.containsKey(curStation)) {
+                                                        ratiosForPair.put(curStation, new HashMap<>());
+                                                    }
+                                                    ratiosForPair.get(curStation).put(freqBand, ratioDetails.getResultPayload().get());
+                                                    ratioData.put(eventPair, ratiosForPair);
+                                                } else {
+                                                    log.info("Unable to ratio spectra {}", ratioDetails.getErrors());
                                                 }
-
+                                            } else {
                                                 Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>> ratiosForPair = ratioData.get(eventPair);
                                                 if (!ratiosForPair.containsKey(curStation)) {
                                                     ratiosForPair.put(curStation, new HashMap<>());
                                                 }
-                                                ratiosForPair.get(curStation).put(freqBand, ratioDetails.getResultPayload().get());
+                                                ratiosForPair.get(curStation).put(freqBand, userRatio);
                                                 ratioData.put(eventPair, ratiosForPair);
-                                            } else {
-                                                log.info("Unable to ratio spectra {}", ratioDetails.getErrors());
                                             }
                                         }
                                     }
@@ -332,7 +373,12 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
             Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionEstimates = invertEventRatios(ratioData);
 
             if (persistResults.booleanValue()) {
-                spectraRatioPairDetailsRepository.saveAll(ratioDataList);
+                if (userEdited != null && !userEdited.isEmpty()) {
+                    spectraRatioPairDetailsRepository.deleteAllNotInIdsList(userEdited.stream().map(SpectraRatioPairDetails::getId).collect(Collectors.toList()));
+                } else {
+                    spectraRatioPairDetailsRepository.deleteAll();
+                }
+                ratioDataList = spectraRatioPairDetailsRepository.saveAll(ratioDataList);
                 spectraRatioPairInversionSampleRepository.deleteAll();
                 spectraRatioJontInversionSampleRepository.deleteAll();
                 spectraRatioPairInversionSampleRepository.saveAll(inversionEstimates.values());
@@ -478,6 +524,25 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
         return spectraDataMap;
     }
 
+    private Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> mapRatioDataToEvents(List<SpectraRatioPairDetails> ratios) {
+        Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioEventMap = new HashMap<>();
+        if (ratios != null) {
+            ratios.forEach(ratio -> {
+                Waveform largeEvent = ratio.getNumerWaveform();
+                Waveform smallEvent = ratio.getDenomWaveform();
+                Station station = ratio.getNumerWaveform().getStream().getStation();
+
+                FrequencyBand band = new FrequencyBand(ratio.getNumerWaveform().getLowFrequency(), ratio.getNumerWaveform().getHighFrequency());
+
+                EventPair eventPair = new EventPair();
+                eventPair.setX(smallEvent.getEvent());
+                eventPair.setY(largeEvent.getEvent());
+                ratioEventMap.computeIfAbsent(eventPair, v -> new HashMap<Station, Map<FrequencyBand, SpectraRatioPairDetails>>()).computeIfAbsent(station, v -> new HashMap<>()).put(band, ratio);
+            });
+        }
+        return ratioEventMap;
+    }
+
     private Result<SpectraRatioPairDetails> setUncutSegments(final SpectraMeasurement numeratorSpectra, final SpectraMeasurement denominatorSpectra) {
         if (denominatorSpectra == null || numeratorSpectra == null) {
             return new Result<>(false, null);
@@ -619,5 +684,63 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
             future = CompletableFuture.completedFuture(new Result<>(false, Collections.singletonList(e), new SpectraRatiosReport()));
         }
         return future;
+    }
+
+    @Override
+    public List<SpectraRatioPairDetailsMetadata> findAllMetadataOnly() {
+        return spectraRatioPairDetailsRepository.findAllMetdataOnly();
+    }
+
+    @Override
+    public List<String> loadRatioMetadata(List<SpectraRatioPairDetailsMetadata> ratios) {
+        List<String> errors = new ArrayList<>();
+        for (SpectraRatioPairDetailsMetadata ratio : ratios) {
+            //Relies on one ratio per distinct event pair/station/freq tuple
+            //Look for wave/freq tuple
+            WaveformMetadata numerWaveMeta = ratio.getNumerWaveform();
+            WaveformMetadata denomWaveMeta = ratio.getDenomWaveform();
+            Waveform numerWaveform = null;
+            Waveform denomWaveform = null;
+
+            Waveform matches = waveformService.getByMatchingKeys(
+                    numerWaveMeta.getStream().getStation(),
+                        numerWaveMeta.getEvent().getEventId(),
+                        numerWaveMeta.getLowFrequency(),
+                        numerWaveMeta.getHighFrequency());
+            if (matches != null) {
+                numerWaveform = matches;
+            }
+
+            matches = waveformService.getByMatchingKeys(
+                    denomWaveMeta.getStream().getStation(),
+                        denomWaveMeta.getEvent().getEventId(),
+                        denomWaveMeta.getLowFrequency(),
+                        denomWaveMeta.getHighFrequency());
+            if (matches != null) {
+                denomWaveform = matches;
+            }
+
+            if (numerWaveform != null && denomWaveform != null) {
+                //Check if we can attach to an existing SpectraRatioPairDetails
+                SpectraRatioPairDetails spectraRatio = spectraRatioPairDetailsRepository.findByWaveformIds(numerWaveform.getId(), denomWaveform.getId());
+                if (spectraRatio == null) {
+                    spectraRatio = new SpectraRatioPairDetails(numerWaveform, denomWaveform);
+                }
+                spectraRatio.mergeNonNullFields(ratio);
+                SpectraRatioPairOperator op = new SpectraRatioPairOperator(spectraRatio);
+                op.updateDiffSegment();
+                spectraRatioPairDetailsRepository.save(spectraRatio);
+            } else {
+                errors.add(
+                        "Unable to find matching waveforms for ratio: \n"
+                                + "Event Id A "
+                                + denomWaveMeta.getEvent().getEventId()
+                                + "\n"
+                                + "Event Id B "
+                                + numerWaveMeta.getEvent().getEventId()
+                                + "\n");
+            }
+        }
+        return errors;
     }
 }

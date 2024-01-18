@@ -4,13 +4,13 @@ summary: Documentation, tutorials, and reference material for the Coda Calibrati
 authors:
     - Kevin Mayeda
     - Justin Barno
-date: 2022-07-31
+date: 2023-12-20
 osti_url: https://www.osti.gov/doecode/biblio/8964
-version: 1.0
+version: 1.1
 ---
 
-# Coda Calibration Tool (CCT) 1.0.20 documentation
-<sub>2022-07-31; Version 1.0; Authors Barno, Justin | Mayeda, Kevin</sub>
+# Coda Calibration Tool (CCT) 1.0.21 documentation
+<sub>2023-12-20; Version 1.1; Authors Barno, Justin | Mayeda, Kevin</sub>
 
 ## About CCT
 
@@ -36,22 +36,22 @@ Overwriting the Envelope directory during the initial QA of the data is common. 
 
 The latest version of the Coda Calibration Tool (CCT) can be found on the [release page](https://github.com/LLNL/coda-calibration-tool/releases/)
 
-The standalone CCT jar file is calibration-standalone-1.0.20-runnable.jar while the REST services only are available in calibration-application-1.0.20-runnable.jar.
+The standalone CCT jar file is calibration-standalone-1.0.21-runnable.jar while the REST services only are available in calibration-application-1.0.21-runnable.jar.
 
 #### Downloading SF Bay Area example tarfile
 
 The complete SF Bay Area calibration which includes SAC waveforms, stacked envelopes and JavaScript
-Object Notation (JSON) parameter files can be [downloaded here](https://doi.org/10.5281/zenodo.6902890)
+Object Notation (JSON) parameter files can be [downloaded here](https://doi.org/10.5281/zenodo.10019686)
 
 #### Running CCT
 
 You can launch CCT by executing Java from the command line as:
 
-``` java -Xmx12g -jar calibration-standalone-1.0.20-runnable.jar ```
+``` java -Xmx12g -jar calibration-standalone-1.0.21-runnable.jar ```
 
 Or, if you have Java 11+ as:
 
-``` java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.20-runnable.jar ```
+``` java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.21-runnable.jar ```
 
 Generally your -Xmx flag should be set to, at most, ~70% of the physical RAM available on the machine.
 
@@ -76,7 +76,7 @@ Once the envelopes are formed, they are decimated so they will not take up as mu
 
 #### Initial Waveform Data
 
-1. CCT requires SAC files. Horizontal components are preferred, but you can use verticals, just don’t mix them and keep in separate folders. Envelope tool will stack all components for an event recorded at station X. 
+1. CCT requires SAC files. Horizontal components are preferred, but you can use verticals, just don’t mix them and keep in separate folders. The envelope tool will stack all components for an event recorded at station X. 
 
 The tool will use the SAC header variables for the event name (**KEVNM**) and station name (**KSTNM**) in the SAC header to create the names for the envelope files. 
 
@@ -122,7 +122,7 @@ Event origin time must be 0 in the ‘**OMARKER**’ header. This can be done us
 5. Immediately you will be prompted to choose a location for your output envelopes. We recommend a subdirectory called "Envelopes" in the working data directory (i.e. , Data_new/Envelopes).
 
 6. Close the Envelope Tool when the progress bar completes.
-The envelopes will be created in the following directory structure: ...Data_new/Envelopes/YEAR/MONTH/EVID/STATION/STA_COMP_EVID_FREQ1_FREQ2_VEL_.ENV In subsequent steps, you can import all stack envelopes created in this envelope tool with "File > Import stack directory…" and choose the "Envelopes" directory.
+The envelopes will be created in the following directory structure: ...Data_new/Envelopes/YEAR/MONTH/EVID/STATION/STA_COMP_EVID_FREQ1_FREQ2_VEL_.ENV In subsequent steps, you can import all stack envelopes created in this envelope tool with "File > Load Stack Directory…" and choose the "Envelopes" directory.
 
 ### San Francisco Bay Example Dataset
 
@@ -167,9 +167,9 @@ You should see the following files and directories:
 
 ### Step-by-Step Bay Area CCT Example
 
-#### Read in necesssary data
+#### Read in necessary data
 
-Read in stacked envelopes using the pulldown tab: File>Import Stack Directory…
+Load in stacked envelopes using the pulldown tab: File>Load Stack Directory…
 ![img](img/import_stacks.png) <figcaption align = "center">Figure. 6, Importing stacked envelopes in a directory.</figcaption> <br/>
 
 Select the **Envelopes_stack_Kevin_picks** directory
@@ -180,9 +180,14 @@ Upon completion you’ll see this:
 
 ![img](img/import_complete.png) <figcaption align = "center">Figure. 7, Dialog showing amount of envelopes imported, errors (if any), and if the process has completed.</figcaption> <br/>
 
-Next, read in the Coda Parameter file: File>Import Coda Param...
+Next, load the Coda Parameter file: File>Load Calibration...
 
 Select the **Calibration_Parameters_Kevin.json** file (This reads instantly)
+
+!!! Note
+    The example SF Bay Area JSON file has been fine-tuned over multiple calibration iterations. When applying to a new region, you will have to re-run CCT multiple times to adjust picks, remove bad data, adjust minimum and maximum window lengths, and possibly SNR pre-sets.
+    
+    Each time you must export the calibration JSON file to save your changes and use the latest JSON in the next iteration. Keep re-running CCT and repeat the above steps to refine the calibration until you are satisfied with the results. The final calibration JSON file that you export can then be used for routine processing for the region.
 
 To view the data in map form, click the Map button in the upper right. In the upper right map pop-up, select the tile pull-down in the upper right. Be sure the application.properties file is in the working directory if you want to use custom layers. You can click on a station or event to see the corresponding name and view envelopes. 
 
@@ -252,13 +257,13 @@ CCT will display five envelopes at a time, and you can use left and right arrow 
 Also, in the Data pull down tab, you can choose ‘Make Picks Reviewed’ which will change all auto-picked **f-markers** reviewed, if for example you’ve visually checked all the **f-markers** and would like them to be changed to ‘reviewed’. If you export the envelopes then all ‘**ap**’ marks will disappear. 
 
 !!! Important
-    To save all the new picks in the current session, under File choose Export Waveforms and you can choose the same Envelope directory, in this case Envelope_stack_Kevin_picks, or create a new directory. The next time you run the calibration, the tool will use the new **f-marker** picks.
+    To save all the new picks in the current session, under File choose Save Waveforms and you can choose the same Envelope directory, in this case Envelope_stack_Kevin_picks, or create a new directory. The next time you run the calibration, the tool will use the new **f-marker** picks.
 
 #### Parameters tab 
 
-Allows users to view the calibration parameters during the current calibration and make adjustments, specifically the window length limits (**Min** and **Max**) as well as **SNR** levels (in log 10). These changes will ONLY be kept if you export the calibration (File->Export Calibration). You will then have to use the newly created **Calibration_Parameters.json** file for the subsequent calibration refinement.
+Allows users to view the calibration parameters during the current calibration and make adjustments, specifically the window length limits (**Min** and **Max**) as well as **SNR** levels (in log 10). These changes will ONLY be kept if you export the calibration (File->Save Calibration). You will then have to use the newly created **Calibration_Parameters.json** file for the subsequent calibration refinement.
 
-![img](img/parameters_example.png) <figcaption align = "center">Figure. 13, The parameters table that defines the core of a calibraition.</figcaption> <br/>
+![img](img/parameters_example.png) <figcaption align = "center">Figure. 13, The parameters table that defines the core of a calibration.</figcaption> <br/>
 
 #### Shape tab
 
@@ -343,7 +348,7 @@ To isolate only the weak motion S-coda site term (from the common S-to-coda tran
 
 This feature allows you to measure **M<sub>w</sub>**s using an existing calibration for new events in a region. This feature also enables automated processing of new events as they are formed provided the event is located in the calibrated area and a calibrated station recorded the event by using the REST services CCT provides. 
 
-Oftentimes we impose a more strict set of guidelines for calibration, whereas for routine event processing we might relax the minimum window length or change the SNR levels. Save your **M<sub>w</sub>**s with File -> Export Measured Mws…
+Oftentimes we impose a more strict set of guidelines for calibration, whereas for routine event processing we might relax the minimum window length or change the SNR levels. Save your **M<sub>w</sub>**s with File -> Save Measured Mws…
 
 ## Glossary of terms
 

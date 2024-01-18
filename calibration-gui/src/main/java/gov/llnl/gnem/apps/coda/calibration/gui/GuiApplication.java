@@ -89,7 +89,7 @@ public class GuiApplication extends Application {
     }
 
     public GuiApplication(ConfigurableApplicationContext springContext, EventBus bus, ApplicationMode mode) {
-        this.springContext = springContext;
+        GuiApplication.springContext = springContext;
         this.bus = bus;
         GuiApplication.startupMode = mode;
     }
@@ -117,7 +117,7 @@ public class GuiApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        this.primaryStage = primaryStage;
+        GuiApplication.primaryStage = primaryStage;
         try (InputStream icon1 = this.getClass().getResourceAsStream("/coda_32x32.png");
                 InputStream icon2 = this.getClass().getResourceAsStream("/coda_64x64.png");
                 InputStream icon3 = this.getClass().getResourceAsStream("/coda_128x128.png");
@@ -261,6 +261,6 @@ public class GuiApplication extends Application {
     }
 
     public void setPrimaryStage(Stage primaryStage) {
-        this.primaryStage = primaryStage;
+        GuiApplication.primaryStage = primaryStage;
     }
 }

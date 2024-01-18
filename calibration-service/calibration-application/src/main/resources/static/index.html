@@ -10,6 +10,7 @@
   <title>Coda Calibration Tool Documentation</title>
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
 
   <script>
     // Current page data
@@ -19,6 +20,11 @@
   </script>
 
   <script src="js/jquery-3.6.0.min.js" defer></script>
+  <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -29,6 +35,11 @@
         <div class="wy-side-nav-search">
           <a href="." class="icon icon-home"> Coda Calibration Tool Documentation
           </a>
+          <div role="search">
+            <form id="rtd-search-form" class="wy-form" action="./search.html" method="get">
+              <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+            </form>
+          </div>
         </div>
 
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
@@ -77,8 +88,8 @@
                     <li class="toctree-l3"><a class="reference internal"
                         href="#step-by-step-bay-area-cct-example">Step-by-Step Bay Area CCT Example</a>
                       <ul>
-                        <li class="toctree-l4"><a class="reference internal" href="#read-in-necesssary-data">Read in
-                            necesssary data</a>
+                        <li class="toctree-l4"><a class="reference internal" href="#read-in-necessary-data">Read in
+                            necessary data</a>
                         </li>
                         <li class="toctree-l4"><a class="reference internal" href="#run-the-calibration">Run the
                             calibration</a>
@@ -134,12 +145,13 @@
           </ul>
           <ul>
             <li class="toctree-l1"><a class="reference internal" href="javadoc/index.html">JavaDoc</a>
+                </li>
+              </ul>
+              <ul>
+                <li class=" toctree-l1"><a class="reference internal" href="swagger/index.html">REST API Docs</a>
             </li>
           </ul>
-          <ul>
-            <li class="toctree-l1"><a class="reference internal" href="swagger-ui/index.html">REST API Docs</a>
-            </li>
-          </ul>
+         
         </div>
       </div>
     </nav>
@@ -165,9 +177,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
 
-              <h1 id="coda-calibration-tool-cct-1020-documentation">Coda Calibration Tool (CCT) 1.0.20 documentation
+              <h1 id="coda-calibration-tool-cct-1021-documentation">Coda Calibration Tool (CCT) 1.0.21 documentation
               </h1>
-              <p><sub>2022-07-31; Version 1.0; Authors Barno, Justin | Mayeda, Kevin</sub></p>
+              <p><sub>2023-12-20; Version 1.1; Authors Barno, Justin | Mayeda, Kevin</sub></p>
               <h2 id="about-cct">About CCT</h2>
               <p>The Coda Calibration Tool (CCT) is a Java-based application that stems from a collaborative project by
                 scientists from the USNDC (AFTAC/SDS) and DOE (LLNL) as well as significant input from seismologists
@@ -204,17 +216,17 @@
               <h4 id="downloading-cct">Downloading CCT</h4>
               <p>The latest version of the Coda Calibration Tool (CCT) can be found on the <a
                   href="https://github.com/LLNL/coda-calibration-tool/releases/">release page</a></p>
-              <p>The standalone CCT jar file is calibration-standalone-1.0.20-runnable.jar while the REST services only
-                are available in calibration-application-1.0.20-runnable.jar.</p>
+              <p>The standalone CCT jar file is calibration-standalone-1.0.21-runnable.jar while the REST services only
+                are available in calibration-application-1.0.21-runnable.jar.</p>
               <h4 id="downloading-sf-bay-area-example-tarfile">Downloading SF Bay Area example tarfile</h4>
               <p>The complete SF Bay Area calibration which includes SAC waveforms, stacked envelopes and JavaScript
                 Object Notation (JSON) parameter files can be <a
-                  href="https://doi.org/10.5281/zenodo.6902890">downloaded here</a></p>
+                  href="https://doi.org/10.5281/zenodo.10019686">downloaded here</a></p>
               <h4 id="running-cct">Running CCT</h4>
               <p>You can launch CCT by executing Java from the command line as:</p>
-              <p><code>java -Xmx12g -jar calibration-standalone-1.0.20-runnable.jar</code></p>
+              <p><code>java -Xmx12g -jar calibration-standalone-1.0.21-runnable.jar</code></p>
               <p>Or, if you have Java 11+ as:</p>
-              <p><code>java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.20-runnable.jar</code></p>
+              <p><code>java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.21-runnable.jar</code></p>
               <p>Generally your -Xmx flag should be set to, at most, ~70% of the physical RAM available on the machine.
               </p>
               <p>You can add the <code>--spring.profiles.active=file</code> flag to the Java call if your dataset is
@@ -251,8 +263,8 @@
               <h4 id="initial-waveform-data">Initial Waveform Data</h4>
               <ol>
                 <li>CCT requires SAC files. Horizontal components are preferred, but you can use verticals, just don’t
-                  mix them and keep in separate folders. Envelope tool will stack all components for an event recorded
-                  at station X. </li>
+                  mix them and keep in separate folders. The envelope tool will stack all components for an event
+                  recorded at station X. </li>
               </ol>
               <p>The tool will use the SAC header variables for the event name (<strong>KEVNM</strong>) and station name
                 (<strong>KSTNM</strong>) in the SAC header to create the names for the envelope files. </p>
@@ -332,8 +344,8 @@
                   <p>Close the Envelope Tool when the progress bar completes.
                     The envelopes will be created in the following directory structure:
                     ...Data_new/Envelopes/YEAR/MONTH/EVID/STATION/STA_COMP_EVID_FREQ1_FREQ2_VEL_.ENV In subsequent
-                    steps, you can import all stack envelopes created in this envelope tool with "File &gt; Import stack
-                    directory…" and choose the "Envelopes" directory.</p>
+                    steps, you can import all stack envelopes created in this envelope tool with "File &gt; Load Stack
+                    Directory…" and choose the "Envelopes" directory.</p>
                 </li>
               </ol>
               <h3 id="san-francisco-bay-example-dataset">San Francisco Bay Example Dataset</h3>
@@ -400,8 +412,8 @@
                 </li>
               </ul>
               <h3 id="step-by-step-bay-area-cct-example">Step-by-Step Bay Area CCT Example</h3>
-              <h4 id="read-in-necesssary-data">Read in necesssary data</h4>
-              <p>Read in stacked envelopes using the pulldown tab: File&gt;Import Stack Directory…
+              <h4 id="read-in-necessary-data">Read in necessary data</h4>
+              <p>Load in stacked envelopes using the pulldown tab: File&gt;Load Stack Directory…
                 <img alt="img" src="img/import_stacks.png" />
               <figcaption align="center">Figure. 6, Importing stacked envelopes in a directory.</figcaption> <br /></p>
               <p>Select the <strong>Envelopes_stack_Kevin_picks</strong> directory</p>
@@ -411,8 +423,18 @@
               <p><img alt="img" src="img/import_complete.png" />
               <figcaption align="center">Figure. 7, Dialog showing amount of envelopes imported, errors (if any), and if
                 the process has completed.</figcaption> <br /></p>
-              <p>Next, read in the Coda Parameter file: File&gt;Import Coda Param...</p>
+              <p>Next, load the Coda Parameter file: File&gt;Load Calibration...</p>
               <p>Select the <strong>Calibration_Parameters_Kevin.json</strong> file (This reads instantly)</p>
+              <div class="admonition note">
+                <p class="admonition-title">Note</p>
+                <p>The example SF Bay Area JSON file has been fine-tuned over multiple calibration iterations. When
+                  applying to a new region, you will have to re-run CCT multiple times to adjust picks, remove bad data,
+                  adjust minimum and maximum window lengths, and possibly SNR pre-sets.</p>
+                <p>Each time you must export the calibration JSON file to save your changes and use the latest JSON in
+                  the next iteration. Keep re-running CCT and repeat the above steps to refine the calibration until you
+                  are satisfied with the results. The final calibration JSON file that you export can then be used for
+                  routine processing for the region.</p>
+              </div>
               <p>To view the data in map form, click the Map button in the upper right. In the upper right map pop-up,
                 select the tile pull-down in the upper right. Be sure the application.properties file is in the working
                 directory if you want to use custom layers. You can click on a station or event to see the corresponding
@@ -525,19 +547,18 @@
                 then all ‘<strong>ap</strong>’ marks will disappear. </p>
               <div class="admonition important">
                 <p class="admonition-title">Important</p>
-                <p>To save all the new picks in the current session, under File choose Export Waveforms and you can
-                  choose the same Envelope directory, in this case Envelope_stack_Kevin_picks, or create a new
-                  directory. The next time you run the calibration, the tool will use the new <strong>f-marker</strong>
-                  picks.</p>
+                <p>To save all the new picks in the current session, under File choose Save Waveforms and you can choose
+                  the same Envelope directory, in this case Envelope_stack_Kevin_picks, or create a new directory. The
+                  next time you run the calibration, the tool will use the new <strong>f-marker</strong> picks.</p>
               </div>
               <h4 id="parameters-tab">Parameters tab</h4>
               <p>Allows users to view the calibration parameters during the current calibration and make adjustments,
                 specifically the window length limits (<strong>Min</strong> and <strong>Max</strong>) as well as
                 <strong>SNR</strong> levels (in log 10). These changes will ONLY be kept if you export the calibration
-                (File-&gt;Export Calibration). You will then have to use the newly created
+                (File-&gt;Save Calibration). You will then have to use the newly created
                 <strong>Calibration_Parameters.json</strong> file for the subsequent calibration refinement.</p>
               <p><img alt="img" src="img/parameters_example.png" />
-              <figcaption align="center">Figure. 13, The parameters table that defines the core of a calibraition.
+              <figcaption align="center">Figure. 13, The parameters table that defines the core of a calibration.
               </figcaption> <br /></p>
               <h4 id="shape-tab">Shape tab</h4>
               <p>Allows users to view empirical envelope shape parameters and velocity fits to the observed data as a
@@ -622,7 +643,7 @@
                   </ul>
                 </li>
                 <li>
-                  <p><strong>Model Fit </strong>M<sub>w</sub>**** </p>
+                  <p><strong>Model Fit M<sub>w</sub></strong> </p>
                   <ul>
                     <li><strong>M<sub>w</sub></strong> derived from omega-square fitting to observed data</li>
                   </ul>
@@ -640,7 +661,7 @@
                   </ul>
                 </li>
                 <li>
-                  <p><strong>Reference </strong>M<sub>w</sub>**** </p>
+                  <p><strong>Reference M<sub>w</sub></strong></p>
                   <ul>
                     <li>Independent <strong>M<sub>w</sub></strong> derived <em>a priori</em>, preferably from waveform
                       modeling. </li>
@@ -689,7 +710,7 @@
                 using the REST services CCT provides. </p>
               <p>Oftentimes we impose a more strict set of guidelines for calibration, whereas for routine event
                 processing we might relax the minimum window length or change the SNR levels. Save your
-                <strong>M<sub>w</sub></strong>s with File -&gt; Export Measured Mws…</p>
+                <strong>M<sub>w</sub></strong>s with File -&gt; Save Measured Mws…</p>
               <h2 id="glossary-of-terms">Glossary of terms</h2>
               <ul>
                 <li>
@@ -1302,7 +1323,7 @@
           </div>
           <footer>
             <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-              <a href="javadoc/index.html" class="btn btn-neutral float-right" title="JavaDoc">Next <span
+              <a href="javadoc/" class="btn btn-neutral float-right" title="JavaDoc">Next <span
                   class="icon icon-circle-arrow-right"></span></a>
             </div>
 
@@ -1329,13 +1350,14 @@
 
 
 
-      <span><a href="javadoc/index.html" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="javadoc/" style="color: #fcfcfc">Next &raquo;</a></span>
 
     </span>
   </div>
   <script>var base_url = '.';</script>
   <script src="js/theme_extra.js" defer></script>
   <script src="js/theme.js" defer></script>
+  <script src="search/main.js" defer></script>
   <script defer>
     window.onload = function () {
       SphinxRtdTheme.Navigation.enable(true);
@@ -1348,5 +1370,5 @@
 
 <!--
 MkDocs version : 1.3.0
-Build Date UTC : 2023-08-22 16:42:16.630924+00:00
+Build Date UTC : 2023-12-20 19:53:33.662370+00:00
 -->

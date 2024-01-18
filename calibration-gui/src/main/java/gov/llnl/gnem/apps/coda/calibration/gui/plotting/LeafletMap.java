@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -206,6 +206,10 @@ public class LeafletMap {
         icons.clear();
         callbackMap.clear();
         clearIconLayer();
+    }
+
+    public Set<Icon> getIcons() {
+        return icons;
     }
 
     private void clearIconLayer() {

@@ -525,8 +525,6 @@ public class Waveform {
                .append(highFrequency)
                .append(", sampleRate=")
                .append(sampleRate)
-               .append(", segment=")
-               .append(segment)
                .append(", associatedPicks=")
                .append(associatedPicks != null ? associatedPicks.subList(0, Math.min(associatedPicks.size(), maxLen)) : null)
                .append(", active=")

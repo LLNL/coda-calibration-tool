@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.20</version>
+		<version>1.0.21</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -55,7 +55,7 @@
 						<id>cct</id>
 						<configuration>
 							<mainClass>gov.llnl.gnem.apps.coda.calibration.standalone.CodaCalibrationStandalone</mainClass>
-							<exuctable>true</exuctable>
+							<executable>true</executable>
 							<classifier>runnable</classifier>
 							<excludeDevtools>true</excludeDevtools>
 						</configuration>
@@ -68,7 +68,7 @@
 						<id>ratios</id>
 						<configuration>
 							<mainClass>gov.llnl.gnem.apps.coda.spectra.standalone.SpectraRatioStandalone</mainClass>
-							<exuctable>true</exuctable>
+							<executable>true</executable>
 							<classifier>ratios</classifier>
 							<excludeDevtools>true</excludeDevtools>
 						</configuration>

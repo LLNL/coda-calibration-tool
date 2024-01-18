@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -53,6 +53,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ScreenshotEnabledController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.ShapeController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController;
+import gov.llnl.gnem.apps.coda.calibration.gui.controllers.SpectraRatioLoadingController;
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
@@ -111,7 +112,7 @@ public class CodaGuiController {
 
     private static final String SCREENSHOT_TITLE = "CERT_Screenshot";
 
-    private static final String ABOUT_TEXT = "Version 1.0.20";
+    private static final String ABOUT_TEXT = "Version 1.0.21";
 
     @FXML
     private Node rootElement;
@@ -186,6 +187,8 @@ public class CodaGuiController {
 
     private ReferenceEventLoadingController refEventLoadingController;
 
+    private SpectraRatioLoadingController spectraRatioLoadingController;
+
     private CalibrationClient calibrationClient;
 
     private DirectoryChooser sacDirFileChooser = new DirectoryChooser();
@@ -197,6 +200,8 @@ public class CodaGuiController {
     private FileChooser referenceEventFileChooser = new FileChooser();
     private FileChooser psModelFileChooser = new FileChooser();
     private FileChooser fiModelFileChooser = new FileChooser();
+    private DirectoryChooser ratioDirFileChooser = new DirectoryChooser();
+    private FileChooser ratioFileChooser = new FileChooser();
     private final ExtensionFilter allFilesFilter = new ExtensionFilter("All Files", "*.*");
 
     private ParamExporter paramExporter;
@@ -229,16 +234,17 @@ public class CodaGuiController {
 
     @Autowired
     public CodaGuiController(LeafletMapController cctMapController, CertLeafletMapController certMapController, WaveformClient waveformClient, EnvelopeLoadingController waveformLoadingController,
-            CodaParamLoadingController codaParamLoadingController, ReferenceEventLoadingController refEventLoadingController, CalibrationClient calibrationClient, ParamExporter paramExporter,
-            LoadRatioEventsGuiController ratioLoadGui, WaveformGui waveformGui, DataController data, EventTableController eventTable, ParametersController param, ShapeController shape,
-            PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient, EnvelopeGuiController envelopeGui, SpectraRatioGuiController spectraGui,
-            HostnameVerifier hostnameVerifier, SSLContext sslContext, Environment env, EventBus bus) {
+            CodaParamLoadingController codaParamLoadingController, ReferenceEventLoadingController refEventLoadingController, SpectraRatioLoadingController spectraRatioLoadingController,
+            CalibrationClient calibrationClient, ParamExporter paramExporter, LoadRatioEventsGuiController ratioLoadGui, WaveformGui waveformGui, DataController data, EventTableController eventTable,
+            ParametersController param, ShapeController shape, PathController path, SiteController site, MeasuredMwsController measuredMws, ParameterClient configClient,
+            EnvelopeGuiController envelopeGui, SpectraRatioGuiController spectraGui, HostnameVerifier hostnameVerifier, SSLContext sslContext, Environment env, EventBus bus) {
         this.waveformClient = waveformClient;
         this.cctMapController = cctMapController;
         this.certMapController = certMapController;
         this.envelopeLoadingController = waveformLoadingController;
         this.codaParamLoadingController = codaParamLoadingController;
         this.refEventLoadingController = refEventLoadingController;
+        this.spectraRatioLoadingController = spectraRatioLoadingController;
         this.calibrationClient = calibrationClient;
         this.paramExporter = paramExporter;
         this.waveformGui = waveformGui;
@@ -283,6 +289,12 @@ public class CodaGuiController {
         referenceEventFileChooser.getExtensionFilters().add(new ExtensionFilter("Reference Event Files (.txt,.dat)", "*.txt", "*.dat"));
         referenceEventFileChooser.getExtensionFilters().add(allFilesFilter);
 
+        ratioFileChooser.setTitle("Load Coda Ratio Project File");
+        ratioFileChooser.getExtensionFilters().add(new ExtensionFilter("Coda Ratio Project File (.json)", "*.json"));
+        ratioFileChooser.getExtensionFilters().add(allFilesFilter);
+
+        ratioDirFileChooser.setTitle("Directory to save Coda Ratio Project");
+
         eventTableRefreshFunction = () -> this.bus.post(new RefreshEventTableAction());
     }
 
@@ -317,11 +329,6 @@ public class CodaGuiController {
                 mainTabPane.getTabs().remove(measuredMwsTab);
             });
         }
-    }
-
-    @FXML
-    private void openWaveformLoadingWindow() {
-        Optional.ofNullable(sacFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(envelopeLoadingController::loadFiles);
     }
 
     @FXML
@@ -421,6 +428,11 @@ public class CodaGuiController {
     }
 
     @FXML
+    private void openWaveformLoadingWindow() {
+        Optional.ofNullable(sacFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(envelopeLoadingController::loadFiles);
+    }
+
+    @FXML
     private void openCalibrationDataSavingWindow(ActionEvent e) {
         //Save all parameters to an archive file and prompt the user about where to save it.
         File selectedFile = FileDialogs.openFileSaveDialog("Calibration_Data", ".zip", rootElement.getScene().getWindow());
@@ -438,6 +450,16 @@ public class CodaGuiController {
                 FileDialogs.fileIoErrorAlert(ex);
             }
         }
+    }
+
+    @FXML
+    private void openRatiosLoadingWindow() {
+        Optional.ofNullable(ratioFileChooser.showOpenMultipleDialog(rootElement.getScene().getWindow())).ifPresent(spectraRatioLoadingController::loadFiles);
+    }
+
+    @FXML
+    private void openRatiosSavingWindow() {
+        Optional.ofNullable(ratioDirFileChooser.showDialog(rootElement.getScene().getWindow())).ifPresent(spectraRatioLoadingController::saveToDirectory);
     }
 
     @FXML

@@ -26,8 +26,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraRatioClient;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioMeasurementJob;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.SpectraRatiosReportDTO;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -66,5 +69,25 @@ public class SpectraRatioWebClient implements SpectraRatioClient {
                      .bodyToMono(SpectraRatiosReportDTO.class)
                      .map(SpectraRatiosReportDTO::getReport)
                      .map(SpectraRatiosReportByEventPair::new);
+    }
+
+    @Override
+    public Mono<SpectraRatioPairDetails> updateRatio(SpectraRatioPairDetails ratio) {
+        return client.post().uri("/spectra-ratios/update-ratio").bodyValue(ratio).retrieve().bodyToMono(SpectraRatioPairDetails.class);
+    }
+
+    @Override
+    public Flux<SpectraRatioPairDetails> getRatios() {
+        return client.get().uri("/spectra-ratios/all").retrieve().bodyToFlux(SpectraRatioPairDetails.class);
+    }
+
+    @Override
+    public Flux<SpectraRatioPairDetailsMetadata> getRatiosMetadata() {
+        return client.get().uri("/spectra-ratios/all-metadata-only").retrieve().bodyToFlux(SpectraRatioPairDetailsMetadata.class);
+    }
+
+    @Override
+    public Flux<String> loadRatioMetadata(long id, List<SpectraRatioPairDetailsMetadata> ratios) {
+        return client.post().uri("/spectra-ratios/load-ratios-metadata").bodyValue(ratios).retrieve().bodyToFlux(String.class);
     }
 }

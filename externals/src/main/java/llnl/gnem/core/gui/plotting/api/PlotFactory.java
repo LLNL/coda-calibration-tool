@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
@@ -26,11 +26,16 @@ public interface PlotFactory {
 
     public Line line(double[] xVals, double[] yVals, Color color, LineStyles style, int pxThickness);
 
+    public Line lineWithErrorBars(final double[] xVals, final double[] yVals, final double[] errorData, final double[] errorDataMinus);
+
     public Line lineX(String label, double startingX, double xIncrement, float[] xData, Color color, LineStyles style, int pxThickness);
 
     public VerticalLine verticalLine(double x, double yRatio, String label);
 
     public Rectangle rectangle(final double x1, final double x2, final double yRatio, final String label, final Color color);
+
+    public Rectangle rectangle(final double x1, final double x2, final int pxWidth, final double yRatio, final String label, final Color edgeColor, final Color fillColor, final boolean draggable,
+            final boolean logScaleX);
 
     public Symbol createSymbol(SymbolStyles style, String name, double x, double y, Color color, Color edgeColor, Color textColor, String text, boolean textVisible);
 

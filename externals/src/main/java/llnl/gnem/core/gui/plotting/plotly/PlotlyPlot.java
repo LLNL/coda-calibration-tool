@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -56,6 +56,8 @@ import javafx.stage.FileChooser;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.AxisLimits;
 import llnl.gnem.core.gui.plotting.api.BasicPlot;
+import llnl.gnem.core.gui.plotting.api.FillModes;
+import llnl.gnem.core.gui.plotting.api.HoverModes;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
 import llnl.gnem.core.gui.plotting.api.PlotObject;
@@ -134,6 +136,7 @@ public class PlotlyPlot implements BasicPlot {
         plotData.setShowWindowLines(false);
         plotData.setShowCodaStartLine(false);
         plotData.setAxes(new ArrayList<>(0));
+        plotData.setShowHorizontalErrorBars(true);
         plotData.setPlotReady(new AtomicBoolean(false));
         plotData.setDefaultTypePlots(new HashMap<>());
     }
@@ -394,6 +397,10 @@ public class PlotlyPlot implements BasicPlot {
             xdata.add(vline.getX());
             xdata.add(vline.getX());
 
+            if (vline.getHoverTemplate() != null) {
+                data.setHoverTemplate(vline.getHoverTemplate());
+            }
+
             if (data.getTraceStyle() == null) {
                 final PlotTrace traceStyle = populateStyle(vline, Style.VERTICAL_LINE, plot);
                 traceStyle.setPxSize(vline.getPxWidth());
@@ -416,6 +423,10 @@ public class PlotlyPlot implements BasicPlot {
             xdata.clear();
             xdata.add(rect.getX1());
             xdata.add(rect.getX2());
+
+            if (rect.getHoverTemplate() != null) {
+                data.setHoverTemplate(rect.getHoverTemplate());
+            }
 
             if (data.getTraceStyle() == null) {
                 final PlotTrace traceStyle = populateStyle(rect, Style.VERTICAL_LINE, plot);
@@ -440,6 +451,28 @@ public class PlotlyPlot implements BasicPlot {
             cdata.clear();
             cdata.addAll(Arrays.stream(line.getColor()).boxed().collect(Collectors.toList()));
 
+            final List<Double> errorDataMin = data.getErrorData();
+            errorDataMin.clear();
+            errorDataMin.addAll(Arrays.stream(line.getErrorData()).boxed().collect(Collectors.toList()));
+
+            final List<Double> errorDataMax = data.getErrorDataMinus();
+            errorDataMax.clear();
+            errorDataMax.addAll(Arrays.stream(line.getErrorDataMinus()).boxed().collect(Collectors.toList()));
+
+            data.setErrorBarsHorizontal(line.getUseHorizontalErrorBars());
+
+            if (line.getHoverTemplate() != null) {
+                data.setHoverTemplate(line.getHoverTemplate());
+            }
+
+            if (line.getHoverMode() != null) {
+                data.setHoverMode(line.getHoverMode());
+            }
+
+            if (line.getFillMode() != null) {
+                data.setFillMode(line.getFillMode());
+            }
+
             if (data.getTraceStyle() == null) {
                 final PlotTrace traceStyle = populateStyle(line, Style.LINE, plot);
                 traceStyle.setPxSize(line.getPxThickness());
@@ -457,6 +490,11 @@ public class PlotlyPlot implements BasicPlot {
             if (symbol.getColorationValue() != null) {
                 data.getColorData().add(symbol.getColorationValue());
             }
+
+            if (symbol.getHoverTemplate() != null) {
+                data.setHoverTemplate(symbol.getHoverTemplate());
+            }
+
             if (data.getTraceStyle() == null) {
                 final PlotTrace traceStyle = populateStyle(symbol, plot.getDefaultTraceStyle().getType(), plot);
                 traceStyle.setPxSize(plot.getDefaultTraceStyle().getPxSize());
@@ -515,6 +553,10 @@ public class PlotlyPlot implements BasicPlot {
 
     public void setShowWindowLines(final boolean showWindowLines) {
         this.plotData.setShowWindowLines(showWindowLines);
+    }
+
+    public void setShowHorizontalErrorBars(final boolean showHorizontalErrorBars) {
+        this.plotData.setShowHorizontalErrorBars(showHorizontalErrorBars);
     }
 
     @Override
@@ -611,6 +653,53 @@ public class PlotlyPlot implements BasicPlot {
                     final ArrayNode yNode = trace.arrayNode();
                     ydata.forEach(yNode::add);
                     trace.set("y", yNode);
+                }
+
+                // Hover mode
+                final HoverModes hoverInfo = data.getHoverMode();
+                if (hoverInfo != null) {
+                    trace.put("hoverinfo", hoverInfo.getHoverModeName());
+                }
+
+                // Fill mode
+                final FillModes fillMode = data.getFillMode();
+                if (fillMode != null) {
+                    trace.put("fill", fillMode.getFillModeName());
+                    trace.put("fillcolor", FxUtils.toWebHexColorString(data.getTraceStyle().getFillColor()));
+                }
+
+                // Hover template
+                final String hoverTemplate = data.getHoverTemplate();
+                if (hoverTemplate != null) {
+                    trace.put("hovertemplate", hoverTemplate);
+                }
+
+                // Error bars
+                final List<Double> errorData = data.getErrorData();
+                final List<Double> errorDataMinus = data.getErrorDataMinus();
+                if (errorData != null && errorDataMinus != null) {
+
+                    final ObjectNode errorBarNode = plotData.getMapper().createObjectNode();
+                    errorBarNode.put("type", "data");
+                    if (!errorData.isEmpty()) {
+                        final ArrayNode errorDataNode = trace.arrayNode();
+                        errorData.forEach(errorDataNode::add);
+                        errorBarNode.set("array", errorDataNode);
+                    }
+
+                    if (!errorDataMinus.isEmpty()) {
+                        final ArrayNode errorDataMinusNode = trace.arrayNode();
+                        errorDataMinus.forEach(errorDataMinusNode::add);
+                        errorBarNode.set("arrayminus", errorDataMinusNode);
+                    }
+
+                    if (errorBarNode.has("array") || errorBarNode.has("arrayminus")) {
+                        if (data.useHorizontalErrorBars()) {
+                            trace.set("error_x", errorBarNode);
+                        } else {
+                            trace.set("error_y", errorBarNode);
+                        }
+                    }
                 }
 
                 final List<Double[]> zdata = data.getZdata();

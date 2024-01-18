@@ -600,7 +600,9 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
         int numerEndIdx = numeratorSeries.getIndexForTime(new TimeT(ratioDetails.getNumerEndCutSec()).add(numerOriginTime).getEpochTime());
         int denomEndIdx = denominatorSeries.getIndexForTime(new TimeT(ratioDetails.getDenomEndCutSec()).add(denomOriginTime).getEpochTime());
 
+        this.ratioDetails.setUserEdited(false);
         this.ratioDetails.updateCutTimesAndRecalculateDiff(numerStartIdx, denomStartIdx, numerEndIdx, denomEndIdx);
+
         if (this.cutSegmentChangeListener != null) {
             CompletableFuture.runAsync(() -> {
                 cutSegmentProperty.firePropertyChange(new PropertyChangeEvent(this, "segment_change", null, null));
@@ -616,18 +618,22 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
                 case NUMERATOR_START_CUT_LABEL:
                     log.trace("Numerator start cut moved.");
                     adjustStartCuts(move.getX0());
+                    this.ratioDetails.setUserEdited(true);
                     break;
                 case NUMERATOR_END_CUT_LABEL:
                     log.trace("Numerator end cut moved.");
                     adjustEndCuts(move.getX0());
+                    this.ratioDetails.setUserEdited(true);
                     break;
                 case NUMERATOR_CUT_LABEL:
                     log.trace("Numerator cut moved.");
                     shiftCutByTime(move.getX0(), true);
+                    this.ratioDetails.setUserEdited(true);
                     break;
                 case DENOMINATOR_CUT_LABEL:
                     log.trace("Denominator cut moved.");
                     shiftCutByTime(move.getX0(), false);
+                    this.ratioDetails.setUserEdited(true);
                     break;
                 default:
                     log.trace("No cut moved.");

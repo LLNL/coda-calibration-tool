@@ -46,7 +46,6 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementC
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
-import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -107,7 +106,8 @@ public class CodaWaveformPlotManager {
     private final ShapeMeasurementClient shapeClient;
     private final ParameterClient paramsClient;
     private final PeakVelocityClient peakVelocityClient;
-    private final GeoMap map;
+    private final LeafletMapController cctMap;
+    private final CertLeafletMapController certMap;
     private final MapPlottingUtilities mapPlotUtils;
     private final ToolBar multiPageToolbar;
     private final ToolBar multiFrequencyToolbar;
@@ -325,12 +325,13 @@ public class CodaWaveformPlotManager {
     };
 
     public CodaWaveformPlotManager(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
-            final GeoMap map, final MapPlottingUtilities mapPlotUtils) {
+            final CertLeafletMapController certMap, final LeafletMapController cctMap, final MapPlottingUtilities mapPlotUtils) {
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
         this.peakVelocityClient = peakVelocityClient;
-        this.map = map;
+        this.cctMap = cctMap;
+        this.certMap = certMap;
         this.mapPlotUtils = mapPlotUtils;
         this.borderPane = new BorderPane();
         this.waveformPanel = new VBox();
@@ -612,7 +613,8 @@ public class CodaWaveformPlotManager {
         if (waveform != null) {
             final Collection<Icon> icons = mapWaveform(waveform);
             mappedIcons.addAll(icons);
-            map.addIcons(icons);
+            cctMap.addIcons(icons);
+            certMap.addIcons(icons);
             if (plot != null) {
                 plot.setMargin(null, null, null, null);
                 plot.getxAxis().setText(TIME_SECONDS_FROM_ORIGIN);
@@ -642,7 +644,8 @@ public class CodaWaveformPlotManager {
     private void clear() {
         final List<Icon> oldIcons = mappedIcons;
         mappedIcons = new ArrayList<>();
-        map.removeIcons(oldIcons);
+        cctMap.removeIcons(oldIcons);
+        certMap.removeIcons(oldIcons);
         synchronized (bagLock) {
             plotBag.addAll(orderedWaveformPlots.values().stream().filter(plot -> {
                 plot.setAxisChangeListener(null);
@@ -801,9 +804,11 @@ public class CodaWaveformPlotManager {
 
     public void setVisible(final boolean visible) {
         if (visible) {
-            map.addIcons(mappedIcons);
+            cctMap.addIcons(mappedIcons);
+            certMap.addIcons(mappedIcons);
         } else {
-            map.removeIcons(mappedIcons);
+            cctMap.removeIcons(mappedIcons);
+            certMap.removeIcons(mappedIcons);
         }
     }
 
@@ -917,7 +922,8 @@ public class CodaWaveformPlotManager {
                 orderedWaveformPlots.put(index, plotPair.getY());
                 final Collection<Icon> icons = mapWaveform(waveform);
                 mappedIcons.addAll(icons);
-                map.addIcons(icons);
+                cctMap.addIcons(icons);
+                certMap.addIcons(icons);
                 if (plot != null) {
                     if (plotPairs.size() > 1) {
                         if (i == plotPairs.size() - 1) {

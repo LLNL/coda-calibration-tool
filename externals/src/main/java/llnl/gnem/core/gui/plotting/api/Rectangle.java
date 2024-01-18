@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2022, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -30,6 +30,27 @@ public class Rectangle implements PlotObject {
     private String text;
     private Integer zIndex;
     private boolean logScaleX;
+    private String hoverTemplate;
+    private Boolean showInLegend;
+    private String legendGroup;
+    private Boolean legendOnly;
+
+    public Rectangle(Rectangle other) {
+        this.canDrag = other.canDrag;
+        this.x1 = other.x1;
+        this.x2 = other.x2;
+        this.ratioY = other.ratioY;
+        this.pxWidth = other.pxWidth;
+        this.edgeColor = other.edgeColor;
+        this.fillColor = other.fillColor;
+        this.text = other.text;
+        this.zIndex = other.zIndex;
+        this.logScaleX = other.logScaleX;
+        this.showInLegend = other.showInLegend;
+        this.legendGroup = other.legendGroup;
+        this.legendOnly = other.legendOnly;
+
+    }
 
     public Rectangle(final double x1, final double x2, final double yRatio, final String label, final Color color) {
         this.x1 = x1;
@@ -38,7 +59,7 @@ public class Rectangle implements PlotObject {
         this.ratioY = yRatio;
         this.text = label;
         this.edgeColor = color;
-        this.fillColor = Color.rgb(128, 128, 128, 1.0); // No fill by default
+        this.fillColor = Color.rgb(128, 128, 128, 0.0); // No fill by default
         this.canDrag = false;
         this.logScaleX = false;
     }
@@ -162,9 +183,49 @@ public class Rectangle implements PlotObject {
         return this;
     }
 
+    public String getHoverTemplate() {
+        return hoverTemplate;
+    }
+
+    public void setHoverTemplate(String hoverTemplate) {
+        this.hoverTemplate = hoverTemplate;
+    }
+
+    public Boolean getShowInLegend() {
+        return showInLegend;
+    }
+
+    @Override
+    public PlotObject showInLegend(Boolean showInLegend) {
+        this.showInLegend = showInLegend;
+        return this;
+    }
+
+    @Override
+    public String getLegendGrouping() {
+        return legendGroup;
+    }
+
+    @Override
+    public PlotObject setLegendGrouping(String legendGroup) {
+        this.legendGroup = legendGroup;
+        return this;
+    }
+
+    @Override
+    public Boolean getLegendOnly() {
+        return legendOnly;
+    }
+
+    @Override
+    public PlotObject setLegendOnly(Boolean legendOnly) {
+        this.legendOnly = legendOnly;
+        return this;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(canDrag, edgeColor, fillColor, logScaleX, pxWidth, ratioY, text, x1, x2, zIndex);
+        return Objects.hash(canDrag, edgeColor, fillColor, hoverTemplate, legendGroup, legendOnly, logScaleX, pxWidth, ratioY, showInLegend, text, x1, x2, zIndex);
     }
 
     @Override
@@ -179,9 +240,13 @@ public class Rectangle implements PlotObject {
         return canDrag == other.canDrag
                 && Objects.equals(edgeColor, other.edgeColor)
                 && Objects.equals(fillColor, other.fillColor)
+                && Objects.equals(hoverTemplate, other.hoverTemplate)
+                && Objects.equals(legendGroup, other.legendGroup)
+                && Objects.equals(legendOnly, other.legendOnly)
                 && logScaleX == other.logScaleX
                 && pxWidth == other.pxWidth
                 && Double.doubleToLongBits(ratioY) == Double.doubleToLongBits(other.ratioY)
+                && Objects.equals(showInLegend, other.showInLegend)
                 && Objects.equals(text, other.text)
                 && Double.doubleToLongBits(x1) == Double.doubleToLongBits(other.x1)
                 && Double.doubleToLongBits(x2) == Double.doubleToLongBits(other.x2)
@@ -191,27 +256,35 @@ public class Rectangle implements PlotObject {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("Rectangle [canDrag=");
-        builder.append(canDrag);
-        builder.append(", x1=");
-        builder.append(x1);
-        builder.append(", x2=");
-        builder.append(x2);
-        builder.append(", ratioY=");
-        builder.append(ratioY);
-        builder.append(", pxWidth=");
-        builder.append(pxWidth);
-        builder.append(", edgeColor=");
-        builder.append(edgeColor);
-        builder.append(", fillColor=");
-        builder.append(fillColor);
-        builder.append(", text=");
-        builder.append(text);
-        builder.append(", zIndex=");
-        builder.append(zIndex);
-        builder.append(", logScaleX=");
-        builder.append(logScaleX);
-        builder.append("]");
+        builder.append("Rectangle [canDrag=")
+               .append(canDrag)
+               .append(", x1=")
+               .append(x1)
+               .append(", x2=")
+               .append(x2)
+               .append(", ratioY=")
+               .append(ratioY)
+               .append(", pxWidth=")
+               .append(pxWidth)
+               .append(", edgeColor=")
+               .append(edgeColor)
+               .append(", fillColor=")
+               .append(fillColor)
+               .append(", text=")
+               .append(text)
+               .append(", zIndex=")
+               .append(zIndex)
+               .append(", logScaleX=")
+               .append(logScaleX)
+               .append(", hoverTemplate=")
+               .append(hoverTemplate)
+               .append(", showInLegend=")
+               .append(showInLegend)
+               .append(", legendGroup=")
+               .append(legendGroup)
+               .append(", legendOnly=")
+               .append(legendOnly)
+               .append("]");
         return builder.toString();
     }
 }

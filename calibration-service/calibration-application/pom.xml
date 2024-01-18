@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>calibration-service</artifactId>
-		<version>1.0.20</version>
+		<version>1.0.21</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -112,7 +112,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<exuctable>true</exuctable>
+					<executable>true</executable>
 					<mainClass>gov.llnl.gnem.apps.coda.calibration.CalibrationApplication</mainClass>
 					<classifier>runnable</classifier>
 					<excludeDevtools>true</excludeDevtools>

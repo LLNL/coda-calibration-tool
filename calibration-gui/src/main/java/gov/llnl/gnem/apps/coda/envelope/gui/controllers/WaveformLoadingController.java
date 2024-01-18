@@ -181,7 +181,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
         bus.post(progressEvent);
 
         evidStaFreqMap.entrySet().parallelStream().forEach(entry -> {
-            if (entry.getValue().size() > 1) {
+            if (!entry.getValue().isEmpty()) {
                 List<File> files = entry.getValue();
                 Map<String, List<Waveform>> waveformsByFreqAndSta = new HashMap<>();
 
@@ -241,7 +241,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
         // FIXME: Duplicate of the one in service.
         //             Need a common-utils because this pulls in stuff from Externals for TimeSeries etc so I can't cheat and slam it into the common model.
         Waveform base = null;
-        if (waves != null && waves.size() > 1) {
+        if (waves != null && !waves.isEmpty()) {
             try {
                 base = waves.get(0);
                 TimeSeries seis = convertToTimeSeries(base);
@@ -272,7 +272,7 @@ public class WaveformLoadingController extends AbstractSeismogramSaveLoadControl
                 log.info(e.getMessage(), e);
             }
         } else {
-            log.info("Waveform with only one channel found for list {}, skipping stacking", waves);
+            log.info("Empty list provided for creating envelopes, skipping");
         }
         return base;
     }

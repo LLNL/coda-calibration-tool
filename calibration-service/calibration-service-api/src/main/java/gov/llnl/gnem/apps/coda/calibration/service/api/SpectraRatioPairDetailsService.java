@@ -22,6 +22,7 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.service.api.BaseService;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatiosReport;
 
 public interface SpectraRatioPairDetailsService extends BaseService<SpectraRatioPairDetails, Long> {
@@ -30,4 +31,9 @@ public interface SpectraRatioPairDetailsService extends BaseService<SpectraRatio
 
     public Future<Result<SpectraRatiosReport>> makeSpectraRatioMeasurementsFromWaveforms(Boolean autoPickingEnabled, Boolean persistResults, Set<String> smallEventIds, Set<String> largeEventIds);
 
+    public SpectraRatioPairDetails update(SpectraRatioPairDetails ratio);
+
+    public List<SpectraRatioPairDetailsMetadata> findAllMetadataOnly();
+
+    public List<String> loadRatioMetadata(List<SpectraRatioPairDetailsMetadata> ratios);
 }

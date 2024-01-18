@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -23,6 +23,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -128,6 +129,11 @@ public class LeafletMapController implements GeoMap {
     @Override
     public long getIconCount() {
         return mapImpl.getIconCount();
+    }
+
+    @Override
+    public Set<Icon> getIcons() {
+        return mapImpl.getIcons();
     }
 
     @Override

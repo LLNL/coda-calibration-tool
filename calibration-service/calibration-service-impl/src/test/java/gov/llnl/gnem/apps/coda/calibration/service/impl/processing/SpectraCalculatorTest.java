@@ -459,7 +459,7 @@ public class SpectraCalculatorTest {
 
     @Test
     public void testCalcTotalEnergyInfo() throws Exception {
-        // testCalcTotalEnergyOutput(testInputData, 15.43, 2.279, 10.97);
+        testCalcTotalEnergyOutput(testInputData, 15.43, 2.279, 10.97);
         testCalcTotalEnergyOutput(2.0, 1.0, 0.01, 200.0);
         // testFitMwOutput(2.0, 1.0, 0.01, 200.0);
         testCalcTotalEnergyOutput(5.0, 1.0, 0.01, 200.0);

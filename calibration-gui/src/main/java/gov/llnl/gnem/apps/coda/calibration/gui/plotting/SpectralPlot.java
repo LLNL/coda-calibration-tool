@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -17,11 +17,13 @@ package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwDetails;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
@@ -42,13 +44,17 @@ import javafx.scene.paint.Color;
 import llnl.gnem.core.gui.plotting.api.Axis;
 import llnl.gnem.core.gui.plotting.api.AxisLimits;
 import llnl.gnem.core.gui.plotting.api.BasicPlot;
+import llnl.gnem.core.gui.plotting.api.FillModes;
+import llnl.gnem.core.gui.plotting.api.HoverModes;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
+import llnl.gnem.core.gui.plotting.api.ObjectGroup;
 import llnl.gnem.core.gui.plotting.api.PlotFactory;
 import llnl.gnem.core.gui.plotting.api.PlotObject;
 import llnl.gnem.core.gui.plotting.api.PlottingUtils;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.SymbolStyles;
+import llnl.gnem.core.gui.plotting.plotly.BasicObjectGroup;
 
 public class SpectralPlot extends Pane implements Serializable {
 
@@ -187,7 +193,7 @@ public class SpectralPlot extends Pane implements Serializable {
      *            calibration spectra
      *            </p>
      */
-    public void plotXYdata(final List<PlotPoint> plots, final List<Spectra> spectra, final String label) {
+    public void plotXYdata(final List<PlotPoint> plots, final List<Spectra> spectra, final MeasuredMwDetails mwDetails, final String label) {
         plot.clear();
 
         if (plots.size() > 1) {
@@ -214,7 +220,7 @@ public class SpectralPlot extends Pane implements Serializable {
         if (spectra != null) {
             for (final Spectra spec : spectra) {
                 if (plotCorners && spec.getCornerFrequency() != null) {
-                    plotCornerFrequency(spec.getCornerFrequency());
+                    plotCornerFrequency("~Fc", spec, mwDetails, Color.BLACK);
                 }
                 plotSpectraObject(plot, spec);
             }
@@ -227,8 +233,91 @@ public class SpectralPlot extends Pane implements Serializable {
         plot.replot();
     }
 
-    private void plotCornerFrequency(final double cornerFreq) {
-        plot.addPlotObject(plotFactory.verticalLine(cornerFreq, 50, "~Fc (" + dfmt.format(cornerFreq) + ")").setDraggable(false).setLogScaleX(true).setFillColor(Color.BLACK));
+    private void plotCornerFrequency(final String name, final Spectra spec, final MeasuredMwDetails mwDetails, final Color color) {
+        List<Double> mwValuesY = spec.getSpectraXY().stream().map(d -> d.getY() - 7.0).collect(Collectors.toList());
+
+        Double minY = Collections.min(mwValuesY);
+        Double maxY = Collections.max(mwValuesY);
+        Double cF = spec.getCornerFrequency();
+
+        double error = 0.0;
+        double errorMinus = 0.0;
+
+        if (mwDetails != null) {
+            error = mwDetails.getCornerFreq2Max();
+            errorMinus = mwDetails.getCornerFreq2Min();
+        }
+
+        ObjectGroup cornerFreqLine = buildVerticalLineWithHorizontalErrorBars(name, cF, maxY, minY, error, errorMinus, color);
+        cornerFreqLine.plotGroup(plot);
+    }
+
+    public void plotCornerFrequency(String name, final Double cornerFreq, final Double error, final Double errorMinus, final Double topY, final Double bottomY, final Color color) {
+        ObjectGroup cornerFreqLine = buildVerticalLineWithHorizontalErrorBars(name, cornerFreq, topY, bottomY, error, errorMinus, color);
+        cornerFreqLine.getLegendObject().setFillColor(Color.BLACK);
+        cornerFreqLine.plotGroup(plot);
+    }
+
+    public ObjectGroup buildVerticalLineWithHorizontalErrorBars(final String name, final Double x, final Double topY, final Double bottomY, final Double error, final Double errorMinus,
+            final Color color) {
+
+        final double[] xPos = new double[1];
+        final double[] shadowX = new double[5];
+        final double[] shadowY = new double[5];
+        final double[] maxY = new double[1];
+        final double[] midY = new double[1];
+        final double[] minY = new double[1];
+        final double[] e1 = new double[1];
+        final double[] e2 = new double[1];
+        final double[] height = new double[1];
+
+        xPos[0] = x;
+        maxY[0] = topY;
+        minY[0] = bottomY;
+        midY[0] = (topY + bottomY) / 2.0;
+        e1[0] = error - x;
+        e2[0] = x - errorMinus;
+        height[0] = (topY - bottomY) / 2.0;
+
+        // Setting shadow box coordinates
+        shadowX[0] = errorMinus;
+        shadowX[1] = errorMinus;
+        shadowX[2] = error;
+        shadowX[3] = error;
+        shadowX[4] = errorMinus;
+        shadowY[0] = topY;
+        shadowY[1] = bottomY;
+        shadowY[2] = bottomY;
+        shadowY[3] = topY;
+        shadowY[4] = topY;
+
+        Line shadowBox = plotFactory.line(shadowX, shadowY, color.deriveColor(0.0, 1.0, 1.0, 0.1), LineStyles.SOLID, 1);
+        shadowBox.setFillMode(FillModes.TO_SELF); // Fills the area between the lines
+        shadowBox.setHoverMode(HoverModes.SKIP); // Skips hover actions for the shadow box
+
+        Line valueLine = plotFactory.lineWithErrorBars(xPos, midY, height, height);
+        valueLine.setFillColor(color);
+        valueLine.setUseHorizontalErrorBars(false);
+
+        Line topErrorLine = plotFactory.lineWithErrorBars(xPos, maxY, e1, e2);
+        topErrorLine.setFillColor(color);
+        topErrorLine.setUseHorizontalErrorBars(true);
+
+        Line botErrorLine = plotFactory.lineWithErrorBars(xPos, minY, e1, e2);
+        botErrorLine.setFillColor(color);
+        botErrorLine.setUseHorizontalErrorBars(true);
+
+        ObjectGroup cornerFreqBar = new BasicObjectGroup(plotFactory, name);
+        cornerFreqBar.setHoverName(name);
+        cornerFreqBar.setHoverTemplate("%{x:.2f} (" + dfmt.format(errorMinus) + ", " + dfmt.format(error) + ")");
+
+        // Order matters! Add shadow first to plot it under error bars.
+        cornerFreqBar.addPlotObject(shadowBox);
+        cornerFreqBar.addPlotObject(valueLine);
+        cornerFreqBar.addPlotObject(topErrorLine);
+        cornerFreqBar.addPlotObject(botErrorLine);
+
+        return cornerFreqBar;
     }
 
     private void plotSpectraObject(final BasicPlot jsubplot, final Spectra spectra) {

@@ -30,7 +30,6 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClien
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
-import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -68,20 +67,22 @@ public class WaveformGui {
     private final ShapeMeasurementClient shapeClient;
     private final ParameterClient paramsClient;
     private final PeakVelocityClient peakVelocityClient;
-    private final GeoMap map;
+    private final CertLeafletMapController certMap;
+    private final LeafletMapController cctMap;
     private final MapPlottingUtilities mapPlotUtilities;
     private final Property<Boolean> shouldFocus = new SimpleBooleanProperty(false);
     private final DirectoryChooser screenshotFolderChooser = new DirectoryChooser();
 
     @Autowired
-    public WaveformGui(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient, final GeoMap map,
-            final MapPlottingUtilities mapPlotUtilities, final EventBus bus) {
+    public WaveformGui(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
+            final LeafletMapController cctMap, final CertLeafletMapController certMap, final MapPlottingUtilities mapPlotUtilities, final EventBus bus) {
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
         this.peakVelocityClient = peakVelocityClient;
-        this.map = map;
         this.mapPlotUtilities = mapPlotUtilities;
+        this.cctMap = cctMap;
+        this.certMap = certMap;
         bus.register(this);
         Platform.runLater(() -> {
             final FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/WaveformGui.fxml"));
@@ -122,13 +123,14 @@ public class WaveformGui {
     @FXML
     public void initialize() {
         final Label label = new Label("\uE3B0");
+
         label.getStyleClass().add("material-icons-medium");
         label.setMaxHeight(16);
         label.setMinWidth(16);
         snapshotButton.setGraphic(label);
         snapshotButton.setContentDisplay(ContentDisplay.CENTER);
         screenshotFolderChooser.setTitle("Screenshot Export Folder");
-        waveformPlotManager = new CodaWaveformPlotManager(waveformClient, shapeClient, paramsClient, peakVelocityClient, map, mapPlotUtilities);
+        waveformPlotManager = new CodaWaveformPlotManager(waveformClient, shapeClient, paramsClient, peakVelocityClient, certMap, cctMap, mapPlotUtilities);
         waveformPlotManager.attachToDisplayNode(waveformPlotNode);
         stage.setOnCloseRequest(evt -> {
             waveformPlotManager.setSavedAxisLimits(null);

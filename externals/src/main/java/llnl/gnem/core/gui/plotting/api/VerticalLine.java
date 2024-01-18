@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -28,6 +28,19 @@ public class VerticalLine implements PlotObject {
     private String text;
     private Integer zIndex;
     private boolean logScaleX;
+    private String hoverTemplate;
+
+    public VerticalLine(VerticalLine other) {
+        this.canDrag = other.canDrag;
+        this.x = other.x;
+        this.ratioY = other.ratioY;
+        this.fillColor = other.fillColor;
+        this.pxWidth = other.pxWidth;
+        this.text = other.text;
+        this.zIndex = other.zIndex;
+        this.logScaleX = other.logScaleX;
+        this.hoverTemplate = other.hoverTemplate;
+    }
 
     public VerticalLine(final double x, final double yRatio, final String label) {
         this.x = x;
@@ -144,6 +157,14 @@ public class VerticalLine implements PlotObject {
     public VerticalLine setLogScaleX(boolean logScaleX) {
         this.logScaleX = logScaleX;
         return this;
+    }
+
+    public String getHoverTemplate() {
+        return hoverTemplate;
+    }
+
+    public void setHoverTemplate(String hoverTemplate) {
+        this.hoverTemplate = hoverTemplate;
     }
 
     @Override

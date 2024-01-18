@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -39,18 +39,21 @@ import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraRatioClient;
+import gov.llnl.gnem.apps.coda.calibration.gui.plotting.CertLeafletMapController;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioMeasurementEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioStatusEvent.Status;
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraEvent;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -62,6 +65,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+import llnl.gnem.core.util.Geometry.EModel;
 
 @Component
 public class SpectraRatioGuiController implements RefreshableController {
@@ -84,6 +88,9 @@ public class SpectraRatioGuiController implements RefreshableController {
     private TableColumn<SpectraEvent, String> dateCol;
 
     @FXML
+    private TableColumn<SpectraEvent, Double> distanceCol;
+
+    @FXML
     private TableColumn<SpectraEvent, CheckBox> numCol;
 
     @FXML
@@ -99,6 +106,9 @@ public class SpectraRatioGuiController implements RefreshableController {
     private MenuItem deselectRowsBtn;
 
     @FXML
+    private MenuItem calculateDistanceBtn;
+
+    @FXML
     private Button calcRatioBtn;
 
     private Alert alertPopup;
@@ -108,6 +118,9 @@ public class SpectraRatioGuiController implements RefreshableController {
     private EventClient eventClient;
     private SpectraClient spectraClient;
     private SpectraRatioClient spectraRatioClient;
+    private CertLeafletMapController certMapController;
+
+    private Event selectedEventForDistCalc;
 
     private EventBus bus;
     private boolean calculationProcessing = false;
@@ -129,11 +142,12 @@ public class SpectraRatioGuiController implements RefreshableController {
 
     private Stage stage;
 
-    public SpectraRatioGuiController(EventClient eventClient, SpectraClient spectraClient, SpectraRatioClient spectraRatioClient, EventBus bus, ConfigurableApplicationContext springContext)
-            throws IOException {
+    public SpectraRatioGuiController(EventClient eventClient, SpectraClient spectraClient, CertLeafletMapController certMapController, SpectraRatioClient spectraRatioClient, EventBus bus,
+            ConfigurableApplicationContext springContext) throws IOException {
         this.eventClient = eventClient;
         this.spectraClient = spectraClient;
         this.spectraRatioClient = spectraRatioClient;
+        this.certMapController = certMapController;
         this.bus = bus;
     }
 
@@ -177,6 +191,18 @@ public class SpectraRatioGuiController implements RefreshableController {
         return eventSpectra.getMw();
     }
 
+    private Double getEventDistance(SpectraEvent spectraEvent) {
+        Event event = eventClient.getEvent(spectraEvent.getEventID()).block();
+
+        // Calculate event distance based from selected event
+        if (event != null && selectedEventForDistCalc != null) {
+
+            return EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), selectedEventForDistCalc.getLatitude(), selectedEventForDistCalc.getLongitude());
+        }
+
+        return 0.0;
+    }
+
     public void loadEnvelopes() {
         requestData();
     }
@@ -185,11 +211,22 @@ public class SpectraRatioGuiController implements RefreshableController {
     public void initialize() {
         bus.register(this);
         this.alertPopup = new Alert(Alert.AlertType.INFORMATION);
+        this.selectedEventForDistCalc = null;
         alertPopup.setTitle("Notice");
         alertPopup.setHeaderText(null);
         alertPopup.setContentText("You need to select at least 1 numerator event and 1 denominator event to calculate ratios.");
 
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        tableView.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<SpectraEvent>() {
+            @Override
+            public void onChanged(Change<? extends SpectraEvent> c) {
+                List<Event> events = c.getList().stream().map(s -> eventClient.getEvent(s.getEventID()).block()).collect(Collectors.toList());
+                List<Event> allEvents = tableView.getItems().stream().map(s -> eventClient.getEvent(s.getEventID()).block()).collect(Collectors.toList());
+                certMapController.setEventIconsInActive(allEvents);
+                certMapController.setEventIconsActive(events);
+            }
+        });
+
         eventCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(SpectraEvent::getEventID).orElseGet(String::new)));
         eventCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
@@ -212,6 +249,8 @@ public class SpectraRatioGuiController implements RefreshableController {
             return box;
         }).orElseGet(CheckBox::new)));
         numCol.comparatorProperty().set((c1, c2) -> Boolean.compare(c1.isSelected(), c2.isSelected()));
+
+        distanceCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventDistance).orElseGet(null)));
 
         denCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(event -> {
             CheckBox box = new CheckBox();
@@ -276,6 +315,14 @@ public class SpectraRatioGuiController implements RefreshableController {
                     denBox.setSelected(false);
                 }
             });
+        }
+    }
+
+    @FXML
+    private void calculateDistance() {
+        if (tableView != null) {
+            selectedEventForDistCalc = eventClient.getEvent(tableView.getSelectionModel().getSelectedItems().get(0).getEventID()).block();
+            tableView.refresh();
         }
     }
 

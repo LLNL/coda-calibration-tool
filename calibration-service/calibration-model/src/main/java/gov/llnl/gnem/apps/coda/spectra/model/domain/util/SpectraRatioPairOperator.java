@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2022, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -20,10 +20,13 @@ import java.beans.PropertyChangeSupport;
 import java.util.Arrays;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.EventPair;
 
 public class SpectraRatioPairOperator {
 
@@ -77,6 +80,16 @@ public class SpectraRatioPairOperator {
     public Station getStation() {
         if (this.getNumerWaveform() != null) {
             return this.getNumerWaveform().getStream().getStation();
+        }
+        return null;
+    }
+
+    public EventPair getEventPair() {
+        if (this.getNumerWaveform() != null && this.getDenomWaveform() != null) {
+            EventPair eventPair = new EventPair();
+            eventPair.setY(this.getNumerWaveform().getEvent());
+            eventPair.setX(this.getDenomWaveform().getEvent());
+            return eventPair;
         }
         return null;
     }
@@ -410,9 +423,21 @@ public class SpectraRatioPairOperator {
         ratio.setDenomEndCutIdx(denomEndCutIdx);
     }
 
+    public boolean isUserEdited() {
+        return ratio.isUserEdited();
+    }
+
+    public void setUserEdited(boolean userEdited) {
+        ratio.setUserEdited(userEdited);
+    }
+
     @Override
     public String toString() {
         return ratio.toString();
     }
 
+    @JsonIgnore
+    public SpectraRatioPairDetails getRatio() {
+        return ratio;
+    }
 }

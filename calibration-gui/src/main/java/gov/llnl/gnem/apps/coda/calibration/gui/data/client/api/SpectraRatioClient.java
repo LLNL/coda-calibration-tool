@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -18,7 +18,10 @@ import java.util.List;
 import java.util.Set;
 
 import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface SpectraRatioClient {
@@ -27,4 +30,11 @@ public interface SpectraRatioClient {
 
     public Mono<SpectraRatiosReportByEventPair> makeSpectraRatioMeasurementsFromRatioData(Set<String> smallEventIds, Set<String> largeEventIds, List<RatioEventData> ratioEventData);
 
+    public Mono<SpectraRatioPairDetails> updateRatio(SpectraRatioPairDetails ratio);
+
+    public Flux<SpectraRatioPairDetails> getRatios();
+
+    public Flux<SpectraRatioPairDetailsMetadata> getRatiosMetadata();
+
+    public Flux<String> loadRatioMetadata(long andIncrement, List<SpectraRatioPairDetailsMetadata> ratios);
 }

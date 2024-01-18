@@ -6,7 +6,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>coda-calibration</artifactId>
-	<version>1.0.20</version>
+	<version>1.0.21</version>
 	<name>coda-calibration</name>
 
 	<packaging>pom</packaging>
@@ -18,14 +18,6 @@
 		<module>calibration-gui</module>
 		<module>calibration-standalone</module>
 	</modules>
-
-	<distributionManagement>
-	 <repository>
-	  <id>github</id>
-	  <name>GitHub Maven Packages</name>
-	  <url>https://maven.pkg.github.com/LLNL/coda-calibration-tool</url>
-	 </repository>
-	</distributionManagement>
 
 	<profiles>
 		<profile>

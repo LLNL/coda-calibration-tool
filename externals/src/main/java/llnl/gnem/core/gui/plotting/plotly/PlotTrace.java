@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -39,6 +39,7 @@ public class PlotTrace {
     private Integer zIndex;
     private Boolean showLegend;
     private String legendGroup;
+    private String hoverTemplate;
     private Boolean legendOnly;
     private Boolean draggable;
     private String xAxisId;
@@ -257,6 +258,9 @@ public class PlotTrace {
         }
         if (legendGroup != null) {
             node.put("legendgroup", legendGroup);
+        }
+        if (hoverTemplate != null) {
+            node.put("hovertemplate", hoverTemplate);
         }
         if (Boolean.TRUE.equals(legendOnly)) {
             if (legendGroup != null) {

@@ -63,8 +63,6 @@ public class MdacCalculator {
     private double K;
 
     public MdacCalculator(double sigma, double M0ref, double Psi, double Zeta, double AlphaS, double BetaS, double RadpatP, double RadpatS, double M0) {
-        sigmaA = getApparentStress(MPA_TO_PA * sigma, M0, M0ref, Psi);
-        wcvels = getCornerFrequencies(Zeta, AlphaS, BetaS, RadpatP, RadpatS, sigmaA, M0);
         this.zeta = Zeta;
         this.alphaS = AlphaS;
         this.betaS = BetaS;
@@ -72,6 +70,8 @@ public class MdacCalculator {
         this.radpatS = RadpatS;
         this.m0_ref = M0ref;
         this.K = calculateK(zeta, alphaS, betaS, radpatP, radpatS);
+        sigmaA = getApparentStress(MPA_TO_PA * sigma, M0, M0ref, Psi);
+        wcvels = getCornerFrequencies(Zeta, AlphaS, BetaS, RadpatP, RadpatS, sigmaA, M0);
     }
 
     /**
@@ -285,14 +285,8 @@ public class MdacCalculator {
      * betas^5}}
      */
     private double[][] getCornerFrequencies(double zeta, double alphas, double betas, double radpatp, double radpats, double sigmaA, double M0) {
-        double z3 = Math.pow(zeta, 3);
         double a5 = Math.pow(alphas, 5);
         double b5 = Math.pow(betas, 5);
-        double b2 = Math.pow(betas, 2);
-
-        double tmpp = (radpatp * radpatp * z3) / a5;
-        double tmps = (radpats * radpats) / b5;
-        double K = (16. * Math.PI) / (b2 * (tmpp + tmps));
         double wcs = Math.pow(((K * sigmaA) / M0), (1.0 / 3.0));
         double wcp = zeta * wcs;
 

@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -41,6 +41,10 @@ public interface Symbol extends PlotObject {
     public boolean isTextVisible();
 
     public void setTextVisible(boolean textVisible);
+
+    public String getHoverTemplate();
+
+    public void setHoverTemplate(String hoverTemplate);
 
     public Double getColorationValue();
 

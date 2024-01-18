@@ -29,9 +29,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -58,11 +62,16 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ReferenceMwParame
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ShapeFitterConstraintsFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SharedFrequencyBandParametersFileMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SiteFrequencyBandParametersFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.SpectraRatioPairDetailsMetadataMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ValidationMwParametersFileMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.WaveformMetadataMixin;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.WaveformPickMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
-import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.common.model.domain.WaveformMetadata;
+import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 
 @Component
 public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter, ValidationMwTempFileWriter, SpectraRatioTempFileWriter {
@@ -74,6 +83,8 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
     private static final String RATIO_JSON_NAME = "Spectra_Ratio_Pair_Details.json";
 
     private ObjectMapper mapper;
+
+    private ObjectMapper streamedMapper;
 
     public JsonTempFileWriter() {
         mapper = new ObjectMapper();
@@ -87,6 +98,20 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
         mapper.addMixIn(MdacParametersFI.class, MdacFiFileMixin.class);
         mapper.addMixIn(MdacParametersPS.class, MdacPsFileMixin.class);
         mapper.addMixIn(ValidationMwParameters.class, ValidationMwParametersFileMixin.class);
+        mapper.addMixIn(SpectraRatioPairDetailsMetadata.class, SpectraRatioPairDetailsMetadataMixin.class);
+        mapper.addMixIn(WaveformMetadata.class, WaveformMetadataMixin.class);
+        mapper.addMixIn(WaveformPick.class, WaveformPickMixin.class);
+
+        //For writing to an output stream we don't control so
+        //Jackson doesn't attempt to close it when we go out of scope
+        JsonFactory jsonFactory = new JsonFactory();
+        jsonFactory.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+        jsonFactory.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
+
+        streamedMapper = new ObjectMapper(jsonFactory);
+        streamedMapper.addMixIn(SpectraRatioPairDetailsMetadata.class, SpectraRatioPairDetailsMetadataMixin.class);
+        streamedMapper.addMixIn(WaveformMetadata.class, WaveformMetadataMixin.class);
+        streamedMapper.addMixIn(WaveformPick.class, WaveformPickMixin.class);
     }
 
     @Override
@@ -142,12 +167,12 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
     }
 
     @Override
-    public void writeSpectraRatioDetails(Path folder, List<SpectraRatioPairDetails> spectraRatioPairDetails) {
+    public void writeSpectraRatioDetails(Path folder, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails) {
         writeSpectraRatioDetails(folder, RATIO_JSON_NAME, spectraRatioPairDetails);
     }
 
     @Override
-    public void writeSpectraRatioDetails(Path folder, String filename, List<SpectraRatioPairDetails> spectraRatioPairDetails) {
+    public void writeSpectraRatioDetails(Path folder, String filename, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails) {
         try {
             JsonNode document = createOrGetDocument(folder, filename);
             writeSpectraRatioEvents(createOrGetFile(folder, filename), document, spectraRatioPairDetails);
@@ -161,6 +186,20 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
         try {
             JsonNode document = createOrGetDocument(folder, filename);
             writeEventSpectraReports(createOrGetFile(folder, filename), document, measurements);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void writeSpectraRatioDetails(BufferedWriter fileWriter, SpectraRatioPairDetailsMetadata spectraRatioPairDetails) {
+        try {
+            //Writes out JSON objects as one-per-line
+            //Useful mostly for when objects are large and we don't
+            //want to deserialize them all at once (memory or time)
+            ObjectWriter writer = streamedMapper.writer();
+            writer.writeValue(fileWriter, spectraRatioPairDetails);
+            fileWriter.append('\n');
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -215,7 +254,7 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
         writeArrayNodeToFile(file, document, measuredMwsDetails, CalibrationJsonConstants.MEASURED_EVENTS_FIELD);
     }
 
-    private void writeSpectraRatioEvents(File file, JsonNode document, List<SpectraRatioPairDetails> spectraRatioPairDetails) throws IOException {
+    private void writeSpectraRatioEvents(File file, JsonNode document, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails) throws IOException {
         writeArrayNodeToFile(file, document, spectraRatioPairDetails, "spectra-ratio-pair-details");
     }
 
@@ -224,11 +263,15 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
         for (T value : values) {
             arrayNode.add(mapper.valueToTree(value));
         }
-        writeFieldNodeToFile(file, document, CalibrationJsonConstants.SCHEMA_FIELD, mapper.valueToTree(CalibrationJsonConstants.SCHEMA_VALUE));
-        writeFieldNodeToFile(file, document, CalibrationJsonConstants.TYPE_FIELD, mapper.valueToTree(CalibrationJsonConstants.TYPE_VALUE));
+        writeMetadataHeaders(file, document);
         if (arrayNode.size() > 0) {
             writeFieldNodeToFile(file, document, field, arrayNode);
         }
+    }
+
+    private void writeMetadataHeaders(File file, JsonNode document) throws IOException {
+        writeFieldNodeToFile(file, document, CalibrationJsonConstants.SCHEMA_FIELD, mapper.valueToTree(CalibrationJsonConstants.SCHEMA_VALUE));
+        writeFieldNodeToFile(file, document, CalibrationJsonConstants.TYPE_FIELD, mapper.valueToTree(CalibrationJsonConstants.TYPE_VALUE));
     }
 
     private void writeFieldNodeToFile(File file, JsonNode document, String field, JsonNode node) throws IOException {
@@ -283,4 +326,5 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
         File file = Files.createFile(folder.resolve(filename)).toFile();
         return file;
     }
+
 }

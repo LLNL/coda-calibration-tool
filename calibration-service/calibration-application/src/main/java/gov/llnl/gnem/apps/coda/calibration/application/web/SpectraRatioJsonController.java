@@ -38,6 +38,7 @@ import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioMeasurementJob;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatiosReport;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.SpectraRatiosReportDTO;
 
@@ -59,6 +60,11 @@ public class SpectraRatioJsonController {
         return service.findAll();
     }
 
+    @GetMapping(name = "getMeasurementsMetadata", path = "/all-metadata-only", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<SpectraRatioPairDetailsMetadata> getMeasurementsMetadata() {
+        return service.findAllMetadataOnly();
+    }
+
     @PostMapping(value = "/measure-spectra-ratio-from-waveforms", name = "measureSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> measureSpectraRatioFromWaveforms(@RequestBody SpectraRatioMeasurementJob job) {
         return measureSpectraRatioFromWaveforms(job.getAutoPickingEnabled(), job.getPersistResults(), job.getSmallEventIds(), job.getLargeEventIds());
@@ -67,6 +73,24 @@ public class SpectraRatioJsonController {
     @PostMapping(value = "/measure-spectra-ratio-from-ratio-data", name = "measureSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> measureSpectraRatioFromRatioData(@RequestBody SpectraRatioMeasurementJob job) {
         return measureSpectraRatioFromRatioData(job.getSmallEventIds(), job.getLargeEventIds(), job.getRatioEventData());
+    }
+
+    @PostMapping(value = "/update-ratio", name = "updateSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> updateSpectraRatio(@RequestBody SpectraRatioPairDetails ratio) {
+        try {
+            return ResponseEntity.ok().body(service.update(ratio));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getLocalizedMessage());
+        }
+    }
+
+    @PostMapping(value = "/load-ratios-metadata", name = "loadRatioMetadata", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> loadRatioMetadata(@RequestBody List<SpectraRatioPairDetailsMetadata> ratios) {
+        try {
+            return ResponseEntity.ok().body(service.loadRatioMetadata(ratios));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getLocalizedMessage());
+        }
     }
 
     private ResponseEntity<?> measureSpectraRatioFromRatioData(Set<String> smallEventIds, Set<String> largeEventIds, List<RatioEventData> ratioEventData) {
