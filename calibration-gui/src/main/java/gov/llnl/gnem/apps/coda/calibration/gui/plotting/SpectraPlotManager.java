@@ -107,7 +107,7 @@ public class SpectraPlotManager {
         if (plotPoints != null && plotPoints.size() > 1) {
             SpectralPlot plot = new SpectralPlot();
             setDisplayText(plot, plotTitle);
-            plot.plotXYdata(plotPoints, null, AVG_LINE_LABEL);
+            plot.plotXYdata(plotPoints, null, null, AVG_LINE_LABEL);
             plot.setLabels(plotTitle, X_AXIS_LABEL, Y_AXIS_LABEL);
 
             Platform.runLater(() -> {

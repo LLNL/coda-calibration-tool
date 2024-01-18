@@ -42,6 +42,7 @@ import gov.llnl.gnem.apps.coda.calibration.repository.SyntheticRepository;
 import gov.llnl.gnem.apps.coda.calibration.repository.VelocityConfigurationRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
@@ -348,5 +349,10 @@ public class WaveformServiceImpl implements WaveformService {
     @Override
     public List<String> getUniqueEventIds() {
         return waveformRepository.getUniqueEventIds();
+    }
+
+    @Override
+    public Waveform getByMatchingKeys(Station station, String eventId, Double lowFrequency, Double highFrequency) {
+        return waveformRepository.findByUniqueFields(eventId, station.getNetworkName(), station.getStationName(), lowFrequency, highFrequency);
     }
 }

@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.eventbus.EventBus;
+
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -35,6 +37,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import gov.llnl.gnem.apps.coda.spectra.gui.events.RatioSegmentChangeEvent;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatioPairOperator;
 import javafx.application.Platform;
@@ -74,6 +77,7 @@ public class RatioMeasurementWaveformPlotManager {
     private static final Logger log = LoggerFactory.getLogger(RatioMeasurementWaveformPlotManager.class);
     private final NumberFormat dfmt4 = NumberFormatFactory.fourDecimalOneLeadingZero();
     private RatioMeasurementSpectraPlotManager parentSpectraPlot;
+    private EventBus bus;
 
     private RatioDetailPlot selectedSinglePlot;
     private RatioDetailPlot ratioDiffWavePlot;
@@ -206,7 +210,8 @@ public class RatioMeasurementWaveformPlotManager {
         showHideRatioWaveform(ratioWindowModeBoolean);
     };
 
-    public RatioMeasurementWaveformPlotManager(CertLeafletMapController mapImpl, MapPlottingUtilities iconFactory) {
+    public RatioMeasurementWaveformPlotManager(EventBus bus, CertLeafletMapController mapImpl, MapPlottingUtilities iconFactory) {
+        this.bus = bus;
         this.mapImpl = mapImpl;
         this.iconFactory = iconFactory;
         freqBandLabel = new Label("Frequency Band");
@@ -256,7 +261,7 @@ public class RatioMeasurementWaveformPlotManager {
             }
 
             // Ensure frequency index fits new station
-            if (curFreqIndex > curFrequencies.size()) {
+            if (curFreqIndex >= curFrequencies.size()) {
                 curFreqIndex = curFrequencies.size() - 1;
             }
 
@@ -478,13 +483,15 @@ public class RatioMeasurementWaveformPlotManager {
     private void updatePlot() {
         if (selectedSinglePlot != null) {
             if (this.parentSpectraPlot != null) {
-                this.parentSpectraPlot.updatePlotPoint();
+                this.parentSpectraPlot.updatePlotPoint(selectedSinglePlot.getRatioDetails().getEventPair());
             }
             Platform.runLater(() -> {
                 setDisplayText(selectedSinglePlot.getRatioDetails());
                 selectedSinglePlot.plotRatio();
                 ratioDiffWavePlot.plotDiffRatio();
             });
+
+            bus.post(new RatioSegmentChangeEvent(selectedSinglePlot.getRatioDetails()));
         }
     }
 

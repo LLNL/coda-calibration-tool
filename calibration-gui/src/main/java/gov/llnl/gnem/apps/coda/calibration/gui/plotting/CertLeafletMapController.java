@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -21,8 +21,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -41,6 +44,7 @@ import gov.llnl.gnem.apps.coda.common.mapping.WMSLayerDescriptor;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoMap;
 import gov.llnl.gnem.apps.coda.common.mapping.api.GeoShape;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -73,12 +77,15 @@ public class CertLeafletMapController implements GeoMap {
 
     private LeafletMap mapImpl;
 
+    private MapPlottingUtilities iconFactories;
+
     private DirectoryChooser screenshotFolderChooser = new DirectoryChooser();
 
     private MapProperties mapProps;
 
-    private CertLeafletMapController(@Autowired(required = false) MapProperties mapProps) {
+    private CertLeafletMapController(@Autowired(required = false) MapProperties mapProps, final MapPlottingUtilities iconFactory) {
         this.mapProps = mapProps;
+        this.iconFactories = iconFactory;
         this.mapImpl = new LeafletMap();
     }
 
@@ -100,6 +107,51 @@ public class CertLeafletMapController implements GeoMap {
         });
     }
 
+    public void replaceIcons(List<Icon> oldIcons, List<Icon> newIcons) {
+        mapImpl.removeIcons(oldIcons);
+        mapImpl.addIcons(newIcons);
+    }
+
+    public void setEventIconsActive(final List<Event> events) {
+        Set<Icon> icons = mapImpl.getIcons();
+        if (icons != null) {
+            List<Icon> iconsToReplace = new ArrayList<>();
+            List<Icon> newIconsToUse = new ArrayList<>();
+
+            icons.forEach(i -> {
+                events.forEach(e -> {
+                    if (i.getFriendlyName().equals(e.getEventId())) {
+                        iconsToReplace.add(i);
+                        newIconsToUse.add(iconFactories.createEventIconForeground(e));
+                    }
+                });
+            });
+            if (iconsToReplace != null) {
+                replaceIcons(iconsToReplace, newIconsToUse);
+            }
+        }
+    }
+
+    public void setEventIconsInActive(final List<Event> events) {
+        Set<Icon> icons = mapImpl.getIcons();
+        if (icons != null) {
+            List<Icon> iconsToReplace = new ArrayList<>();
+            List<Icon> newIconsToUse = new ArrayList<>();
+
+            icons.forEach(i -> {
+                events.forEach(e -> {
+                    if (i.getFriendlyName().equals(e.getEventId())) {
+                        iconsToReplace.add(i);
+                        newIconsToUse.add(iconFactories.createEventIcon(e));
+                    }
+                });
+            });
+            if (iconsToReplace != null) {
+                replaceIcons(iconsToReplace, newIconsToUse);
+            }
+        }
+    }
+
     @Override
     public void show() {
         // No op for now
@@ -113,6 +165,11 @@ public class CertLeafletMapController implements GeoMap {
     @Override
     public void clearIcons() {
         mapImpl.clearIcons();
+    }
+
+    @Override
+    public Set<Icon> getIcons() {
+        return mapImpl.getIcons();
     }
 
     @Override

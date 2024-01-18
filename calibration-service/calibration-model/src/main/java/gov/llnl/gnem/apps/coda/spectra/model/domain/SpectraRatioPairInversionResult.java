@@ -66,12 +66,52 @@ public class SpectraRatioPairInversionResult {
     @Column
     @NumberFormat
     @NotNull
+    private double cornerEstimateA1Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double cornerEstimateA2Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double cornerEstimateA1Max;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double cornerEstimateA2Max;
+
+    @Column
+    @NumberFormat
+    @NotNull
     private float momentEstimateB;
 
     @Column
     @NumberFormat
     @NotNull
     private float cornerEstimateB;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double cornerEstimateB1Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double cornerEstimateB2Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double cornerEstimateB1Max;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double cornerEstimateB2Max;
 
     @Column
     @NumberFormat
@@ -269,6 +309,78 @@ public class SpectraRatioPairInversionResult {
 
     public SpectraRatioPairInversionResult setApparentStressEstimateB(float apparentStressEstimateB) {
         this.apparentStressEstimateB = apparentStressEstimateB;
+        return this;
+    }
+
+    public double getCornerEstimateA1Min() {
+        return cornerEstimateA1Min;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateA1Min(double cornerEstimateA1Min) {
+        this.cornerEstimateA1Min = cornerEstimateA1Min;
+        return this;
+    }
+
+    public double getCornerEstimateA2Min() {
+        return cornerEstimateA2Min;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateA2Min(double cornerEstimateA2Min) {
+        this.cornerEstimateA2Min = cornerEstimateA2Min;
+        return this;
+    }
+
+    public double getCornerEstimateA1Max() {
+        return cornerEstimateA1Max;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateA1Max(double cornerEstimateA1Max) {
+        this.cornerEstimateA1Max = cornerEstimateA1Max;
+        return this;
+    }
+
+    public double getCornerEstimateA2Max() {
+        return cornerEstimateA2Max;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateA2Max(double cornerEstimateA2Max) {
+        this.cornerEstimateA2Max = cornerEstimateA2Max;
+        return this;
+    }
+
+    public double getCornerEstimateB1Min() {
+        return cornerEstimateB1Min;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateB1Min(double cornerEstimateB1Min) {
+        this.cornerEstimateB1Min = cornerEstimateB1Min;
+        return this;
+    }
+
+    public double getCornerEstimateB2Min() {
+        return cornerEstimateB2Min;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateB2Min(double cornerEstimateB2Min) {
+        this.cornerEstimateB2Min = cornerEstimateB2Min;
+        return this;
+    }
+
+    public double getCornerEstimateB1Max() {
+        return cornerEstimateB1Max;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateB1Max(double cornerEstimateB1Max) {
+        this.cornerEstimateB1Max = cornerEstimateB1Max;
+        return this;
+    }
+
+    public double getCornerEstimateB2Max() {
+        return cornerEstimateB2Max;
+    }
+
+    public SpectraRatioPairInversionResult setCornerEstimateB2Max(double cornerEstimateB2Max) {
+        this.cornerEstimateB2Max = cornerEstimateB2Max;
         return this;
     }
 

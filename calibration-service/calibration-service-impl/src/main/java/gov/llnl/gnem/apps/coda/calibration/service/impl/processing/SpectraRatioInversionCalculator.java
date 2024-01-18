@@ -15,17 +15,22 @@
 package gov.llnl.gnem.apps.coda.calibration.service.impl.processing;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.PointValuePair;
@@ -35,6 +40,8 @@ import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.stat.descriptive.SynchronizedMultivariateSummaryStatistics;
+import org.apache.commons.math3.stat.descriptive.SynchronizedSummaryStatistics;
 import org.eclipse.collections.impl.list.mutable.primitive.FloatArrayList;
 import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
 import org.slf4j.Logger;
@@ -43,13 +50,13 @@ import org.slf4j.LoggerFactory;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.RatioOptimizerMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ReferenceMwParametersService;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
-import gov.llnl.gnem.apps.coda.spectra.model.domain.MomentCornerEstimate;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResult;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResultJoint;
@@ -65,18 +72,44 @@ public class SpectraRatioInversionCalculator {
 
     private static final int PARAM_COUNT = 2;
 
+    private static final int FIT = 0;
+
+    private static final int JOINT_FIT = 0;
+    private static final int JOINT_CF_A = 3;
+    private static final int JOINT_CF_B = 6;
+
     private double momentErrorRange;
     private final double DEFAULT_LOW_MOMENT = 1.0;
     private final double DEFAULT_HIGH_MOMENT = 25.0;
-    private final double testMomentIncrement = 0.25;
 
     private final double lowTestAppStressMpa = 0.001;
     private final double highTestAppStressMpa = 100.0;
-    private final double testAppStressIncrement = 0.1;
 
     private MeasuredMwsService fitMwService;
     private ReferenceMwParametersService refMwService;
     private MdacCalculator mdacCalculator;
+
+    enum CORNER_FREQ_NAMES {
+        A1_MIN, A1_MAX, B1_MIN, B1_MAX, A2_MIN, A2_MAX, B2_MIN, B2_MAX
+    }
+
+    private final Comparator<RatioOptimizerMeasurement> ratioOptimizerComparator = (o1, o2) -> {
+        int compare = Double.compare(o1.getFit(), o2.getFit());
+        if (compare == 0) {
+            compare = Double.compare(o2.getCornerFreqA(), o1.getCornerFreqA());
+            if (compare == 0) {
+                compare = Double.compare(o2.getCornerFreqB(), o1.getCornerFreqB());
+            }
+        }
+        return compare;
+    };
+
+    final Map<EventPair, Double[]> jointCornerMeasurements = new HashMap<>();
+    Map<String, Double> eventMisfitA = new HashMap<>();
+    Map<String, Double> eventMisfitB = new HashMap<>();
+
+    // Create a map of eventpair to cornerFrequency min/max values for each event A and B in the pair
+    final SynchronizedSummaryStatistics jointStats = new SynchronizedSummaryStatistics();
 
     public SpectraRatioInversionCalculator(MdacCalculatorService mdacService, MdacParametersFI mdacFiEntry, MdacParametersPS psRows, MeasuredMwsService fitMwService,
             ReferenceMwParametersService refMwService, double momentErrorRange) {
@@ -85,95 +118,6 @@ public class SpectraRatioInversionCalculator {
         //We just want the K constant for the given MDAC model so no need for a real moment here
         this.mdacCalculator = mdacService.getMdacCalculator(psRows, mdacFiEntry, DEFAULT_HIGH_MOMENT);
         this.momentErrorRange = momentErrorRange;
-    }
-
-    public Map<EventPair, List<MomentCornerEstimate>> gridSearchPerPair(Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData) {
-
-        Map<EventPair, List<MomentCornerEstimate>> estimatedMomentCorners = new HashMap<>();
-        ratioData.entrySet().stream().forEach(eventPairEntry -> {
-            EventPair eventPair = eventPairEntry.getKey();
-            Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>> stationData = eventPairEntry.getValue();
-
-            double curCost = 0.0;
-
-            //Check for fit or reference entries for both events and, if present, use those
-            // as priors on the inversion to help constrain it.
-            Double lowTestMomentEventA = null;
-            Double highTestMomentEventA = null;
-            Double lowTestMomentEventB = null;
-            Double highTestMomentEventB = null;
-
-            MeasuredMwParameters fitMoment = fitMwService.findByEventId(eventPair.getY().getEventId());
-            ReferenceMwParameters refMoment = refMwService.findByEventId(eventPair.getY().getEventId());
-
-            if (fitMoment != null) {
-                lowTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw());
-                highTestMomentEventA = MdacCalculator.mwToLogM0(fitMoment.getMw());
-            } else if (refMoment != null) {
-                lowTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw());
-                highTestMomentEventA = MdacCalculator.mwToLogM0(refMoment.getRefMw());
-            }
-
-            if (lowTestMomentEventA == null) {
-                lowTestMomentEventA = DEFAULT_LOW_MOMENT;
-            }
-            if (highTestMomentEventA == null) {
-                highTestMomentEventA = DEFAULT_HIGH_MOMENT;
-            }
-
-            fitMoment = fitMwService.findByEventId(eventPair.getX().getEventId());
-            refMoment = refMwService.findByEventId(eventPair.getX().getEventId());
-
-            if (fitMoment != null) {
-                lowTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw());
-                highTestMomentEventB = MdacCalculator.mwToLogM0(fitMoment.getMw());
-            } else if (refMoment != null) {
-                lowTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw());
-                highTestMomentEventB = MdacCalculator.mwToLogM0(refMoment.getRefMw());
-            }
-
-            if (lowTestMomentEventB == null) {
-                lowTestMomentEventB = DEFAULT_LOW_MOMENT;
-            }
-            if (highTestMomentEventB == null) {
-                highTestMomentEventB = DEFAULT_HIGH_MOMENT;
-            }
-
-            SpectraRatioCostFunctionPerEventPair costFunc = new SpectraRatioCostFunctionPerEventPair(stationData,
-                                                                                                     lowTestMomentEventB,
-                                                                                                     highTestMomentEventB,
-                                                                                                     lowTestMomentEventA,
-                                                                                                     highTestMomentEventA,
-                                                                                                     lowTestAppStressMpa,
-                                                                                                     highTestAppStressMpa,
-                                                                                                     lowTestAppStressMpa,
-                                                                                                     highTestAppStressMpa);
-
-            List<Pair<Double, double[]>> costs = new ArrayList<>();
-            double[] values = new double[4];
-            for (double testMoment = lowTestMomentEventA; testMoment <= highTestMomentEventA; testMoment += testMomentIncrement) {
-                values[0] = testMoment;
-                for (double testAppStress = lowTestAppStressMpa; testAppStress <= lowTestAppStressMpa; testAppStress += testAppStressIncrement) {
-                    values[1] = testAppStress;
-                    for (double testMoment_2 = lowTestMomentEventB; testMoment_2 <= highTestMomentEventB; testMoment_2 += testMomentIncrement) {
-                        values[2] = testMoment_2;
-                        for (double testCornerFreq_2 = lowTestAppStressMpa; testCornerFreq_2 <= lowTestAppStressMpa; testCornerFreq_2 += testAppStressIncrement) {
-                            values[3] = testCornerFreq_2;
-                            curCost = costFunc.value(values);
-                            costs.add(new Pair<>(curCost, values.clone()));
-                        }
-                    }
-                }
-            }
-
-            List<MomentCornerEstimate> cornerEstimates = new ArrayList<>();
-            cornerEstimates.add(new MomentCornerEstimate(null, costs.get(0).getY()[0], costs.get(0).getY()[1]));
-            cornerEstimates.add(new MomentCornerEstimate(null, costs.get(0).getY()[2], costs.get(0).getY()[3]));
-            estimatedMomentCorners.put(eventPair, cornerEstimates);
-        });
-
-        return estimatedMomentCorners;
-
     }
 
     public Map<EventPair, SpectraRatioPairInversionResult> cmaesRegressionPerPair(Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData) {
@@ -252,7 +196,6 @@ public class SpectraRatioInversionCalculator {
 
             //Technically we could save the second Z array copy here by storing these as a tensor rather than a matrix but
             //almost assuredly premature optimization at the moment
-
             Pair<EventInversionMap, EventInversionMap> costs = costFunc.getSamplePoints();
             EventInversionMap eventCost = costs.getX();
             IntArrayList m0XIdx = new IntArrayList(eventCost.size());
@@ -274,13 +217,76 @@ public class SpectraRatioInversionCalculator {
                 stressSamples.add(cost.getValue().getX());
             }
 
+            SynchronizedMultivariateSummaryStatistics stats = costFunc.getStats();
+            // Calculate the corner freq min max x2
+            final RealMatrix C = stats.getCovariance();
+
+            final double SE = Math.sqrt(C.getEntry(FIT, FIT) / (stats.getN() - 4.0));
+            final double f1 = best.getValue() + SE;
+            final double f2 = best.getValue() + (SE * 2.0);
+
+            double cornerFreqA1Min = Double.POSITIVE_INFINITY;
+            double cornerFreqA2Min = Double.POSITIVE_INFINITY;
+            double cornerFreqB1Min = Double.POSITIVE_INFINITY;
+            double cornerFreqB2Min = Double.POSITIVE_INFINITY;
+            double cornerFreqA1Max = Double.NEGATIVE_INFINITY;
+            double cornerFreqA2Max = Double.NEGATIVE_INFINITY;
+            double cornerFreqB1Max = Double.NEGATIVE_INFINITY;
+            double cornerFreqB2Max = Double.NEGATIVE_INFINITY;
+
+            for (RatioOptimizerMeasurement meas : costFunc.getOptimizerMeasurements()) {
+                if (meas.getFit() < f1) {
+                    if (meas.getCornerFreqA() < cornerFreqA1Min) {
+                        cornerFreqA1Min = meas.getCornerFreqA();
+                        cornerFreqA2Min = meas.getCornerFreqA();
+                    }
+                    if (meas.getCornerFreqA() > cornerFreqA1Max) {
+                        cornerFreqA1Max = meas.getCornerFreqA();
+                        cornerFreqA2Max = meas.getCornerFreqA();
+                    }
+
+                    if (meas.getCornerFreqB() < cornerFreqB1Min) {
+                        cornerFreqB1Min = meas.getCornerFreqB();
+                        cornerFreqB2Min = meas.getCornerFreqB();
+                    }
+                    if (meas.getCornerFreqB() > cornerFreqB1Max) {
+                        cornerFreqB1Max = meas.getCornerFreqB();
+                        cornerFreqB2Max = meas.getCornerFreqB();
+                    }
+                } else if (meas.getFit() < f2) {
+                    if (meas.getCornerFreqA() < cornerFreqA2Min) {
+                        cornerFreqA2Min = meas.getCornerFreqA();
+                    }
+                    if (meas.getCornerFreqA() > cornerFreqA2Max) {
+                        cornerFreqA2Max = meas.getCornerFreqA();
+                    }
+
+                    if (meas.getCornerFreqB() < cornerFreqB2Min) {
+                        cornerFreqB2Min = meas.getCornerFreqB();
+                    }
+                    if (meas.getCornerFreqB() > cornerFreqB2Max) {
+                        cornerFreqB2Max = meas.getCornerFreqB();
+                    }
+                } else {
+                    break;
+                }
+            }
+
             SpectraRatioPairInversionResult estimate = new SpectraRatioPairInversionResult();
             estimate.setEventIdA(eventPair.getY().getEventId())
                     .setEventIdB(eventPair.getX().getEventId())
                     .setMomentEstimateA((float) best.getPoint()[0])
                     .setCornerEstimateA((float) mdacCalculator.cornerFreqFromApparentStressM0(Math.pow(10, best.getPoint()[0]), best.getPoint()[1]))
+                    .setCornerEstimateA1Min(cornerFreqA1Min)
+                    .setCornerEstimateA1Max(cornerFreqA1Max)
+                    .setCornerEstimateA2Min(cornerFreqA2Min)
+                    .setCornerEstimateA2Max(cornerFreqA2Max)
                     .setMomentEstimateB((float) best.getPoint()[2])
                     .setCornerEstimateB((float) mdacCalculator.cornerFreqFromApparentStressM0(Math.pow(10, best.getPoint()[2]), best.getPoint()[3]))
+                    .setCornerEstimateB1Min(cornerFreqB1Min)
+                    .setCornerEstimateB1Max(cornerFreqB1Max)
+                    .setCornerEstimateB2Min(cornerFreqB2Min)
+                    .setCornerEstimateB2Max(cornerFreqB2Max)
                     .setApparentStressEstimateA((float) best.getPoint()[1])
                     .setApparentStressEstimateB((float) best.getPoint()[3])
                     .setMisfit(best.getValue().floatValue())
@@ -331,6 +337,8 @@ public class SpectraRatioInversionCalculator {
         double lowTestMomentB = Double.MAX_VALUE;
 
         Map<String, Integer> eventIndexMap = new HashMap<>();
+        Map<Pair<Integer, Integer>, List<Double[]>> eventPairData = new HashMap<>();
+
         int i = 0;
         for (EventPair eventPair : ratioData.keySet()) {
             int increment = 0;
@@ -433,7 +441,8 @@ public class SpectraRatioInversionCalculator {
                                                                                    lowTestAppStressMpa,
                                                                                    highTestAppStressMpa,
                                                                                    lowTestAppStressMpa,
-                                                                                   highTestAppStressMpa);
+                                                                                   highTestAppStressMpa,
+                                                                                   eventPairData);
 
         CMAESOptimizer optimizer = new CMAESOptimizer(5000, STOP_FITNESS, true, 0, 0, new MersenneTwister(), false, new SimplePointChecker<>(0.001, 0.001, 1000000));
 
@@ -446,6 +455,82 @@ public class SpectraRatioInversionCalculator {
                     new CMAESOptimizer.Sigma(sigmaValues),
                     new CMAESOptimizer.PopulationSize(100));
 
+        Map<CORNER_FREQ_NAMES, Map<Pair<Integer, Integer>, Double>> cornerFreqMap = new EnumMap<>(CORNER_FREQ_NAMES.class);
+
+        cornerFreqMap.put(CORNER_FREQ_NAMES.A1_MIN, new HashMap<>());
+        cornerFreqMap.put(CORNER_FREQ_NAMES.A1_MAX, new HashMap<>());
+        cornerFreqMap.put(CORNER_FREQ_NAMES.B1_MIN, new HashMap<>());
+        cornerFreqMap.put(CORNER_FREQ_NAMES.B1_MAX, new HashMap<>());
+        cornerFreqMap.put(CORNER_FREQ_NAMES.A2_MIN, new HashMap<>());
+        cornerFreqMap.put(CORNER_FREQ_NAMES.A2_MAX, new HashMap<>());
+        cornerFreqMap.put(CORNER_FREQ_NAMES.B2_MIN, new HashMap<>());
+        cornerFreqMap.put(CORNER_FREQ_NAMES.B2_MAX, new HashMap<>());
+
+        for (Entry<Pair<Integer, Integer>, List<Double[]>> eventPairDataEntry : eventPairData.entrySet()) {
+
+            Pair<Integer, Integer> idxPair = eventPairDataEntry.getKey();
+            final double SE = jointStats.getStandardDeviation() / Math.sqrt(jointStats.getN() - (4.0 * eventPairData.size()));
+            final double f1 = best.getValue().doubleValue() + SE;
+            final double f2 = f1 + (SE * 2.0);
+
+            double cornerFreqA1Min = Double.POSITIVE_INFINITY;
+            double cornerFreqB1Min = Double.POSITIVE_INFINITY;
+            double cornerFreqA2Min = Double.POSITIVE_INFINITY;
+            double cornerFreqB2Min = Double.POSITIVE_INFINITY;
+            double cornerFreqA1Max = Double.NEGATIVE_INFINITY;
+            double cornerFreqB1Max = Double.NEGATIVE_INFINITY;
+            double cornerFreqA2Max = Double.NEGATIVE_INFINITY;
+            double cornerFreqB2Max = Double.NEGATIVE_INFINITY;
+
+            for (Double[] values : eventPairDataEntry.getValue()) {
+                Double eventFit = values[JOINT_FIT];
+                Double cornerFreqA = values[JOINT_CF_A];
+                Double cornerFreqB = values[JOINT_CF_B];
+                if (eventFit < f1) {
+                    if (cornerFreqA < cornerFreqA1Min) {
+                        cornerFreqA1Min = cornerFreqA;
+                        cornerFreqA2Min = cornerFreqA;
+                    }
+                    if (cornerFreqA > cornerFreqA1Max) {
+                        cornerFreqA1Max = cornerFreqA;
+                        cornerFreqA2Max = cornerFreqA;
+                    }
+
+                    if (cornerFreqB < cornerFreqB1Min) {
+                        cornerFreqB1Min = cornerFreqB;
+                        cornerFreqB2Min = cornerFreqB;
+                    }
+                    if (cornerFreqB > cornerFreqB1Max) {
+                        cornerFreqB1Max = cornerFreqB;
+                        cornerFreqB2Max = cornerFreqB;
+                    }
+                } else if (eventFit < f2) {
+                    if (cornerFreqA < cornerFreqA2Min) {
+                        cornerFreqA2Min = cornerFreqA;
+                    }
+                    if (cornerFreqA > cornerFreqA2Max) {
+                        cornerFreqA2Max = cornerFreqA;
+                    }
+
+                    if (cornerFreqB < cornerFreqB2Min) {
+                        cornerFreqB2Min = cornerFreqB;
+                    }
+                    if (cornerFreqB > cornerFreqB2Max) {
+                        cornerFreqB2Max = cornerFreqB;
+                    }
+                }
+            }
+
+            cornerFreqMap.get(CORNER_FREQ_NAMES.A1_MIN).put(idxPair, cornerFreqA1Min);
+            cornerFreqMap.get(CORNER_FREQ_NAMES.A1_MAX).put(idxPair, cornerFreqA1Max);
+            cornerFreqMap.get(CORNER_FREQ_NAMES.B1_MIN).put(idxPair, cornerFreqB1Min);
+            cornerFreqMap.get(CORNER_FREQ_NAMES.B1_MAX).put(idxPair, cornerFreqB1Max);
+            cornerFreqMap.get(CORNER_FREQ_NAMES.A2_MIN).put(idxPair, cornerFreqA2Min);
+            cornerFreqMap.get(CORNER_FREQ_NAMES.A2_MAX).put(idxPair, cornerFreqA2Max);
+            cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MIN).put(idxPair, cornerFreqB2Min);
+            cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MAX).put(idxPair, cornerFreqB2Max);
+        }
+
         //We split these back out to "per-pair" measurements to report them
         //It wastes some amount of space and makes N-d plots very hard
         // but it fits into our existing plots and ways of looking at the results
@@ -456,6 +541,9 @@ public class SpectraRatioInversionCalculator {
         for (Entry<EventPair, Pair<EventInversionMap, EventInversionMap>> rawEstimate : rawEstimates.entrySet()) {
             Pair<EventInversionMap, EventInversionMap> costs = rawEstimate.getValue();
             EventPair eventPair = rawEstimate.getKey();
+            Integer numerIdx = eventIndexMap.get(eventPair.getY().getEventId());
+            Integer denomIdx = eventIndexMap.get(eventPair.getX().getEventId());
+            Pair<Integer, Integer> idxPair = new Pair<>(numerIdx, denomIdx);
             Integer eventAidx = eventIndexMap.get(eventPair.getY().getEventId());
             Integer eventBidx = eventIndexMap.get(eventPair.getX().getEventId());
 
@@ -484,8 +572,16 @@ public class SpectraRatioInversionCalculator {
                     .setEventIdB(eventPair.getX().getEventId())
                     .setMomentEstimateA((float) best.getPoint()[eventAidx])
                     .setCornerEstimateA((float) mdacCalculator.cornerFreqFromApparentStressM0(Math.pow(10, best.getPoint()[eventAidx]), best.getPoint()[eventAidx + 1]))
+                    .setCornerEstimateA1Min(cornerFreqMap.get(CORNER_FREQ_NAMES.A1_MIN).get(idxPair))
+                    .setCornerEstimateA1Max(cornerFreqMap.get(CORNER_FREQ_NAMES.A1_MAX).get(idxPair))
+                    .setCornerEstimateA2Min(cornerFreqMap.get(CORNER_FREQ_NAMES.A2_MIN).get(idxPair))
+                    .setCornerEstimateA2Max(cornerFreqMap.get(CORNER_FREQ_NAMES.A2_MAX).get(idxPair))
                     .setMomentEstimateB((float) best.getPoint()[eventBidx])
                     .setCornerEstimateB((float) mdacCalculator.cornerFreqFromApparentStressM0(Math.pow(10, best.getPoint()[eventBidx]), best.getPoint()[eventBidx + 1]))
+                    .setCornerEstimateB1Min(cornerFreqMap.get(CORNER_FREQ_NAMES.B1_MIN).get(idxPair))
+                    .setCornerEstimateB1Max(cornerFreqMap.get(CORNER_FREQ_NAMES.B1_MAX).get(idxPair))
+                    .setCornerEstimateB2Min(cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MIN).get(idxPair))
+                    .setCornerEstimateB2Max(cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MAX).get(idxPair))
                     .setApparentStressEstimateA((float) best.getPoint()[eventAidx + 1])
                     .setApparentStressEstimateB((float) best.getPoint()[eventBidx + 1])
                     .setMisfit(best.getValue().floatValue())
@@ -526,6 +622,9 @@ public class SpectraRatioInversionCalculator {
 
         private Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>> stationData;
         private Pair<EventInversionMap, EventInversionMap> costs = new Pair<>(new EventInversionMap(), new EventInversionMap());
+        final SortedSet<RatioOptimizerMeasurement> optimizerMeasurements = Collections.synchronizedSortedSet(new TreeSet<>(ratioOptimizerComparator));
+        final SynchronizedMultivariateSummaryStatistics stats = new SynchronizedMultivariateSummaryStatistics(7, false);
+
         private double m0minX;
         private double m0maxX;
         private double m0minY;
@@ -584,12 +683,24 @@ public class SpectraRatioInversionCalculator {
             value = costs.getY().get(xyPoint);
             costs.getY().put(xyPoint, accumulatePoint(sum, value));
 
+            stats.addValue(new double[] { sum, log10_M0, appStress, cornerFreq, log10_M0_2, appStress_2, cornerFreq_2 });
+            optimizerMeasurements.add(new RatioOptimizerMeasurement(sum, log10_M0, appStress, cornerFreq, log10_M0_2, appStress_2, cornerFreq_2));
+
             return sum;
         }
 
         public Pair<EventInversionMap, EventInversionMap> getSamplePoints() {
             return costs;
         }
+
+        public SortedSet<RatioOptimizerMeasurement> getOptimizerMeasurements() {
+            return optimizerMeasurements;
+        }
+
+        public SynchronizedMultivariateSummaryStatistics getStats() {
+            return stats;
+        }
+
     }
 
     private class SpectraRatioCostFunctionJoint implements MultivariateFunction {
@@ -607,10 +718,11 @@ public class SpectraRatioInversionCalculator {
         private double appStressMaxY;
 
         private Map<EventPair, Pair<EventInversionMap, EventInversionMap>> costs = new HashMap<>();
+        private Map<Pair<Integer, Integer>, List<Double[]>> eventPairData;
 
         public SpectraRatioCostFunctionJoint(Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> ratioData, Map<String, Integer> eventIndexMap,
                 BiFunction<Double, Double, Double> stressFunc, double m0minX, double m0maxX, double m0minY, double m0maxY, double appStressMinX, double appStressMaxX, double appStressMinY,
-                double appStressMaxY) {
+                double appStressMaxY, Map<Pair<Integer, Integer>, List<Double[]>> eventPairData) {
             this.ratioData = ratioData;
             this.eventIndexMap = eventIndexMap;
             this.cornerFreqFunc = stressFunc;
@@ -622,11 +734,13 @@ public class SpectraRatioInversionCalculator {
             this.appStressMaxX = appStressMaxX;
             this.appStressMinY = appStressMinY;
             this.appStressMaxY = appStressMaxY;
+            this.eventPairData = eventPairData;
         }
 
         @Override
         public double value(double[] point) {
             float sum = 0f;
+            List<Double[]> eventPairInput = new ArrayList<>();
 
             for (Entry<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> eventPair : ratioData.entrySet()) {
                 float eventPairSum = 0f;
@@ -677,6 +791,35 @@ public class SpectraRatioInversionCalculator {
                 cost.getY().put(xyPoint, accumulatePoint(eventPairSum, value));
 
                 sum = sum + eventPairSum;
+
+                eventPairInput.add(new Double[] { numerIdx.doubleValue(), denomIdx.doubleValue(), cornerFreq, appStress, log10_M0, cornerFreq_2, appStress_2, log10_M0_2 });
+            }
+
+            jointStats.addValue(sum);
+
+            for (Double[] eventPairValue : eventPairInput) {
+                Integer numerIdx = eventPairValue[0].intValue();
+                Integer denomIdx = eventPairValue[1].intValue();
+
+                // Create a pair from the idx values
+                Pair<Integer, Integer> idxPair = new Pair<>(numerIdx, denomIdx);
+
+                // Create new array item that contains the sum as first value
+                Double[] arr = new Double[eventPairValue.length + 1];
+                arr[0] = (double) sum;
+                for (int idx = 1; idx < arr.length; idx++) {
+                    arr[idx] = eventPairValue[idx - 1];
+                }
+
+                // Updated event pair data by adding the arr
+                if (!eventPairData.containsKey(idxPair)) {
+                    List<Double[]> eventPairValues = new ArrayList<Double[]>();
+                    eventPairValues.add(arr);
+                    eventPairData.put(idxPair, eventPairValues);
+                } else {
+                    List<Double[]> eventPairValues = eventPairData.get(idxPair);
+                    eventPairValues.add(arr);
+                }
             }
 
             return sum;

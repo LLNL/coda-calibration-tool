@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -34,9 +34,28 @@ public class BasicSymbol implements Symbol {
     private Double colorationValue;
     private String name;
     private String colorMap;
+    private String hoverTemplate;
     private Boolean showInLegend;
     private String legendGroup;
     private Integer zIndex;
+
+    public BasicSymbol(BasicSymbol other) {
+        this.x = other.x;
+        this.y = other.y;
+        this.edgeColor = other.edgeColor;
+        this.fillColor = other.fillColor;
+        this.style = other.style;
+        this.textColor = other.textColor;
+        this.text = other.text;
+        this.textVisible = other.textVisible;
+        this.colorationValue = other.colorationValue;
+        this.name = other.name;
+        this.colorMap = other.colorMap;
+        this.hoverTemplate = other.hoverTemplate;
+        this.showInLegend = other.showInLegend;
+        this.legendGroup = other.legendGroup;
+        this.zIndex = other.zIndex;
+    }
 
     public BasicSymbol(final SymbolStyles style, final String name, final double x, final double y, final Color fillColor, final Color edgeColor, final Color textColor, final String text,
             final boolean textVisible) {
@@ -152,6 +171,16 @@ public class BasicSymbol implements Symbol {
     @Override
     public void setTextVisible(final boolean textVisible) {
         this.textVisible = textVisible;
+    }
+
+    @Override
+    public String getHoverTemplate() {
+        return hoverTemplate;
+    }
+
+    @Override
+    public void setHoverTemplate(String hoverTemplate) {
+        this.hoverTemplate = hoverTemplate;
     }
 
     @Override

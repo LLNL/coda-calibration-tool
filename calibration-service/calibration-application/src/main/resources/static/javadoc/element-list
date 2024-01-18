@@ -5,6 +5,7 @@ gov.llnl.gnem.apps.coda.calibration.gui.controllers
 gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters
 gov.llnl.gnem.apps.coda.calibration.gui.converters.api
 gov.llnl.gnem.apps.coda.calibration.gui.converters.param
+gov.llnl.gnem.apps.coda.calibration.gui.converters.ratios
 gov.llnl.gnem.apps.coda.calibration.gui.converters.sac
 gov.llnl.gnem.apps.coda.calibration.gui.data.client
 gov.llnl.gnem.apps.coda.calibration.gui.data.client.api
@@ -58,6 +59,7 @@ gov.llnl.gnem.apps.coda.envelope.standalone.data.client
 gov.llnl.gnem.apps.coda.envelope.util
 gov.llnl.gnem.apps.coda.spectra
 gov.llnl.gnem.apps.coda.spectra.gui
+gov.llnl.gnem.apps.coda.spectra.gui.events
 gov.llnl.gnem.apps.coda.spectra.model.domain
 gov.llnl.gnem.apps.coda.spectra.model.domain.messaging
 gov.llnl.gnem.apps.coda.spectra.model.domain.util

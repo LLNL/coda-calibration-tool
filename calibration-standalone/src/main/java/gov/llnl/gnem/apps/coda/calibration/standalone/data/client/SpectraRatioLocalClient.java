@@ -29,8 +29,11 @@ import org.springframework.stereotype.Component;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraRatioClient;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SpectraRatioPairDetailsService;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatiosReport;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -73,5 +76,26 @@ public class SpectraRatioLocalClient implements SpectraRatioClient {
             log.error(e.getMessage(), e);
             return Mono.empty();
         }
+    }
+
+    @Override
+    public Mono<SpectraRatioPairDetails> updateRatio(SpectraRatioPairDetails ratio) {
+        log.trace("Updating ratio data for ratio {}", ratio.getId());
+        return Mono.just(ratioDetailsService.update(ratio));
+    }
+
+    @Override
+    public Flux<SpectraRatioPairDetails> getRatios() {
+        return Flux.fromIterable(ratioDetailsService.findAll());
+    }
+
+    @Override
+    public Flux<SpectraRatioPairDetailsMetadata> getRatiosMetadata() {
+        return Flux.fromIterable(ratioDetailsService.findAllMetadataOnly());
+    }
+
+    @Override
+    public Flux<String> loadRatioMetadata(long id, List<SpectraRatioPairDetailsMetadata> ratios) {
+        return Flux.fromIterable(ratioDetailsService.loadRatioMetadata(ratios));
     }
 }

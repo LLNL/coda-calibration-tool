@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import javafx.scene.paint.Color;
+import llnl.gnem.core.gui.plotting.api.FillModes;
+import llnl.gnem.core.gui.plotting.api.HoverModes;
 import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
 import llnl.gnem.core.gui.plotting.api.PlotObject;
@@ -27,15 +29,42 @@ public class BasicLine implements Line {
     private double[] x;
     private double[] y;
     private double[] color = new double[0];
+    private double[] errorMin;
+    private double[] errorMax;
     private Color fillColor;
     private LineStyles style;
+    private FillModes fillMode;
+    private HoverModes hoverMode;
     private int pxThickness;
     private String name;
     private String colorMap;
     private Boolean showInLegend;
     private String legendGroup;
     private Boolean legendOnly;
+    private Boolean useHorizontalErrorBars;
+    private String hoverTemplate;
     private Integer zIndex;
+
+    public BasicLine(final Line other) {
+        this.x = other.getX();
+        this.y = other.getY();
+        this.color = other.getColor();
+        this.errorMin = other.getErrorData();
+        this.errorMax = other.getErrorDataMinus();
+        this.fillColor = other.getFillColor();
+        this.style = other.getStyle();
+        this.pxThickness = other.getPxThickness();
+        this.name = other.getName();
+        this.colorMap = other.getColorMap();
+        this.showInLegend = other.shouldShowInLegend();
+        this.useHorizontalErrorBars = other.getUseHorizontalErrorBars();
+        this.hoverTemplate = other.getHoverTemplate();
+        this.hoverMode = other.getHoverMode();
+        this.fillMode = other.getFillMode();
+        this.legendGroup = other.getLegendGrouping();
+        this.legendOnly = other.getLegendOnly();
+        this.zIndex = other.getZindex();
+    }
 
     public BasicLine(final double[] xVals, final double[] yVals, final Color color, final LineStyles style, final int pxThickness) {
         this.x = xVals;
@@ -43,6 +72,20 @@ public class BasicLine implements Line {
         this.fillColor = color;
         this.style = style;
         this.pxThickness = pxThickness;
+        this.useHorizontalErrorBars = false;
+        this.errorMin = new double[0];
+        this.errorMax = new double[0];
+    }
+
+    public BasicLine(final double[] xVals, final double[] yVals, final double[] errorMin, final double[] errorMax, final Color color, final LineStyles style, final int pxThickness) {
+        this.x = xVals;
+        this.y = yVals;
+        this.fillColor = color;
+        this.style = style;
+        this.pxThickness = pxThickness;
+        this.useHorizontalErrorBars = false;
+        this.errorMin = errorMin;
+        this.errorMax = errorMax;
     }
 
     public BasicLine(final String name, final double xStart, final double xIncrement, final float[] data, final Color blue, final LineStyles solid, final int lineWidth) {
@@ -50,6 +93,9 @@ public class BasicLine implements Line {
         fillColor = blue;
         style = solid;
         pxThickness = lineWidth;
+        this.useHorizontalErrorBars = false;
+        this.errorMin = new double[0];
+        this.errorMax = new double[0];
         this.x = new double[data.length];
         this.y = new double[data.length];
         for (int t = 0; t < data.length; t++) {
@@ -64,8 +110,9 @@ public class BasicLine implements Line {
     }
 
     @Override
-    public void setX(final double[] xVals) {
+    public PlotObject setX(final double[] xVals) {
         this.x = xVals;
+        return this;
     }
 
     @Override
@@ -74,8 +121,31 @@ public class BasicLine implements Line {
     }
 
     @Override
-    public void setY(final double[] yVals) {
+    public PlotObject setY(final double[] yVals) {
         this.y = yVals;
+        return this;
+    }
+
+    @Override
+    public double[] getErrorData() {
+        return errorMin;
+    }
+
+    @Override
+    public PlotObject setErrorData(final double[] errorMin) {
+        this.errorMin = errorMin;
+        return this;
+    }
+
+    @Override
+    public double[] getErrorDataMinus() {
+        return errorMax;
+    }
+
+    @Override
+    public PlotObject setErrorDataMinus(final double[] errorMax) {
+        this.errorMax = errorMax;
+        return this;
     }
 
     @Override
@@ -105,8 +175,31 @@ public class BasicLine implements Line {
     }
 
     @Override
-    public void setStyle(final LineStyles style) {
+    public PlotObject setStyle(final LineStyles style) {
         this.style = style;
+        return this;
+    }
+
+    @Override
+    public HoverModes getHoverMode() {
+        return hoverMode;
+    }
+
+    @Override
+    public PlotObject setHoverMode(HoverModes hoverMode) {
+        this.hoverMode = hoverMode;
+        return this;
+    }
+
+    @Override
+    public FillModes getFillMode() {
+        return fillMode;
+    }
+
+    @Override
+    public PlotObject setFillMode(FillModes fillMode) {
+        this.fillMode = fillMode;
+        return this;
     }
 
     @Override
@@ -115,8 +208,9 @@ public class BasicLine implements Line {
     }
 
     @Override
-    public void setPxThickness(final int pxThickness) {
+    public PlotObject setPxThickness(final int pxThickness) {
         this.pxThickness = pxThickness;
+        return this;
     }
 
     @Override
@@ -136,18 +230,20 @@ public class BasicLine implements Line {
     }
 
     @Override
-    public void setColor(final double[] colorVals) {
+    public PlotObject setColor(final double[] colorVals) {
         color = colorVals;
-    }
-
-    @Override
-    public void setColorMap(final String colorMap) {
-        this.colorMap = colorMap;
+        return this;
     }
 
     @Override
     public String getColorMap() {
         return colorMap;
+    }
+
+    @Override
+    public PlotObject setColorMap(final String colorMap) {
+        this.colorMap = colorMap;
+        return this;
     }
 
     @Override
@@ -158,6 +254,28 @@ public class BasicLine implements Line {
     @Override
     public PlotObject showInLegend(final Boolean showInLegend) {
         this.showInLegend = showInLegend;
+        return this;
+    }
+
+    @Override
+    public boolean getUseHorizontalErrorBars() {
+        return useHorizontalErrorBars;
+    }
+
+    @Override
+    public PlotObject setUseHorizontalErrorBars(final boolean useHorizontalErrorBars) {
+        this.useHorizontalErrorBars = useHorizontalErrorBars;
+        return this;
+    }
+
+    @Override
+    public String getHoverTemplate() {
+        return this.hoverTemplate;
+    }
+
+    @Override
+    public PlotObject setHoverTemplate(final String hoverTemplate) {
+        this.hoverTemplate = hoverTemplate;
         return this;
     }
 
@@ -203,47 +321,65 @@ public class BasicLine implements Line {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(color);
+        result = prime * result + Arrays.hashCode(errorMax);
+        result = prime * result + Arrays.hashCode(errorMin);
         result = prime * result + Arrays.hashCode(x);
         result = prime * result + Arrays.hashCode(y);
-        result = prime * result + Objects.hash(colorMap, fillColor, legendGroup, legendOnly, name, pxThickness, showInLegend, style);
+        result = prime * result
+                + Objects.hash(colorMap, fillColor, fillMode, hoverMode, hoverTemplate, legendGroup, legendOnly, name, pxThickness, showInLegend, style, useHorizontalErrorBars, zIndex);
         return result;
     }
 
     @Override
-    public boolean equals(final Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
         if (!(obj instanceof BasicLine)) {
             return false;
         }
-        final BasicLine other = (BasicLine) obj;
+        BasicLine other = (BasicLine) obj;
         return Arrays.equals(color, other.color)
                 && Objects.equals(colorMap, other.colorMap)
+                && Arrays.equals(errorMax, other.errorMax)
+                && Arrays.equals(errorMin, other.errorMin)
                 && Objects.equals(fillColor, other.fillColor)
+                && fillMode == other.fillMode
+                && hoverMode == other.hoverMode
+                && Objects.equals(hoverTemplate, other.hoverTemplate)
                 && Objects.equals(legendGroup, other.legendGroup)
+                && Objects.equals(legendOnly, other.legendOnly)
                 && Objects.equals(name, other.name)
                 && pxThickness == other.pxThickness
                 && Objects.equals(showInLegend, other.showInLegend)
                 && style == other.style
+                && Objects.equals(useHorizontalErrorBars, other.useHorizontalErrorBars)
                 && Arrays.equals(x, other.x)
-                && Arrays.equals(y, other.y);
+                && Arrays.equals(y, other.y)
+                && Objects.equals(zIndex, other.zIndex);
     }
 
     @Override
     public String toString() {
-        final int maxLen = 10;
-        final StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
         builder.append("BasicLine [x=")
-               .append(x != null ? Arrays.toString(Arrays.copyOf(x, Math.min(x.length, maxLen))) : null)
+               .append(Arrays.toString(x))
                .append(", y=")
-               .append(y != null ? Arrays.toString(Arrays.copyOf(y, Math.min(y.length, maxLen))) : null)
+               .append(Arrays.toString(y))
                .append(", color=")
-               .append(color != null ? Arrays.toString(Arrays.copyOf(color, Math.min(color.length, maxLen))) : null)
+               .append(Arrays.toString(color))
+               .append(", errorMin=")
+               .append(Arrays.toString(errorMin))
+               .append(", errorMax=")
+               .append(Arrays.toString(errorMax))
                .append(", fillColor=")
                .append(fillColor)
                .append(", style=")
                .append(style)
+               .append(", fillMode=")
+               .append(fillMode)
+               .append(", hoverMode=")
+               .append(hoverMode)
                .append(", pxThickness=")
                .append(pxThickness)
                .append(", name=")
@@ -256,8 +392,13 @@ public class BasicLine implements Line {
                .append(legendGroup)
                .append(", legendOnly=")
                .append(legendOnly)
+               .append(", useHorizontalErrorBars=")
+               .append(useHorizontalErrorBars)
+               .append(", hoverTemplate=")
+               .append(hoverTemplate)
+               .append(", zIndex=")
+               .append(zIndex)
                .append("]");
         return builder.toString();
     }
-
 }

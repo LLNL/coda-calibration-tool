@@ -73,7 +73,6 @@ public class SpectraRatioPairDetails {
     @Column
     @NumberFormat
     private double cutTimeLength;
-    // A segment created from the difference between large and small waveforms
 
     @Column
     @NotNull
@@ -129,6 +128,8 @@ public class SpectraRatioPairDetails {
     @Column
     @NumberFormat
     private int denomEndCutIdx;
+    @Column
+    private boolean userEdited;
 
     public SpectraRatioPairDetails() {
         this.diffAvg = null;
@@ -152,9 +153,12 @@ public class SpectraRatioPairDetails {
         this.cutSegmentLength = 0;
         this.cutTimeLength = 0.0;
         this.loadedFromJson = false;
+        this.userEdited = false;
     }
 
     public SpectraRatioPairDetails(SpectraRatioPairDetails ratioDetails) {
+        this.id = ratioDetails.id;
+        this.version = ratioDetails.version;
         this.diffAvg = ratioDetails.diffAvg;
         this.numerAvg = ratioDetails.numerAvg;
         this.denomAvg = ratioDetails.denomAvg;
@@ -176,6 +180,7 @@ public class SpectraRatioPairDetails {
         this.cutSegmentLength = ratioDetails.cutSegmentLength;
         this.cutTimeLength = ratioDetails.cutTimeLength;
         this.loadedFromJson = ratioDetails.loadedFromJson;
+        this.userEdited = ratioDetails.userEdited;
     }
 
     public SpectraRatioPairDetails(Waveform numeratorWaveform, Waveform denominatorWaveform) {
@@ -207,6 +212,7 @@ public class SpectraRatioPairDetails {
             this.denomWaveEndSec = null;
         }
         this.loadedFromJson = false;
+        this.userEdited = false;
     }
 
     private double getTimeMinusOriginSec(Date time, boolean isNumerator) {
@@ -439,6 +445,14 @@ public class SpectraRatioPairDetails {
         this.denomEndCutIdx = denomEndCutIdx;
     }
 
+    public boolean isUserEdited() {
+        return userEdited;
+    }
+
+    public void setUserEdited(boolean userEdited) {
+        this.userEdited = userEdited;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(
@@ -468,6 +482,7 @@ public class SpectraRatioPairDetails {
                     numerWaveEndSec,
                     numerWaveStartSec,
                     numerWaveform,
+                    userEdited,
                     version);
     }
 
@@ -506,6 +521,7 @@ public class SpectraRatioPairDetails {
                 && Objects.equals(numerWaveEndSec, other.numerWaveEndSec)
                 && Objects.equals(numerWaveStartSec, other.numerWaveStartSec)
                 && Objects.equals(numerWaveform, other.numerWaveform)
+                && userEdited == other.userEdited
                 && Objects.equals(version, other.version);
     }
 
@@ -526,6 +542,8 @@ public class SpectraRatioPairDetails {
                .append(numerWaveform)
                .append(", denomWaveform=")
                .append(denomWaveform)
+               .append(", loadedFromJson=")
+               .append(loadedFromJson)
                .append(", cutSegmentLength=")
                .append(cutSegmentLength)
                .append(", cutTimeLength=")
@@ -564,10 +582,74 @@ public class SpectraRatioPairDetails {
                .append(numerEndCutIdx)
                .append(", denomEndCutIdx=")
                .append(denomEndCutIdx)
-               .append(", loadedFromJson=")
-               .append(loadedFromJson)
+               .append(", userEdited=")
+               .append(userEdited)
                .append("]");
         return builder.toString();
+    }
+
+    public void mergeNonNullFields(SpectraRatioPairDetails entity) {
+        this.diffAvg = entity.getDiffAvg();
+        this.numerAvg = entity.getNumerAvg();
+        this.denomAvg = entity.getDenomAvg();
+        if (entity.getNumerWaveform() != null) {
+            if (this.numerWaveform == null) {
+                this.numerWaveform = new Waveform();
+            }
+            this.numerWaveform.mergeNonNullOrEmptyFields(entity.getNumerWaveform());
+        }
+        if (entity.getDenomWaveform() != null) {
+            if (this.denomWaveform == null) {
+                this.denomWaveform = new Waveform();
+            }
+            this.denomWaveform.mergeNonNullOrEmptyFields(entity.getDenomWaveform());
+        }
+        this.loadedFromJson = entity.isLoadedFromJson();
+        this.cutSegmentLength = entity.getCutSegmentLength();
+        this.cutTimeLength = entity.getCutTimeLength();
+        this.setDiffSegment(entity.getDiffSegment());
+        this.numerWaveStartSec = entity.getNumerWaveStartSec();
+        this.denomWaveStartSec = entity.getDenomWaveStartSec();
+        this.numerWaveEndSec = entity.getNumerWaveEndSec();
+        this.denomWaveEndSec = entity.getDenomWaveEndSec();
+        this.numerPeakSec = entity.getNumerPeakSec();
+        this.denomPeakSec = entity.getDenomPeakSec();
+        this.numerFMarkerSec = entity.getNumerFMarkerSec();
+        this.denomFMarkerSec = entity.getDenomFMarkerSec();
+        this.numerStartCutSec = entity.getNumerStartCutSec();
+        this.denomStartCutSec = entity.getDenomStartCutSec();
+        this.numerEndCutSec = entity.getNumerEndCutSec();
+        this.denomEndCutSec = entity.getDenomEndCutSec();
+        this.numerStartCutIdx = entity.getNumerStartCutIdx();
+        this.denomStartCutIdx = entity.getDenomStartCutIdx();
+        this.numerEndCutIdx = entity.getNumerEndCutIdx();
+        this.denomEndCutIdx = entity.getDenomEndCutIdx();
+        this.userEdited = entity.isUserEdited();
+    }
+
+    public void mergeNonNullFields(SpectraRatioPairDetailsMetadata entity) {
+        this.diffAvg = entity.getDiffAvg();
+        this.denomAvg = entity.getDenomAvg();
+        this.numerAvg = entity.getNumerAvg();
+        this.cutSegmentLength = entity.getCutSegmentLength();
+        this.cutTimeLength = entity.getCutTimeLength();
+        this.numerWaveStartSec = entity.getNumerWaveStartSec();
+        this.denomWaveStartSec = entity.getDenomWaveStartSec();
+        this.numerWaveEndSec = entity.getNumerWaveEndSec();
+        this.denomWaveEndSec = entity.getDenomWaveEndSec();
+        this.numerPeakSec = entity.getNumerPeakSec();
+        this.denomPeakSec = entity.getDenomPeakSec();
+        this.numerFMarkerSec = entity.getNumerFMarkerSec();
+        this.denomFMarkerSec = entity.getDenomFMarkerSec();
+        this.numerStartCutSec = entity.getNumerStartCutSec();
+        this.denomStartCutSec = entity.getDenomStartCutSec();
+        this.numerEndCutSec = entity.getNumerEndCutSec();
+        this.denomEndCutSec = entity.getDenomEndCutSec();
+        this.numerStartCutIdx = entity.getNumerStartCutIdx();
+        this.denomStartCutIdx = entity.getDenomStartCutIdx();
+        this.numerEndCutIdx = entity.getNumerEndCutIdx();
+        this.denomEndCutIdx = entity.getDenomEndCutIdx();
+        this.userEdited = entity.getUserEdited();
     }
 
 }

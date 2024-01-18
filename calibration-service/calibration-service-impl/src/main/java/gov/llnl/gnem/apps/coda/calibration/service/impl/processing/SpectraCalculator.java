@@ -603,9 +603,7 @@ public class SpectraCalculator {
     /**
      * Now compute the total energy by summing the squared product of the
      * discrete path-corrected moment rate spectra and omega. Then divide by
-     * 4*pi*pi*rho*(vel**5)/(Radiation) Radiation=(2/5)
-     *
-     * rho=2.7 gm/cm**3 vel=3.5E5 cm/s
+     * (Radiation)/4*pi*pi*rho*(vel**5) Radiation=(2/5)
      *
      * Then finally multiply by delta omega at the front.
      *
@@ -633,9 +631,9 @@ public class SpectraCalculator {
             idx++;
         }
 
-        // double k = Math.sqrt(0.4 / (4 * Math.PI * Math.PI * mdacFI.getRhos() * Math.pow(mdacFI.getBetas(), 5)));
-        double k = Math.sqrt(6.48E-24); // Numerically derived k constant
+        double k = Math.sqrt(Math.pow(mdacFI.getRadPatS(), 2.0) / (4.0 * Math.PI * Math.PI * mdacFI.getRhos() * Math.pow(mdacFI.getBetas(), 5)));
         double sumEnergy = 0.0;
+
         double end;
         double start;
         double amp;
@@ -653,9 +651,9 @@ public class SpectraCalculator {
          * Now for the last point, assume an omega square fall-off and integrate
          * from wN to infinity.
          */
-        final double wN = Math.PI * (highFreq[measCount - 1] + lowFreq[measCount - 1]);
+        double wN = 2.0 * Math.PI * highFreq[measCount - 1];
         final double AN = (Math.pow(10, logAmplitudes[measCount - 1])) * k;
-        final double delta_wN = (Math.PI * (highFreq[measCount - 1] + lowFreq[measCount - 1]) / 2.0);
+        final double delta_wN = 2.0 * Math.PI * ((highFreq[measCount - 1] - lowFreq[measCount - 1]) / 2.0);
         final double EN = ((Math.pow(AN, 2.0)) / 3.0) * (Math.pow(wN, 3.0) - Math.pow(wN - delta_wN, 3.0));
         final double eTotal_obs = sumEnergy + EN;
 
@@ -685,14 +683,17 @@ public class SpectraCalculator {
         // wild fluctuations in the values measured.
 
         // Extrapolated low frequency energy
+        final double lowFrequency = spec != null && spec.getSpectraXY().size() > 0 ? Math.pow(10.0, spec.getSpectraXY().get(0).getX()) : lowFreq[0];
         final double lowAmp = (Math.pow(10, spec != null && spec.getSpectraXY().size() > 0 ? (spec.getSpectraXY().get(0).getY() - 7.0) : logAmplitudes[0])) * k;
-
-        final double wF = 2.0 * Math.PI * lowFreq[0];
+        final double wF = lowFrequency * 2.0 * Math.PI;
         final double eTotal_low = Math.pow(lowAmp, 2) * Math.pow(wF, 3.0) / 3.0;
 
         // We do the same thing for the high frequency extrapolation.
-        final double ahi = Math.pow(10.0, spec != null && spec.getSpectraXY().size() > 0 ? (spec.getSpectraXY().get(measCount - 1).getY() - 7.0) : logAmplitudes[measCount - 1]) * k;
-        final double eTotal_hi = Math.pow(ahi, 2) * Math.pow(wN, 3.0);
+        final double highFrequency = spec != null && spec.getSpectraXY().size() > measCount - 1 ? Math.pow(10.0, spec.getSpectraXY().get(measCount - 1).getX()) : highFreq[measCount - 1];
+        wN = highFrequency * 2.0 * Math.PI;
+
+        final double ahi = Math.pow(10.0, spec != null && spec.getSpectraXY().size() > measCount - 1 ? (spec.getSpectraXY().get(measCount - 1).getY() - 7.0) : logAmplitudes[measCount - 1]) * k;
+        final double eTotal_hi = Math.pow(ahi, 2.0) * Math.pow(wN, 3.0);
 
         // This is the total energy of low, observed and high
         double energyS = eTotal_low + eTotal_obs + eTotal_hi;
@@ -805,9 +806,6 @@ public class SpectraCalculator {
             for (double mw = minMW; mw < maxMW; mw = mw + ((maxMW - minMW) / 100.)) {
                 for (double stress = minApparentStress; stress < maxApparentStress; stress = stress + ((maxApparentStress - minApparentStress) / 100.)) {
                     final double res = mdacFunction.value(new double[] { mw, stress });
-                    final double corner = mdacService.getCornerFrequency(mdacPs, mdacFi.setPsi(0.0).setSigma(stress), mw);
-                    stats.addValue(new double[] { mw, stress, res, corner });
-                    optimizerMeasurements.add(new MwOptimizerMeasurement(res, mw, stress, corner));
                     if (res < best) {
                         best = res;
                         result[MW_FIT] = mw;
@@ -832,7 +830,7 @@ public class SpectraCalculator {
         // until I can get a stats person to eyeball this it'll have to do.
         final double SE = Math.sqrt(C.getEntry(FIT, FIT) / (stats.getN() - 2.0));
         final double f1 = result[RMS_FIT] + SE;
-        final double f2 = f1 + (2.0 * SE);
+        final double f2 = result[RMS_FIT] + (2.0 * SE);
 
         double mw1min = Double.POSITIVE_INFINITY;
         double mw1max = Double.NEGATIVE_INFINITY;

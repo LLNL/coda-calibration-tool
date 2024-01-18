@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* CODE-743439, CODE-848318.
 * All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
@@ -298,7 +298,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         stressPlot = plotFactory.basicPlot();
         stressPlot.getTitle().setText("Apparent Stress (MPa)");
         stressPlot.getTitle().setFontSize(16);
-        stressPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Measured"), plotFactory.axis(Axis.Type.LOG_Y, "Comparison"));
+        stressPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Observed"), plotFactory.axis(Axis.Type.LOG_Y, "Comparison"));
         final AxisLimits stressXaxis = new AxisLimits(Axis.Type.X, 1.0, 1.0);
         final AxisLimits stressYaxis = new AxisLimits(Axis.Type.Y, 1.0, 1.0);
         stressPlot.setAxisLimits(stressXaxis, stressYaxis);
@@ -328,7 +328,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
         energyVsMomentPlot.attachToDisplayNode(energyVsMomentPane);
 
         apparentStressVsMomentPlot = plotFactory.basicPlot();
-        apparentStressVsMomentPlot.getTitle().setText("Apparent Stress vs Moment");
+        apparentStressVsMomentPlot.getTitle().setText("Observed Stress vs Moment");
         apparentStressVsMomentPlot.getTitle().setFontSize(16);
         apparentStressVsMomentPlot.getTitle().setYOffset(0.92);
         apparentStressVsMomentPlot.addAxes(plotFactory.axis(Axis.Type.X, "log10 Mo (N-m)"), plotFactory.axis(Axis.Type.LOG_Y, "App. Stress (MPa)"));
@@ -538,11 +538,13 @@ public abstract class AbstractMeasurementController implements MapListeningContr
 
         final boolean showPoorlyConstrainedBanner = likelyPoorlyConstrained;
 
+        final MeasuredMwDetails specMwInfo = mwDetails;
+
         spectraControllers.forEach(spc -> {
             if (fittingSpectra != null && spc.shouldShowFits()) {
-                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), fittingSpectra, null);
+                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), fittingSpectra, specMwInfo, null);
             } else {
-                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), null, null);
+                spc.getSpectralPlot().plotXYdata(toPlotPoints(selectedEventMeasurements, spc.getDataFunc()), null, specMwInfo, null);
             }
             spc.getSpectraDataMap().putAll(mapSpectraToPoint(selectedEventMeasurements, spc.getDataFunc()));
 
@@ -702,9 +704,9 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                             }
 
                             double m0 = (1.5 * mw) + 9.1;
-                            if (ev.getApparentStressInMpa() != null && ev.getApparentStressInMpa() != 0.0) {
+                            if (ev.getEnergyStress() != null && ev.getEnergyStress() != 0.0) {
                                 apparentStressVsMomentPlot.addPlotObject(
-                                        plotFactory.createSymbol(SymbolStyles.CIRCLE, "", m0, ev.getApparentStressInMpa(), Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
+                                        plotFactory.createSymbol(SymbolStyles.CIRCLE, "", m0, ev.getEnergyStress(), Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false));
                             }
                             if (ev.getCornerFreq() != null && ev.getCornerFreq() != 0.0) {
                                 Symbol symbol = plotFactory.createSymbol(SymbolStyles.CIRCLE, "Data", ev.getCornerFreq(), m0, Color.BLACK, Color.BLACK, Color.BLACK, ev.getEventId(), false);
@@ -751,7 +753,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                 mwPlotSymbols.add(valSym);
                             }
 
-                            final Double stress = ev.getApparentStressInMpa();
+                            final Double stress = ev.getEnergyStress();
                             Double refStress = ev.getRefApparentStressInMpa();
 
                             if (stress != null) {

@@ -84,7 +84,7 @@ public class EnvelopeStacker implements WaveformStacker {
                 log.info(e.getMessage(), e);
             }
         } else {
-            log.info("Waveform with only one channel found for list {}, skipping stacking", waves);
+            log.info("Empty list provided for creating envelopes, skipping");
         }
         return base;
     }

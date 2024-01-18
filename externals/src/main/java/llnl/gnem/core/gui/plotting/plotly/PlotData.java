@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2022, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
@@ -38,6 +38,7 @@ public class PlotData implements Serializable {
     private boolean showGroupVelocity;
     private boolean showWindowLine;
     private boolean showCodaStartLine;
+    private boolean showHorizontalErrorBars;
     private boolean useHorizontalBottomLegend;
 
     public PlotData(final PlotTrace defaultTraceStyle, final Color backgroundColor, final Title plotTitle) {
@@ -124,6 +125,14 @@ public class PlotData implements Serializable {
 
     public void setShowCodaStartLine(boolean showCodaStartLine) {
         this.showCodaStartLine = showCodaStartLine;
+    }
+
+    public boolean getShowHorizontalErrorBars() {
+        return showHorizontalErrorBars;
+    }
+
+    public void setShowHorizontalErrorBars(final boolean showHorizontalErrorBars) {
+        this.showHorizontalErrorBars = showHorizontalErrorBars;
     }
 
     public boolean shouldShowWindowLine() {

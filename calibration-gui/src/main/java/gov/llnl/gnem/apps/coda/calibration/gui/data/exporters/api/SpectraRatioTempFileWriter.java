@@ -14,13 +14,16 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api;
 
+import java.io.BufferedWriter;
 import java.nio.file.Path;
 import java.util.List;
 
-import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 
 public interface SpectraRatioTempFileWriter {
-    public void writeSpectraRatioDetails(Path folder, List<SpectraRatioPairDetails> spectraRatioPairDetails);
+    public void writeSpectraRatioDetails(Path folder, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails);
 
-    public void writeSpectraRatioDetails(Path folder, String filename, List<SpectraRatioPairDetails> spectraRatioPairDetails);
+    public void writeSpectraRatioDetails(Path folder, String filename, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails);
+
+    public void writeSpectraRatioDetails(BufferedWriter fileWriter, SpectraRatioPairDetailsMetadata spectraRatioPairDetails);
 }

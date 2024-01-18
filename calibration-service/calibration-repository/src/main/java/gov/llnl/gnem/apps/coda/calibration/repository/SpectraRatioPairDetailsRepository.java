@@ -14,11 +14,29 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.repository;
 
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepository;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 
 @Transactional
 public interface SpectraRatioPairDetailsRepository extends DetachableJpaRepository<SpectraRatioPairDetails, Long> {
+
+    public List<SpectraRatioPairDetails> findByUserEditedTrue();
+
+    @Modifying
+    @Query("delete from SpectraRatioPairDetails ratio where ratio.id NOT IN :ids")
+    public void deleteAllNotInIdsList(@Param("ids") List<Long> ids);
+
+    @Query("select ratio from SpectraRatioPairDetails ratio")
+    public List<SpectraRatioPairDetailsMetadata> findAllMetdataOnly();
+
+    @Query("select ratio from SpectraRatioPairDetails ratio where ratio.numerWaveform.id = :numerId and ratio.denomWaveform.id = :denomId")
+    public SpectraRatioPairDetails findByWaveformIds(@Param("numerId") Long numerId, @Param("denomId") Long denomId);
 }

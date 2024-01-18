@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -18,25 +18,49 @@ public interface Line extends PlotObject {
 
     public double[] getX();
 
-    public void setX(double[] xVals);
+    public PlotObject setX(double[] xVals);
 
     public double[] getY();
 
-    public void setY(double[] yVals);
+    public PlotObject setY(double[] yVals);
+
+    public double[] getErrorData();
+
+    public PlotObject setErrorData(double[] errorData);
+
+    public double[] getErrorDataMinus();
+
+    public PlotObject setErrorDataMinus(double[] errorDataMinus);
+
+    public boolean getUseHorizontalErrorBars();
+
+    public PlotObject setUseHorizontalErrorBars(boolean useHorizontalErrorBars);
+
+    public String getHoverTemplate();
+
+    public PlotObject setHoverTemplate(String hoverTemplate);
 
     public double[] getColor();
 
-    public void setColor(double[] colorVals);
+    public PlotObject setColor(double[] colorVals);
 
     public LineStyles getStyle();
 
-    public void setStyle(LineStyles style);
+    public PlotObject setStyle(LineStyles style);
+
+    public HoverModes getHoverMode();
+
+    public PlotObject setHoverMode(HoverModes hoverMode);
+
+    public FillModes getFillMode();
+
+    public PlotObject setFillMode(FillModes fillMode);
 
     public int getPxThickness();
 
-    public void setPxThickness(int pxThickness);
-
-    public void setColorMap(String colorMap);
+    public PlotObject setPxThickness(int pxThickness);
 
     public String getColorMap();
+
+    public PlotObject setColorMap(String colorMap);
 }

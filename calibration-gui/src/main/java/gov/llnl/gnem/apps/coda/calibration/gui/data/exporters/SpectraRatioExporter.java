@@ -14,6 +14,7 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.data.exporters;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -27,7 +28,7 @@ import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraRatioTempFileWriter;
 import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
-import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
 
 @Component
 public class SpectraRatioExporter {
@@ -40,10 +41,10 @@ public class SpectraRatioExporter {
         this.spectraRatioWriters = spectraRatioWriters;
     }
 
-    public File createExportArchive(List<SpectraRatioPairDetails> ratiosByEventPair, Path directory) throws IOException {
+    public File createExportArchive(List<SpectraRatioPairDetailsMetadata> ratiosByEventPair, Path directory) throws IOException {
 
         if (spectraRatioWriters != null) {
-            List<SpectraRatioPairDetails> spectraRatioDetails = new ArrayList<>(ratiosByEventPair);
+            List<SpectraRatioPairDetailsMetadata> spectraRatioDetails = new ArrayList<>(ratiosByEventPair);
             for (SpectraRatioTempFileWriter writer : spectraRatioWriters) {
                 writer.writeSpectraRatioDetails(directory, spectraRatioDetails);
             }
@@ -52,9 +53,15 @@ public class SpectraRatioExporter {
         return CommonGuiUtils.zipDirectory(directory);
     }
 
-    public void writeSpectraRatioPairDetails(Path path, String filename, List<SpectraRatioPairDetails> spectraRatioDetails) {
+    public void writeSpectraRatioPairDetails(Path path, String filename, List<SpectraRatioPairDetailsMetadata> spectraRatioDetails) {
         for (SpectraRatioTempFileWriter writer : spectraRatioWriters) {
             writer.writeSpectraRatioDetails(path, filename, spectraRatioDetails);
+        }
+    }
+
+    public void writeSpectraRatioPairDetails(BufferedWriter fileWriter, SpectraRatioPairDetailsMetadata ratio) {
+        for (SpectraRatioTempFileWriter writer : spectraRatioWriters) {
+            writer.writeSpectraRatioDetails(fileWriter, ratio);
         }
     }
 }

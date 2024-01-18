@@ -17,6 +17,7 @@ package gov.llnl.gnem.apps.coda.common.service.api;
 import java.util.List;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 
 public interface WaveformService extends BaseService<Waveform, Long> {
@@ -54,4 +55,6 @@ public interface WaveformService extends BaseService<Waveform, Long> {
     public List<Waveform> getActiveSharedEventStationStacksById(Long id);
 
     public List<String> getUniqueEventIds();
+
+    public Waveform getByMatchingKeys(Station station, String eventId, Double lowFrequency, Double highFrequency);
 }

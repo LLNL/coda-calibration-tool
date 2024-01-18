@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2021, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
-* CODE-743439.
+* Copyright (c) 2023, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
+* CODE-743439, CODE-848318.
 * All rights reserved.
 * This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
 *
@@ -17,11 +17,21 @@ package llnl.gnem.core.gui.plotting.plotly;
 import java.util.ArrayList;
 import java.util.List;
 
+import llnl.gnem.core.gui.plotting.api.FillModes;
+import llnl.gnem.core.gui.plotting.api.HoverModes;
+
 public class PlotObjectData {
     private final List<Double> xData;
     private final List<Double> yData;
     private final List<Double[]> zData;
     private final List<Double> cData;
+    private final List<Double> errorData;
+    private final List<Double> errorDataMinus;
+    private boolean useHorizontalErrorBars;
+    private HoverModes hoverMode;
+    private FillModes fillMode;
+    private String hoverTemplate;
+
     private final List<String> textData;
     private PlotTrace traceStyle;
 
@@ -34,6 +44,9 @@ public class PlotObjectData {
         yData = new ArrayList<>(0);
         zData = new ArrayList<>(0);
         cData = new ArrayList<>(0);
+        errorData = new ArrayList<>(0);
+        errorDataMinus = new ArrayList<>(0);
+        useHorizontalErrorBars = false;
         textData = new ArrayList<>(0);
         this.traceStyle = traceStyle;
     }
@@ -54,8 +67,48 @@ public class PlotObjectData {
         return cData;
     }
 
+    public List<Double> getErrorData() {
+        return errorData;
+    }
+
+    public List<Double> getErrorDataMinus() {
+        return errorDataMinus;
+    }
+
+    public boolean useHorizontalErrorBars() {
+        return useHorizontalErrorBars;
+    }
+
+    public void setErrorBarsHorizontal(final boolean useHorizontalErrorBars) {
+        this.useHorizontalErrorBars = useHorizontalErrorBars;
+    }
+
     public List<String> getTextData() {
         return textData;
+    }
+
+    public HoverModes getHoverMode() {
+        return hoverMode;
+    }
+
+    public void setHoverMode(HoverModes hoverMode) {
+        this.hoverMode = hoverMode;
+    }
+
+    public FillModes getFillMode() {
+        return fillMode;
+    }
+
+    public void setFillMode(FillModes fillMode) {
+        this.fillMode = fillMode;
+    }
+
+    public String getHoverTemplate() {
+        return hoverTemplate;
+    }
+
+    public void setHoverTemplate(String hoverTemplate) {
+        this.hoverTemplate = hoverTemplate;
     }
 
     public PlotTrace getTraceStyle() {
@@ -71,7 +124,8 @@ public class PlotObjectData {
         yData.clear();
         zData.clear();
         cData.clear();
+        errorData.clear();
+        errorDataMinus.clear();
         textData.clear();
     }
-
 }
