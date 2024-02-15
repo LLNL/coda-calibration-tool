@@ -150,6 +150,9 @@ public class RatioMeasurementSpectraPlotManager {
     private SplitPane mainSplitPane;
 
     @FXML
+    private StackPane rootPane;
+
+    @FXML
     private StackPane borderPane;
 
     @FXML
@@ -1019,12 +1022,7 @@ public class RatioMeasurementSpectraPlotManager {
     }
 
     public String getPlotIdentifier() {
-        StringBuilder sb = new StringBuilder();
-        ratioMeasurementReport.getStationsForEventPair(getEventPair()).forEach(station -> {
-            sb.append(station.getStationName());
-            sb.append("_");
-        });
-        return String.format("large_event_%s_small_event_%s_stations_%s", getEventPair().getY().getEventId(), getEventPair().getX().getEventId(), sb.toString());
+        return String.format("large_event_%s_small_event_%s", getEventPair().getY().getEventId(), getEventPair().getX().getEventId());
     }
 
     // Gets the epicentral distance EModel WGS84 distance between both events
@@ -1250,7 +1248,7 @@ public class RatioMeasurementSpectraPlotManager {
 
     public void exportScreenshots(final File folder) {
         String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
-        SnapshotUtils.writePng(folder, new Pair<>(ALL_PLOTS_PREFIX, mainSplitPane), timestamp);
+        SnapshotUtils.writePng(folder, new Pair<>(ALL_PLOTS_PREFIX, rootPane), timestamp);
         SnapshotUtils.writePng(folder, new Pair<>(SPECTRA_RATIO_PREFIX, spectraRatioPlotNode), timestamp);
         SnapshotUtils.writePng(folder, new Pair<>(JOINT_MOMENT_PREFIX, jointMomentPlotNode), timestamp);
         SnapshotUtils.writePng(folder, new Pair<>(JOINT_STRESS_PREFIX, jointStressPlotNode), timestamp);

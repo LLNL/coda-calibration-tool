@@ -631,7 +631,7 @@ public class SpectraCalculator {
             idx++;
         }
 
-        double k = Math.sqrt(Math.pow(mdacFI.getRadPatS(), 2.0) / (4.0 * Math.PI * Math.PI * mdacFI.getRhos() * Math.pow(mdacFI.getBetas(), 5)));
+        double k = mdacFI.getRadPatS() / (2.0 * Math.PI * Math.sqrt(mdacFI.getRhos() * Math.pow(mdacFI.getBetas(), 5)));
         double sumEnergy = 0.0;
 
         double end;

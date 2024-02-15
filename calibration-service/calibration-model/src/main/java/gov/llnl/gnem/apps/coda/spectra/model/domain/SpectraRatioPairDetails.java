@@ -24,6 +24,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -36,7 +37,7 @@ import org.springframework.format.annotation.NumberFormat;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 
 @Entity
-@Table(name = "Spectra_Ratio_Pair_Details")
+@Table(name = "Spectra_Ratio_Pair_Details", indexes = { @Index(name = "denomWaveform.id_index", columnList = "id"), @Index(name = "numerWaveform.id_index", columnList = "id") })
 public class SpectraRatioPairDetails {
 
     @Id

@@ -331,29 +331,25 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
                                                 userRatio = userEditedRatios.get(eventPair).get(curStation).get(freqBand);
                                             }
 
+                                            if (!ratioData.containsKey(eventPair)) {
+                                                ratioData.put(eventPair, new HashMap<>());
+                                            }
+                                            Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>> ratiosForPair = ratioData.get(eventPair);
+
+                                            if (!ratiosForPair.containsKey(curStation)) {
+                                                ratiosForPair.put(curStation, new HashMap<>());
+                                            }
+
                                             if (userRatio == null) {
                                                 Result<SpectraRatioPairDetails> ratioDetails = calcRatioFunc.apply(smallSpectra, largeSpectra);
                                                 if (ratioDetails.isSuccess()) {
                                                     ratioDataList.add(ratioDetails.getResultPayload().get());
-
-                                                    if (!ratioData.containsKey(eventPair)) {
-                                                        ratioData.put(eventPair, new HashMap<>());
-                                                    }
-
-                                                    Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>> ratiosForPair = ratioData.get(eventPair);
-                                                    if (!ratiosForPair.containsKey(curStation)) {
-                                                        ratiosForPair.put(curStation, new HashMap<>());
-                                                    }
                                                     ratiosForPair.get(curStation).put(freqBand, ratioDetails.getResultPayload().get());
                                                     ratioData.put(eventPair, ratiosForPair);
                                                 } else {
                                                     log.info("Unable to ratio spectra {}", ratioDetails.getErrors());
                                                 }
                                             } else {
-                                                Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>> ratiosForPair = ratioData.get(eventPair);
-                                                if (!ratiosForPair.containsKey(curStation)) {
-                                                    ratiosForPair.put(curStation, new HashMap<>());
-                                                }
                                                 ratiosForPair.get(curStation).put(freqBand, userRatio);
                                                 ratioData.put(eventPair, ratiosForPair);
                                             }
@@ -695,50 +691,54 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
     public List<String> loadRatioMetadata(List<SpectraRatioPairDetailsMetadata> ratios) {
         List<String> errors = new ArrayList<>();
         for (SpectraRatioPairDetailsMetadata ratio : ratios) {
-            //Relies on one ratio per distinct event pair/station/freq tuple
-            //Look for wave/freq tuple
-            WaveformMetadata numerWaveMeta = ratio.getNumerWaveform();
-            WaveformMetadata denomWaveMeta = ratio.getDenomWaveform();
-            Waveform numerWaveform = null;
-            Waveform denomWaveform = null;
+            try {
+                //Relies on one ratio per distinct event pair/station/freq tuple
+                //Look for wave/freq tuple
+                WaveformMetadata numerWaveMeta = ratio.getNumerWaveform();
+                WaveformMetadata denomWaveMeta = ratio.getDenomWaveform();
+                Waveform numerWaveform = null;
+                Waveform denomWaveform = null;
 
-            Waveform matches = waveformService.getByMatchingKeys(
-                    numerWaveMeta.getStream().getStation(),
-                        numerWaveMeta.getEvent().getEventId(),
-                        numerWaveMeta.getLowFrequency(),
-                        numerWaveMeta.getHighFrequency());
-            if (matches != null) {
-                numerWaveform = matches;
-            }
-
-            matches = waveformService.getByMatchingKeys(
-                    denomWaveMeta.getStream().getStation(),
-                        denomWaveMeta.getEvent().getEventId(),
-                        denomWaveMeta.getLowFrequency(),
-                        denomWaveMeta.getHighFrequency());
-            if (matches != null) {
-                denomWaveform = matches;
-            }
-
-            if (numerWaveform != null && denomWaveform != null) {
-                //Check if we can attach to an existing SpectraRatioPairDetails
-                SpectraRatioPairDetails spectraRatio = spectraRatioPairDetailsRepository.findByWaveformIds(numerWaveform.getId(), denomWaveform.getId());
-                if (spectraRatio == null) {
-                    spectraRatio = new SpectraRatioPairDetails(numerWaveform, denomWaveform);
+                Waveform matches = waveformService.getByMatchingKeys(
+                        numerWaveMeta.getStream().getStation(),
+                            numerWaveMeta.getEvent().getEventId(),
+                            numerWaveMeta.getLowFrequency(),
+                            numerWaveMeta.getHighFrequency());
+                if (matches != null) {
+                    numerWaveform = matches;
                 }
-                spectraRatio.mergeNonNullFields(ratio);
-                SpectraRatioPairOperator op = new SpectraRatioPairOperator(spectraRatio);
-                op.updateDiffSegment();
-                spectraRatioPairDetailsRepository.save(spectraRatio);
-            } else {
-                errors.add(
-                        "Unable to find matching waveforms for ratio: \n"
-                                + "Event Id A "
-                                + denomWaveMeta.getEvent().getEventId()
-                                + "\n"
-                                + "Event Id B "
-                                + numerWaveMeta.getEvent().getEventId()
-                                + "\n");
+
+                matches = waveformService.getByMatchingKeys(
+                        denomWaveMeta.getStream().getStation(),
+                            denomWaveMeta.getEvent().getEventId(),
+                            denomWaveMeta.getLowFrequency(),
+                            denomWaveMeta.getHighFrequency());
+                if (matches != null) {
+                    denomWaveform = matches;
+                }
+
+                if (numerWaveform != null && denomWaveform != null) {
+                    //Check if we can attach to an existing SpectraRatioPairDetails
+                    SpectraRatioPairDetails spectraRatio = spectraRatioPairDetailsRepository.findByWaveformIds(numerWaveform.getId(), denomWaveform.getId());
+                    if (spectraRatio == null) {
+                        spectraRatio = new SpectraRatioPairDetails(numerWaveform, denomWaveform);
+                    }
+                    spectraRatio.mergeNonNullFields(ratio);
+                    SpectraRatioPairOperator op = new SpectraRatioPairOperator(spectraRatio);
+                    op.updateDiffSegment();
+                    spectraRatioPairDetailsRepository.save(spectraRatio);
+                } else {
+                    errors.add(
+                            "Unable to find matching waveforms for ratio: \n"
+                                    + "Event Id A "
+                                    + denomWaveMeta.getEvent().getEventId()
+                                    + "\n"
+                                    + "Event Id B "
+                                    + numerWaveMeta.getEvent().getEventId()
+                                    + "\n");
+                }
+            } catch (Exception e) {
+                log.error(e.getLocalizedMessage(), e);
             }
         }
         return errors;

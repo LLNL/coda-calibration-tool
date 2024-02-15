@@ -162,36 +162,42 @@ public class SpectraRatioLoadingController {
                         fileFailedProgress.setTotal(0l);
                         bus.post(processingFailedProgressEvent);
 
+                        final int batchSize = 50;
                         for (File file : files) {
                             List<Result<SpectraRatioPairDetailsMetadata>> results = ratioLoader.convertFile(file);
-                            try {
-                                List<SpectraRatioPairDetailsMetadata> successfulResults = results.parallelStream()
-                                                                                                 .filter(Result::isSuccess)
-                                                                                                 .map(result -> result.getResultPayload().get())
-                                                                                                 .collect(Collectors.toList());
+                            int i = 0;
+                            fileProcessingProgress.setTotal(fileProcessingProgress.getTotal() + results.size());
 
-                                List<String> loadFailures = new ArrayList<>();
-                                client.loadRatioMetadata(idCounter.getAndIncrement(), successfulResults).doOnNext(ret -> loadFailures.add(ret)).retry(3).blockLast(Duration.ofHours(1l));
+                            while (i < results.size()) {
+                                try {
+                                    List<Result<SpectraRatioPairDetailsMetadata>> batch = results.subList(i, Math.min(i + batchSize, results.size()));
+                                    i = i + batchSize;
+                                    List<SpectraRatioPairDetailsMetadata> successfulResults = batch.parallelStream()
+                                                                                                   .filter(Result::isSuccess)
+                                                                                                   .map(result -> result.getResultPayload().get())
+                                                                                                   .collect(Collectors.toList());
 
-                                if (loadFailures.size() > 0) {
-                                    fileFailedProgress.setTotal(fileFailedProgress.getTotal() + loadFailures.size());
-                                    fileFailedProgress.setCurrent(fileFailedProgress.getCurrent() + loadFailures.size());
-                                    bus.post(processingFailedProgressEvent);
-                                    loadFailures.forEach(
-                                            r -> bus.post(new PassFailEvent(LOCAL_FAIL_EVENT, "", new Result<>(false, Collections.singletonList(new LightweightIllegalStateException(r)), null))));
+                                    List<String> loadFailures = new ArrayList<>();
+                                    client.loadRatioMetadata(idCounter.getAndIncrement(), successfulResults).doOnNext(ret -> loadFailures.add(ret)).retry(3).blockLast(Duration.ofHours(1l));
+
+                                    if (loadFailures.size() > 0) {
+                                        fileFailedProgress.setTotal(fileFailedProgress.getTotal() + loadFailures.size());
+                                        fileFailedProgress.setCurrent(fileFailedProgress.getCurrent() + loadFailures.size());
+                                        bus.post(processingFailedProgressEvent);
+                                        loadFailures.forEach(
+                                                r -> bus.post(new PassFailEvent(LOCAL_FAIL_EVENT, "", new Result<>(false, Collections.singletonList(new LightweightIllegalStateException(r)), null))));
+                                    }
+
+                                    fileProcessingProgress.setCurrent(fileProcessingProgress.getCurrent() + successfulResults.size() - loadFailures.size());
+                                    bus.post(processingProgressEvent);
+                                } catch (RuntimeException ex) {
+                                    log.trace(ex.getMessage(), ex);
                                 }
-
-                                fileProcessingProgress.setTotal(fileProcessingProgress.getTotal() + successfulResults.size());
-                                fileProcessingProgress.setCurrent(fileProcessingProgress.getCurrent() + successfulResults.size() - loadFailures.size());
-                                bus.post(processingProgressEvent);
-                            } catch (RuntimeException ex) {
-                                log.trace(ex.getMessage(), ex);
                             }
                         }
                     } catch (RuntimeException e) {
                         log.error(e.getMessage(), e);
                     }
-
                 }
             } catch (IllegalStateException e) {
                 log.error("Unable to instantiate loading display {}", e.getMessage(), e);

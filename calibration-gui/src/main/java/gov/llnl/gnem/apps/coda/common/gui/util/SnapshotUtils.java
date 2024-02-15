@@ -2,11 +2,11 @@
 * Copyright (c) 2020, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory
 * CODE-743439.
 * All rights reserved.
-* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool. 
-* 
+* This file is part of CCT. For details, see https://github.com/LLNL/coda-calibration-tool.
+*
 * Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License.  You may obtain a copy of the License at:
 * http://www.apache.org/licenses/LICENSE-2.0
-* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+* Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the license.
 *
 * This work was performed under the auspices of the U.S. Department of Energy
@@ -21,6 +21,8 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -39,7 +41,7 @@ public class SnapshotUtils {
 
     public static Image snapshot(final Node node) {
         SnapshotParameters snapshotParams = new SnapshotParameters();
-        snapshotParams.setTransform(Transform.scale(8.0, 8.0));
+        snapshotParams.setTransform(Transform.scale(2.0, 2.0));
         return node.snapshot(snapshotParams, null);
     }
 
@@ -54,9 +56,9 @@ public class SnapshotUtils {
         }
     }
 
-    public static void writePng(final Node node, String filename) {
+    public static CompletableFuture<Void> writePng(final Node node, String filename) {
         Image snapshot = snapshot(node);
-        CompletableFuture.runAsync(() -> writePng(SwingFXUtils.fromFXImage(snapshot, null), filename));
+        return CompletableFuture.runAsync(() -> writePng(SwingFXUtils.fromFXImage(snapshot, null), filename));
     }
 
     public static void writePng(File folder, Pair<String, Node> nameAndNode) {
@@ -75,7 +77,15 @@ public class SnapshotUtils {
             timestamp = getTimestampWithLeadingSeparator();
         }
         if (folder != null && namesAndNodes != null && !namesAndNodes.isEmpty()) {
-            namesAndNodes.stream().forEach(nameAndNode -> writePng(nameAndNode.getY(), folder.getAbsolutePath() + File.separator + nameAndNode.getX() + timestamp + ".png"));
+            List<CompletableFuture<Void>> futures = namesAndNodes.stream()
+                                                                 .map(nameAndNode -> writePng(nameAndNode.getY(), folder.getAbsolutePath() + File.separator + nameAndNode.getX() + timestamp + ".png"))
+                                                                 .collect(Collectors.toList());
+            try {
+                //Block for a minute to make sure the PNGs get written to disk in total before we move on
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0])).get(1l, TimeUnit.MINUTES);
+            } catch (Exception ex) {
+                log.debug(ex.getLocalizedMessage(), ex);
+            }
         }
     }
 

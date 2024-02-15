@@ -6,7 +6,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>coda-calibration</artifactId>
-	<version>1.0.21</version>
+	<version>1.0.21.1</version>
 	<name>coda-calibration</name>
 
 	<packaging>pom</packaging>
@@ -76,7 +76,7 @@
 
 		<jfx.version>17.0.6</jfx.version>
 		<jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-		<spring.boot.version>2.7.2</spring.boot.version>
+		<spring.boot.version>2.7.18</spring.boot.version>
 		<reactor.version>2022.0.5</reactor.version>
 
 		<javax.persistence.version>2.2.1</javax.persistence.version>
