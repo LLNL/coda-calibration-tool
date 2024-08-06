@@ -258,6 +258,28 @@ public class SpectralPlot extends Pane implements Serializable {
         cornerFreqLine.plotGroup(plot);
     }
 
+    public Line drawRectangle(double x, double y, double xx, double yy, Color color) {
+        final double[] posX = new double[5];
+        final double[] posY = new double[5];
+
+        // Setting shadow box coordinates
+        posX[0] = x;
+        posX[1] = xx;
+        posX[2] = xx;
+        posX[3] = x;
+        posX[4] = x;
+        posY[0] = y;
+        posY[1] = y;
+        posY[2] = yy;
+        posY[3] = yy;
+        posY[4] = y;
+
+        Line plotRect = plotFactory.line(posX, posY, color, LineStyles.SOLID, 1);
+        plotRect.setFillMode(FillModes.TO_SELF); // Fills the area between the lines
+
+        return plotRect;
+    }
+
     public ObjectGroup buildVerticalLineWithHorizontalErrorBars(final String name, final Double x, final Double topY, final Double bottomY, final Double error, final Double errorMinus,
             final Color color) {
 
@@ -291,8 +313,7 @@ public class SpectralPlot extends Pane implements Serializable {
         shadowY[3] = topY;
         shadowY[4] = topY;
 
-        Line shadowBox = plotFactory.line(shadowX, shadowY, color.deriveColor(0.0, 1.0, 1.0, 0.1), LineStyles.SOLID, 1);
-        shadowBox.setFillMode(FillModes.TO_SELF); // Fills the area between the lines
+        Line shadowBox = drawRectangle(errorMinus, topY, error, bottomY, color.deriveColor(0.0, 1.0, 1.0, 0.1));
         shadowBox.setHoverMode(HoverModes.SKIP); // Skips hover actions for the shadow box
 
         Line valueLine = plotFactory.lineWithErrorBars(xPos, midY, height, height);

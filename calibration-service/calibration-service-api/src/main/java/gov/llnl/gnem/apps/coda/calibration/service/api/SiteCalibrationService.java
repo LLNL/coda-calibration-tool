@@ -23,6 +23,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -31,10 +32,10 @@ import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 public interface SiteCalibrationService {
 
     public Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> measureSiteCorrections(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand, MdacParametersFI mdacFI,
-            Map<PICK_TYPES, MdacParametersPS> mdacPS, Map<String, List<ReferenceMwParameters>> refMws, Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters,
-            PICK_TYPES selectedPhase);
+            Map<PICK_TYPES, MdacParametersPS> mdacPS, Map<String, List<ReferenceMwParameters>> refMws, Map<String, List<ValidationMwParameters>> valMws,
+            Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, PICK_TYPES selectedPhase);
 
     public List<MeasuredMwParameters> fitMws(Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand, MdacParametersFI mdacFI, Map<PICK_TYPES, MdacParametersPS> mdacPS,
-            Map<String, List<ReferenceMwParameters>> refMws, Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandParameters, PICK_TYPES selectedPhase);
+            Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandParameters, PICK_TYPES selectedPhase);
 
 }

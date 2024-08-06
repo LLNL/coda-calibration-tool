@@ -25,8 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -50,6 +48,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.common.model.util.SPECTRA_TYPES;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraEvent;
+import jakarta.annotation.PreDestroy;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -217,21 +216,18 @@ public class SpectraRatioGuiController implements RefreshableController {
         alertPopup.setContentText("You need to select at least 1 numerator event and 1 denominator event to calculate ratios.");
 
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        tableView.getSelectionModel().getSelectedItems().addListener(new ListChangeListener<SpectraEvent>() {
-            @Override
-            public void onChanged(Change<? extends SpectraEvent> c) {
-                List<Event> events = c.getList().stream().map(s -> eventClient.getEvent(s.getEventID()).block()).collect(Collectors.toList());
-                List<Event> allEvents = tableView.getItems().stream().map(s -> eventClient.getEvent(s.getEventID()).block()).collect(Collectors.toList());
-                certMapController.setEventIconsInActive(allEvents);
-                certMapController.setEventIconsActive(events);
-            }
+        tableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<SpectraEvent>) c -> {
+            List<Event> events = c.getList().stream().map(s -> eventClient.getEvent(s.getEventID()).block()).collect(Collectors.toList());
+            List<Event> allEvents = tableView.getItems().stream().map(s -> eventClient.getEvent(s.getEventID()).block()).collect(Collectors.toList());
+            certMapController.setEventIconsInActive(allEvents);
+            certMapController.setEventIconsActive(events);
         });
 
         eventCol.setCellValueFactory(x -> Bindings.createStringBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(SpectraEvent::getEventID).orElseGet(String::new)));
         eventCol.comparatorProperty().set(new MaybeNumericStringComparator());
 
-        fitMwCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventFitMw).orElseGet(null)));
-        refMwCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventRefMw).orElseGet(null)));
+        fitMwCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventFitMw).orElseGet(() -> null)));
+        refMwCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventRefMw).orElseGet(() -> null)));
 
         dateCol.setCellValueFactory(
                 x -> Bindings.createStringBinding(
@@ -250,7 +246,7 @@ public class SpectraRatioGuiController implements RefreshableController {
         }).orElseGet(CheckBox::new)));
         numCol.comparatorProperty().set((c1, c2) -> Boolean.compare(c1.isSelected(), c2.isSelected()));
 
-        distanceCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventDistance).orElseGet(null)));
+        distanceCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventDistance).orElseGet(() -> null)));
 
         denCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(event -> {
             CheckBox box = new CheckBox();

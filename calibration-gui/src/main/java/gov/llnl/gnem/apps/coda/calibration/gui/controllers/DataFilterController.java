@@ -120,7 +120,6 @@ class DataFilterController<T> {
     public void addFilterBtnToColumn(TableColumn<T, ?> column) {
         // Create the checkbox that opens the filter panel/dialog
         Button filterBtn = new Button();
-        filterBtn.setDisable(true);
         Label label = new Label("\uEF4F");
         label.getStyleClass().add("material-icons-medium");
         label.setMaxHeight(16);
@@ -128,6 +127,10 @@ class DataFilterController<T> {
         filterBtn.setGraphic(label);
         filterBtn.setOnMouseClicked(e -> filterDialog.show());
         buttons.add(filterBtn);
+
+        if (items.isEmpty()) {
+            filterBtn.setDisable(true);
+        }
 
         // Create a label that wraps the checkbox so that the column text
         // is displayed to the left of the checkbox

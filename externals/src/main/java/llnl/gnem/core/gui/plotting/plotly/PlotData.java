@@ -40,6 +40,7 @@ public class PlotData implements Serializable {
     private boolean showCodaStartLine;
     private boolean showHorizontalErrorBars;
     private boolean useHorizontalBottomLegend;
+    private String dragmode;
 
     public PlotData(final PlotTrace defaultTraceStyle, final Color backgroundColor, final Title plotTitle) {
         this.defaultTraceStyle = defaultTraceStyle;
@@ -149,5 +150,13 @@ public class PlotData implements Serializable {
 
     public boolean useHorizontalBottomLegend() {
         return useHorizontalBottomLegend;
+    }
+
+    public String getDragmode() {
+        return dragmode;
+    }
+
+    public void setDragmode(String dragmode) {
+        this.dragmode = dragmode;
     }
 }

@@ -36,6 +36,10 @@ public interface Line extends PlotObject {
 
     public PlotObject setUseHorizontalErrorBars(boolean useHorizontalErrorBars);
 
+    public boolean getDraggable();
+
+    public PlotObject setDraggable(boolean draggable);
+
     public String getHoverTemplate();
 
     public PlotObject setHoverTemplate(String hoverTemplate);

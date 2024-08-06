@@ -34,7 +34,7 @@ import java.util.TimeZone;
  *
  * @author Doug Dodge
  */
-public strictfp class TimeT implements Comparable, Serializable {
+public class TimeT implements Comparable, Serializable {
 
     /**
      * Number of seconds in a minute
@@ -186,6 +186,7 @@ public strictfp class TimeT implements Comparable, Serializable {
      *            A String representation of the time, e.g. "1994/02/24
      *            06:17:12.234"
      * @param formatString
+     *            <p>
      *            A format String that specifies how to interpret the time
      *            String. The format String must follow the rules of
      *            SimpleDateFormat. You must not attempt to specify seconds to
@@ -193,12 +194,12 @@ public strictfp class TimeT implements Comparable, Serializable {
      *            an incorrect parse. For example a time String of "12.12345"
      *            with a format String of "ss.SSSSS" will result in seconds
      *            interpreted as 12.345.
-     *            <p>
      *            </p>
+     *            <p>
      *            The following pattern letters are defined (all other
      *            characters from 'A' to 'Z' and from 'a' to 'z' are reserved):
-     *            <p>
      *            </p>
+     *            <p>
      *            Letter Date or Time Component Presentation Examples G Era
      *            designator Text AD y Year Year 1996; 96 M Month in year Month
      *            July; Jul; 07 w Week in year Number 27 W Week in month Number
@@ -210,7 +211,6 @@ public strictfp class TimeT implements Comparable, Serializable {
      *            minute Number 55 S Millisecond Number 978 z Time zone General
      *            time zone Pacific Standard Time; PST; GMT-08:00 Z Time zone
      *            RFC 822 time zone -0800
-     *            <p>
      *            </p>
      *            Pattern letters are usually repeated, as their number
      *            determines the exact presentation: Text: For formatting, if

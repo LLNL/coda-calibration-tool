@@ -24,6 +24,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.messaging.MdacDataChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.MeasurementStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioStatusEvent;
 import gov.llnl.gnem.apps.coda.common.application.web.TypingMessageTemplate;
+import gov.llnl.gnem.apps.coda.common.model.messaging.ReferenceEventChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.SpectraMeasurementChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import gov.llnl.gnem.apps.coda.common.service.api.Listener;
@@ -42,6 +43,7 @@ public class CalibrationNotificationStompController {
         registerCalEvent(notificationService, typingTemplate, MdacDataChangeEvent.class);
         registerCalEvent(notificationService, typingTemplate, BandParametersDataChangeEvent.class);
         registerCalEvent(notificationService, typingTemplate, WaveformChangeEvent.class);
+        registerCalEvent(notificationService, typingTemplate, ReferenceEventChangeEvent.class);
         registerCalEvent(notificationService, typingTemplate, SpectraMeasurementChangeEvent.class);
     }
 

@@ -28,7 +28,7 @@ public interface PlotFactory {
 
     public Line lineWithErrorBars(final double[] xVals, final double[] yVals, final double[] errorData, final double[] errorDataMinus);
 
-    public Line lineX(String label, double startingX, double xIncrement, float[] xData, Color color, LineStyles style, int pxThickness);
+    public Line horizontalLine(double x1, double x2, double y, Color color, LineStyles style, int pxThickness);
 
     public VerticalLine verticalLine(double x, double yRatio, String label);
 

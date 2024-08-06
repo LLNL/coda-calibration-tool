@@ -50,6 +50,7 @@ import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
+import gov.llnl.gnem.apps.coda.common.model.messaging.ReferenceEventChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.SpectraMeasurementChangeEvent;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
 import javafx.application.Platform;
@@ -637,6 +638,11 @@ public class EventTableController implements RefreshableController {
 
     @Subscribe
     private void listener(final RefreshEventTableAction refresh) {
+        reloadData();
+    }
+
+    @Subscribe
+    private void listener(ReferenceEventChangeEvent refEventChange) {
         reloadData();
     }
 

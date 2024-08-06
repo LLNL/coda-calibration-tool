@@ -33,7 +33,7 @@ import com.google.common.eventbus.EventBus;
 
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.envelope.gui.controllers.WaveformLoadingController;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PreDestroy;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

@@ -16,13 +16,12 @@ package gov.llnl.gnem.apps.coda.envelope.application.web;
 
 import java.util.List;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,9 +32,11 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 import gov.llnl.gnem.apps.coda.envelope.model.domain.EnvelopeJob;
 import gov.llnl.gnem.apps.coda.envelope.service.api.EnvelopeCreationService;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping(value = "/api/v1/envelopes/create", name = "EnvelopeJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/envelopes/create", "/api/v1/envelopes/create/" }, name = "EnvelopeJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class EnvelopeJsonController {
 
     private EnvelopeCreationService service;

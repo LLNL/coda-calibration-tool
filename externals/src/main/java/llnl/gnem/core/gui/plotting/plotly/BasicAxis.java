@@ -23,6 +23,7 @@ public class BasicAxis implements Axis {
     private double min;
     private double max;
     private TickFormat tickFormat;
+    private String tickFormatString;
 
     public BasicAxis(final Type axisType, final String label) {
         this.axisType = axisType;
@@ -79,4 +80,13 @@ public class BasicAxis implements Axis {
         this.tickFormat = tickFormat;
     }
 
+    @Override
+    public String getTickFormatString() {
+        return tickFormatString;
+    }
+
+    @Override
+    public void setTickFormatString(String tickFormatString) {
+        this.tickFormatString = tickFormatString;
+    }
 }

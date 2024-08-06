@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.validation.Valid;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -41,8 +40,10 @@ import org.springframework.web.bind.annotation.RestController;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticCodaGenerationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticService;
 import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
+import jakarta.validation.Valid;
 
 @RestController
+@CrossOrigin
 @RequestMapping(value = "/api/v1/synthetics", name = "SyntheticCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SyntheticCollectionJsonController {
 
@@ -58,7 +59,7 @@ public class SyntheticCollectionJsonController {
         this.genService = genService;
     }
 
-    @GetMapping(value = "/all", name = "getAll")
+    @GetMapping(value = { "/all", "/all/" }, name = "getAll")
     public ResponseEntity<?> getAll() {
         List<SyntheticCoda> data = syntheticService.findAll();
         if (data == null) {
@@ -96,7 +97,7 @@ public class SyntheticCollectionJsonController {
         return ResponseEntity.ok().body(synthetic);
     }
 
-    @PostMapping(value = "/amplitude-corrected/query", name = "amplitudeCorrectedSyntheticsQuery")
+    @PostMapping(value = { "/amplitude-corrected/query", "/amplitude-corrected/query/" }, name = "amplitudeCorrectedSyntheticsQuery")
     public ResponseEntity<?> amplitudeCorrectedSyntheticsQuery(@RequestParam(required = false) String eventId, @RequestParam(required = false) String stationName,
             @RequestParam(required = false) Double lowFreq, @RequestParam(required = false) Double highFreq, @RequestParam(required = false) Double sampleRate) {
         List<SyntheticCoda> synthetics = syntheticService.amplitudeCorrectedSyntheticsQuery(eventId, stationName, lowFreq, highFreq, sampleRate);
@@ -123,7 +124,7 @@ public class SyntheticCollectionJsonController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping(value = "/generate", name = "generateSynthetic")
+    @PostMapping(value = { "/generate", "/generate/" }, name = "generateSynthetic")
     public ResponseEntity<?> generateSynthetic(@Valid @RequestBody SyntheticGenerationRequest request, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);

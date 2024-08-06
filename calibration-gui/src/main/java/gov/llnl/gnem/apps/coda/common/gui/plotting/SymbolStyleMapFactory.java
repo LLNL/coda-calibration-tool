@@ -29,6 +29,7 @@ import llnl.gnem.core.gui.plotting.api.SymbolStyles;
 public class SymbolStyleMapFactory {
 
     private int symbol = 0;
+    private int symbolSkipAmount = 7;
 
     /**
      * This function splits the red-green-blue color wheel into n equally spaced
@@ -53,6 +54,11 @@ public class SymbolStyleMapFactory {
         return SymbolStyles.values()[symbol];
     }
 
+    private synchronized SymbolStyles nextSymbolSkip(int skipAmount) {
+        symbol = (symbol + skipAmount) % (SymbolStyles.values().length);
+        return SymbolStyles.values()[symbol];
+    }
+
     public <T, R> Map<R, PlotPoint> build(List<T> values, Function<T, R> keyProvider) {
         Map<R, PlotPoint> styles = new HashMap<>();
         AtomicInteger i = new AtomicInteger(0);
@@ -64,7 +70,7 @@ public class SymbolStyleMapFactory {
                               keyProvider.apply(v),
                                   new PlotPoint(null,
                                                 null,
-                                                nextSymbol(),
+                                                nextSymbolSkip(symbolSkipAmount),
                                                 SymbolStyleMapFactory.getSpacedOutColour(i.get(), (int) keyCount),
                                                 SymbolStyleMapFactory.getSpacedOutColour(i.getAndIncrement(), (int) keyCount))));
         return styles;

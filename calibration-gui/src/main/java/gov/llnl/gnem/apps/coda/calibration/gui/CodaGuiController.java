@@ -27,7 +27,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import javax.annotation.PreDestroy;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
@@ -80,6 +79,7 @@ import gov.llnl.gnem.apps.coda.envelope.gui.EnvelopeGuiController;
 import gov.llnl.gnem.apps.coda.envelope.gui.LoadRatioEventsGuiController;
 import gov.llnl.gnem.apps.coda.spectra.gui.RatioStatusProgressListener;
 import gov.llnl.gnem.apps.coda.spectra.gui.SpectraRatioGuiController;
+import jakarta.annotation.PreDestroy;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
@@ -112,7 +112,7 @@ public class CodaGuiController {
 
     private static final String SCREENSHOT_TITLE = "CERT_Screenshot";
 
-    private static final String ABOUT_TEXT = "Version 1.0.21";
+    private static final String ABOUT_TEXT = "Version 1.0.22";
 
     @FXML
     private Node rootElement;
@@ -313,10 +313,13 @@ public class CodaGuiController {
                 refreshButton.setGraphic(refreshLabel);
             });
         } else {
+            activeTabRefresh = data.getRefreshFunction();
+
             spectraGui.loadEnvelopes();
             siteTab.setOnSelectionChanged(e -> {
                 if (siteTab.isSelected()) {
                     activeTabRefresh = eventTableRefreshFunction;
+                    activeTabRefresh.run();
                     activeTabScreenshot = basicPngScreenshot(siteTab);
                 } else {
                     siteTab.setGraphic(null);
@@ -324,6 +327,7 @@ public class CodaGuiController {
             });
 
             Platform.runLater(() -> {
+                dataTab.setGraphic(activeMapIcon);
                 mainTabPane.getTabs().remove(shapeTab);
                 mainTabPane.getTabs().remove(pathTab);
                 mainTabPane.getTabs().remove(measuredMwsTab);
@@ -509,7 +513,7 @@ public class CodaGuiController {
 
     @FXML
     private void measureMws() {
-        measuredMws.getRefreshFunction().run();
+        Platform.runLater(measuredMws::reload);
     }
 
     @FXML
@@ -550,11 +554,7 @@ public class CodaGuiController {
         snapshotButton.setGraphic(makeSnapshotLabel());
         snapshotButton.setContentDisplay(ContentDisplay.CENTER);
 
-        addEnabledTabListeners(dataTab, data);
-
         activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(dataTab.getText(), dataTab.getContent()));
-
-        data.setVisible(true);
 
         paramTab.setOnSelectionChanged(e -> {
             if (paramTab.isSelected()) {
@@ -564,6 +564,9 @@ public class CodaGuiController {
                 activeTabScreenshot = folder -> SnapshotUtils.writePng(folder, new Pair<>(paramTab.getText(), paramTab.getContent()));
             }
         });
+
+        data.setVisible(true);
+        addEnabledTabListeners(dataTab, data);
 
         if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
             dataTab.setGraphic(activeMapIcon);
@@ -575,12 +578,14 @@ public class CodaGuiController {
             siteTab.setOnSelectionChanged(e -> {
                 if (siteTab.isSelected()) {
                     activeTabRefresh = eventTableRefreshFunction;
+                    activeTabRefresh.run();
                     activeTabScreenshot = basicPngScreenshot(siteTab);
                 } else {
                     siteTab.setGraphic(null);
                 }
             });
             Platform.runLater(() -> {
+                dataTab.setGraphic(activeMapIcon);
                 mainTabPane.getTabs().remove(shapeTab);
                 mainTabPane.getTabs().remove(pathTab);
                 mainTabPane.getTabs().remove(measuredMwsTab);
@@ -657,6 +662,9 @@ public class CodaGuiController {
     @FXML
     private void refreshTab(ActionEvent e) {
         activeTabRefresh.run();
+        if (rootElement.getParent() != null) {
+            rootElement.getParent().requestLayout();
+        }
     }
 
     @FXML

@@ -6,7 +6,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>coda-calibration</artifactId>
-	<version>1.0.21.1</version>
+	<version>1.0.22</version>
 	<name>coda-calibration</name>
 
 	<packaging>pom</packaging>
@@ -61,56 +61,64 @@
 	</pluginRepositories>
 
 	<properties>
-		<java.product.version>8</java.product.version>
-		<java.version>1.8</java.version>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.release>17</maven.compiler.release>
+		<java.version>17</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
-		<maven.javadoc.plugin.version>3.4.0</maven.javadoc.plugin.version>
-		<maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
-		<maven.shade.plugin.version>3.3.0</maven.shade.plugin.version>
-		<maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
-		<maven.source.plugin.version>3.2.1</maven.source.plugin.version>
+		<maven.compiler.plugin.version>3.12.1</maven.compiler.plugin.version>
+		<maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
+		<maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+		<maven.shade.plugin.version>3.5.2</maven.shade.plugin.version>
+		<maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
+		<maven.source.plugin.version>3.3.0</maven.source.plugin.version>
 
-		<jfx.version>17.0.6</jfx.version>
-		<jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-		<spring.boot.version>2.7.18</spring.boot.version>
-		<reactor.version>2022.0.5</reactor.version>
+		<jfx.version>17.0.11</jfx.version>
+		<!-- 17.0.11 introduced regressions with WebKit, have to hold off for now -->
+		<jfx-web.version>17.0.10</jfx-web.version>
+		
+		<jaxb-api.version>4.0.1</jaxb-api.version>
+		<spring.boot.version>3.3.1</spring.boot.version>
+		<reactor.version>2023.0.3</reactor.version>
 
-		<javax.persistence.version>2.2.1</javax.persistence.version>
-		<org.apache.xmlgraphics.batik-script.version>1.16</org.apache.xmlgraphics.batik-script.version>
+		<jakarta.persistence.version>3.1.0</jakarta.persistence.version>
+		<jakarta.validation.version>3.0.2</jakarta.validation.version>
+		<org.apache.xmlgraphics.batik-script.version>1.17</org.apache.xmlgraphics.batik-script.version>
 		<xml.apis.ext.version>1.3.04</xml.apis.ext.version>
 		<geographiclib.java.version>2.0</geographiclib.java.version>
-		<eclipse.collections.version>11.1.0</eclipse.collections.version>
-		<javax.version>2.0.0-RC1</javax.version>
+		<eclipse.collections.version>12.0.0.M3</eclipse.collections.version>
+		<jakarta.annotation.version>3.0.0-M1</jakarta.annotation.version>
 		<jts.version>1.19.0</jts.version>
 		<jts2geojson.version>0.18.1</jts2geojson.version>
-		<springdoc.version>1.7.0</springdoc.version>
-		
+		<springdoc.version>2.6.0</springdoc.version>
+		<hibernate.validator.version>8.0.1.Final</hibernate.validator.version>
+
 		<!-- GUI Specific -->
-		<tyrus.standalone.client.version>1.20</tyrus.standalone.client.version>
-		<commons.compress.version>1.23.0</commons.compress.version>
+		<tyrus.standalone.client.version>2.1.5</tyrus.standalone.client.version>
+		<commons.compress.version>1.26.0</commons.compress.version>
 		<commons.math3.version>3.6.1</commons.math3.version>
-		<guava.version>31.1-jre</guava.version>
+		<guava.version>33.0.0-jre</guava.version>
 		<failsafe.version>2.4.4</failsafe.version>
 
 		<!-- Testing -->
-		<spring.test.version>5.3.26</spring.test.version>
-		<junit.jupiter.version>5.9.2</junit.jupiter.version>
-		<mockito.version>5.2.0</mockito.version>
-		<javax.annotation.version>1.3.2</javax.annotation.version>
+		<spring.test.version>6.1.4</spring.test.version>
+		<junit.jupiter.version>5.10.2</junit.jupiter.version>
+		<mockito.version>5.10.0</mockito.version>
 
 		<!-- CVE overrides -->
-		<log4j2.version>2.20.0</log4j2.version>
+		<log4j2.version>3.0.0-beta2</log4j2.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
+				<groupId>org.hibernate.validator</groupId>
+				<artifactId>hibernate-validator</artifactId>
+				<version>${hibernate.validator.version}</version>
+			</dependency>
+
+			<dependency>
 				<groupId>org.springdoc</groupId>
-				<artifactId>springdoc-openapi-ui</artifactId>
+				<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 				<version>${springdoc.version}</version>
 			</dependency>
 
@@ -154,19 +162,19 @@
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-web</artifactId>
-				<version>${jfx.version}</version>
+				<version>${jfx-web.version}</version>
 				<classifier>win</classifier>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-web</artifactId>
-				<version>${jfx.version}</version>
+				<version>${jfx-web.version}</version>
 				<classifier>mac</classifier>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-web</artifactId>
-				<version>${jfx.version}</version>
+				<version>${jfx-web.version}</version>
 				<classifier>linux</classifier>
 			</dependency>
 			<dependency>
@@ -193,9 +201,14 @@
 				<version>${jfx.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>javax.xml.bind</groupId>
-				<artifactId>jaxb-api</artifactId>
+				<groupId>jakarta.xml.bind</groupId>
+				<artifactId>jakarta.xml.bind-api</artifactId>
 				<version>${jaxb-api.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>jakarta.validation</groupId>
+				<artifactId>jakarta.validation-api</artifactId>
+				<version>${jakarta.validation.version}</version>
 			</dependency>
 
 			<!-- Ours -->
@@ -332,9 +345,9 @@
 			</dependency>
 
 			<dependency>
-				<groupId>org.eclipse.persistence</groupId>
-				<artifactId>javax.persistence</artifactId>
-				<version>${javax.persistence.version}</version>
+				<groupId>jakarta.persistence</groupId>
+				<artifactId>jakarta.persistence-api</artifactId>
+				<version>${jakarta.persistence.version}</version>
 			</dependency>
 
 			<dependency>
@@ -462,9 +475,9 @@
 				<version>${mockito.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>javax.annotation</groupId>
-				<artifactId>javax.annotation-api</artifactId>
-				<version>${javax.annotation.version}</version>
+				<groupId>jakarta.annotation</groupId>
+				<artifactId>jakarta.annotation-api</artifactId>
+				<version>${jakarta.annotation.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -491,11 +504,10 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>${maven.compiler.plugin.version}</version>
 					<configuration>
-						<source>${java.product.version}</source>
-						<target>${java.product.version}</target>
 						<encoding>${project.build.sourceEncoding}</encoding>
 						<useIncrementalCompilation>false</useIncrementalCompilation>
 						<compilerArgument>-Xlint:deprecation</compilerArgument>
+						<parameters>true</parameters>
 					</configuration>
 				</plugin>
 
@@ -503,6 +515,9 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>${maven.javadoc.plugin.version}</version>
+					<configuration>
+						<doclint>all,-missing</doclint>
+					</configuration>
 					<executions>
 						<execution>
 							<id>javadoc</id>
@@ -549,4 +564,16 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-awt-util</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	</dependencies>
 </project>

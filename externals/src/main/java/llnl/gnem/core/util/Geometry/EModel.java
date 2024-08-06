@@ -630,10 +630,8 @@ public class EModel {
     }
 
     /**
-     * Calculate point at azimuth and distance from another point.
-     * <p>
-     * Returns a Vertex at great-circle distance delta and azimuth Azimuth.
-     * <p>
+     * Calculate point at azimuth and distance from another point. Returns a
+     * Vertex at great-circle distance delta and azimuth Azimuth.
      *
      * @param latIn
      *            latitude in degrees of start point

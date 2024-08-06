@@ -17,7 +17,7 @@ package gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

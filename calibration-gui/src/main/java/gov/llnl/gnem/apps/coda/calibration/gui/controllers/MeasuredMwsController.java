@@ -208,6 +208,17 @@ public class MeasuredMwsController extends AbstractMeasurementController {
         }
     }
 
+    public void reload() {
+        this.reloadData();
+    }
+
+    @Override
+    public Runnable getRefreshFunction() {
+        return () -> {
+            //NOP
+        };
+    }
+
     @Override
     protected List<SpectraMeasurement> getSpectraData() {
         return mfs.getSpectraMeasurements()

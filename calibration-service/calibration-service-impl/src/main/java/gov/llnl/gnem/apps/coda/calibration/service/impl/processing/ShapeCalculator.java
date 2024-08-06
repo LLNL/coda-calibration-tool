@@ -62,51 +62,51 @@ public class ShapeCalculator {
         // Loop through each entry and try to fit a line using the max
         // amplitude prediction for that frequency band from the velocity model
 
-        measuredShapes = filteredVelocityMeasurements.parallelStream().map(filteredVelocityMeasurement -> {
-
-            CalibrationCurveFitter curveFitter = new CalibrationCurveFitter();
-            PeakVelocityMeasurement velocityMeasurement = filteredVelocityMeasurement.getKey();
-            WaveformPick endPick = filteredVelocityMeasurement.getValue();
-
-            boolean isAutoPicked = velocityMeasurement.getWaveform().getAssociatedPicks().stream().anyMatch(wp -> wp.getPickName().equalsIgnoreCase(PICK_TYPES.AP.name()));
-            boolean shouldAutoPick = autoPickingEnabled && isAutoPicked;
-
-            FrequencyBand freqBand = new FrequencyBand(velocityMeasurement.getWaveform().getLowFrequency(), velocityMeasurement.getWaveform().getHighFrequency());
-            SharedFrequencyBandParameters frequencyBandParameter = frequencyBandParameters.get(freqBand);
-
-            if (frequencyBandParameter == null) {
-                // TODO: Feedback to user
-                log.info("Unable to find frequency band parameters for band {} given input measurement {}; this measurement will be skipped", freqBand, velocityMeasurement);
-                return null;
-            }
-
-            double distance = velocityMeasurement.getDistance();
-
-            TimeT originTime = new TimeT(velocityMeasurement.getWaveform().getEvent().getOriginTime());
-            TimeT endTime;
-
-            Double maxTimeRaw = velocityMeasurement.getTime();
-
-            Double velocity = frequencyBandParameter.getVelocity0() - (frequencyBandParameter.getVelocity1() / (frequencyBandParameter.getVelocity2() + distance));
-
-            double travelTimeRaw = 0.0;
-            if (velocity != 0.0) {
-                travelTimeRaw = (distance / velocity);
-            }
-
-            Double timeDifference = maxTimeRaw - travelTimeRaw;
-            TimeT travelTime = originTime.add(travelTimeRaw);
-
-            endTime = originTime.add(endPick.getPickTimeSecFromOrigin());
-
-            if (travelTime.ge(endTime)) {
-                log.trace("Encountered F pick with time before expected Coda start while processing {}; processing will skip this file", velocityMeasurement);
-                return null;
-            }
-
-            //TODO: Make synthetic creation/fit part of the optimization pass
-            TimeSeries seis = converter.convert(velocityMeasurement.getWaveform());
+        measuredShapes = filteredVelocityMeasurements.parallelStream().filter(Objects::nonNull).map(filteredVelocityMeasurement -> {
             try {
+                CalibrationCurveFitter curveFitter = new CalibrationCurveFitter();
+                PeakVelocityMeasurement velocityMeasurement = filteredVelocityMeasurement.getKey();
+                WaveformPick endPick = filteredVelocityMeasurement.getValue();
+
+                boolean isAutoPicked = velocityMeasurement.getWaveform().getAssociatedPicks().stream().anyMatch(wp -> wp.getPickName().equalsIgnoreCase(PICK_TYPES.AP.name()));
+                boolean shouldAutoPick = autoPickingEnabled && isAutoPicked;
+
+                FrequencyBand freqBand = new FrequencyBand(velocityMeasurement.getWaveform().getLowFrequency(), velocityMeasurement.getWaveform().getHighFrequency());
+                SharedFrequencyBandParameters frequencyBandParameter = frequencyBandParameters.get(freqBand);
+
+                if (frequencyBandParameter == null) {
+                    // TODO: Feedback to user
+                    log.info("Unable to find frequency band parameters for band {} given input measurement {}; this measurement will be skipped", freqBand, velocityMeasurement);
+                    return null;
+                }
+
+                double distance = velocityMeasurement.getDistance();
+
+                TimeT originTime = new TimeT(velocityMeasurement.getWaveform().getEvent().getOriginTime());
+                TimeT endTime;
+
+                Double maxTimeRaw = velocityMeasurement.getTime();
+
+                Double velocity = frequencyBandParameter.getVelocity0() - (frequencyBandParameter.getVelocity1() / (frequencyBandParameter.getVelocity2() + distance));
+
+                double travelTimeRaw = 0.0;
+                if (velocity != 0.0) {
+                    travelTimeRaw = (distance / velocity);
+                }
+
+                Double timeDifference = maxTimeRaw - travelTimeRaw;
+                TimeT travelTime = originTime.add(travelTimeRaw);
+
+                endTime = originTime.add(endPick.getPickTimeSecFromOrigin());
+
+                if (travelTime.ge(endTime)) {
+                    log.trace("Encountered F pick with time before expected Coda start while processing {}; processing will skip this file", velocityMeasurement);
+                    return null;
+                }
+
+                //TODO: Make synthetic creation/fit part of the optimization pass
+                TimeSeries seis = converter.convert(velocityMeasurement.getWaveform());
+
                 seis.cut(travelTime, endTime);
                 if (seis.getSamprate() > 1.0) {
                     seis.interpolate(1.0);
@@ -153,12 +153,15 @@ public class ShapeCalculator {
                                              .setMeasuredError(curve.getError())
                                              .setMeasuredTime(travelTime.getDate())
                                              .setTimeDifference(timeDifference);
-            } catch (IllegalArgumentException e) {
-                log.info("Error generating shape {}", e.getMessage());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                log.warn("Error generating shape {}", e.getMessage());
             }
             return null;
         }).filter(Objects::nonNull).collect(Collectors.toList());
 
+        if (measuredShapes == null) {
+            measuredShapes = new ArrayList<>(0);
+        }
         return measuredShapes;
     }
 }

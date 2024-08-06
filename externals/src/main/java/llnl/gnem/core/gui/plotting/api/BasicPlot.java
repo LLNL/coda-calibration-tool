@@ -28,6 +28,8 @@ public interface BasicPlot extends Serializable {
 
     public void setSymbolSize(int pxSymbolSize);
 
+    public void setSubplotLayout(int columns, int rows);
+
     public Title getTitle();
 
     public void addPlotObjectObserver(PropertyChangeListener observer);
@@ -60,8 +62,12 @@ public interface BasicPlot extends Serializable {
 
     public void setUseHorizontalBottomLegend(boolean useHorizontalBottomLegend);
 
+    public void setDragMode(String dragmode);
+
     public Map<String, PlotObjectData> getPlotTypes();
 
     public void fullReplot();
+
+    public void setShowFreqLevelButtons(boolean shouldShow);
 
 }

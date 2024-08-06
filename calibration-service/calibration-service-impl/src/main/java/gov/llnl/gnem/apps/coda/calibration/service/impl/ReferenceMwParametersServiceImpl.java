@@ -25,16 +25,20 @@ import org.springframework.transaction.annotation.Transactional;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.repository.ReferenceMwParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ReferenceMwParametersService;
+import gov.llnl.gnem.apps.coda.common.model.messaging.ReferenceEventChangeEvent;
+import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 
 @Service
 @Transactional
 public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersService {
 
     private ReferenceMwParametersRepository referenceMwParametersRepository;
+    private NotificationService notificationService;
 
     @Autowired
-    public ReferenceMwParametersServiceImpl(ReferenceMwParametersRepository referenceMwParametersRepository) {
+    public ReferenceMwParametersServiceImpl(ReferenceMwParametersRepository referenceMwParametersRepository, NotificationService notificationService) {
         this.referenceMwParametersRepository = referenceMwParametersRepository;
+        this.notificationService = notificationService;
     }
 
     public ReferenceMwParametersRepository getReferenceMwParametersRepository() {
@@ -58,6 +62,7 @@ public class ReferenceMwParametersServiceImpl implements ReferenceMwParametersSe
         for (ReferenceMwParameters ref : entities) {
             results.add(save(ref));
         }
+        notificationService.post(new ReferenceEventChangeEvent());
         return results;
     }
 

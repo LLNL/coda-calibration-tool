@@ -358,8 +358,6 @@ public class RatioMeasurementWaveformPlotManager {
 
     @FXML
     private void showRatioOnMap(final ActionEvent e) {
-
-        log.trace("Map button pressed!");
         SpectraRatioPairDetails ratioDetails = curEventStationRatios.get(curFrequencies.get(curFreqIndex));
 
         if (mapImpl != null && ratioDetails != null) {

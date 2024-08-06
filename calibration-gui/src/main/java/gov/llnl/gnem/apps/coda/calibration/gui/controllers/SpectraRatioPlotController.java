@@ -22,4 +22,8 @@ public class SpectraRatioPlotController extends BaseSpectraPlotController<Spectr
     public SpectraRatioPlotController(final Function<SpectraRatioPairOperator, Double> dataFunction) {
         super(dataFunction);
     }
+
+    public void setShowFreqLevelButtons(final boolean showFreqLevelButtons) {
+        this.getSpectralPlot().getSubplot().setShowFreqLevelButtons(showFreqLevelButtons);
+    }
 }

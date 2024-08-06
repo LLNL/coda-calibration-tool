@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,7 +35,8 @@ import gov.llnl.gnem.apps.coda.calibration.service.api.SpectraMeasurementService
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 
 @RestController
-@RequestMapping(value = "/api/v1/spectra-measurements", name = "SpectraMeasurementJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/spectra-measurements", "/api/v1/spectra-measurements/" }, name = "SpectraMeasurementJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SpectraMeasurementJsonController {
 
     private SpectraMeasurementService service;
@@ -46,43 +48,43 @@ public class SpectraMeasurementJsonController {
         this.sharedParamsService = sharedParamsService;
     }
 
-    @GetMapping(name = "getMeasurements", path = "/all")
+    @GetMapping(name = "getMeasurements", path = { "/all", "/all/" })
     public List<SpectraMeasurement> getMeasurements() {
         return service.findAll();
     }
 
-    @GetMapping(name = "getMeasurementsMetadata", path = "/metadata/all")
+    @GetMapping(name = "getMeasurementsMetadata", path = { "/metadata/all", "/metadata/all/" })
     public List<SpectraMeasurement> getMeasurementsMetadata() {
         return service.findAllMetadataOnly().stream().map(SpectraMeasurement::new).collect(Collectors.toList());
     }
 
-    @PostMapping(name = "getMeasurementsMetadataById", path = "/metadata/by-ids")
+    @PostMapping(name = "getMeasurementsMetadataById", path = { "/metadata/by-ids", "/metadata/by-ids/" })
     public List<SpectraMeasurement> getMeasurementsMetadataByIds(@RequestBody List<Long> ids) {
         return service.findAllMetadataOnly(ids).stream().map(SpectraMeasurement::new).collect(Collectors.toList());
     }
 
-    @PostMapping(value = "/reference-spectra", name = "computeSpectraForEventId")
+    @PostMapping(value = { "/reference-spectra", "/reference-spectra/" }, name = "computeSpectraForEventId")
     public ResponseEntity<?> computeSpectraForEventId(@RequestBody String eventId, BindingResult result) {
         //FIXME: Accept a phase to use!
         Spectra theoreticalSpectra = service.computeReferenceSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG);
         return ResponseEntity.ok(theoreticalSpectra);
     }
 
-    @PostMapping(value = "/validation-spectra", name = "computeValidationSpectraForEventId")
+    @PostMapping(value = { "/validation-spectra", "/validation-spectra/" }, name = "computeValidationSpectraForEventId")
     public ResponseEntity<?> computeValidationSpectraForEventId(@RequestBody String eventId, BindingResult result) {
         //FIXME: Accept a phase to use!
         Spectra theoreticalSpectra = service.computeValidationSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG);
         return ResponseEntity.ok(theoreticalSpectra);
     }
 
-    @PostMapping(value = "/compute-spectra", name = "computeSpectra")
+    @PostMapping(value = { "/compute-spectra", "/compute-spectra/" }, name = "computeSpectra")
     public ResponseEntity<?> computeSpectra(@RequestBody Double moment, @RequestBody Double apparentStress, @RequestBody Double start, @RequestBody Double stop, @RequestBody Integer count,
             BindingResult result) {
         Spectra theoreticalSpectra = service.getSpecificSpectra(moment, apparentStress, start, stop, count);
         return ResponseEntity.ok(theoreticalSpectra);
     }
 
-    @PostMapping(value = "/fit-spectra", name = "getFitSpectraForEventId")
+    @PostMapping(value = { "/fit-spectra", "/fit-spectra/" }, name = "getFitSpectraForEventId")
     public ResponseEntity<?> getFitSpectraForEventId(@RequestBody String eventId, BindingResult result) {
         //FIXME: Accept a phase to use!
         List<Spectra> fitSpectra = service.getFitSpectraForEventId(eventId, sharedParamsService.getFrequencyBands(), PICK_TYPES.LG);

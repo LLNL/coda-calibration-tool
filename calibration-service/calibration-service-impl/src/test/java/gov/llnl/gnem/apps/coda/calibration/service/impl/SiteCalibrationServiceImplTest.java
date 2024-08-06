@@ -184,6 +184,7 @@ public class SiteCalibrationServiceImplTest {
                     new MdacParametersFI(),
                     mdacPsMap,
                     refEventMap,
+                    null,
                     frequencyBandParameterMap,
                     PICK_TYPES.LG);
 

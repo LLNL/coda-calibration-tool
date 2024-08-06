@@ -38,6 +38,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.MeasuredMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ValidationMwParameters;
 import gov.llnl.gnem.apps.coda.calibration.repository.SharedFrequencyBandParametersRepository;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SiteCalibrationService;
@@ -79,7 +80,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
 
     @Override
     public List<MeasuredMwParameters> fitMws(final Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand, final MdacParametersFI mdacFI, final Map<PICK_TYPES, MdacParametersPS> mdacPS,
-            final Map<String, List<ReferenceMwParameters>> refMws, final Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandParameters, final PICK_TYPES selectedPhase) {
+            final Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> stationFrequencyBandParameters, final PICK_TYPES selectedPhase) {
         final MdacParametersPS psRows = mdacPS.get(selectedPhase);
         final Map<Event, Map<FrequencyBand, Map<Station, SpectraMeasurement>>> evidFreqBandStaMeasurementsMap = mapToEventAndStation(dataByFreqBand);
         final Map<Event, Function<Map<Double, Double>, SortedMap<Double, Double>>> weightFunctionMapByEvent = new HashMap<>();
@@ -140,8 +141,8 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
 
     @Override
     public Map<FrequencyBand, Map<Station, SiteFrequencyBandParameters>> measureSiteCorrections(final Map<FrequencyBand, List<SpectraMeasurement>> dataByFreqBand, final MdacParametersFI mdacFI,
-            final Map<PICK_TYPES, MdacParametersPS> mdacPS, final Map<String, List<ReferenceMwParameters>> refMws, final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters,
-            final PICK_TYPES selectedPhase) {
+            final Map<PICK_TYPES, MdacParametersPS> mdacPS, final Map<String, List<ReferenceMwParameters>> refMws, Map<String, List<ValidationMwParameters>> valMws,
+            final Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameters, final PICK_TYPES selectedPhase) {
         final MdacParametersPS psRows = mdacPS.get(selectedPhase);
 
         //Input
@@ -231,20 +232,23 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         //2) For every station with a site correction measured apply it to every other event and get average site term for every frequency band
         for (final Entry<Event, Map<FrequencyBand, Map<Station, SpectraMeasurement>>> evidFreqMap : evidFreqBandStaMeasurementsMap.entrySet()) {
             final Event evid = evidFreqMap.getKey();
-            for (final Entry<FrequencyBand, Map<Station, SpectraMeasurement>> freqStaMap : evidFreqMap.getValue().entrySet()) {
-                final FrequencyBand freqBand = freqStaMap.getKey();
-                for (final Entry<Station, SpectraMeasurement> staMwEntry : freqStaMap.getValue().entrySet()) {
-                    if (staFreqBandSiteCorrectionMapReferenceEvents.containsKey(staMwEntry.getKey()) && staFreqBandSiteCorrectionMapReferenceEvents.get(staMwEntry.getKey()).containsKey(freqBand)) {
-                        final double amp = staMwEntry.getValue().getPathCorrected();
-                        if (!averageMapByEvent.containsKey(evid)) {
-                            averageMapByEvent.put(evid, new HashMap<FrequencyBand, SummaryStatistics>());
-                        }
-                        if (!averageMapByEvent.get(evid).containsKey(freqBand)) {
-                            averageMapByEvent.get(evid).put(freqBand, new SummaryStatistics());
-                        }
+            if ((refMws != null && refMws.containsKey(evid.getEventId())) || (valMws == null || valMws.isEmpty() || !valMws.containsKey(evid.getEventId()))) {
+                for (final Entry<FrequencyBand, Map<Station, SpectraMeasurement>> freqStaMap : evidFreqMap.getValue().entrySet()) {
+                    final FrequencyBand freqBand = freqStaMap.getKey();
+                    for (final Entry<Station, SpectraMeasurement> staMwEntry : freqStaMap.getValue().entrySet()) {
+                        if (staFreqBandSiteCorrectionMapReferenceEvents.containsKey(staMwEntry.getKey())
+                                && staFreqBandSiteCorrectionMapReferenceEvents.get(staMwEntry.getKey()).containsKey(freqBand)) {
+                            final double amp = staMwEntry.getValue().getPathCorrected();
+                            if (!averageMapByEvent.containsKey(evid)) {
+                                averageMapByEvent.put(evid, new HashMap<FrequencyBand, SummaryStatistics>());
+                            }
+                            if (!averageMapByEvent.get(evid).containsKey(freqBand)) {
+                                averageMapByEvent.get(evid).put(freqBand, new SummaryStatistics());
+                            }
 
-                        final double refAmp = amp + staFreqBandSiteCorrectionMapReferenceEvents.get(staMwEntry.getKey()).get(freqBand).getMean();
-                        averageMapByEvent.get(evid).get(freqBand).addValue(refAmp);
+                            final double refAmp = amp + staFreqBandSiteCorrectionMapReferenceEvents.get(staMwEntry.getKey()).get(freqBand).getMean();
+                            averageMapByEvent.get(evid).get(freqBand).addValue(refAmp);
+                        }
                     }
                 }
             }
@@ -253,20 +257,22 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
         //3) For all measurements offset by the average site term for each station/frequency band to get the final site terms
         for (final Entry<Event, Map<FrequencyBand, Map<Station, SpectraMeasurement>>> evidFreqMap : evidFreqBandStaMeasurementsMap.entrySet()) {
             final Event evid = evidFreqMap.getKey();
-            for (final Entry<FrequencyBand, Map<Station, SpectraMeasurement>> freqStaMap : evidFreqMap.getValue().entrySet()) {
-                final FrequencyBand freqBand = freqStaMap.getKey();
-                if (averageMapByEvent.containsKey(evid) && averageMapByEvent.get(evid).containsKey(freqBand)) {
-                    for (final Entry<Station, SpectraMeasurement> staMwEntry : freqStaMap.getValue().entrySet()) {
-                        final double amp = staMwEntry.getValue().getPathCorrected();
-                        if (!staFreqBandSiteCorrectionMapAverage.containsKey(staMwEntry.getKey())) {
-                            staFreqBandSiteCorrectionMapAverage.put(staMwEntry.getKey(), new HashMap<FrequencyBand, SummaryStatistics>());
+            if ((refMws != null && refMws.containsKey(evid.getEventId())) || (valMws == null || valMws.isEmpty() || !valMws.containsKey(evid.getEventId()))) {
+                for (final Entry<FrequencyBand, Map<Station, SpectraMeasurement>> freqStaMap : evidFreqMap.getValue().entrySet()) {
+                    final FrequencyBand freqBand = freqStaMap.getKey();
+                    if (averageMapByEvent.containsKey(evid) && averageMapByEvent.get(evid).containsKey(freqBand)) {
+                        for (final Entry<Station, SpectraMeasurement> staMwEntry : freqStaMap.getValue().entrySet()) {
+                            final double amp = staMwEntry.getValue().getPathCorrected();
+                            if (!staFreqBandSiteCorrectionMapAverage.containsKey(staMwEntry.getKey())) {
+                                staFreqBandSiteCorrectionMapAverage.put(staMwEntry.getKey(), new HashMap<FrequencyBand, SummaryStatistics>());
+                            }
+                            if (!staFreqBandSiteCorrectionMapAverage.get(staMwEntry.getKey()).containsKey(freqBand)) {
+                                staFreqBandSiteCorrectionMapAverage.get(staMwEntry.getKey()).put(freqBand, new SummaryStatistics());
+                            }
+                            final double refAmp = averageMapByEvent.get(evid).get(freqBand).getMean();
+                            final double ampDiff = refAmp - amp;
+                            staFreqBandSiteCorrectionMapAverage.get(staMwEntry.getKey()).get(freqBand).addValue(ampDiff);
                         }
-                        if (!staFreqBandSiteCorrectionMapAverage.get(staMwEntry.getKey()).containsKey(freqBand)) {
-                            staFreqBandSiteCorrectionMapAverage.get(staMwEntry.getKey()).put(freqBand, new SummaryStatistics());
-                        }
-                        final double refAmp = averageMapByEvent.get(evid).get(freqBand).getMean();
-                        final double ampDiff = refAmp - amp;
-                        staFreqBandSiteCorrectionMapAverage.get(staMwEntry.getKey()).get(freqBand).addValue(ampDiff);
                     }
                 }
             }
@@ -371,7 +377,7 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
             if (data != null) {
                 data.entrySet().forEach(entry -> rawData.put((entry.getKey().getHighFrequency() + entry.getKey().getLowFrequency()) / 2.0, entry.getValue()));
             }
-            double maxWeight = 1.0;
+            double maxWeight = 2.0;
             for (Double frequency : frequencies.keySet()) {
                 SummaryStatistics stats = rawData.getOrDefault(frequency, new SummaryStatistics());
 
@@ -385,20 +391,10 @@ public class SiteCalibrationServiceImpl implements SiteCalibrationService {
                     weight = Double.valueOf(1d);
                 }
                 if (weight > maxWeight) {
-                    maxWeight = weight;
+                    weight = maxWeight;
                 }
                 weightMap.put(frequency, weight);
             }
-            //FIXME: Temporarily removing this while we re-evaluate this kind of weighting (again)
-            //            int lowestFrequencies = 2;
-            //            int i = 0;
-            //            for (final Double frequency : frequencies.keySet()) {
-            //                if (i >= lowestFrequencies) {
-            //                    break;
-            //                }
-            //                weightMap.put(frequency, 2 * maxWeight);
-            //                i++;
-            //            }
             return weightMap;
         };
     }

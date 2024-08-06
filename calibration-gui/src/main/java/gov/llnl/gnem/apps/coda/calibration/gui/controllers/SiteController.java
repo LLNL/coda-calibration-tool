@@ -98,6 +98,9 @@ public class SiteController extends AbstractMeasurementController {
     private StackPane rawPlotNode;
 
     @FXML
+    private StackPane pathPlotNode;
+
+    @FXML
     private StackPane sitePlotNode;
 
     @FXML
@@ -140,6 +143,13 @@ public class SiteController extends AbstractMeasurementController {
         plot.setAutoCalculateYaxisRange(true);
         rawPlotNode.getChildren().add(plot);
 
+        final SpectraPlotController path = new SpectraPlotController(SpectraMeasurement::getPathCorrected);
+        plot = path.getSpectralPlot();
+        plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(path::getSpectraDataMap));
+        plot.setLabels("Path Corrected Plot", X_AXIS_LABEL, "log10(non-dim)");
+        plot.setAutoCalculateYaxisRange(true);
+        pathPlotNode.getChildren().add(plot);
+
         final SpectraPlotController site = new SpectraPlotController(SpectraMeasurement::getPathAndSiteCorrected);
         plot = site.getSpectralPlot();
         plot.getSubplot().addPlotObjectObserver(getPlotpointObserver(site::getSpectraDataMap));
@@ -154,6 +164,7 @@ public class SiteController extends AbstractMeasurementController {
         sitePlotNode.getChildren().add(plot);
 
         spectraControllers.add(raw);
+        spectraControllers.add(path);
         spectraControllers.add(site);
 
         rawTitledPane.expandedProperty().addListener((v, o, n) -> {
@@ -170,7 +181,7 @@ public class SiteController extends AbstractMeasurementController {
         siteTermsPlot.getTitle().setText("Site and transfer function corrections");
         siteTermsPlot.getTitle().setFontSize(16);
         siteTermsPlot.setSymbolSize(12);
-        siteTermsPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Site and transfer correction log10(N-m)"));
+        siteTermsPlot.addAxes(plotFactory.axis(Axis.Type.LOG_X, "Frequency (Hz)"), plotFactory.axis(Axis.Type.Y, "Site and transfer correction"));
         siteTermsPlot.setAxisLimits(new AxisLimits(Axis.Type.X, 0.0, 10.0), new AxisLimits(Axis.Type.Y, 0.0, 2.0));
         siteTermsPlot.setMargin(30, 40, 50, null);
         siteTermsPlot.attachToDisplayNode(siteTermsPlotPane);
@@ -246,8 +257,7 @@ public class SiteController extends AbstractMeasurementController {
                 stationSet.add(key);
                 final PlotPoint pp = getPlotPoint(key, true);
                 double centerFreq = centerFreq(val.getLowFrequency(), val.getHighFrequency());
-                //Dyne-cm to nm for plot, in log
-                double site = val.getSiteTerm() - 7.0;
+                double site = val.getSiteTerm();
 
                 if (site < minSite) {
                     minSite = site;

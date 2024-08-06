@@ -51,6 +51,7 @@ public class Pair<X, Y> {
         return Objects.hash(x, y);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

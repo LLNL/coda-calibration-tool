@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,7 +44,8 @@ import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatiosReport;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.SpectraRatiosReportDTO;
 
 @RestController
-@RequestMapping(value = "/api/v1/spectra-ratios", name = "SpectraRatioJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/spectra-ratios", "/api/v1/spectra-ratios/" }, name = "SpectraRatioJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SpectraRatioJsonController {
 
     private static final Logger log = LoggerFactory.getLogger(SpectraRatioJsonController.class);
@@ -55,27 +57,27 @@ public class SpectraRatioJsonController {
         this.service = service;
     }
 
-    @GetMapping(name = "getMeasurements", path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(name = "getMeasurements", path = { "/all", "/all/" }, produces = MediaType.APPLICATION_JSON_VALUE)
     public List<SpectraRatioPairDetails> getMeasurements() {
         return service.findAll();
     }
 
-    @GetMapping(name = "getMeasurementsMetadata", path = "/all-metadata-only", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(name = "getMeasurementsMetadata", path = { "/all-metadata-only", "/all-metadata-only/" }, produces = MediaType.APPLICATION_JSON_VALUE)
     public List<SpectraRatioPairDetailsMetadata> getMeasurementsMetadata() {
         return service.findAllMetadataOnly();
     }
 
-    @PostMapping(value = "/measure-spectra-ratio-from-waveforms", name = "measureSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/measure-spectra-ratio-from-waveforms", "/measure-spectra-ratio-from-waveforms/" }, name = "measureSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> measureSpectraRatioFromWaveforms(@RequestBody SpectraRatioMeasurementJob job) {
         return measureSpectraRatioFromWaveforms(job.getAutoPickingEnabled(), job.getPersistResults(), job.getSmallEventIds(), job.getLargeEventIds());
     }
 
-    @PostMapping(value = "/measure-spectra-ratio-from-ratio-data", name = "measureSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/measure-spectra-ratio-from-ratio-data", "/measure-spectra-ratio-from-ratio-data/" }, name = "measureSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> measureSpectraRatioFromRatioData(@RequestBody SpectraRatioMeasurementJob job) {
         return measureSpectraRatioFromRatioData(job.getSmallEventIds(), job.getLargeEventIds(), job.getRatioEventData());
     }
 
-    @PostMapping(value = "/update-ratio", name = "updateSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/update-ratio", "/update-ratio/" }, name = "updateSpectraRatio", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateSpectraRatio(@RequestBody SpectraRatioPairDetails ratio) {
         try {
             return ResponseEntity.ok().body(service.update(ratio));
@@ -84,7 +86,7 @@ public class SpectraRatioJsonController {
         }
     }
 
-    @PostMapping(value = "/load-ratios-metadata", name = "loadRatioMetadata", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/load-ratios-metadata", "/load-ratios-metadata/" }, name = "loadRatioMetadata", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> loadRatioMetadata(@RequestBody List<SpectraRatioPairDetailsMetadata> ratios) {
         try {
             return ResponseEntity.ok().body(service.loadRatioMetadata(ratios));

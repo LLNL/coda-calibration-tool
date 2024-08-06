@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.21.1</version>
+		<version>1.0.22</version>
 	</parent>
 
 	<artifactId>calibration-gui</artifactId>
@@ -53,10 +55,6 @@
 			<artifactId>calibration-model</artifactId>
 			<exclusions>
 				<exclusion>
-					<groupId>org.eclipse.persistence</groupId>
-					<artifactId>javax.persistence</artifactId>
-				</exclusion>
-				<exclusion>
 					<groupId>org.aspectj</groupId>
 					<artifactId>aspectjweaver</artifactId>
 				</exclusion>
@@ -69,8 +67,8 @@
 					<artifactId>spring-aspects</artifactId>
 				</exclusion>
 				<exclusion>
-					<groupId>javax.validation</groupId>
-					<artifactId>validation-api</artifactId>
+					<groupId>jakarta.validation</groupId>
+					<artifactId>jakarta.validation-api</artifactId>
 				</exclusion>
 				<exclusion>
 					<groupId>org.springframework.data</groupId>
@@ -95,7 +93,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
@@ -177,6 +174,8 @@
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 					<execution>
+						<!-- Tells Eclipses m2e adapter to only execute this when using the maven->update project button -->
+						<?m2eexecute onConfiguration?>
 						<goals>
 							<goal>unpack</goal>
 						</goals>
@@ -207,6 +206,10 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -221,7 +224,8 @@
 							<Implementation-Build>${buildNumber}</Implementation-Build>
 							<Build-Branch>${scmBranch}</Build-Branch>
 							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
-							<JavaFX-Preloader-Class>gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiPreloader</JavaFX-Preloader-Class>
+							<JavaFX-Preloader-Class>
+								gov.llnl.gnem.apps.coda.calibration.gui.CodaGuiPreloader</JavaFX-Preloader-Class>
 						</manifestEntries>
 					</archive>
 				</configuration>

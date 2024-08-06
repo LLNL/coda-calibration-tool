@@ -28,7 +28,6 @@ public interface Axis extends Serializable {
 
         TickFormat(String format) {
             this.format = format;
-
         }
 
         public String getFormat() {
@@ -56,4 +55,7 @@ public interface Axis extends Serializable {
 
     public void setTickFormat(TickFormat tickFormat);
 
+    public String getTickFormatString();
+
+    public void setTickFormatString(String tickFormat);
 }

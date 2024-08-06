@@ -136,7 +136,6 @@ public abstract class AbstractSeismogramSaveLoadController<FC extends FileToSeis
 
                 if (!files.isEmpty()) {
                     bus.post(new EnvelopeLoadStartingEvent());
-                    // TODO: Condense these bars into a composite pass/fail progress bar
                     Progress fileProcessingProgress = new Progress(-1l, 0l);
                     Progress fileFailedProgress = new Progress(-1l, 0l);
                     ProgressEvent processingProgressEvent = new ProgressEvent(idCounter.getAndIncrement(), fileProcessingProgress);

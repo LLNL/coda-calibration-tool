@@ -9,7 +9,7 @@ osti_url: https://www.osti.gov/doecode/biblio/8964
 version: 1.1
 ---
 
-# Coda Calibration Tool (CCT) 1.0.21 documentation
+# Coda Calibration Tool (CCT) 1.0.22 documentation
 <sub>2023-12-20; Version 1.1; Authors Barno, Justin | Mayeda, Kevin</sub>
 
 ## About CCT
@@ -36,7 +36,7 @@ Overwriting the Envelope directory during the initial QA of the data is common. 
 
 The latest version of the Coda Calibration Tool (CCT) can be found on the [release page](https://github.com/LLNL/coda-calibration-tool/releases/)
 
-The standalone CCT jar file is calibration-standalone-1.0.21-runnable.jar while the REST services only are available in calibration-application-1.0.21-runnable.jar.
+The standalone CCT jar file is calibration-standalone-1.0.22-runnable.jar while the REST services only are available in calibration-application-1.0.22-runnable.jar.
 
 #### Downloading SF Bay Area example tarfile
 
@@ -47,11 +47,11 @@ Object Notation (JSON) parameter files can be [downloaded here](https://doi.org/
 
 You can launch CCT by executing Java from the command line as:
 
-``` java -Xmx12g -jar calibration-standalone-1.0.21-runnable.jar ```
+``` java -Xmx12g -jar calibration-standalone-1.0.22-runnable.jar ```
 
 Or, if you have Java 11+ as:
 
-``` java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.21-runnable.jar ```
+``` java -XX:MaxRAMPercentage=70.0 -jar calibration-standalone-1.0.22-runnable.jar ```
 
 Generally your -Xmx flag should be set to, at most, ~70% of the physical RAM available on the machine.
 
@@ -432,7 +432,7 @@ The internal APIs are expecting internal JSON formats. CCT makes a distinction b
 
 As a result, you need to translate the exported calibration JSON to the internal format. The easiest way to do that is to load up the tool and import your calibration, then do a GET on the relevant endpoints to get the internal representation. Ideally before the end of the summer I should put together docs on this and maybe add a special endpoint just to do an import of existing user JSON as a one shot.
 
-So the shared frequency band parameters is a GET request to the [https://127.0.0.1:53921/api/v1/params/shared-fb-parameters](https://127.0.0.1:53921/api/v1/params/shared-fb-parameters) REST endpoint and the site specific parameters is a GET to [https://127.0.0.1:53921/api/v1/params/site-fb-parameters](https://127.0.0.1:53921/api/v1/params/site-fb-parameters). See the [API Documentation](swagger/index.html) for additional information about the JSON schema and endpoints.
+So the shared frequency band parameters is a GET request to the [https://127.0.0.1:53921/api/v1/params/shared-fb-parameters](https://127.0.0.1:53921/api/v1/params/shared-fb-parameters) REST endpoint and the site specific parameters is a GET to [https://127.0.0.1:53921/api/v1/params/site-fb-parameters](https://127.0.0.1:53921/api/v1/params/site-fb-parameters). See the [API Documentation](swagger-ui.html) for additional information about the JSON schema and endpoints.
 
 See the [Example Jupyter Notebook](https://github.com/LLNL/coda-calibration-tool/blob/master/example-notebooks/measure-mws/Mw-From-FDSN-waveforms.ipynb) for a working example of using these two JSON files for a calibrated region using FDSN webservices to fetch event information and waveforms, then feeding that information to CCT to measure **M<sub>w</sub>**s.
 

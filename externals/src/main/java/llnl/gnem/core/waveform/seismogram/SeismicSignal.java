@@ -55,18 +55,14 @@ public interface SeismicSignal {
     public void RemoveMedian();
 
     /**
-     * Replaces each point in the Seismogram its signed sqrt
-     * <p>
-     * </p>
-     * Note: values LT 0 are returned -1* sqrt(abs(value)).
+     * Replaces each point in the Seismogram its signed sqrt Note: values LT 0
+     * are returned -1* sqrt(abs(value)).
      */
     public void SignedSqrt();
 
     /**
-     * Replaces each point in the Seismogram its signed square value
-     * <p>
-     * </p>
-     * Note: values LT 0 are returned -1* value*value.
+     * Replaces each point in the Seismogram its signed square value Note:
+     * values LT 0 are returned -1* value*value.
      */
     public void SignedSquare();
 
@@ -77,10 +73,8 @@ public interface SeismicSignal {
 
     /**
      * Smooth the Seismogram using a sliding window of width halfWidth. replaces
-     * the data with it's smoothed result
-     * <p>
-     * </p>
-     * Note halfwidth refers to number of samples, not seconds
+     * the data with it's smoothed result Note halfwidth refers to number of
+     * samples, not seconds
      *
      * @param halfwidth
      *            half width in samples.
@@ -88,10 +82,8 @@ public interface SeismicSignal {
     public void Smooth(int halfwidth);
 
     /**
-     * Replaces each point in the Seismogram with its sqrt
-     * <p>
-     * </p>
-     * Note: values LT 0 are returned 0.
+     * Replaces each point in the Seismogram with its sqrt Note: values LT 0 are
+     * returned 0.
      */
     public void Sqrt();
 
@@ -341,9 +333,9 @@ public interface SeismicSignal {
     public double quickMedian();
 
     /**
-     * remove glitches from the seismogram where glitches are defined by data
-     * that exceed a threshhold above the variance defined by a moving window
      * <p>
+     * Remove glitches from the seismogram where glitches are defined by data
+     * that exceed a threshhold above the variance defined by a moving window
      * </p>
      * value = Math.abs((data[j] - median)); if (value GT Threshhold *
      * Math.sqrt(variance)) replace data[j] with the median value

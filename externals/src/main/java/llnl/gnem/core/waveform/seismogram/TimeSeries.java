@@ -359,10 +359,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     /**
-     * Replaces each point in the Seismogram its signed sqrt
-     * <p>
-     * </p>
-     * Note: values LT 0 are returned -1* sqrt(abs(value)).
+     * Replaces each point in the Seismogram its signed sqrt Note: values LT 0
+     * are returned -1* sqrt(abs(value)).
      */
     @Override
     public void SignedSqrt() {
@@ -371,10 +369,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     /**
-     * Replaces each point in the Seismogram its signed square value
-     * <p>
-     * </p>
-     * Note: values LT 0 are returned -1* value*value.
+     * Replaces each point in the Seismogram its signed square value Note:
+     * values LT 0 are returned -1* value*value.
      */
     @Override
     public void SignedSquare() {
@@ -393,10 +389,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     /**
      * Smooth the Seismogram using a sliding window of width halfWidth. replaces
-     * the data with it's smoothed result
-     * <p>
-     * </p>
-     * Note halfwidth refers to number of samples, not seconds
+     * the data with it's smoothed result Note halfwidth refers to number of
+     * samples, not seconds
      *
      * @param halfwidth
      *            half width in samples.
@@ -408,10 +402,8 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     /**
-     * Replaces each point in the Seismogram with its sqrt
-     * <p>
-     * </p>
-     * Note: values LT 0 are returned 0.
+     * Replaces each point in the Seismogram with its sqrt Note: values LT 0 are
+     * returned 0.
      */
     @Override
     public void Sqrt() {
@@ -707,13 +699,13 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     /**
+     * <p>
      * Decimate the data (Note this should be interchangeable with the
      * interpolate methods)
-     * <p>
      * </p>
-     * the data series it is decimated so that only every Nth point is retained
-     * where N is the decimationfactor
      * <p>
+     * The data series it is decimated so that only every Nth point is retained
+     * where N is the decimationfactor
      * </p>
      * Note the samprate and number of points in the data series changes
      *
@@ -1179,8 +1171,6 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
 
     /**
      * Gets a float array which is a subsection of the Seismogram's time series.
-     * <p>
-     * </p>
      * The start and end times must be within the Seismogram's time window or an
      * IllegalArgument exception will be thrown
      *
@@ -1379,9 +1369,9 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
      * @param newsamprate
      *            is the new sample rate (Hz)
      *            <p>
-     *            </p>
      *            Note the samprate changes and the number of points in the data
      *            series changes based on the new desired sample rate
+     *            </p>
      */
     public void interpolate(final double newsamprate) {
         if ((newsamprate > 0.)) {
@@ -1522,9 +1512,9 @@ public class TimeSeries implements Comparable<TimeSeries>, Serializable, Cloneab
     }
 
     /**
-     * remove glitches from the seismogram where glitches are defined by data
-     * that exceed a threshhold above the variance defined by a moving window
      * <p>
+     * Remove glitches from the seismogram where glitches are defined by data
+     * that exceed a threshhold above the variance defined by a moving window
      * </p>
      * value = Math.abs((data[j] - median)); if (value GT Threshhold *
      * Math.sqrt(variance)) replace data[j] with the median value

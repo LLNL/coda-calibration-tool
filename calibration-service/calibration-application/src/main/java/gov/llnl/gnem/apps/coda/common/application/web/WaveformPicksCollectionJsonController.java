@@ -16,13 +16,12 @@ package gov.llnl.gnem.apps.coda.common.application.web;
 
 import java.util.Collection;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,9 +34,11 @@ import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformPickService;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping(value = "/api/v1/waveform-picks", name = "WaveformPicksCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/waveform-picks", "/api/v1/waveform-picks/" }, name = "WaveformPicksCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class WaveformPicksCollectionJsonController {
 
     private WaveformPickService waveformPickService;
@@ -63,7 +64,7 @@ public class WaveformPicksCollectionJsonController {
         return ResponseEntity.created(showURI.toUri()).build();
     }
 
-    @PostMapping(value = "/batch", name = "createBatch")
+    @PostMapping(value = { "/batch", "/batch/" }, name = "createBatch")
     public ResponseEntity<?> createBatch(@Valid @RequestBody Collection<WaveformPick> waveformPicks, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
@@ -73,13 +74,13 @@ public class WaveformPicksCollectionJsonController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/clear-autopicks", name = "clearAutopicks")
+    @GetMapping(value = { "/clear-autopicks", "/clear-autopicks/" }, name = "clearAutopicks")
     public ResponseEntity<?> clearAutopicks() {
         waveformPickService.clearAutopicks();
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping(value = "/batch", name = "updateBatch")
+    @PutMapping(value = { "/batch", "/batch/" }, name = "updateBatch")
     public ResponseEntity<?> updateBatch(@Valid @RequestBody Collection<WaveformPick> waveformPicks, BindingResult result) {
 
         if (result.hasErrors()) {

@@ -21,7 +21,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.persistence.Table;
+import jakarta.persistence.Table;
 
 /**
  * Specifies that a Entity marked with the {@link Table} annotation should not

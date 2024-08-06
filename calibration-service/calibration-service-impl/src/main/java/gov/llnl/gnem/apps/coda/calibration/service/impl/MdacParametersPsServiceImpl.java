@@ -16,7 +16,7 @@ package gov.llnl.gnem.apps.coda.calibration.service.impl;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

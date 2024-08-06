@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,7 +40,8 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
 
 @RestController
-@RequestMapping(value = "/api/v1/measurement", name = "MeasurementJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/measurement", "/api/v1/measurement/" }, name = "MeasurementJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class MeasurementJsonController {
 
     private static final Logger log = LoggerFactory.getLogger(MeasurementJsonController.class);
@@ -51,7 +53,7 @@ public class MeasurementJsonController {
         this.calibrationService = service;
     }
 
-    @PostMapping(value = "/measure-mws", name = "measureMws")
+    @PostMapping(value = { "/measure-mws", "/measure-mws/" }, name = "measureMws")
     public ResponseEntity<?> measureMws(@RequestBody MeasurementJob job) {
         return measureMw(job.getAutopickingEnabled(), job.getPersistResults(), job.getEventIds(), job.getStacks());
     }

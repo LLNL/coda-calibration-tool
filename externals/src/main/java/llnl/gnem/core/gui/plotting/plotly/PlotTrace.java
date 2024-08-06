@@ -36,6 +36,10 @@ public class PlotTrace {
     private String seriesName;
     private final ObjectMapper mapper;
     private String colorMap;
+    private String colorBarTitle = "";
+    private Double colorBarX = 0.0;
+    private Double colorBarY = 0.3;
+    private Double colorBarLength = 0.7;
     private Integer zIndex;
     private Boolean showLegend;
     private String legendGroup;
@@ -147,6 +151,38 @@ public class PlotTrace {
         return colorMap;
     }
 
+    public String getColorBarTitle() {
+        return colorBarTitle;
+    }
+
+    public void setColorBarTitle(String colorBarTitle) {
+        this.colorBarTitle = colorBarTitle;
+    }
+
+    public Double getColorBarX() {
+        return colorBarX;
+    }
+
+    public void setColorBarX(Double colorBarX) {
+        this.colorBarX = colorBarX;
+    }
+
+    public Double getColorBarY() {
+        return colorBarY;
+    }
+
+    public void setColorBarY(Double colorBarY) {
+        this.colorBarY = colorBarY;
+    }
+
+    public Double getColorBarLength() {
+        return colorBarLength;
+    }
+
+    public void setColorBarLength(Double colorBarLength) {
+        this.colorBarLength = colorBarLength;
+    }
+
     public void setLegendOnly(final Boolean legendOnly) {
         this.legendOnly = legendOnly;
     }
@@ -214,32 +250,34 @@ public class PlotTrace {
                 } else {
                     node.put("colorscale", colorMap);
                 }
-                node.with("colorbar").put("y", 0.3);
-                node.with("colorbar").put("len", 0.7);
+                node.withObjectProperty("colorbar").put("y", colorBarY);
+                node.withObjectProperty("colorbar").put("x", colorBarX);
+                node.withObjectProperty("colorbar").put("len", colorBarLength);
+                node.withObjectProperty("colorbar").withObjectProperty("title").put("text", colorBarTitle);
                 node.put("showscale", true);
                 node.put("reversescale", true);
-                node.with(CONTOUR).put("coloring", "heatmap");
+                node.withObjectProperty(CONTOUR).put("coloring", "heatmap");
                 if (colorMap != null && colorMap.startsWith("[[")) {
-                    node.with(MARKER).putRawValue("colorscale", new RawValue(colorMap));
+                    node.withObjectProperty(MARKER).putRawValue("colorscale", new RawValue(colorMap));
                 } else {
-                    node.with(MARKER).put("colorscale", colorMap);
+                    node.withObjectProperty(MARKER).put("colorscale", colorMap);
                 }
-                node.with(MARKER).put("showscale", true);
-                node.with(MARKER).put("reversescale", true);
+                node.withObjectProperty(MARKER).put("showscale", true);
+                node.withObjectProperty(MARKER).put("reversescale", true);
                 break;
             case SCATTER_MARKER_AND_LINE:
             case SCATTER_MARKER:
                 if (colorMap != null && colorMap.startsWith("[[")) {
-                    node.with(MARKER).putRawValue("colorscale", new RawValue(colorMap));
+                    node.withObjectProperty(MARKER).putRawValue("colorscale", new RawValue(colorMap));
                 } else {
-                    node.with(MARKER).put("colorscale", colorMap);
+                    node.withObjectProperty(MARKER).put("colorscale", colorMap);
                 }
-                node.with(MARKER).put("showscale", false);
-                node.with(MARKER).put("reversescale", true);
+                node.withObjectProperty(MARKER).put("showscale", false);
+                node.withObjectProperty(MARKER).put("reversescale", true);
                 break;
             case VERTICAL_LINE:
             case LINE:
-                node.with(MARKER).with(LINE).put("colorscale", colorMap);
+                node.withObjectProperty(MARKER).withObjectProperty(LINE).put("colorscale", colorMap);
                 break;
             default:
                 break;
@@ -247,11 +285,11 @@ public class PlotTrace {
         }
 
         if (fillColor != null) {
-            node.with(MARKER).put(COLOR, FxUtils.toWebHexColorString(fillColor));
+            node.withObjectProperty(MARKER).put(COLOR, FxUtils.toWebHexColorString(fillColor));
         }
         if (edgeColor != null) {
-            node.with(MARKER).with(LINE).put(COLOR, FxUtils.toWebHexColorString(edgeColor));
-            node.with(MARKER).with(LINE).put(WIDTH, 1);
+            node.withObjectProperty(MARKER).withObjectProperty(LINE).put(COLOR, FxUtils.toWebHexColorString(edgeColor));
+            node.withObjectProperty(MARKER).withObjectProperty(LINE).put(WIDTH, 1);
         }
         if (showLegend != null) {
             node.put("showlegend", showLegend);
@@ -272,15 +310,15 @@ public class PlotTrace {
         if (pxSize != null) {
             switch (type) {
             case SCATTER_MARKER_AND_LINE:
-                node.with(MARKER).put("size", pxSize);
-                node.with(LINE).put(WIDTH, 3);
+                node.withObjectProperty(MARKER).put("size", pxSize);
+                node.withObjectProperty(LINE).put(WIDTH, 3);
                 break;
             case SCATTER_MARKER:
-                node.with(MARKER).put("size", pxSize);
+                node.withObjectProperty(MARKER).put("size", pxSize);
                 break;
             case VERTICAL_LINE:
             case LINE:
-                node.with(LINE).put(WIDTH, pxSize);
+                node.withObjectProperty(LINE).put(WIDTH, pxSize);
                 break;
             default:
                 break;
@@ -289,15 +327,15 @@ public class PlotTrace {
         if (styleName != null) {
             switch (type) {
             case SCATTER_MARKER_AND_LINE:
-                node.with(LINE).put("dash", "solid");
-                node.with(MARKER).put("symbol", styleName);
+                node.withObjectProperty(LINE).put("dash", "solid");
+                node.withObjectProperty(MARKER).put("symbol", styleName);
                 break;
             case SCATTER_MARKER:
-                node.with(MARKER).put("symbol", styleName);
+                node.withObjectProperty(MARKER).put("symbol", styleName);
                 break;
             case VERTICAL_LINE:
             case LINE:
-                node.with(LINE).put("dash", styleName);
+                node.withObjectProperty(LINE).put("dash", styleName);
                 break;
             default:
                 break;
@@ -306,7 +344,7 @@ public class PlotTrace {
 
         if (type.getType().equals("shapes")) {
             if (edgeColor != null) {
-                node.with(LINE).put(COLOR, FxUtils.toWebHexColorString(edgeColor));
+                node.withObjectProperty(LINE).put(COLOR, FxUtils.toWebHexColorString(edgeColor));
             }
             if (fillColor != null) {
                 node.put("fillcolor", FxUtils.toWebHexColorString(fillColor));

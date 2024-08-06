@@ -16,7 +16,6 @@ package gov.llnl.gnem.apps.coda.calibration.gui;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.CancellationException;
@@ -24,10 +23,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
-
-import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +38,7 @@ import com.google.common.eventbus.EventBus;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.CalibrationStageShownEvent;
 import gov.llnl.gnem.apps.coda.common.gui.SimpleGuiPreloader;
 import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
+import jakarta.annotation.PostConstruct;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -137,43 +133,14 @@ public class GuiApplication extends Application {
             Hooks.onOperatorDebug();
         }
 
-        try {
-            Class<GuiApplication> clazz = GuiApplication.class;
-            String className = clazz.getSimpleName() + ".class";
-            String classPath = clazz.getResource(className).toString();
-            String baseTitle = "";
-
-            if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
-                baseTitle = CCT_TITLE;
-            } else {
-                baseTitle = CERT_TITLE;
-            }
-
-            if (classPath.startsWith("jar")) {
-                String manifestPath = classPath.substring(0, classPath.indexOf('!') + 1) + "/META-INF/MANIFEST.MF";
-                Manifest mf = new Manifest(new URL(manifestPath).openStream());
-                Attributes atts = mf.getMainAttributes();
-                // Put this info in the log to help with analysis
-                log.debug(
-                        "Version:{} Commit:{} Branch:{} By:{} at {}",
-                            atts.getValue("Implementation-Version"),
-                            atts.getValue("Implementation-Build"),
-                            atts.getValue("Build-Branch"),
-                            atts.getValue("Built-By"),
-                            atts.getValue("Build-Timestamp"));
-                // Update the title bar
-                baseTitle += " Built at " + atts.getValue("Build-Timestamp");
-            } else {
-                // Class not from JAR
-                log.debug("{} not running from a jar.", baseTitle);
-            }
-            props.setBaseTitle(baseTitle);
-        } catch (IOException e) {
-            // should never happen...
-            log.error("Failed initializing!", e);
+        String baseTitle = "";
+        if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
+            baseTitle = CCT_TITLE;
+        } else {
+            baseTitle = CERT_TITLE;
         }
 
-        Platform.setImplicitExit(true);
+        props.setBaseTitle(baseTitle);
         FXMLLoader fxmlLoader = null;
 
         if (startupMode == ApplicationMode.CERT) {
@@ -199,7 +166,6 @@ public class GuiApplication extends Application {
     }
 
     static public void changeApplicationMode() {
-
         if (GuiApplication.getStartupMode() == ApplicationMode.CCT) {
             GuiApplication.startupMode = ApplicationMode.CERT;
         } else {
@@ -224,6 +190,7 @@ public class GuiApplication extends Application {
         try {
             Parent root = fxmlLoader.load();
             Platform.runLater(() -> {
+                Font.loadFont(GuiApplication.class.getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
                 primaryStage.setTitle(props.getBaseTitle());
                 Scene scene = new Scene(root, props.getHeight(), props.getWidth());
                 primaryStage.setScene(scene);

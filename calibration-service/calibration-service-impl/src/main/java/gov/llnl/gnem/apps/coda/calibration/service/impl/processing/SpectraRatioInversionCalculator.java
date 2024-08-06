@@ -658,15 +658,20 @@ public class SpectraRatioInversionCalculator {
             double appStress_2 = point[3];
             double cornerFreq_2 = mdacCalculator.cornerFreqFromApparentStressM0(Math.pow(10.0, log10_M0_2), appStress_2);
 
+            int count = 0;
+
             for (Map<FrequencyBand, SpectraRatioPairDetails> recordings : stationData.values()) {
                 for (Entry<FrequencyBand, SpectraRatioPairDetails> record : recordings.entrySet()) {
                     double centerFreq = (record.getKey().getLowFrequency() + record.getKey().getHighFrequency()) / 2.0;
                     double numer = log10_M0 - Math.log10(1.0 + Math.pow(centerFreq / cornerFreq, 2.0));
                     double denom = log10_M0_2 - Math.log10(1.0 + Math.pow(centerFreq / cornerFreq_2, 2.0));
                     double diff = numer - denom;
+                    count++;
                     sum = (float) (sum + Math.abs(record.getValue().getDiffAvg() - diff));
                 }
             }
+
+            sum = sum / (count);
 
             int y = (int) (((log10_M0 - m0minY) / (m0maxY - m0minY)) * (XDIM - 1));
             int x = (int) (((log10_M0_2 - m0minX) / (m0maxX - m0minX)) * (XDIM - 1));
@@ -764,6 +769,8 @@ public class SpectraRatioInversionCalculator {
                 double cornerFreq = cornerFreqFunc.apply(log10_M0, appStress);
                 double cornerFreq_2 = cornerFreqFunc.apply(log10_M0_2, appStress_2);
 
+                int count = 0;
+
                 for (Map<FrequencyBand, SpectraRatioPairDetails> stationRecordings : eventPair.getValue().values()) {
                     for (Entry<FrequencyBand, SpectraRatioPairDetails> record : stationRecordings.entrySet()) {
                         final Double centerFreq = (record.getKey().getHighFrequency() + record.getKey().getLowFrequency()) / 2.0;
@@ -772,9 +779,12 @@ public class SpectraRatioInversionCalculator {
                         double denom = log10_M0_2 - Math.log10(1.0 + Math.pow(centerFreq / cornerFreq_2, 2.0));
                         double diff = numer - denom;
                         double recordDiff = record.getValue().getDiffAvg();
+                        count++;
                         eventPairSum = eventPairSum + (float) Math.abs(recordDiff - diff);
                     }
                 }
+
+                eventPairSum = eventPairSum / count;
 
                 int y = (int) (((log10_M0 - m0minY) / (m0maxY - m0minY)) * (XDIM - 1));
                 int x = (int) (((log10_M0_2 - m0minX) / (m0maxX - m0minX)) * (XDIM - 1));

@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -67,11 +68,17 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.ValidationMwParam
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.WaveformMetadataMixin;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.mixins.WaveformPickMixin;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformMetadata;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformPick;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadataImpl;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResult;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairInversionResultJoint;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.EventPair;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
 
 @Component
 public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileWriter, MeasuredMwTempFileWriter, ReferenceMwTempFileWriter, ValidationMwTempFileWriter, SpectraRatioTempFileWriter {
@@ -80,7 +87,7 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
 
     private static final String CALIBRATION_JSON_NAME = "Calibration_Parameters.json";
     private static final String MW_JSON_NAME = "Measured_Events.json";
-    private static final String RATIO_JSON_NAME = "Spectra_Ratio_Pair_Details.json";
+    private static final String RATIO_JSON_NAME = "Spectra_Ratio_Event_Pair_Details.json";
 
     private ObjectMapper mapper;
 
@@ -167,21 +174,6 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
     }
 
     @Override
-    public void writeSpectraRatioDetails(Path folder, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails) {
-        writeSpectraRatioDetails(folder, RATIO_JSON_NAME, spectraRatioPairDetails);
-    }
-
-    @Override
-    public void writeSpectraRatioDetails(Path folder, String filename, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails) {
-        try {
-            JsonNode document = createOrGetDocument(folder, filename);
-            writeSpectraRatioEvents(createOrGetFile(folder, filename), document, spectraRatioPairDetails);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    @Override
     public void writeSpectraValues(Path folder, String filename, List<EventSpectraReport> measurements) {
         try {
             JsonNode document = createOrGetDocument(folder, filename);
@@ -200,6 +192,39 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
             ObjectWriter writer = streamedMapper.writer();
             writer.writeValue(fileWriter, spectraRatioPairDetails);
             fileWriter.append('\n');
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void writeSpectraRatiosReport(Path folder, SpectraRatiosReportByEventPair ratioReport, EventPair eventPair) {
+        try {
+            JsonNode document = createOrGetDocument(folder, RATIO_JSON_NAME);
+            List<SpectraRatioPairDetailsMetadata> ratioDetails = new ArrayList<>(ratioReport.getRatiosList(eventPair)
+                                                                                            .stream()
+                                                                                            .map(SpectraRatioPairDetailsMetadataImpl::new)
+                                                                                            .collect(Collectors.toList()));
+            SpectraRatioPairInversionResult pairInversion = ratioReport.getReport().getInversionEstimates().get(eventPair);
+            SpectraRatioPairInversionResultJoint jointInversion = ratioReport.getReport().getJointInversionEstimates().get(eventPair);
+
+            writeSpectraRatioEvents(createOrGetFile(folder, RATIO_JSON_NAME), document, ratioDetails);
+            writeJsonNodeToFile(createOrGetFile(folder, RATIO_JSON_NAME), document, pairInversion, "pair_inversion");
+            writeJsonNodeToFile(createOrGetFile(folder, RATIO_JSON_NAME), document, jointInversion, "joint_inversion");
+
+            Pair<Double, Double> userSetFreqHighLow = ratioReport.getReport().getUserAdjustedLowAndHighFreqLevels().get(eventPair);
+            if (userSetFreqHighLow != null) {
+                ObjectNode userSetFrequencies = mapper.createObjectNode();
+                userSetFrequencies.put("low_frequency_level", userSetFreqHighLow.getX());
+                userSetFrequencies.put("high_frequency_level", userSetFreqHighLow.getY());
+
+                Double appStress = ratioReport.getReport().getUserSetStressResult();
+                if (appStress != null) {
+                    userSetFrequencies.put("user_set_lfl_hfl_stress", ratioReport.getReport().getUserSetStressResult());
+                }
+
+                writeJsonNodeToFile(createOrGetFile(folder, RATIO_JSON_NAME), document, userSetFrequencies, "user_saved_frequency_levels");
+            }
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -256,6 +281,13 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
 
     private void writeSpectraRatioEvents(File file, JsonNode document, List<SpectraRatioPairDetailsMetadata> spectraRatioPairDetails) throws IOException {
         writeArrayNodeToFile(file, document, spectraRatioPairDetails, "spectra-ratio-pair-details");
+    }
+
+    private <T> void writeJsonNodeToFile(File file, JsonNode document, T objectNode, String field) throws IllegalArgumentException, IOException {
+        JsonNode jsonNode = mapper.valueToTree(objectNode);
+
+        writeMetadataHeaders(file, document);
+        writeFieldNodeToFile(file, document, field, jsonNode);
     }
 
     private <T> void writeArrayNodeToFile(File file, JsonNode document, Collection<T> values, String field) throws IllegalArgumentException, IOException {

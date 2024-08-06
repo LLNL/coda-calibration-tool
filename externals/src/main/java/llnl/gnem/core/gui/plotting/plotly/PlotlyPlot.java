@@ -18,6 +18,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,6 +67,8 @@ import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.Title;
 import llnl.gnem.core.gui.plotting.api.VerticalLine;
 import llnl.gnem.core.gui.plotting.events.PlotAxisChange;
+import llnl.gnem.core.gui.plotting.events.PlotFreqLevelChange;
+import llnl.gnem.core.gui.plotting.events.PlotMouseEvent;
 import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
 import llnl.gnem.core.gui.plotting.events.PlotShapeMove;
 import llnl.gnem.core.gui.plotting.fx.utils.FxUtils;
@@ -98,21 +101,24 @@ public class PlotlyPlot implements BasicPlot {
 
     private transient Comparator<Integer> nullsLastIntComparator = Comparator.nullsLast(Integer::compare);
     private boolean isSubPlot;
+    private int rows = 1;
+    private int columns = 1;
     private boolean clickToPickEnabled = false;
+    private boolean showFreqLevelButtons = false;
 
     private static FileChooser chooser = null;
     private static final SimpleObjectProperty<File> lastKnownDirectoryProperty = new SimpleObjectProperty<>();
     private static final Object fileChooserLock = new Object();
 
     public PlotlyPlot() {
-        this(false, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
+        this(false, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()), 1, 1);
     }
 
     public PlotlyPlot(boolean isSubPlot) {
-        this(isSubPlot, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()));
+        this(isSubPlot, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER), Color.WHITE, new BasicTitle()), 1, 1);
     }
 
-    public PlotlyPlot(boolean isSubPlot, PlotData plotData) {
+    public PlotlyPlot(boolean isSubPlot, PlotData plotData, int rows, int columns) {
         this.plotData = plotData;
         this.isSubPlot = isSubPlot;
         //TODO: Accept other plot types
@@ -161,6 +167,7 @@ public class PlotlyPlot implements BasicPlot {
                     wind.setMember("dataExporter", this);
                     wind.setMember("logBridge", this);
                     engine.executeScript("console.log = function(message)\n" + "{\n" + " logBridge.log(message);\n" + "};");
+                    engine.executeScript("initPlotDiv();");
                     plotData.getPlotReady().set(true);
                     replot();
                 }
@@ -170,13 +177,19 @@ public class PlotlyPlot implements BasicPlot {
         });
     }
 
+    @Override
+    public void setSubplotLayout(final int columns, final int rows) {
+        this.columns = columns;
+        this.rows = rows;
+    }
+
     public String exportData() {
         if (plotData.getPlotReady().get()) {
             try {
                 chooser.setInitialFileName("raw-data.json");
                 File saveTarget = chooser.showSaveDialog(null);
                 if (saveTarget != null) {
-                    FileUtils.writeStringToFile(saveTarget, getPlotDataJSON());
+                    FileUtils.writeStringToFile(saveTarget, getPlotDataJSON(), Charset.defaultCharset());
                     synchronized (fileChooserLock) {
                         lastKnownDirectoryProperty.set(saveTarget.getParentFile());
                     }
@@ -208,10 +221,43 @@ public class PlotlyPlot implements BasicPlot {
         return clickToPickEnabled;
     }
 
+    @Override
+    public void setShowFreqLevelButtons(boolean showFreqLevelButtons) {
+        this.showFreqLevelButtons = showFreqLevelButtons;
+    }
+
+    public boolean isShowFreqLevelButtons() {
+        return showFreqLevelButtons;
+    }
+
     public void fireShapeMoveEvent(final String name, final double x0, final double x1, final double y0, final double y1) {
         CompletableFuture.runAsync(() -> {
             if (propertyChange.getPropertyChangeListeners().length > 0) {
                 propertyChange.firePropertyChange(new PropertyChangeEvent(this, "shape_move", null, new PlotShapeMove(name, x0, x1, y0, y1)));
+            }
+        });
+    }
+
+    public void fireFreqLevelChange(final boolean lflMode, final double x, final double y, final double xx, final double yy) {
+        CompletableFuture.runAsync(() -> {
+            if (propertyChange.getPropertyChangeListeners().length > 0) {
+                propertyChange.firePropertyChange(new PropertyChangeEvent(this, "freq_level_mode", null, new PlotFreqLevelChange(lflMode, x, y, xx, yy)));
+            }
+        });
+    }
+
+    public void firePlotClickedEvent(final double plotX, final double plotY, final double clientX, final double clientY) {
+        CompletableFuture.runAsync(() -> {
+            if (propertyChange.getPropertyChangeListeners().length > 0) {
+                propertyChange.firePropertyChange(new PropertyChangeEvent(this, "plot_clicked", null, new PlotMouseEvent(plotX, plotY, clientX, clientY)));
+            }
+        });
+    }
+
+    public void firePlotMouseMovedEvent(final double plotX, final double plotY, final double clientX, final double clientY) {
+        CompletableFuture.runAsync(() -> {
+            if (propertyChange.getPropertyChangeListeners().length > 0) {
+                propertyChange.firePropertyChange(new PropertyChangeEvent(this, "plot_mouse_moved", null, new PlotMouseEvent(plotX, plotY, clientX, clientY)));
             }
         });
     }
@@ -723,7 +769,7 @@ public class PlotlyPlot implements BasicPlot {
                 if (!cData.isEmpty()) {
                     final ArrayNode cNode = trace.arrayNode();
                     cData.forEach(cNode::add);
-                    trace.with("marker").set("color", cNode);
+                    trace.withObjectProperty("marker").set("color", cNode);
                 }
 
                 final List<String> textData = data.getTextData();
@@ -760,8 +806,13 @@ public class PlotlyPlot implements BasicPlot {
         layoutNode.put("showGroupVelocity", plotData.shouldShowGroupVelocity());
         layoutNode.put("showWindowLines", plotData.shouldShowWindowLine());
         layoutNode.put("showCodaStartLine", plotData.shouldShowCodaStartLine());
+        layoutNode.put("dragmode", plotData.getDragmode());
         if (!subPlots.isEmpty()) {
-            layoutNode.with("grid").put("rows", subPlots.size()).put("columns", 1).put("pattern", "independent");
+            // If rows is set to default of 1, update it to match number of subplots
+            if (this.rows == 1) {
+                this.rows = subPlots.size();
+            }
+            layoutNode.withObjectProperty("grid").put("rows", rows).put("columns", columns).put("pattern", "independent");
             for (int i = 0; i < subPlots.size(); i++) {
                 PlotlyPlot subPlot = subPlots.get(i);
                 if (i > 0) {
@@ -773,9 +824,9 @@ public class PlotlyPlot implements BasicPlot {
         } else {
             layoutNode.put("showlegend", plotData.shouldShowLegend());
             if (plotData.useHorizontalBottomLegend()) {
-                layoutNode.with("legend").put("orientation", "h");
-                layoutNode.with("legend").put("x", "0.0");
-                layoutNode.with("legend").put("y", "-0.5");
+                layoutNode.withObjectProperty("legend").put("orientation", "h");
+                layoutNode.withObjectProperty("legend").put("x", "0.0");
+                layoutNode.withObjectProperty("legend").put("y", "-0.5");
             }
             for (final Axis axis : plotData.getAxes()) {
                 String axisType;
@@ -815,49 +866,53 @@ public class PlotlyPlot implements BasicPlot {
                     if (subplotId != null) {
                         axisType = axisType + subplotId;
                     }
-                    layoutNode.with(axisType).put("zeroline", false);
-                    layoutNode.with(axisType).put("hoverformat", ".2f");
-                    layoutNode.with(axisType).with("title").put("text", axis.getText()).with("font").put("size", 12);
+                    layoutNode.withObjectProperty(axisType).put("zeroline", false);
+                    layoutNode.withObjectProperty(axisType).put("hoverformat", ".2f");
+                    layoutNode.withObjectProperty(axisType).withObjectProperty("title").put("text", axis.getText()).withObjectProperty("font").put("size", 12);
 
                     if (axisSide != null && axisSide.equals("top")) {
-                        layoutNode.with(axisType).with("title").put("standoff", 0);
+                        layoutNode.withObjectProperty(axisType).withObjectProperty("title").put("standoff", 0);
                     }
 
-                    layoutNode.with(axisType).put("linecolor", "black");
-                    layoutNode.with(axisType).put("linewidth", 1.25);
-                    layoutNode.with(axisType).put("mirror", true);
+                    layoutNode.withObjectProperty(axisType).put("linecolor", "black");
+                    layoutNode.withObjectProperty(axisType).put("linewidth", 1.25);
+                    layoutNode.withObjectProperty(axisType).put("mirror", true);
 
                     if (dataType != null) {
-                        layoutNode.with(axisType).put("type", dataType);
+                        layoutNode.withObjectProperty(axisType).put("type", dataType);
                     }
 
                     if (axisSide != null) {
-                        layoutNode.with(axisType).put("side", axisSide);
+                        layoutNode.withObjectProperty(axisType).put("side", axisSide);
                     }
                     if (axis.getMin() != axis.getMax()) {
                         final ArrayNode range = plotData.getMapper().createArrayNode();
                         range.add(axis.getMin());
                         range.add(axis.getMax());
-                        layoutNode.with(axisType).set("range", range);
+                        layoutNode.withObjectProperty(axisType).set("range", range);
                     } else {
-                        layoutNode.with(axisType).remove("range");
+                        layoutNode.withObjectProperty(axisType).remove("range");
                     }
 
                     if (axis.getTickFormat() != null) {
-                        layoutNode.with(axisType).put("tickformat", axis.getTickFormat().getFormat());
-                        layoutNode.with(axisType).put("hoverformat", axis.getTickFormat().getFormat());
+                        layoutNode.withObjectProperty(axisType).put("tickformat", axis.getTickFormat().getFormat());
+                        layoutNode.withObjectProperty(axisType).put("hoverformat", axis.getTickFormat().getFormat());
+                    }
+
+                    if (axis.getTickFormatString() != null) {
+                        layoutNode.withObjectProperty(axisType).put("tickformat", axis.getTickFormatString());
                     }
 
                     if (overlaying != null) {
-                        layoutNode.with(axisType).put("overlaying", overlaying);
+                        layoutNode.withObjectProperty(axisType).put("overlaying", overlaying);
                     }
                     if (anchor != null) {
-                        layoutNode.with(axisType).put("anchor", anchor);
+                        layoutNode.withObjectProperty(axisType).put("anchor", anchor);
                     }
                 }
             }
 
-            ObjectNode margin = layoutNode.with("margin");
+            ObjectNode margin = layoutNode.withObjectProperty("margin");
             if (topMargin != null) {
                 margin.put("t", topMargin);
             }
@@ -910,7 +965,7 @@ public class PlotlyPlot implements BasicPlot {
                                           .put("x", xVal)
                                           .put("showarrow", false)
                                           .put("text", style.getSeriesName())
-                                          .with("font")
+                                          .withObjectProperty("font")
                                           .put("color", FxUtils.toWebHexColorString(style.getFillColor()));
                         }
                         shapes.add(shapeNode);
@@ -955,4 +1010,9 @@ public class PlotlyPlot implements BasicPlot {
         hasPersistentChanges.set(true);
     }
 
+    @Override
+    public void setDragMode(String dragmode) {
+        this.plotData.setDragmode(dragmode);
+        hasPersistentChanges.set(true);
+    }
 }

@@ -58,6 +58,11 @@ import llnl.gnem.core.waveform.seismogram.TimeSeries;
  */
 public class CalibrationCurveFitter {
 
+    private static final double huberDel = 0.5;
+    private static final double relativeThreshold = 1e-5;
+    private static final double absoluteThreshold = 1e-5;
+    private static final int populationSize = 50;
+
     private Logger log = LoggerFactory.getLogger(CalibrationCurveFitter.class);
 
     public EnvelopeFit fitCurveLengthByDivergenceFromSynthetic(final ShapeMeasurement measurement, final SyntheticCoda synthetic, final double endPickTime, final ShapeFitterConstraints constraints,
@@ -196,7 +201,7 @@ public class CalibrationCurveFitter {
             return sum - ((sum * lengthWeight) * ((double) length / segment.length));
         };
 
-        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.0005, -1.0, 100000);
+        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(relativeThreshold, -1.0, 100000);
 
         if (Double.isNaN(startIntercept)) {
             startIntercept = ThreadLocalRandom.current().nextDouble(minInt, maxInt);
@@ -212,7 +217,7 @@ public class CalibrationCurveFitter {
                     new InitialGuess(new double[] { startIntercept, minGamma, startBeta, maxTime }),
                     new CMAESOptimizer.Sigma(new double[] { (maxInt - minInt) / 2.0, (maxGamma - minGamma) / 2.0, (maxBeta - minBeta) / 2.0, (maxTime - minTime) / 2.0 }),
                     convergenceChecker,
-                    50,
+                    populationSize,
                     new SimpleBounds(new double[] { -Double.MAX_VALUE, minGamma, minBeta, minTime }, new double[] { Double.MAX_VALUE, maxGamma, maxBeta, maxTime }));
 
         double[] curve = bestResult.getKey();
@@ -270,7 +275,7 @@ public class CalibrationCurveFitter {
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
                             ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
-                    new CMAESOptimizer.Sigma(new double[] { 1, 75, 100 }),
+                    new CMAESOptimizer.Sigma(new double[] { (maxP1 - minP1) / 2.0, (maxP2 - minP2) / 2.0, (maxP3 - minP3) / 2.0 }),
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
 
         PointValuePair bestResult = bestByFunction(prediction, mapper, constraints);
@@ -321,8 +326,8 @@ public class CalibrationCurveFitter {
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), ThreadLocalRandom.current().nextDouble(minP2, maxP2),
                             ThreadLocalRandom.current().nextDouble(minP3, maxP3) }),
-                    new CMAESOptimizer.Sigma(new double[] { .05, 0.5, 750 }),
-                    50,
+                    new CMAESOptimizer.Sigma(new double[] { (maxP1 - minP1) / 2.0, (maxP2 - minP2) / 2.0, (maxP3 - minP3) / 2.0 }),
+                    populationSize,
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
 
         PointValuePair bestResult = bestByFunction(prediction, mapper, constraints);
@@ -350,7 +355,7 @@ public class CalibrationCurveFitter {
     }
 
     private double lossFunction(double sum, final double X, double Y) {
-        return sum + Math.pow(.5d, 2.0) + (Math.sqrt(1d + Math.pow(Math.abs(X - Y) / .5d, 2.0)) - 1d);
+        return sum + (Math.pow(huberDel, 2.0) + (Math.sqrt(1d + Math.pow(Math.abs(X - Y) / huberDel, 2.0)) - 1d));
     }
 
     public double[] gridSearchCodaGApacheCMAES(final List<Entry<Double, Double>> gammaDistancePairs, ShapeFitterConstraints constraints) {
@@ -383,14 +388,14 @@ public class CalibrationCurveFitter {
             return sum;
         };
 
-        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(0.005, 0.005, 100000);
+        ConvergenceChecker<PointValuePair> convergenceChecker = new SimplePointChecker<>(relativeThreshold, absoluteThreshold, 100000);
 
         Function<Integer, PointValuePair> mapper = i -> optimizeCMAES(
                 prediction,
                     new InitialGuess(new double[] { ThreadLocalRandom.current().nextDouble(minP1, maxP1), minP2, minP3 }),
-                    new CMAESOptimizer.Sigma(new double[] { 1, 50, 50 }),
+                    new CMAESOptimizer.Sigma(new double[] { (maxP1 - minP1) / 2.0, (maxP2 - minP2) / 2.0, (maxP3 - minP3) / 2.0 }),
                     convergenceChecker,
-                    50,
+                    populationSize,
                     new SimpleBounds(new double[] { minP1, minP2, minP3 }, new double[] { maxP1, maxP2, maxP3 }));
 
         PointValuePair bestResult = bestByFunction(prediction, mapper, constraints);
@@ -412,7 +417,7 @@ public class CalibrationCurveFitter {
     }
 
     private PointValuePair optimizeCMAES(MultivariateFunction prediction, InitialGuess initialGuess, Sigma sigma, SimpleBounds bounds) {
-        return optimizeCMAES(prediction, initialGuess, sigma, null, 100, bounds);
+        return optimizeCMAES(prediction, initialGuess, sigma, null, populationSize, bounds);
     }
 
     private PointValuePair optimizeCMAES(MultivariateFunction prediction, InitialGuess initialGuess, CMAESOptimizer.Sigma stepSize, ConvergenceChecker<PointValuePair> convergenceChecker,

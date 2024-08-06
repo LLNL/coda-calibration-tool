@@ -23,7 +23,7 @@ import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
  * <b>If possible you should call MdacCalculatorService instead of calling this
  * class directly. It will handle the setup and care and feeding needed to
  * ensure you get a correct (or any) answer.</b>
- * <p>
+ * </p>
  *
  * <p>
  * Revised Moment and Distance Amplitude Corrections (MDAC2) Based on the MDAC2

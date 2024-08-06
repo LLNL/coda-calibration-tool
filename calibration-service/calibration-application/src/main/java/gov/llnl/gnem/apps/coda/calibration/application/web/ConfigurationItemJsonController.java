@@ -14,13 +14,12 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.application.web;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,9 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping(value = "/api/v1/config/", name = "ConfigurationItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/config", "/api/v1/config/" }, name = "ConfigurationItemJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ConfigurationItemJsonController {
 
     private ConfigurationService configService;
@@ -42,12 +43,12 @@ public class ConfigurationItemJsonController {
         this.configService = configService;
     }
 
-    @GetMapping(value = "/velocity", name = "getVelocityConfiguration")
+    @GetMapping(value = { "/velocity", "/velocity/" }, name = "getVelocityConfiguration")
     public VelocityConfiguration getVelocityConfiguration() {
         return configService.getVelocityConfiguration();
     }
 
-    @PostMapping(value = "/velocity/update", name = "updateVelocity")
+    @PostMapping(value = { "/velocity/update", "/velocity/update/" }, name = "updateVelocity")
     public ResponseEntity<?> update(@Valid @RequestBody VelocityConfiguration entry, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
@@ -56,12 +57,12 @@ public class ConfigurationItemJsonController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/shape", name = "getShapeFitterConstraints")
+    @GetMapping(value = { "/shape", "/shape/" }, name = "getShapeFitterConstraints")
     public ShapeFitterConstraints getShapeFitterConstraints() {
         return configService.getCalibrationShapeFitterConstraints();
     }
 
-    @PostMapping(value = "/shape/update", name = "updateShapeFitterConstraints")
+    @PostMapping(value = { "/shape/update", "/shape/update/" }, name = "updateShapeFitterConstraints")
     public ResponseEntity<?> updateShapeFitterConstraints(@Valid @RequestBody ShapeFitterConstraints entry, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
@@ -70,16 +71,16 @@ public class ConfigurationItemJsonController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/polygon", name = "getPolygon")
+    @GetMapping(value = { "/polygon", "/polygon/" }, name = "getPolygon")
     public ResponseEntity<String> getPolygon() {
         return ResponseEntity.ok().body(configService.getPolygonGeoJSON());
     }
 
-    @PostMapping(value = "/polygon/update", name = "updatePolygon")
+    @PostMapping(value = { "/polygon/update", "/polygon/update/" }, name = "updatePolygon")
     public ResponseEntity<?> updatePolygon(@Valid @RequestBody String rawGeoJSON, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
-        }        
+        }
         return ResponseEntity.ok().body(configService.updatePolygon(rawGeoJSON));
     }
 }

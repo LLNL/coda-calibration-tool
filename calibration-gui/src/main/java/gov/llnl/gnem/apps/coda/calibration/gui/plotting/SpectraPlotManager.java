@@ -14,23 +14,30 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.eventbus.EventBus;
+
+import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
+import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.EventPair;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
@@ -39,6 +46,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.DirectoryChooser;
+import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
 
 public class SpectraPlotManager {
 
@@ -51,9 +59,11 @@ public class SpectraPlotManager {
     private SpectralPlot denomPlot;
     private SpectralPlot numerPlot;
     private EventPair eventPair;
+    private EventBus bus;
 
-    private List<PlotPoint> numeratorPlotPoints;
-    private List<PlotPoint> denominatorPlotPoints;
+    private Map<Point2D, Waveform> waveformMap;
+    private List<PlotPoint> numeratorPoints;
+    private List<PlotPoint> denominatorPoints;
 
     @FXML
     private StackPane rootPane;
@@ -83,30 +93,47 @@ public class SpectraPlotManager {
 
     private final DirectoryChooser screenshotFolderChooser = new DirectoryChooser();
 
-    public SpectraPlotManager(EventPair eventPair, List<PlotPoint> numeratorPlotPoints, List<PlotPoint> denominatorPlotPoints) {
+    public SpectraPlotManager(EventBus bus, EventPair eventPair, Map<Point2D, Waveform> waveformMap, List<PlotPoint> numeratorPoints, List<PlotPoint> denominatorPoints) {
+        this.bus = bus;
         this.eventPair = eventPair;
-        this.numeratorPlotPoints = numeratorPlotPoints;
-        this.denominatorPlotPoints = denominatorPlotPoints;
+        this.waveformMap = waveformMap;
+        this.numeratorPoints = numeratorPoints;
+        this.denominatorPoints = denominatorPoints;
     }
 
     public List<PlotPoint> getNumeratorPlotPoints() {
-        return this.numeratorPlotPoints;
+        return this.numeratorPoints;
     }
 
     public List<PlotPoint> getDenominatorPlotPoints() {
-        return this.denominatorPlotPoints;
+        return this.denominatorPoints;
     }
 
     public List<PlotPoint> getCombinedPlotPoints() {
-        List<PlotPoint> combinedPlotPoints = new ArrayList<>(numeratorPlotPoints);
-        combinedPlotPoints.addAll(denominatorPlotPoints);
+        List<PlotPoint> combinedPlotPoints = new ArrayList<>(getNumeratorPlotPoints());
+        combinedPlotPoints.addAll(getDenominatorPlotPoints());
         return combinedPlotPoints;
+    }
+
+    private PropertyChangeListener getPlotpointObserver() {
+        return evt -> {
+            Object po = evt.getNewValue();
+            if (po instanceof PlotObjectClick && ((PlotObjectClick) po).getPlotPoints() != null) {
+
+                Point2D point = ((PlotObjectClick) po).getPlotPoints().get(0);
+                Waveform waveform = waveformMap.get(point);
+                if (waveform != null) {
+                    bus.post(new WaveformSelectionEvent(waveform.getId()));
+                }
+            }
+        };
     }
 
     public SpectralPlot plotSpectra(List<PlotPoint> plotPoints, String plotTitle, Pane parent) {
         if (plotPoints != null && plotPoints.size() > 1) {
             SpectralPlot plot = new SpectralPlot();
             setDisplayText(plot, plotTitle);
+            plot.getSubplot().addPlotObjectObserver(getPlotpointObserver());
             plot.plotXYdata(plotPoints, null, null, AVG_LINE_LABEL);
             plot.setLabels(plotTitle, X_AXIS_LABEL, Y_AXIS_LABEL);
 

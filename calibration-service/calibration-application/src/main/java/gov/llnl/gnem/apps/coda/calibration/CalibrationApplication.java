@@ -17,8 +17,6 @@ package gov.llnl.gnem.apps.coda.calibration;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import javax.annotation.PostConstruct;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -27,6 +25,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import gov.llnl.gnem.apps.coda.common.repository.DetachableJpaRepoImpl;
+import jakarta.annotation.PostConstruct;
 
 @SpringBootApplication
 @EnableAutoConfiguration

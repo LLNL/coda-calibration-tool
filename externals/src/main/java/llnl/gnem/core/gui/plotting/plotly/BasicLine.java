@@ -41,6 +41,7 @@ public class BasicLine implements Line {
     private Boolean showInLegend;
     private String legendGroup;
     private Boolean legendOnly;
+    private Boolean draggable = false;
     private Boolean useHorizontalErrorBars;
     private String hoverTemplate;
     private Integer zIndex;
@@ -57,6 +58,7 @@ public class BasicLine implements Line {
         this.name = other.getName();
         this.colorMap = other.getColorMap();
         this.showInLegend = other.shouldShowInLegend();
+        this.draggable = other.getDraggable();
         this.useHorizontalErrorBars = other.getUseHorizontalErrorBars();
         this.hoverTemplate = other.getHoverTemplate();
         this.hoverMode = other.getHoverMode();
@@ -258,6 +260,17 @@ public class BasicLine implements Line {
     }
 
     @Override
+    public boolean getDraggable() {
+        return draggable;
+    }
+
+    @Override
+    public PlotObject setDraggable(boolean draggable) {
+        this.draggable = draggable;
+        return this;
+    }
+
+    @Override
     public boolean getUseHorizontalErrorBars() {
         return useHorizontalErrorBars;
     }
@@ -326,7 +339,7 @@ public class BasicLine implements Line {
         result = prime * result + Arrays.hashCode(x);
         result = prime * result + Arrays.hashCode(y);
         result = prime * result
-                + Objects.hash(colorMap, fillColor, fillMode, hoverMode, hoverTemplate, legendGroup, legendOnly, name, pxThickness, showInLegend, style, useHorizontalErrorBars, zIndex);
+                + Objects.hash(colorMap, draggable, fillColor, fillMode, hoverMode, hoverTemplate, legendGroup, legendOnly, name, pxThickness, showInLegend, style, useHorizontalErrorBars, zIndex);
         return result;
     }
 
@@ -341,6 +354,7 @@ public class BasicLine implements Line {
         BasicLine other = (BasicLine) obj;
         return Arrays.equals(color, other.color)
                 && Objects.equals(colorMap, other.colorMap)
+                && Objects.equals(draggable, other.draggable)
                 && Arrays.equals(errorMax, other.errorMax)
                 && Arrays.equals(errorMin, other.errorMin)
                 && Objects.equals(fillColor, other.fillColor)
@@ -392,6 +406,8 @@ public class BasicLine implements Line {
                .append(legendGroup)
                .append(", legendOnly=")
                .append(legendOnly)
+               .append(", draggable=")
+               .append(draggable)
                .append(", useHorizontalErrorBars=")
                .append(useHorizontalErrorBars)
                .append(", hoverTemplate=")

@@ -18,6 +18,7 @@ import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.Calibratio
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.ENVELOPE_JOB_NODE;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.MDAC_FI_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.MDAC_PS_FIELD;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.POLYGON_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.REFERENCE_EVENTS_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SCHEMA_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.SCHEMA_VALUE;
@@ -27,7 +28,6 @@ import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.Calibratio
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.TYPE_VALUE;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VALIDATION_EVENTS_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.VELOCITY_CONFIGURATION;
-import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.POLYGON_FIELD;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +49,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterConverter;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
@@ -76,6 +77,8 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
 
     public CodaJsonParamLoader() {
         mapper = new ObjectMapper();
+        //Support for Optional<> types
+        mapper.registerModule(new Jdk8Module());
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersFileMixin.class);
         mapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersFileMixin.class);
@@ -96,9 +99,8 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
 
     public List<Result<Object>> convertJsonParamFile(File file) {
         if (file == null) {
-            return Collections.singletonList(exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable. %s",
-                                                                                                                  "NULL",
-                                                                                                                  "File reference is null"))));
+            return Collections.singletonList(
+                    exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): file does not exist or is unreadable. %s", "NULL", "File reference is null"))));
         }
 
         List<Result<Object>> results = new ArrayList<>();
@@ -107,17 +109,17 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
             JsonNode node = mapper.readTree(file);
             //TODO: Collapse these into generic method with self-validation type at some point.
             if (node.has(SCHEMA_FIELD) && node.get(SCHEMA_FIELD).asText().equalsIgnoreCase(SCHEMA_VALUE) && node.has(TYPE_FIELD) && node.get(TYPE_FIELD).asText().equalsIgnoreCase(TYPE_VALUE)) {
-                results.addAll(convertJsonFields(node, BAND_FIELD, x -> sharedFrequenyBandFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, SITE_CORRECTION_FIELD, x -> siteFrequenyBandsFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, MDAC_PS_FIELD, x -> mdacPsFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, MDAC_FI_FIELD, x -> mdacFiFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, REFERENCE_EVENTS_FIELD, x -> refEventsFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, VALIDATION_EVENTS_FIELD, x -> valEventsFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, VELOCITY_CONFIGURATION, x -> velocityConfigurationFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, SHAPE_CONSTRAINTS, x -> shapeConstraintsFromJsonNode(x)));
-                results.addAll(convertJsonFields(node, POLYGON_FIELD, x -> polygonFromJsonNode(x)));
+                results.addAll(convertJsonFields(node, BAND_FIELD, this::sharedFrequenyBandFromJsonNode));
+                results.addAll(convertJsonFields(node, SITE_CORRECTION_FIELD, this::siteFrequenyBandsFromJsonNode));
+                results.addAll(convertJsonFields(node, MDAC_PS_FIELD, this::mdacPsFromJsonNode));
+                results.addAll(convertJsonFields(node, MDAC_FI_FIELD, this::mdacFiFromJsonNode));
+                results.addAll(convertJsonFields(node, REFERENCE_EVENTS_FIELD, this::refEventsFromJsonNode));
+                results.addAll(convertJsonFields(node, VALIDATION_EVENTS_FIELD, this::valEventsFromJsonNode));
+                results.addAll(convertJsonFields(node, VELOCITY_CONFIGURATION, this::velocityConfigurationFromJsonNode));
+                results.addAll(convertJsonFields(node, SHAPE_CONSTRAINTS, this::shapeConstraintsFromJsonNode));
+                results.addAll(convertJsonFields(node, POLYGON_FIELD, this::polygonFromJsonNode));
             } else if (node.has(ENVELOPE_JOB_NODE)) {
-                results.addAll(convertJsonFields(node, ENVELOPE_JOB_NODE, x -> envelopeJobBandsToSharedBands(x)));
+                results.addAll(convertJsonFields(node, ENVELOPE_JOB_NODE, this::envelopeJobBandsToSharedBands));
             }
         } catch (IOException e) {
             return Collections.singletonList(exceptionalResult(new LightweightIllegalStateException(String.format("Error parsing (%s): %s", file.getName(), e.getMessage()), e)));

@@ -19,7 +19,8 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane fx:id="sitePane" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController">
+<StackPane fx:id="sitePane" stylesheets="@CommonGui.css"
+	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.SiteController">
 	<children>
 		<VBox>
 			<children>
@@ -97,13 +98,22 @@
 												</SplitPane>
 												<StackPane>
 													<children>
-														<TitledPane fx:id="rawTitledPane" animated="false" expanded="false" maxHeight="1.7976931348623157E308" text="Raw">
+														<TitledPane fx:id="rawTitledPane" animated="false" expanded="false" maxHeight="1.7976931348623157E308" prefHeight="10.0" text="Raw/Path">
 															<content>
-																<StackPane>
-																	<children>
-																		<StackPane fx:id="rawPlotNode" />
-																	</children>
-																</StackPane>
+																<SplitPane dividerPositions="0.5">
+																	<items>
+																		<StackPane>
+																			<children>
+																				<StackPane fx:id="rawPlotNode" />
+																			</children>
+																		</StackPane>
+																		<StackPane>
+																			<children>
+																				<StackPane fx:id="pathPlotNode" />
+																			</children>
+																		</StackPane>
+																	</items>
+																</SplitPane>
 															</content>
 														</TitledPane>
 													</children>
@@ -184,13 +194,13 @@
 											</items>
 											<items>
 												<ScrollPane fitToHeight="true" fitToWidth="true">
-                                       <content>
-                                          <StackPane prefHeight="150.0" prefWidth="200.0">
-                                             <children>
-                                                <fx:include fx:id="eventTableController" source="EventsTableGui.fxml" />
-                                             </children>
-                                          </StackPane>
-                                       </content>
+													<content>
+														<StackPane prefHeight="150.0" prefWidth="200.0">
+															<children>
+																<fx:include fx:id="eventTableController" source="EventsTableGui.fxml" />
+															</children>
+														</StackPane>
+													</content>
 												</ScrollPane>
 											</items>
 										</SplitPane>
@@ -198,7 +208,7 @@
 								</VBox>
 							</content>
 						</Tab>
-						<Tab text="Site Terms" fx:id="siteTermsTab">
+						<Tab fx:id="siteTermsTab" text="Site Terms">
 							<content>
 								<ScrollPane fitToHeight="true" fitToWidth="true" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
 									<content>

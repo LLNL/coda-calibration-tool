@@ -16,7 +16,7 @@ package gov.llnl.gnem.apps.coda.common.model.domain;
 
 import java.io.Serializable;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 @Embeddable
 public class FrequencyBand implements Comparable<FrequencyBand>, Serializable {

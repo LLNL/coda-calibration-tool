@@ -14,13 +14,12 @@
 */
 package gov.llnl.gnem.apps.coda.spectra.model.domain;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
+import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.EventPair;
 
@@ -29,12 +28,15 @@ public class SpectraRatiosReport {
     private Map<EventPair, Map<Station, Map<FrequencyBand, SpectraRatioPairDetails>>> data;
     private Map<EventPair, SpectraRatioPairInversionResult> inversionEstimates;
     private Map<EventPair, SpectraRatioPairInversionResultJoint> jointInversionEstimates;
+    private Map<EventPair, Pair<Double, Double>> userAdjustedLowAndHighFreqLevels;
+    private Double userSetStressResult;
     private boolean isLoadedFromJson;
 
     public SpectraRatiosReport() {
         data = new HashMap<>(0);
         inversionEstimates = new HashMap<>(0);
         jointInversionEstimates = new HashMap<>(0);
+        userAdjustedLowAndHighFreqLevels = new HashMap<>(0);
     }
 
     public boolean isLoadedFromJson() {
@@ -72,37 +74,45 @@ public class SpectraRatiosReport {
         return this;
     }
 
-    @Override
-    public String toString() {
-        final int maxLen = 10;
-        StringBuilder builder = new StringBuilder();
-        builder.append("SpectraRatiosReport [data=")
-               .append(data != null ? toString(data.entrySet(), maxLen) : null)
-               .append(", inversionEstimates=")
-               .append(inversionEstimates != null ? toString(inversionEstimates.entrySet(), maxLen) : null)
-               .append(", jointInversionEstimates=")
-               .append(jointInversionEstimates != null ? toString(jointInversionEstimates.entrySet(), maxLen) : null)
-               .append("]");
-        return builder.toString();
+    public Map<EventPair, Pair<Double, Double>> getUserAdjustedLowAndHighFreqLevels() {
+        return userAdjustedLowAndHighFreqLevels;
     }
 
-    private String toString(Collection<?> collection, int maxLen) {
+    public SpectraRatiosReport setUserAdjustedLowAndHighFreqLevels(Map<EventPair, Pair<Double, Double>> userAdjustedLowAndHighFreqLevels) {
+        this.userAdjustedLowAndHighFreqLevels = userAdjustedLowAndHighFreqLevels;
+        return this;
+    }
+
+    public Double getUserSetStressResult() {
+        return userSetStressResult;
+    }
+
+    public void setUserSetStressResult(Double userSetStressResult) {
+        this.userSetStressResult = userSetStressResult;
+    }
+
+    @Override
+    public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("[");
-        int i = 0;
-        for (Iterator<?> iterator = collection.iterator(); iterator.hasNext() && i < maxLen; i++) {
-            if (i > 0) {
-                builder.append(", ");
-            }
-            builder.append(iterator.next());
-        }
-        builder.append("]");
+        builder.append("SpectraRatiosReport [data=")
+               .append(data)
+               .append(", inversionEstimates=")
+               .append(inversionEstimates)
+               .append(", jointInversionEstimates=")
+               .append(jointInversionEstimates)
+               .append(", userAdjustedLowAndHighFreqLevels=")
+               .append(userAdjustedLowAndHighFreqLevels)
+               .append(", userSetStressResult=")
+               .append(userSetStressResult)
+               .append(", isLoadedFromJson=")
+               .append(isLoadedFromJson)
+               .append("]");
         return builder.toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(data, inversionEstimates, jointInversionEstimates);
+        return Objects.hash(data, inversionEstimates, isLoadedFromJson, jointInversionEstimates, userAdjustedLowAndHighFreqLevels, userSetStressResult);
     }
 
     @Override
@@ -114,7 +124,12 @@ public class SpectraRatiosReport {
             return false;
         }
         SpectraRatiosReport other = (SpectraRatiosReport) obj;
-        return Objects.equals(data, other.data) && Objects.equals(inversionEstimates, other.inversionEstimates) && Objects.equals(jointInversionEstimates, other.jointInversionEstimates);
+        return Objects.equals(data, other.data)
+                && Objects.equals(inversionEstimates, other.inversionEstimates)
+                && isLoadedFromJson == other.isLoadedFromJson
+                && Objects.equals(jointInversionEstimates, other.jointInversionEstimates)
+                && Objects.equals(userAdjustedLowAndHighFreqLevels, other.userAdjustedLowAndHighFreqLevels)
+                && Objects.equals(userSetStressResult, other.userSetStressResult);
     }
 
 }

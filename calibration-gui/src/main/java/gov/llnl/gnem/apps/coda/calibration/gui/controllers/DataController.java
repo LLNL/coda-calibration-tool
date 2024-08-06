@@ -31,8 +31,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +53,7 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.model.domain.Stream;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.messaging.WaveformChangeEvent;
+import jakarta.annotation.PreDestroy;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -414,6 +413,7 @@ public class DataController implements MapListeningController, RefreshableContro
             updates.addAll(updatedData);
             updatedData.clear();
         }
+
         if (!updates.isEmpty()) {
             synchronized (listData) {
                 tableView.getSelectionModel().getSelectedItems().removeListener(tableChangeListener);

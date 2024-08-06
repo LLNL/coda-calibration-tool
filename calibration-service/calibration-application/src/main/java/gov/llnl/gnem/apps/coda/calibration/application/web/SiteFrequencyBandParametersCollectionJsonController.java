@@ -17,13 +17,12 @@ package gov.llnl.gnem.apps.coda.calibration.application.web;
 import java.util.Collection;
 import java.util.List;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,9 +35,12 @@ import org.springframework.web.util.UriComponents;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SiteFrequencyBandParametersService;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping(value = "/api/v1/params/site-fb-parameters", name = "SiteFrequencyBandParametersCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/params/site-fb-parameters",
+        "/api/v1/params/site-fb-parameters/" }, name = "SiteFrequencyBandParametersCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SiteFrequencyBandParametersCollectionJsonController {
 
     private SiteFrequencyBandParametersService siteFrequencyBandParametersService;
@@ -81,7 +83,7 @@ public class SiteFrequencyBandParametersCollectionJsonController {
         return ResponseEntity.status(HttpStatus.OK).body(newSiteFrequencyBandParameters.getId());
     }
 
-    @PostMapping(value = "/batch", name = "updateBatch")
+    @PostMapping(value = { "/batch", "/batch/" }, name = "updateBatch")
     public ResponseEntity<?> updateBatch(@Valid @RequestBody Collection<SiteFrequencyBandParameters> siteFrequencyBandParameters, BindingResult result) {
 
         if (result.hasErrors()) {

@@ -17,13 +17,12 @@ package gov.llnl.gnem.apps.coda.calibration.application.web;
 import java.util.Collection;
 import java.util.List;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,9 +37,12 @@ import org.springframework.web.util.UriComponents;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping(value = "/api/v1/params/shared-fb-parameters", name = "SharedFrequencyBandParametersCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/params/shared-fb-parameters",
+        "/api/v1/params/shared-fb-parameters/" }, name = "SharedFrequencyBandParametersCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SharedFrequencyBandParametersCollectionJsonController {
 
     private SharedFrequencyBandParametersService sharedFrequencyBandParametersService;
@@ -85,7 +87,7 @@ public class SharedFrequencyBandParametersCollectionJsonController {
         return ResponseEntity.created(showURI.toUri()).build();
     }
 
-    @PostMapping(value = "/update", name = "update")
+    @PostMapping(value = { "/update", "/update/" }, name = "update")
     public ResponseEntity<?> update(@Valid @RequestBody SharedFrequencyBandParameters sharedFbParams, BindingResult result) {
 
         if (result.hasErrors()) {
@@ -97,7 +99,7 @@ public class SharedFrequencyBandParametersCollectionJsonController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping(value = "/delete", name = "delete")
+    @PostMapping(value = { "/delete", "/delete/" }, name = "delete")
     public ResponseEntity<?> delete(@Valid @RequestBody SharedFrequencyBandParameters sharedFbParams, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
@@ -107,7 +109,7 @@ public class SharedFrequencyBandParametersCollectionJsonController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping(value = "/find-by-band", name = "findByBand")
+    @PostMapping(value = { "/find-by-band", "/find-by-band/" }, name = "findByBand")
     public ResponseEntity<?> findByBand(@Valid @RequestBody FrequencyBand band, BindingResult result) {
 
         if (result.hasErrors()) {
@@ -117,7 +119,7 @@ public class SharedFrequencyBandParametersCollectionJsonController {
         return ResponseEntity.ok(getSharedFrequencyBandParametersService().findByFrequencyBand(band));
     }
 
-    @PutMapping(value = "/batch", name = "createBatch")
+    @PutMapping(value = { "/batch", "/batch/" }, name = "createBatch")
     public ResponseEntity<?> createBatch(@Valid @RequestBody Collection<SharedFrequencyBandParameters> sharedFrequencyBandParameters, BindingResult result) {
 
         if (result.hasErrors()) {
@@ -131,7 +133,7 @@ public class SharedFrequencyBandParametersCollectionJsonController {
         return ResponseEntity.created(listURI().toUri()).build();
     }
 
-    @PostMapping(value = "/batch", name = "updateBatch")
+    @PostMapping(value = { "/batch", "/batch/" }, name = "updateBatch")
     public ResponseEntity<?> updateBatch(@Valid @RequestBody Collection<SharedFrequencyBandParameters> sharedFrequencyBandParameters, BindingResult result) {
 
         if (result.hasErrors()) {

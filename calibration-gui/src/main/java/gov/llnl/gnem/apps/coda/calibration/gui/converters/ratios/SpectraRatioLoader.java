@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleAbstractTypeResolver;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.WaveformMetadataImpl;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformMetadata;
@@ -53,6 +54,8 @@ public class SpectraRatioLoader {
         resolver.addMapping(WaveformMetadata.class, WaveformMetadataImpl.class);
         module.setAbstractTypes(resolver);
         streamedMapper.registerModule(module);
+        //Support for Optional
+        streamedMapper.registerModule(new Jdk8Module());
     }
 
     public List<Result<SpectraRatioPairDetailsMetadata>> convertFile(File file) {

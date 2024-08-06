@@ -26,8 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -65,6 +63,8 @@ import gov.llnl.gnem.apps.coda.common.gui.events.SocketDisconnectEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.SslUtils;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeExecutor;
 import net.jodah.failsafe.RetryPolicy;
@@ -180,7 +180,7 @@ public class CodaWebClientBuilder {
         failsafe.with(retryExecutor).onFailure(evt -> {
             log.trace("Attempting to connect to stomp: {}", evt);
         }).runAsync(r -> {
-            stompSession = stompClient.connect(websocketBase, frameHandler).get(1, TimeUnit.SECONDS);
+            stompSession = stompClient.connectAsync(websocketBase, frameHandler).get(1, TimeUnit.SECONDS);
             config.getSubscriptions().forEach(topic -> stompSession.subscribe(topic.replaceAll("\"", ""), frameHandler));
         });
     }

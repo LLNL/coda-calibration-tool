@@ -1386,7 +1386,7 @@ public class SeriesMath {
         RollingStats window1 = null;
         RollingStats window2 = null;
         for (int i = windowLength; i < data.length - windowLength; i++) {
-            if (window1 == null) {
+            if (window1 == null || window2 == null) {
                 window1 = new RollingStats(Arrays.copyOfRange(data, 0, windowLength - 1));
                 window2 = new RollingStats(Arrays.copyOfRange(data, i + 1, i + windowLength));
             } else {
@@ -2450,10 +2450,10 @@ public class SeriesMath {
             throw new IllegalArgumentException("newLength must be > 0");
         }
 
+        @SuppressWarnings("unchecked")
         final T[] padded = (T[]) Array.newInstance(javaSucks, newLength);
         Arrays.fill(padded, padElement);
         if (original == null) {
-
             return padded;
         }
         if (newLength < original.length) {

@@ -44,7 +44,7 @@ public class PlotlyPlotFactory implements PlotFactory {
 
     @Override
     public BasicPlot lineAndMarkerScatterPlot() {
-        return new PlotlyPlot(false, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER_AND_LINE), Color.WHITE, new BasicTitle()));
+        return new PlotlyPlot(false, new PlotData(new PlotTrace(PlotTrace.Style.SCATTER_MARKER_AND_LINE), Color.WHITE, new BasicTitle()), 1, 1);
     }
 
     @Override
@@ -63,8 +63,16 @@ public class PlotlyPlotFactory implements PlotFactory {
     }
 
     @Override
-    public Line lineX(String label, double startingX, double xIncrement, float[] xData, Color color, LineStyles style, int pxThickness) {
-        return new BasicLine(label, startingX, xIncrement, xData, color, style, pxThickness);
+    public Line horizontalLine(final double x1, final double x2, final double y, final Color color, final LineStyles style, final int pxThickness) {
+        double[] xVals = new double[2];
+        double[] yVals = new double[2];
+
+        xVals[0] = x1;
+        xVals[1] = x2;
+        yVals[0] = y;
+        yVals[1] = y;
+
+        return new BasicLine(xVals, yVals, color, style, pxThickness);
     }
 
     @Override

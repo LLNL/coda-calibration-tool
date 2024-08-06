@@ -123,7 +123,7 @@ public class CommonGuiUtils {
 
         try (Stream<Path> fileStream = Files.walk(zipFolder, 5)) {
             List<File> files = fileStream.map(Path::toFile).filter(File::isFile).collect(Collectors.toList());
-            try (ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream("zip", Files.newOutputStream(zipDir.toPath()))) {
+            try (ArchiveOutputStream<ZipArchiveEntry> os = new ArchiveStreamFactory().createArchiveOutputStream("zip", Files.newOutputStream(zipDir.toPath()))) {
                 for (File file : files) {
                     os.putArchiveEntry(new ZipArchiveEntry(file, file.getName()));
                     try (InputStream fis = Files.newInputStream(file.toPath())) {

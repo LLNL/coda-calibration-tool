@@ -39,8 +39,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,6 +97,7 @@ import gov.llnl.gnem.apps.coda.common.service.api.WaveformPickService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 import gov.llnl.gnem.apps.coda.common.service.util.MetadataUtils;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
+import jakarta.annotation.PreDestroy;
 import llnl.gnem.core.util.TimeT;
 import llnl.gnem.core.util.Geometry.EModel;
 
@@ -323,7 +322,6 @@ public class CalibrationServiceImpl implements CalibrationService {
                     spectraByFrequencyBand(spectra),
                         mdacFiService.findFirst(),
                         collectByFrequencyBand(mdacPsService.findAll()),
-                        collectByEvid(referenceMwService.findAll()),
                         stationFrequencyBandMap,
                         PICK_TYPES.LG);
 
@@ -401,6 +399,20 @@ public class CalibrationServiceImpl implements CalibrationService {
                 try {
                     notificationService.post(new CalibrationStatusEvent(id, CalibrationStatusEvent.Status.STARTING));
                     log.info("Starting calibration at {}", LocalDateTime.now());
+
+                    List<ValidationMwParameters> validationEvents = validationMwService.findAll();
+                    Set<String> validationEventIds = Collections.emptySet();
+                    if (validationEvents != null) {
+                        validationEventIds = validationEvents.stream().map(ValidationMwParameters::getEventId).collect(Collectors.toSet());
+                    }
+
+                    List<ReferenceMwParameters> referenceEvents = referenceMwService.findAll();
+                    Set<String> referenceEventIds = Collections.emptySet();
+                    if (referenceEvents != null) {
+                        referenceEventIds = referenceEvents.stream().map(ReferenceMwParameters::getEventId).collect(Collectors.toSet());
+                    }
+                    //Handle the case where ref/val are the same event (invalid but users are users...)
+                    validationEventIds.removeAll(referenceEventIds);
 
                     Map<FrequencyBand, SharedFrequencyBandParameters> frequencyBandParameterMap = MetadataUtils.mapSharedParamsToFrequencyBands(sharedParametersService.findAll());
                     final Map<FrequencyBand, SharedFrequencyBandParameters> snrFilterMap = new HashMap<>(frequencyBandParameterMap);
@@ -514,7 +526,8 @@ public class CalibrationServiceImpl implements CalibrationService {
                             spectraByFrequencyBand(spectra),
                                 mdacFiService.findFirst(),
                                 collectByFrequencyBand(mdacPsService.findAll()),
-                                collectByEvid(referenceMwService.findAll()),
+                                collectReferenceByEvid(referenceMwService.findAll()),
+                                collectValidationByEvid(validationMwService.findAll()),
                                 frequencyBandParameterMap,
                                 PICK_TYPES.LG);
 
@@ -557,8 +570,12 @@ public class CalibrationServiceImpl implements CalibrationService {
         return cancelled;
     }
 
-    private Map<String, List<ReferenceMwParameters>> collectByEvid(List<ReferenceMwParameters> refMws) {
+    private Map<String, List<ReferenceMwParameters>> collectReferenceByEvid(List<ReferenceMwParameters> refMws) {
         return refMws.stream().filter(Objects::nonNull).collect(Collectors.groupingBy(ReferenceMwParameters::getEventId));
+    }
+
+    private Map<String, List<ValidationMwParameters>> collectValidationByEvid(List<ValidationMwParameters> valMws) {
+        return valMws.stream().filter(Objects::nonNull).collect(Collectors.groupingBy(ValidationMwParameters::getEventId));
     }
 
     private Map<PICK_TYPES, MdacParametersPS> collectByFrequencyBand(List<MdacParametersPS> mdacPs) {
@@ -571,6 +588,7 @@ public class CalibrationServiceImpl implements CalibrationService {
         return spectra.stream()
                       .filter(Objects::nonNull)
                       .filter(s -> s.getWaveform() != null)
+                      .filter(s -> s.getWaveform().getEvent() != null)
                       .collect(Collectors.groupingBy(s -> new FrequencyBand(s.getWaveform().getLowFrequency(), s.getWaveform().getHighFrequency())));
     }
 

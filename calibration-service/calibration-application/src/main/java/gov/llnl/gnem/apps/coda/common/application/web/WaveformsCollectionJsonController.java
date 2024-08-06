@@ -19,13 +19,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,9 +36,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping(value = "/api/v1/waveforms", name = "WaveformsCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
+@CrossOrigin
+@RequestMapping(value = { "/api/v1/waveforms", "/api/v1/waveforms/" }, name = "WaveformsCollectionJsonController", produces = MediaType.APPLICATION_JSON_VALUE)
 public class WaveformsCollectionJsonController {
 
     private WaveformService waveformService;
@@ -49,19 +50,19 @@ public class WaveformsCollectionJsonController {
         this.waveformService = waveformService;
     }
 
-    @PostMapping(value = "/query/all", name = "getByExampleAllMatching")
+    @PostMapping(value = { "/query/all", "/query/all/" }, name = "getByExampleAllMatching")
     public ResponseEntity<?> getByExampleAllMatching(@RequestBody Waveform waveform, BindingResult result) {
         List<Waveform> waveforms = getWaveformService().getByExampleAllDistinctMatching(waveform);
         return ResponseEntity.ok(waveforms);
     }
 
-    @GetMapping(value = "/query/stacks", name = "getAllStacks")
+    @GetMapping(value = { "/query/stacks", "/query/stacks/" }, name = "getAllStacks")
     public ResponseEntity<?> getAllStacks() {
         List<Waveform> waveforms = getWaveformService().getAllStacks();
         return ResponseEntity.ok(waveforms);
     }
 
-    @GetMapping(value = "/query/active-stacks", name = "getAllActiveStacks")
+    @GetMapping(value = { "/query/active-stacks", "/query/active-stacks/" }, name = "getAllActiveStacks")
     public ResponseEntity<?> getAllActiveStacks() {
         List<Waveform> waveforms = getWaveformService().getAllActiveStacks();
         return ResponseEntity.ok(waveforms);
@@ -77,7 +78,7 @@ public class WaveformsCollectionJsonController {
         return ResponseEntity.ok(getWaveformService().getActiveSharedEventStationStacksById(id));
     }
 
-    @GetMapping(value = "/query/unique-by-event-station", name = "getAllStacks")
+    @GetMapping(value = { "/query/unique-by-event-station", "/query/unique-by-event-station/" }, name = "getAllStacks")
     public ResponseEntity<?> getUniqueEventStationStacks() {
         return ResponseEntity.ok(getWaveformService().getUniqueEventStationStacks());
     }

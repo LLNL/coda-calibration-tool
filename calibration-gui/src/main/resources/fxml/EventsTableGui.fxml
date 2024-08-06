@@ -8,7 +8,7 @@
 
 
 <ScrollPane fitToHeight="true" fitToWidth="true"
-	xmlns="http://javafx.com/javafx/19"
+	xmlns="http://javafx.com/javafx/"
 	xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.EventTabController">
 	<content>
 		<TableView fx:id="eventTable" tableMenuButtonVisible="true">

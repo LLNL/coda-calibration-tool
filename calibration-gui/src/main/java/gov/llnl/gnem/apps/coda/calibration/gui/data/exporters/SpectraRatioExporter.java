@@ -18,7 +18,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -29,6 +28,8 @@ import org.springframework.stereotype.Component;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraRatioTempFileWriter;
 import gov.llnl.gnem.apps.coda.common.gui.util.CommonGuiUtils;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.messaging.EventPair;
+import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
 
 @Component
 public class SpectraRatioExporter {
@@ -41,22 +42,14 @@ public class SpectraRatioExporter {
         this.spectraRatioWriters = spectraRatioWriters;
     }
 
-    public File createExportArchive(List<SpectraRatioPairDetailsMetadata> ratiosByEventPair, Path directory) throws IOException {
-
+    public File createExportArchive(SpectraRatiosReportByEventPair spectraRatioReport, EventPair eventPair, Path directory) throws IOException {
         if (spectraRatioWriters != null) {
-            List<SpectraRatioPairDetailsMetadata> spectraRatioDetails = new ArrayList<>(ratiosByEventPair);
             for (SpectraRatioTempFileWriter writer : spectraRatioWriters) {
-                writer.writeSpectraRatioDetails(directory, spectraRatioDetails);
+                writer.writeSpectraRatiosReport(directory, spectraRatioReport, eventPair);
             }
         }
 
         return CommonGuiUtils.zipDirectory(directory);
-    }
-
-    public void writeSpectraRatioPairDetails(Path path, String filename, List<SpectraRatioPairDetailsMetadata> spectraRatioDetails) {
-        for (SpectraRatioTempFileWriter writer : spectraRatioWriters) {
-            writer.writeSpectraRatioDetails(path, filename, spectraRatioDetails);
-        }
     }
 
     public void writeSpectraRatioPairDetails(BufferedWriter fileWriter, SpectraRatioPairDetailsMetadata ratio) {

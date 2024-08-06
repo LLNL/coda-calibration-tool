@@ -920,7 +920,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                     for (final SpectraMeasurement meas : spectralMeasurements) {
                         final String evid = meas.getWaveform().getEvent().getEventId();
                         final Double freq = centerFreq(meas.getWaveform());
-                        evidStats.computeIfAbsent(evid, key -> new HashMap<>()).computeIfAbsent(freq, key -> new SummaryStatistics()).addValue(meas.getPathAndSiteCorrected());
+                        evidStats.computeIfAbsent(evid, key -> new HashMap<>()).computeIfAbsent(freq, key -> new SummaryStatistics()).addValue(meas.getPathAndSiteCorrected() - 7.0);
                     }
 
                     for (final Map<Double, SummaryStatistics> freqStats : evidStats.values()) {
@@ -1048,7 +1048,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             if (!eventId.equalsIgnoreCase("All")) {
                 filteredMeasurements = filterToEvent(eventId, measurements);
             }
-            Map<String, Map<Double, Double>> averageValues = new HashMap<>();
+            Map<String, Map<Double, SummaryStatistics>> averageValues = new HashMap<>();
             for (SpectraMeasurement meas : filteredMeasurements) {
                 String key = meas.getWaveform().getEvent().getEventId()
                         + "-"
@@ -1063,17 +1063,20 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                                                         new ArrayList<>()));
 
                 Double freq = centerFreq(meas.getWaveform());
-                valuesMap.get(key).add(new Pair<>(freq, meas.getPathAndSiteCorrected()));
-                averageValues.computeIfAbsent(meas.getWaveform().getEvent().getEventId(), k -> new TreeMap<>()).merge(freq, meas.getPathAndSiteCorrected(), (l, r) -> (l + r) / 2.0);
+                valuesMap.get(key).add(new Pair<>(freq, meas.getPathAndSiteCorrected() - 7.0));
+                averageValues.computeIfAbsent(meas.getWaveform().getEvent().getEventId(), k -> new TreeMap<>()).computeIfAbsent(freq, x -> {
+                    SummaryStatistics sum = new SummaryStatistics();
+                    return sum;
+                }).addValue(meas.getPathAndSiteCorrected() - 7.0);
             }
 
-            for (Entry<String, Map<Double, Double>> average : averageValues.entrySet()) {
+            for (Entry<String, Map<Double, SummaryStatistics>> average : averageValues.entrySet()) {
                 valuesMap.put(
                         "Average-" + average.getKey(),
                             new EventSpectraReport(average.getKey(),
                                                    null,
                                                    "Average",
-                                                   average.getValue().entrySet().stream().map(e -> new Pair<>(e.getKey(), e.getValue())).collect(Collectors.toList())));
+                                                   average.getValue().entrySet().stream().map(e -> new Pair<>(e.getKey(), e.getValue().getMean())).collect(Collectors.toList())));
             }
         }
         return new ArrayList<>(valuesMap.values());

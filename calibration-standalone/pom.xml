@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
 
 	<parent>
 		<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 		<artifactId>coda-calibration</artifactId>
-		<version>1.0.21.1</version>
+		<version>1.0.22</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -25,6 +27,10 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -54,7 +60,8 @@
 					<execution>
 						<id>cct</id>
 						<configuration>
-							<mainClass>gov.llnl.gnem.apps.coda.calibration.standalone.CodaCalibrationStandalone</mainClass>
+							<mainClass>
+								gov.llnl.gnem.apps.coda.calibration.standalone.CodaCalibrationStandalone</mainClass>
 							<executable>true</executable>
 							<classifier>runnable</classifier>
 							<excludeDevtools>true</excludeDevtools>
@@ -67,7 +74,8 @@
 					<execution>
 						<id>ratios</id>
 						<configuration>
-							<mainClass>gov.llnl.gnem.apps.coda.spectra.standalone.SpectraRatioStandalone</mainClass>
+							<mainClass>
+								gov.llnl.gnem.apps.coda.spectra.standalone.SpectraRatioStandalone</mainClass>
 							<executable>true</executable>
 							<classifier>ratios</classifier>
 							<excludeDevtools>true</excludeDevtools>
