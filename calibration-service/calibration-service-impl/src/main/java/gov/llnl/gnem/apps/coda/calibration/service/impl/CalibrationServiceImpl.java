@@ -99,7 +99,6 @@ import gov.llnl.gnem.apps.coda.common.service.util.MetadataUtils;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 import jakarta.annotation.PreDestroy;
 import llnl.gnem.core.util.TimeT;
-import llnl.gnem.core.util.Geometry.EModel;
 
 /**
  * The CalibrationServiceImpl class is the core control loop of the service
@@ -652,11 +651,9 @@ public class CalibrationServiceImpl implements CalibrationService {
                 SharedFrequencyBandParameters sfb = frequencyBandParameterMap.get(new FrequencyBand(p.getWaveform().getLowFrequency(), p.getWaveform().getHighFrequency()));
                 //Offset to this back to the model predicted velocity instead of the raw max velocity
                 if ((sfb != null) && (p.getWaveform().getMaxVelTime() != null)) {
-                    double distance = EModel.getDistanceWGS84(
-                            p.getWaveform().getEvent().getLatitude(),
-                                p.getWaveform().getEvent().getLongitude(),
-                                p.getWaveform().getStream().getStation().getLatitude(),
-                                p.getWaveform().getStream().getStation().getLongitude());
+
+                    double distance = configService.getDistanceFunc()
+                                                   .apply(configService.getEventCoord(p.getWaveform().getEvent()), configService.getStationCoord(p.getWaveform().getStream().getStation()));
 
                     TimeT codastart = new TimeT(p.getWaveform().getEvent().getOriginTime()).add(distance / (sfb.getVelocity0() - sfb.getVelocity1() / (sfb.getVelocity2() + distance)));
                     codastart.add(sfb.getCodaStartOffset());

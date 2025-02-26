@@ -27,6 +27,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraRatioClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.SpectraRatioExporter;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioMeasurementEvent;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.DistanceCalculator;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
 import gov.llnl.gnem.apps.coda.spectra.gui.events.RatioSegmentChangeEvent;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.util.SpectraRatiosReportByEventPair;
@@ -52,22 +53,31 @@ public class RatioMeasurementsGui {
 
     private final Property<Boolean> shouldFocus = new SimpleBooleanProperty(false);
     private EventBus bus;
+    private DistanceCalculator distanceCalc;
 
     @Autowired
     public RatioMeasurementsGui(final EventBus bus, final SymbolStyleMapFactory styleFactory, final CertLeafletMapController mapImpl, final MapPlottingUtilities iconFactory,
-            SpectraClient spectraClient, SpectraRatioClient spectraRatioClient, SpectraRatioExporter spectraRatioExporter) {
+            SpectraClient spectraClient, SpectraRatioClient spectraRatioClient, SpectraRatioExporter spectraRatioExporter, DistanceCalculator distanceCalc) {
+
         bus.register(this);
         this.bus = bus;
         this.mapImpl = mapImpl;
         this.iconFactory = iconFactory;
         this.spectraClient = spectraClient;
+        this.distanceCalc = distanceCalc;
         this.spectraRatioExporter = spectraRatioExporter;
         this.spectraRatioClient = spectraRatioClient;
         this.symbolStyleFactory = styleFactory;
     }
 
     private void createSpectraPlotPopup(SpectraRatiosReportByEventPair ratioReport) {
-        RatioMeasurementSpectraPlotManager spectraRatioPlotManager = new RatioMeasurementSpectraPlotManager(bus, symbolStyleFactory, mapImpl, iconFactory, spectraClient, spectraRatioExporter);
+        RatioMeasurementSpectraPlotManager spectraRatioPlotManager = new RatioMeasurementSpectraPlotManager(bus,
+                                                                                                            symbolStyleFactory,
+                                                                                                            mapImpl,
+                                                                                                            iconFactory,
+                                                                                                            spectraClient,
+                                                                                                            spectraRatioExporter,
+                                                                                                            distanceCalc);
         spectraRatioPlotManager.setRatioMeasurements(ratioReport);
 
         final FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/SpectraRatioPlotGui.fxml"));

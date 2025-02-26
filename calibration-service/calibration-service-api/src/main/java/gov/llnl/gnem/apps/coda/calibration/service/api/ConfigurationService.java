@@ -14,19 +14,38 @@
 */
 package gov.llnl.gnem.apps.coda.calibration.service.api;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
+import gov.llnl.gnem.apps.coda.common.model.domain.Station;
+import gov.llnl.gnem.apps.coda.common.model.util.GeodeticCoordinate;
+import gov.llnl.gnem.apps.coda.common.model.util.WGS84DistanceCalcFunction;
 
 public interface ConfigurationService {
     public VelocityConfiguration getVelocityConfiguration();
 
     public VelocityConfiguration update(VelocityConfiguration entry);
 
-    public ShapeFitterConstraints update(ShapeFitterConstraints entry);
+    public CalibrationSettings getCalibrationSettings();
+
+    public CalibrationSettings update(CalibrationSettings entry);
 
     public ShapeFitterConstraints getCalibrationShapeFitterConstraints();
+
+    public ShapeFitterConstraints update(ShapeFitterConstraints entry);
 
     public String updatePolygon(String rawGeoJSON);
 
     public String getPolygonGeoJSON();
+
+    public WGS84DistanceCalcFunction getDistanceFunc();
+
+    public Double getEpicentralDistance(GeodeticCoordinate coordA, GeodeticCoordinate coordB);
+
+    public Double getHypocentralDistance(GeodeticCoordinate coordA, GeodeticCoordinate coordB);
+
+    public GeodeticCoordinate getEventCoord(Event event);
+
+    public GeodeticCoordinate getStationCoord(Station station);
 }

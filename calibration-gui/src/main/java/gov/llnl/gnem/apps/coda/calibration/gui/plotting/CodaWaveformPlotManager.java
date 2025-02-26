@@ -43,6 +43,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.DistanceCalculator;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
@@ -323,9 +324,10 @@ public class CodaWaveformPlotManager {
             selectedSinglePlot.setCodaStartLineVisbility();
         }
     };
+    private DistanceCalculator distanceCalc;
 
     public CodaWaveformPlotManager(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
-            final CertLeafletMapController certMap, final LeafletMapController cctMap, final MapPlottingUtilities mapPlotUtils) {
+            final CertLeafletMapController certMap, final LeafletMapController cctMap, final MapPlottingUtilities mapPlotUtils, DistanceCalculator distanceCalc) {
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
@@ -333,6 +335,7 @@ public class CodaWaveformPlotManager {
         this.cctMap = cctMap;
         this.certMap = certMap;
         this.mapPlotUtils = mapPlotUtils;
+        this.distanceCalc = distanceCalc;
         this.borderPane = new BorderPane();
         this.waveformPanel = new VBox();
         this.plottedWaveformIds = new TreeMap<>();
@@ -769,7 +772,8 @@ public class CodaWaveformPlotManager {
                                             peakVelocityClient,
                                             () -> groupVelToggle.isSelected(),
                                             () -> windowLineToggle.isSelected(),
-                                            () -> moveStartToggle.isSelected());
+                                            () -> moveStartToggle.isSelected(),
+                                            distanceCalc);
             }
         }
 

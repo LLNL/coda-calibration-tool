@@ -168,6 +168,9 @@ public class SiteFrequencyBandParameters {
                 if (overlay.getStation().getLongitude() != 0.0) {
                     station.setLongitude(overlay.getStation().getLongitude());
                 }
+                if (overlay.getStation().getElevation() != 0.0) {
+                    station.setElevation(overlay.getStation().getElevation());
+                }
             }
             if (overlay.getSiteTerm() != 0.0) {
                 siteTerm = overlay.getSiteTerm();

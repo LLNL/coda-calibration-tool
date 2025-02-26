@@ -48,6 +48,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTem
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraRatioTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ValidationMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.EventSpectraReport;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
@@ -100,6 +101,7 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
         mapper.addMixIn(SharedFrequencyBandParameters.class, SharedFrequencyBandParametersFileMixin.class);
         mapper.addMixIn(SiteFrequencyBandParameters.class, SiteFrequencyBandParametersFileMixin.class);
         mapper.addMixIn(ReferenceMwParameters.class, ReferenceMwParametersFileMixin.class);
+        mapper.addMixIn(CalibrationSettings.class, CalibrationSettingsFileMixin.class);
         mapper.addMixIn(VelocityConfiguration.class, VelocityConfigurationFileMixin.class);
         mapper.addMixIn(ShapeFitterConstraints.class, ShapeFitterConstraintsFileMixin.class);
         mapper.addMixIn(MdacParametersFI.class, MdacFiFileMixin.class);
@@ -123,10 +125,21 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
 
     @Override
     public void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
-            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig, ShapeFitterConstraints shapeConstraints, String polygonGeoJSON) {
+            List<MdacParametersFI> fi, List<MdacParametersPS> ps, CalibrationSettings calibrationSettings, VelocityConfiguration velocityConfig, ShapeFitterConstraints shapeConstraints,
+            String polygonGeoJSON) {
         try {
             JsonNode document = createOrGetDocument(folder, CALIBRATION_JSON_NAME);
-            writeParams(createOrGetFile(folder, CALIBRATION_JSON_NAME), document, sharedParametersByFreqBand, siteParameters, fi, ps, velocityConfig, shapeConstraints, polygonGeoJSON);
+            writeParams(
+                    createOrGetFile(folder, CALIBRATION_JSON_NAME),
+                        document,
+                        sharedParametersByFreqBand,
+                        siteParameters,
+                        fi,
+                        ps,
+                        calibrationSettings,
+                        velocityConfig,
+                        shapeConstraints,
+                        polygonGeoJSON);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -235,8 +248,8 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
     }
 
     private void writeParams(File file, JsonNode document, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand,
-            Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters, List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocityConfig,
-            ShapeFitterConstraints shapeConstraints, String polygonGeoJSON) throws IOException {
+            Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters, List<MdacParametersFI> fi, List<MdacParametersPS> ps, CalibrationSettings calibrationSettings,
+            VelocityConfiguration velocityConfig, ShapeFitterConstraints shapeConstraints, String polygonGeoJSON) throws IOException {
         writeArrayNodeToFile(file, document, sharedParametersByFreqBand.values(), CalibrationJsonConstants.BAND_FIELD);
         if (siteParameters != null && !siteParameters.isEmpty()) {
             Map<String, Map<String, List<SiteFrequencyBandParameters>>> siteBands = siteParameters.entrySet()
@@ -255,6 +268,9 @@ public class JsonTempFileWriter implements SpectraTempFileWriter, ParamTempFileW
         }
         if (ps != null && !ps.isEmpty()) {
             writeArrayNodeToFile(file, document, ps, CalibrationJsonConstants.MDAC_PS_FIELD);
+        }
+        if (calibrationSettings != null) {
+            writeFieldNodeToFile(file, document, CalibrationJsonConstants.CALIBRATION_SETTINGS, mapper.valueToTree(calibrationSettings));
         }
         if (velocityConfig != null) {
             writeFieldNodeToFile(file, document, CalibrationJsonConstants.VELOCITY_CONFIGURATION, mapper.valueToTree(velocityConfig));

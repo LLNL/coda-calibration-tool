@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="parameters" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController">
+<StackPane fx:id="parameters" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@CommonGui.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gov.llnl.gnem.apps.coda.calibration.gui.controllers.parameters.ParametersController">
 	<children>
 		<VBox StackPane.alignment="CENTER_RIGHT">
 			<children>
@@ -47,6 +47,11 @@
                               </TabPane>
                            </center>
                         </BorderPane>
+                     </content>
+                  </Tab>
+                  <Tab text="Settings">
+                     <content>
+                        <fx:include fx:id="calibrationSettings" source="CalibrationSettings.fxml" />
                      </content>
                   </Tab>
 					</tabs>

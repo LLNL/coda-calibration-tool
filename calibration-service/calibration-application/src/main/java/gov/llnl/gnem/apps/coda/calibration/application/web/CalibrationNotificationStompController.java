@@ -19,6 +19,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.BandParametersDataChangeEvent;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationSettingsChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.MdacDataChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.MeasurementStatusEvent;
@@ -38,6 +39,7 @@ public class CalibrationNotificationStompController {
         final TypingMessageTemplate typingTemplate = new TypingMessageTemplate(template);
 
         registerCalEvent(notificationService, typingTemplate, CalibrationStatusEvent.class);
+        registerCalEvent(notificationService, typingTemplate, CalibrationSettingsChangeEvent.class);
         registerCalEvent(notificationService, typingTemplate, RatioStatusEvent.class);
         registerCalEvent(notificationService, typingTemplate, MeasurementStatusEvent.class);
         registerCalEvent(notificationService, typingTemplate, MdacDataChangeEvent.class);

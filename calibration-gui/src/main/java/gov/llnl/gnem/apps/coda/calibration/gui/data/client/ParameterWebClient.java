@@ -24,6 +24,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
@@ -164,6 +165,16 @@ public class ParameterWebClient implements ParameterClient {
     }
 
     @Override
+    public Mono<CalibrationSettings> getCalibrationSettings() {
+        return client.get().uri("/config/calibration-settings/").accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(CalibrationSettings.class).onErrorReturn(new CalibrationSettings());
+    }
+
+    @Override
+    public Mono<String> updateCalibrationSettings(CalibrationSettings calSettings) {
+        return client.post().uri("/config/calibration-settings/update").accept(MediaType.APPLICATION_JSON).bodyValue(calSettings).retrieve().bodyToMono(String.class).onErrorReturn("");
+    }
+
+    @Override
     public Mono<VelocityConfiguration> getVelocityConfiguration() {
         return client.get()
                      .uri("/config/velocity/")
@@ -206,5 +217,5 @@ public class ParameterWebClient implements ParameterClient {
                 .retrieve()
                 .bodyToMono(String.class)
                 .onErrorReturn("");
-    }    
+    }
 }

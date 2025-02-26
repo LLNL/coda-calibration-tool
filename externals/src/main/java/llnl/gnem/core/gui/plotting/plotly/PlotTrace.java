@@ -45,7 +45,7 @@ public class PlotTrace {
     private String legendGroup;
     private String hoverTemplate;
     private Boolean legendOnly;
-    private Boolean draggable;
+    private Boolean draggable = false;
     private String xAxisId;
     private String yAxisId;
     private boolean isAnnotationLogX = false;

@@ -90,7 +90,7 @@ public class RatioMeasurementWaveformPlotManager {
     private List<Station> curEventStations;
     private int curFreqIndex = -1;
     private int curStationIndex = -1;
-    private boolean alignPeaksModeBoolean = true;
+    private boolean alignPeaksModeBoolean = false;
     private boolean ratioWindowModeBoolean = true;
 
     final Button nextButton = new Button(">");
@@ -234,6 +234,12 @@ public class RatioMeasurementWaveformPlotManager {
             final double position = show ? 0.8 : 1.0;
 
             Platform.runLater(() -> {
+                if (position == 1.0) {
+                    ratioWaveformPane.setVisible(false);
+                }
+                else {
+                    ratioWaveformPane.setVisible(true);
+                }
                 splitPaneDivider.setPosition(position);
             });
         }
@@ -381,8 +387,8 @@ public class RatioMeasurementWaveformPlotManager {
         topToolbar.getItems().add(nextStationButton);
         topToolbar.getItems().add(prevButton);
         topToolbar.getItems().add(nextButton);
-        topToolbar.getItems().add(alignPeaksToggle);
         topToolbar.getItems().add(trueTimeToggle);
+        topToolbar.getItems().add(alignPeaksToggle);
         topToolbar.getItems().add(ratioWindowToggle);
         topToolbar.getItems().add(freqBandLabel);
         topToolbar.getItems().add(eventStationLabel);

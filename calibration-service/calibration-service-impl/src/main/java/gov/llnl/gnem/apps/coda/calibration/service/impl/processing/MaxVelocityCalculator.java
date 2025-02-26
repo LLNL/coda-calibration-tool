@@ -27,6 +27,7 @@ import com.google.common.base.Functions;
 
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PeakVelocityMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
@@ -37,7 +38,6 @@ import gov.llnl.gnem.apps.coda.common.service.api.WaveformPickService;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 import llnl.gnem.core.util.TimeT;
-import llnl.gnem.core.util.Geometry.EModel;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 @Component
@@ -48,13 +48,16 @@ public class MaxVelocityCalculator {
     private VelocityConfiguration velConf;
     private SharedFrequencyBandParametersService sfbService;
     private WaveformPickService pickService;
+    private ConfigurationService configService;
 
     @Autowired
-    public MaxVelocityCalculator(VelocityConfiguration velConf, WaveformToTimeSeriesConverter converter, SharedFrequencyBandParametersService sfbService, WaveformPickService pickService) {
+    public MaxVelocityCalculator(VelocityConfiguration velConf, WaveformToTimeSeriesConverter converter, SharedFrequencyBandParametersService sfbService, WaveformPickService pickService,
+            ConfigurationService configService) {
         this.converter = converter;
         this.velConf = velConf;
         this.sfbService = sfbService;
         this.pickService = pickService;
+        this.configService = configService;
     }
 
     public List<PeakVelocityMeasurement> computeMaximumVelocity(List<Waveform> waveforms, VelocityConfiguration velocityConfiguration, boolean persistResults) {
@@ -115,11 +118,8 @@ public class MaxVelocityCalculator {
             }
 
             TimeSeries waveform = converter.convert(rawWaveform);
-            double distance = EModel.getDistanceWGS84(
-                    rawWaveform.getEvent().getLatitude(),
-                        rawWaveform.getEvent().getLongitude(),
-                        rawWaveform.getStream().getStation().getLatitude(),
-                        rawWaveform.getStream().getStation().getLongitude());
+
+            double distance = configService.getDistanceFunc().apply(configService.getEventCoord(rawWaveform.getEvent()), configService.getStationCoord(rawWaveform.getStream().getStation()));
             TimeT origintime = new TimeT(rawWaveform.getEvent().getOriginTime());
             TimeT starttime;
             TimeT endtime;

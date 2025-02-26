@@ -66,6 +66,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParamet
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersFiService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersPsService;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -79,7 +80,6 @@ import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 import llnl.gnem.core.util.SeriesMath;
 import llnl.gnem.core.util.TimeT;
-import llnl.gnem.core.util.Geometry.EModel;
 import llnl.gnem.core.util.MathFunctions.FitnessCriteria;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
@@ -155,14 +155,17 @@ public class SpectraCalculator {
         return compare;
     };
 
+    private ConfigurationService configService;
+
     @Autowired
     public SpectraCalculator(final WaveformToTimeSeriesConverter converter, final SyntheticCodaModel syntheticCodaModel, final MdacCalculatorService mdacService,
-            final MdacParametersFiService mdacFiService, final MdacParametersPsService mdacPsService, final VelocityConfiguration velConf) {
+            final MdacParametersFiService mdacFiService, final MdacParametersPsService mdacPsService, final VelocityConfiguration velConf, final ConfigurationService configService) {
         this.converter = converter;
         this.syntheticCodaModel = syntheticCodaModel;
         this.mdacService = mdacService;
         this.mdacFiService = mdacFiService;
         this.mdacPsService = mdacPsService;
+        this.configService = configService;
         this.PHASE_VELOCITY_KM_S = velConf.getPhaseVelocityInKms();
     }
 
@@ -193,7 +196,8 @@ public class SpectraCalculator {
             final Station station = synth.getSourceWaveform().getStream().getStation();
             final Event event = synth.getSourceWaveform().getEvent();
 
-            final double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
+            final double distance = configService.getDistanceFunc().apply(configService.getEventCoord(event), configService.getStationCoord(station));
+
             double vr = params.getVelocity0() - params.getVelocity1() / (params.getVelocity2() + distance);
             if (vr == 0.0) {
                 vr = 1.0;

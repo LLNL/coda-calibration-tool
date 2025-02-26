@@ -102,6 +102,7 @@ public class SacExporter {
             header.kcmpnm = w.getStream().getChannelName();
             header.stla = (float) w.getStream().getStation().getLatitude();
             header.stlo = (float) w.getStream().getStation().getLongitude();
+            header.stel = (float) w.getStream().getStation().getElevation();
             header.knetwk = w.getStream().getStation().getNetworkName();
             header.kevnm = w.getEvent().getEventId();
             header.evla = (float) w.getEvent().getLatitude();

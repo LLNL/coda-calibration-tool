@@ -37,6 +37,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.EventClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.UpdateMapPolygonEvent;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
@@ -200,6 +201,14 @@ public class CodaParamLoadingController {
                             }
                         } catch (JsonProcessingException ex) {
                             log.trace(ex.getMessage(), ex);
+                        }
+                    } else if (res.get() instanceof CalibrationSettings) {
+                        CalibrationSettings entry = (CalibrationSettings) res.get();
+                        Mono<String> request = paramsClient.updateCalibrationSettings(entry);
+                        if (request != null) {
+                            request.retry(3).subscribe();
+                        } else {
+                            log.error("Returned a null request from the parameter client while posting CalibrationSettings {}", entry);
                         }
                     } else if (res.get() instanceof VelocityConfiguration) {
                         VelocityConfiguration entry = (VelocityConfiguration) res.get();

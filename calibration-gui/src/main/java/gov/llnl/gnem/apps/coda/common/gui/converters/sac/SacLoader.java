@@ -178,9 +178,16 @@ public class SacLoader implements FileToWaveformConverter {
 
             double eventDepth;
             if (SACHeader.isDefault(header.evdp)) {
-                eventDepth = 0;
+                eventDepth = 0d;
             } else {
                 eventDepth = header.evdp;
+            }
+            
+            double stationElevation;
+            if (SACHeader.isDefault(header.stel)) {
+                stationElevation = 0d;
+            } else {
+                stationElevation = header.stel;
             }
 
             String dataType = StringUtils.trimToEmpty((String) header.getVariableMap().get("depvariabletype")).toLowerCase(Locale.ENGLISH);
@@ -237,6 +244,7 @@ public class SacLoader implements FileToWaveformConverter {
                                                                           new Station().setStationName(stationName)
                                                                                        .setLatitude(stationLatitude)
                                                                                        .setLongitude(stationLongitude)
+                                                                                       .setElevation(stationElevation)
                                                                                        .setNetworkName(networkName)))
                                               .setEvent(
                                                       new Event().setEventId(evid)

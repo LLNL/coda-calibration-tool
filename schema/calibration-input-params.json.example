@@ -48,6 +48,9 @@
         "mw": 3.1,
         "apparentStressInMpa": 0.5
     }],
+    "calibration-settings": {
+        "distanceCalcMethod": "Epicentral",
+    },
     "velocity-configuration": {
         "phaseVelocityInKms": 3.5,
         "groupVelocity1InKmsGtDistance": 4.7,

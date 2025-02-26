@@ -62,7 +62,7 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
 
     private final Axis yAxis;
 
-    private boolean alignPeaks = true;
+    private boolean alignPeaks = false;
 
     private double diffAvg;
 
@@ -154,42 +154,39 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
             plotIdentifier = String.format("%s_over_%s-%s_%s", numEventId, denEventId, stationName, frequency);
 
             double offsetAmountToUse = 0.0; // Note this offset is only applied to the denominator wave
-            peakOffset = ratioDetails.getDenomStartCutSec() - ratioDetails.getNumerStartCutSec();
+            peakOffset = ratioDetails.getDenomPeakSec() - ratioDetails.getNumerPeakSec();
 
             // If alignPeaks is true we need to move the denominator by peakOffset
             if (this.alignPeaks) {
                 offsetAmountToUse = peakOffset;
-            }
 
-            // Label the peak offset
-            if (peakOffset != 0.0) {
-                double numerPeak = numeratorSeries.getMax();
-                double denomPeak = denominatorSeries.getMax();
-                double peakOffsetLabelY = (numerPeak + denomPeak) / 2;
+                // Label the peak offset
+                if (peakOffset != 0.0) {
+                    double numerPeak = numeratorSeries.getMax();
+                    double denomPeak = denominatorSeries.getMax();
+                    double peakOffsetLabelY = (numerPeak + denomPeak) / 2;
 
-                if (peakOffset < 0) {
-                    addPlotObject(
-                            createHorizontalSegment(
-                                    String.format("True Time Offset: %s s", dfmt4.format(peakOffset)),
-                                        peakOffsetLabelY,
-                                        ratioDetails.getDenomStartCutSec(),
-                                        ratioDetails.getNumerStartCutSec(),
-                                        ratioValColor,
-                                        LineStyles.DASH_DOT),
-                                PLOT_ORDERING.PICK_LINES.getZOrder());
-                } else {
-                    addPlotObject(
-                            createHorizontalSegment(
-                                    String.format("True Time Offset: %s s", dfmt4.format(peakOffset)),
-                                        peakOffsetLabelY,
-                                        ratioDetails.getNumerStartCutSec(),
-                                        ratioDetails.getDenomStartCutSec(),
-                                        ratioValColor,
-                                        LineStyles.DASH_DOT),
-                                PLOT_ORDERING.PICK_LINES.getZOrder());
-                }
-
-                if (alignPeaks) {
+                    if (peakOffset < 0) {
+                        addPlotObject(
+                                createHorizontalSegment(
+                                        String.format("True Time Offset: %s s", dfmt4.format(peakOffset)),
+                                            peakOffsetLabelY,
+                                            ratioDetails.getDenomStartCutSec(),
+                                            ratioDetails.getNumerStartCutSec(),
+                                            ratioValColor,
+                                            LineStyles.DASH_DOT),
+                                    PLOT_ORDERING.PICK_LINES.getZOrder());
+                    } else {
+                        addPlotObject(
+                                createHorizontalSegment(
+                                        String.format("True Time Offset: %s s", dfmt4.format(peakOffset)),
+                                            peakOffsetLabelY,
+                                            ratioDetails.getNumerStartCutSec(),
+                                            ratioDetails.getDenomStartCutSec(),
+                                            ratioValColor,
+                                            LineStyles.DASH_DOT),
+                                    PLOT_ORDERING.PICK_LINES.getZOrder());
+                    }
                     addPlotObject(new VerticalLine(ratioDetails.getDenomStartCutSec(), 100, "Denominator Actual Start Cut Time", ratioValColor, 1, false, false));
                 }
             }
@@ -275,9 +272,7 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
                         false,
                         !this.alignPeaks,
                         false);
-            if (this.alignPeaks) {
-                plotTimeSeries(diffSegment, numeratorWave.getSampleRate(), numerOriginTime, numerStartCutTime, "Diff Wave", PLOT_ORDERING.DIFF_WAVEFORM.getZOrder(), diffColor, true, true, true);
-            }
+            plotTimeSeries(diffSegment, numeratorWave.getSampleRate(), numerOriginTime, numerStartCutTime, "Diff Wave", PLOT_ORDERING.DIFF_WAVEFORM.getZOrder(), diffColor, true, false, true);
             replot();
         }
     }
@@ -312,7 +307,7 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
             final TimeT numerOriginTime = new TimeT(ratioDetails.getNumeratorEventOriginTime());
             final TimeT numerStartCutTime = new TimeT(ratioDetails.getNumerStartCutSec()).add(numerOriginTime);
 
-            plotTimeSeries(diffSegment, numeratorWave.getSampleRate(), numerOriginTime, numerStartCutTime, "Diff Wave", PLOT_ORDERING.DIFF_WAVEFORM.getZOrder(), diffColor, true, true, true);
+            plotTimeSeries(diffSegment, numeratorWave.getSampleRate(), numerOriginTime, numerStartCutTime, "Diff Wave", PLOT_ORDERING.DIFF_WAVEFORM.getZOrder(), diffColor, true, false, true);
             replot();
         }
     }
@@ -339,41 +334,15 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
         double startTime = beginTime.subtractD(originTime);
         double endTime = rawSeries.getLengthInSeconds() + startTime;
 
-        if (plotStartEndLines && peakOffset != 0.0) {
+        if (plotStartEndLines && isNumerator) {
+            Color verticalColor = verticalLineColor1;
+            String startTitle = NUMERATOR_START_CUT_LABEL;
+            String endTitle = NUMERATOR_END_CUT_LABEL;
+            final VerticalLine line1 = new VerticalLine(startTime, 100, startTitle, verticalColor.deriveColor(0, 1, 1, 0.8), DRAGGABLE_LINE_WIDTH, true, false);
+            final VerticalLine line2 = new VerticalLine(endTime, 100, endTitle, verticalColor.deriveColor(0, 1, 1, 0.8), DRAGGABLE_LINE_WIDTH, true, false);
 
-            if (!this.alignPeaks) {
-                Color rectangleColor = verticalLineColor2;
-                String title = DENOMINATOR_CUT_LABEL;
-                if (isNumerator) {
-                    rectangleColor = verticalLineColor1;
-                    title = NUMERATOR_CUT_LABEL;
-                }
-                final Rectangle rect = new Rectangle(startTime,
-                                                     endTime,
-                                                     DRAGGABLE_LINE_WIDTH,
-                                                     100,
-                                                     title,
-                                                     rectangleColor.deriveColor(0, 1, 1, 0.9),
-                                                     rectangleColor.deriveColor(0, 1, 1, 0.05),
-                                                     true,
-                                                     false);
-                addPlotObject(rect);
-            } else {
-                Color verticalColor = verticalLineColor2;
-                String startTitle = DENOMINATOR_START_CUT_LABEL;
-                String endTitle = DENOMINATOR_END_CUT_LABEL;
-                if (isNumerator) {
-                    verticalColor = verticalLineColor1;
-                    startTitle = NUMERATOR_START_CUT_LABEL;
-                    endTitle = NUMERATOR_END_CUT_LABEL;
-                }
-                final VerticalLine line1 = new VerticalLine(startTime, 100, startTitle, verticalColor.deriveColor(0, 1, 1, 0.8), DRAGGABLE_LINE_WIDTH, true, false);
-                final VerticalLine line2 = new VerticalLine(endTime, 100, endTitle, verticalColor.deriveColor(0, 1, 1, 0.8), DRAGGABLE_LINE_WIDTH, true, false);
-
-                addPlotObject(line1);
-                addPlotObject(line2);
-            }
-
+            addPlotObject(line1);
+            addPlotObject(line2);
         }
         if (plotRatioValue) {
             addPlotObject(
@@ -395,9 +364,9 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
     }
 
     private TimeSeries getTimeSeriesFromWaveform(Waveform wave) {
-        final TimeT denomBeginTime = new TimeT(wave.getBeginTime());
+        final TimeT beginTime = new TimeT(wave.getBeginTime());
         final float[] waveSegment = doublesToFloats(wave.getSegment());
-        return new TimeSeries(waveSegment, wave.getSampleRate(), denomBeginTime);
+        return new TimeSeries(waveSegment, wave.getSampleRate(), beginTime);
     }
 
     public static float[] doublesToFloats(double[] x) {

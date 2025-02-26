@@ -66,6 +66,7 @@ import llnl.gnem.core.gui.plotting.api.Rectangle;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.Title;
 import llnl.gnem.core.gui.plotting.api.VerticalLine;
+import llnl.gnem.core.gui.plotting.events.PlotAnnotationMove;
 import llnl.gnem.core.gui.plotting.events.PlotAxisChange;
 import llnl.gnem.core.gui.plotting.events.PlotFreqLevelChange;
 import llnl.gnem.core.gui.plotting.events.PlotMouseEvent;
@@ -234,6 +235,14 @@ public class PlotlyPlot implements BasicPlot {
         CompletableFuture.runAsync(() -> {
             if (propertyChange.getPropertyChangeListeners().length > 0) {
                 propertyChange.firePropertyChange(new PropertyChangeEvent(this, "shape_move", null, new PlotShapeMove(name, x0, x1, y0, y1)));
+            }
+        });
+    }
+
+    public void fireAnnotationMoveEvent(String name, double x, double y) {
+        CompletableFuture.runAsync(() -> {
+            if (propertyChange.getPropertyChangeListeners().length > 0) {
+                propertyChange.firePropertyChange(new PropertyChangeEvent(this, "annotation_move", null, new PlotAnnotationMove(name, x, y)));
             }
         });
     }
@@ -522,6 +531,8 @@ public class PlotlyPlot implements BasicPlot {
             if (data.getTraceStyle() == null) {
                 final PlotTrace traceStyle = populateStyle(line, Style.LINE, plot);
                 traceStyle.setPxSize(line.getPxThickness());
+                traceStyle.setDraggable(line.getDraggable());
+                traceStyle.setSeriesName(line.getName());
                 traceStyle.setStyleName(line.getStyle().getStyleName());
                 traceStyle.setColorMap(line.getColorMap());
                 data.setTraceStyle(traceStyle);
@@ -932,8 +943,33 @@ public class PlotlyPlot implements BasicPlot {
             final ArrayNode annotations = plotData.getMapper().createArrayNode();
 
             for (final PlotObjectData data : orderedPlots) {
-                if (data.getTraceStyle() != null && data.getTraceStyle().getType() != null && data.getTraceStyle().getType().getType().equals(SHAPES)) {
-                    final PlotTrace style = data.getTraceStyle();
+                PlotTrace style = data.getTraceStyle();
+
+                // Create annotations for LFL and HFL lines
+                if (style != null && style.isDraggable() && (style.getSeriesName().contains("LFL") || style.getSeriesName().contains("HFL"))) {
+                    final ObjectNode annotationNode = plotData.getMapper().createObjectNode();
+                    String name = "LFL";
+
+                    // Styling differs between hfl and lfl lines
+                    if (style.getSeriesName().contains("HFL")) {
+                        name = "HFL";
+                        annotationNode.put("x", 0.95).put("ay", 20.0);
+                    } else {
+                        annotationNode.put("x", 0.05).put("ay", -20.0);
+                    }
+
+                    annotationNode.put("yref", "y")
+                                  .put("xref", "paper")
+                                  .put("ax", 0.0)
+                                  .put("y", data.getYdata().get(0))
+                                  .put("showarrow", true)
+                                  .put("arrowcolor", FxUtils.toWebHexColorString(Color.BLACK))
+                                  .put("text", name);
+
+                    annotations.add(annotationNode);
+                }
+
+                if (style != null && style.getType() != null && style.getType().getType().equals(SHAPES)) {
                     final ObjectNode shapeNode = style.getJSONObject();
                     final ObjectNode annotationNode = plotData.getMapper().createObjectNode();
 

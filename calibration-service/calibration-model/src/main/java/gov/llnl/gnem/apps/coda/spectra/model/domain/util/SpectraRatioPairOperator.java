@@ -97,23 +97,44 @@ public class SpectraRatioPairOperator {
     public void updateCutTimesAndRecalculateDiff(int numeratorStartCutIdx, int denominatorStartCutIdx, int numeratorEndCutIdx, int denominatorEndCutIdx) {
 
         // Calculate max cut length and cut time
-        int numerLength = numeratorEndCutIdx - numeratorStartCutIdx;
-        int denomLength = denominatorEndCutIdx - denominatorStartCutIdx;
-        int maxLength = Math.min(denomLength, numerLength);
-        double newTimeLength = maxLength / getNumerWaveform().getSampleRate();
+        // By this point these segments have been re-sampled to the same
+        // sample rate, so index in the array is proportional to
+        // time
+        double numerStartSec = ratio.getNumerStartCutSec();
+        double denomStartSec = ratio.getDenomStartCutSec();
+        double numerEndSec = ratio.getNumerEndCutSec();
+        double denomEndSec = ratio.getDenomEndCutSec();
+        double startTimeSec = Math.max(numerStartSec, denomStartSec);
+        if (startTimeSec > 0) {
+            startTimeSec = Math.floor(startTimeSec);
+        }
+        else {
+            startTimeSec = Math.ceil(startTimeSec);
+        }
+        double endTimeSec = Math.min(numerEndSec, denomEndSec);
+        
+        if (startTimeSec > endTimeSec) {
+            startTimeSec = endTimeSec;
+        }
+
+        double sampleRate = ratio.getNumerWaveform().getSampleRate();
+        double maxTimeLength = endTimeSec - startTimeSec;
 
         // Update end cut time and indexes
-        this.setCutSegmentLength(maxLength);
-        this.setCutTimeLength(newTimeLength);
+        this.setCutSegmentLength((int) (maxTimeLength * sampleRate));
+        this.setCutTimeLength(maxTimeLength);
 
         // Update cut time and indexes
-        this.setNumerStartCutIdx(numeratorStartCutIdx);
-        this.setNumerEndCutIdx(numeratorStartCutIdx + this.getCutSegmentLength());
-        this.setNumerEndCutSec(getNumerStartCutSec() + this.getCutTimeLength());
-        this.setDenomStartCutIdx(denominatorStartCutIdx);
-        this.setDenomEndCutIdx(denominatorStartCutIdx + this.getCutSegmentLength());
-        this.setDenomEndCutSec(getDenomStartCutSec() + this.getCutTimeLength());
+        this.setNumerStartCutSec(startTimeSec);
+        this.setNumerEndCutSec(endTimeSec);
+        this.setDenomStartCutSec(startTimeSec);
+        this.setDenomEndCutSec(endTimeSec);
 
+        //Explicitly reset the stop index to the same length to account for 
+        //rounding issues between the two cuts
+        this.setNumerEndCutIdx(this.getNumerStartCutIdx() + getCutSegmentLength());
+        this.setDenomEndCutIdx(this.getDenomStartCutIdx() + getCutSegmentLength());
+        
         updateDiffSegment();
     }
 
@@ -196,7 +217,7 @@ public class SpectraRatioPairOperator {
      * @return
      */
     public double[] getSubArray(double[] originalArray, int startIdx, int endIdx) {
-        if (originalArray.length - startIdx > endIdx - startIdx) {
+        if (originalArray.length - 1 > endIdx && originalArray.length > startIdx) {
             return Arrays.copyOfRange(originalArray, startIdx, endIdx);
         }
 
@@ -365,6 +386,7 @@ public class SpectraRatioPairOperator {
 
     public void setNumerStartCutSec(Double numerStartCutSec) {
         ratio.setNumerStartCutSec(numerStartCutSec);
+        ratio.setNumerStartCutIdx(getIndexForTimeFromOrigin(ratio.getNumerWaveform(), ratio.getNumerWaveStartSec(), numerStartCutSec));
     }
 
     public Double getDenomStartCutSec() {
@@ -373,6 +395,7 @@ public class SpectraRatioPairOperator {
 
     public void setDenomStartCutSec(Double denomStartCutSec) {
         ratio.setDenomStartCutSec(denomStartCutSec);
+        ratio.setDenomStartCutIdx(getIndexForTimeFromOrigin(ratio.getDenomWaveform(), ratio.getDenomWaveStartSec(), denomStartCutSec));
     }
 
     public Double getNumerEndCutSec() {
@@ -381,6 +404,7 @@ public class SpectraRatioPairOperator {
 
     public void setNumerEndCutSec(Double numerEndCutSec) {
         ratio.setNumerEndCutSec(numerEndCutSec);
+        ratio.setNumerEndCutIdx(getIndexForTimeFromOrigin(ratio.getNumerWaveform(), ratio.getNumerWaveStartSec(), numerEndCutSec));
     }
 
     public Double getDenomEndCutSec() {
@@ -389,6 +413,7 @@ public class SpectraRatioPairOperator {
 
     public void setDenomEndCutSec(Double denomEndCutSec) {
         ratio.setDenomEndCutSec(denomEndCutSec);
+        ratio.setDenomEndCutIdx(getIndexForTimeFromOrigin(ratio.getDenomWaveform(), ratio.getDenomWaveStartSec(), denomEndCutSec));
     }
 
     public int getNumerStartCutIdx() {
@@ -439,5 +464,12 @@ public class SpectraRatioPairOperator {
     @JsonIgnore
     public SpectraRatioPairDetails getRatio() {
         return ratio;
+    }
+    
+    @JsonIgnore
+    public int getIndexForTimeFromOrigin(Waveform waveform, double originOffset, double timeSecondsFromOrigin) {
+        int indexOffsetForOrigin = (int) (originOffset * waveform.getSampleRate());
+        int indexFromOrigin = (int) (timeSecondsFromOrigin * waveform.getSampleRate());
+        return indexFromOrigin - indexOffsetForOrigin;
     }
 }

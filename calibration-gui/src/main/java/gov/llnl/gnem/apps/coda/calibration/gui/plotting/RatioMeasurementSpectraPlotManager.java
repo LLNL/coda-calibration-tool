@@ -49,6 +49,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.SpectraRatioExporter;
 import gov.llnl.gnem.apps.coda.calibration.gui.util.FileDialogs;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.DistanceCalculator;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.LabeledPlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.PlotPoint;
 import gov.llnl.gnem.apps.coda.common.gui.plotting.SymbolStyleMapFactory;
@@ -57,6 +58,7 @@ import gov.llnl.gnem.apps.coda.common.gui.util.HiddenHeaderTableView;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.gui.util.SnapshotUtils;
 import gov.llnl.gnem.apps.coda.common.mapping.api.Icon;
+import gov.llnl.gnem.apps.coda.common.model.domain.Event;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.Pair;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
@@ -104,12 +106,11 @@ import llnl.gnem.core.gui.plotting.api.Line;
 import llnl.gnem.core.gui.plotting.api.LineStyles;
 import llnl.gnem.core.gui.plotting.api.PlotFactory;
 import llnl.gnem.core.gui.plotting.api.SymbolStyles;
+import llnl.gnem.core.gui.plotting.events.PlotAnnotationMove;
 import llnl.gnem.core.gui.plotting.events.PlotFreqLevelChange;
 import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
 import llnl.gnem.core.gui.plotting.plotly.PlotObjectData;
 import llnl.gnem.core.gui.plotting.plotly.PlotTrace;
-import llnl.gnem.core.util.Geometry.EModel;
-import llnl.gnem.core.util.Geometry.GeodeticCoordinate;
 
 public class RatioMeasurementSpectraPlotManager {
 
@@ -220,13 +221,15 @@ public class RatioMeasurementSpectraPlotManager {
 
     private SpectraRatioExporter spectraRatioExporter;
     private EventBus bus;
+    private DistanceCalculator distanceCalc;
 
     public RatioMeasurementSpectraPlotManager(EventBus bus, final SymbolStyleMapFactory styleFactory, CertLeafletMapController mapImpl, MapPlottingUtilities iconFactory, SpectraClient spectraClient,
-            SpectraRatioExporter spectraRatioExporter) {
+            SpectraRatioExporter spectraRatioExporter, DistanceCalculator distanceCalc) {
         this.bus = bus;
         this.symbolStyleMapFactory = styleFactory;
         this.mapImpl = mapImpl;
         this.iconFactory = iconFactory;
+        this.distanceCalc = distanceCalc;
         this.symbolMap = new HashMap<>();
         this.spectraClient = spectraClient;
         this.spectraRatioExporter = spectraRatioExporter;
@@ -264,7 +267,8 @@ public class RatioMeasurementSpectraPlotManager {
     private void setLflHflLine(boolean isLFL, double x, double y, double xx, double yy) {
         double ratioVal = calcAvgRatioValsInBox(x, y, xx, yy);
         addUserSetFreqLine(ratioVal, isLFL);
-        getRatioSpectraPlot().getSubplot().replot();
+
+        getRatioSpectraPlot().getSubplot().fullReplot();
     }
 
     private PropertyChangeListener getPlotAreaObserver(final Supplier<Map<Point2D, SpectraRatioPairOperator>> ratioDetailsMap) {
@@ -280,8 +284,13 @@ public class RatioMeasurementSpectraPlotManager {
             } else if (newValue instanceof PlotObjectClick && ((PlotObjectClick) newValue).getPlotPoints() != null) {
                 handlePlotObjectClicked((PlotObjectClick) newValue, point -> ratioDetailsMap.get().get(point));
                 return;
-            }
+            } else if (newValue instanceof PlotAnnotationMove) {
+                PlotAnnotationMove moved = (PlotAnnotationMove) newValue;
 
+                // Creates or updates the LFL/HFL marker to follow the annotation position
+                addUserSetFreqLine(moved.getY(), moved.getName().equals("LFL"));
+                getRatioSpectraPlot().getSubplot().fullReplot();
+            }
         };
     }
 
@@ -666,7 +675,7 @@ public class RatioMeasurementSpectraPlotManager {
     }
 
     private void addEventDataToTable(String dataHeader, EventPair eventPair) {
-        Double eventDistance = getEventPairDistanceKm();
+        Double epicentralEventDistance = getEventPairEpicentralDistanceKm();
         Double hypocentralEventDistance = getHypocentralEventPairDistanceKm();
         Double eventDepth = getEventPairDepthKm();
 
@@ -674,8 +683,8 @@ public class RatioMeasurementSpectraPlotManager {
         ratioSummaryValues.add(new Pair<>("Numerator Event [A]", eventPair.getY().getEventId()));
         ratioSummaryValues.add(new Pair<>("Denominator Event [B]", eventPair.getX().getEventId()));
 
-        if (eventDistance != null) {
-            ratioSummaryValues.add(new Pair<>("Distance (Km)", dfmt2.format(eventDistance.doubleValue())));
+        if (epicentralEventDistance != null) {
+            ratioSummaryValues.add(new Pair<>("Epicentral Dist (Km)", dfmt2.format(epicentralEventDistance.doubleValue())));
         }
         if (hypocentralEventDistance != null) {
             ratioSummaryValues.add(new Pair<>("Hypocentral Dist (Km)", dfmt2.format(hypocentralEventDistance.doubleValue())));
@@ -702,7 +711,11 @@ public class RatioMeasurementSpectraPlotManager {
         Double hfl = userSetFreqs.getY();
 
         if (lfl != null && hfl != null) {
-            return Math.pow(hfl, 3.0 / 2.0) / Math.pow(lfl, 1.0 / 2.0);
+
+            double num = Math.pow(Math.pow(10, hfl), 1.5);
+            double den = Math.pow(Math.pow(10, lfl), 0.5);
+
+            return num / den;
         }
 
         return null;
@@ -745,14 +758,14 @@ public class RatioMeasurementSpectraPlotManager {
         updateUserSetFreqLevels(ratioVal, isLFL);
         if (isLFL) {
             if (userSetLFL != null) {
-                updateFrequencyLine(userSetLFL, "User", false, ratioVal);
+                updateFrequencyLine(userSetLFL, "User", true, ratioVal);
             } else {
-                userSetLFL = createFrequencyLine("User", false, Color.PURPLE.darker(), LineStyles.LONG_DASH_DOT, false, ratioVal, true);
+                userSetLFL = createFrequencyLine("User", true, Color.PURPLE.brighter(), LineStyles.LONG_DASH_DOT, false, ratioVal, true);
             }
         } else if (userSetHFL != null) {
-            updateFrequencyLine(userSetHFL, "User", true, ratioVal);
+            updateFrequencyLine(userSetHFL, "User", false, ratioVal);
         } else {
-            userSetHFL = createFrequencyLine("User", true, Color.PURPLE.brighter(), LineStyles.LONG_DASH_DOT, false, ratioVal, true);
+            userSetHFL = createFrequencyLine("User", false, Color.PURPLE.darker(), LineStyles.LONG_DASH_DOT, false, ratioVal, true);
         }
     }
 
@@ -1182,14 +1195,14 @@ public class RatioMeasurementSpectraPlotManager {
         curMaxX = Math.max(30.0, symbolMap.entrySet().stream().mapToDouble(entry -> entry.getKey().getX()).max().getAsDouble());
     }
 
-    private Line createFrequencyLine(String name, boolean isHFL, Color color, LineStyles style, boolean hideByDefault, double ratioValue, boolean draggable) {
+    private Line createFrequencyLine(String name, boolean isLFL, Color color, LineStyles style, boolean hideByDefault, double ratioValue, boolean draggable) {
         final float[] lineData = new float[2];
         lineData[0] = (float) ratioValue;
         lineData[1] = (float) ratioValue;
 
-        String formatStr = "%s LFL: %s";
-        if (isHFL) {
-            formatStr = "%s HFL: %s";
+        String formatStr = "%s HFL: %s";
+        if (isLFL) {
+            formatStr = "%s LFL: %s";
         }
 
         Line freqLine = plotFactory.horizontalLine(curMinX, curMaxX, ratioValue, color, style, 2);
@@ -1258,16 +1271,27 @@ public class RatioMeasurementSpectraPlotManager {
         return String.format("large_event_%s_small_event_%s", getEventPair().getY().getEventId(), getEventPair().getX().getEventId());
     }
 
-    // Gets the epicentral distance EModel WGS84 distance between both events
+    // Gets the distance between both events using the user preferred method (from settings)
     public Double getEventPairDistanceKm() {
         SpectraRatioPairDetails ratioDetails = getCurrentFirstRatio();
         if (ratioDetails != null) {
-            double numerLatitude = ratioDetails.getNumerWaveform().getEvent().getLatitude();
-            double numerLongitude = ratioDetails.getNumerWaveform().getEvent().getLongitude();
-            double denomLatitude = ratioDetails.getDenomWaveform().getEvent().getLatitude();
-            double denomLongitude = ratioDetails.getDenomWaveform().getEvent().getLongitude();
+            Event numerEvent = ratioDetails.getNumerWaveform().getEvent();
+            Event denomEvent = ratioDetails.getDenomWaveform().getEvent();
 
-            return EModel.getDistanceWGS84(numerLatitude, numerLongitude, denomLatitude, denomLongitude);
+            return distanceCalc.getDistanceFunc().apply(DistanceCalculator.getEventCoord(numerEvent), DistanceCalculator.getEventCoord(denomEvent));
+        }
+
+        return null;
+    }
+
+    // Gets the epicentral distance EModel WGS84 distance between both events
+    public Double getEventPairEpicentralDistanceKm() {
+        SpectraRatioPairDetails ratioDetails = getCurrentFirstRatio();
+        if (ratioDetails != null) {
+            Event numerEvent = ratioDetails.getNumerWaveform().getEvent();
+            Event denomEvent = ratioDetails.getDenomWaveform().getEvent();
+
+            return distanceCalc.getEpicentralDistance(DistanceCalculator.getEventCoord(numerEvent), DistanceCalculator.getEventCoord(denomEvent));
         }
 
         return null;
@@ -1277,14 +1301,10 @@ public class RatioMeasurementSpectraPlotManager {
     public Double getHypocentralEventPairDistanceKm() {
         SpectraRatioPairDetails ratioDetails = getCurrentFirstRatio();
         if (ratioDetails != null) {
-            double numerLatitude = ratioDetails.getNumerWaveform().getEvent().getLatitude();
-            double numerLongitude = ratioDetails.getNumerWaveform().getEvent().getLongitude();
-            double denomLatitude = ratioDetails.getDenomWaveform().getEvent().getLatitude();
-            double denomLongitude = ratioDetails.getDenomWaveform().getEvent().getLongitude();
-            double numerDepth = ratioDetails.getNumerWaveform().getEvent().getDepth() / 1000.0;
-            double denomDepth = ratioDetails.getDenomWaveform().getEvent().getDepth() / 1000.0;
+            Event numerEvent = ratioDetails.getNumerWaveform().getEvent();
+            Event denomEvent = ratioDetails.getDenomWaveform().getEvent();
 
-            return EModel.getSeparationMeters(new GeodeticCoordinate(numerLatitude, numerLongitude, numerDepth), new GeodeticCoordinate(denomLatitude, denomLongitude, denomDepth)) / 1000.0;
+            return distanceCalc.getHypocentralDistance(DistanceCalculator.getEventCoord(numerEvent), DistanceCalculator.getEventCoord(denomEvent));
         }
 
         return null;

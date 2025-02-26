@@ -48,6 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.PathCalibrationMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PathCalibrationMeasurementService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.PathCalibrationService;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SpectraCalculator;
@@ -56,7 +57,6 @@ import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
 import gov.llnl.gnem.apps.coda.common.model.domain.SharedFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
-import llnl.gnem.core.util.Geometry.EModel;
 
 @Service
 @Transactional
@@ -104,10 +104,13 @@ public class Joint1DPathCorrection implements PathCalibrationService {
     @Value(value = "${path.use-aggressive-opt:true}")
     private boolean agressiveOptimization;
 
+    private ConfigurationService configService;
+
     @Autowired
-    public Joint1DPathCorrection(SpectraCalculator spectraCalc, PathCalibrationMeasurementService pathCalibrationMeasurementService) {
+    public Joint1DPathCorrection(SpectraCalculator spectraCalc, PathCalibrationMeasurementService pathCalibrationMeasurementService, ConfigurationService configService) {
         this.spectraCalc = spectraCalc;
         this.pathCalibrationMeasurementService = pathCalibrationMeasurementService;
+        this.configService = configService;
     }
 
     /**
@@ -188,7 +191,7 @@ public class Joint1DPathCorrection implements PathCalibrationService {
                             eventCountByStation.put(station, 0);
                         }
                         dataMap.get(event).put(station, spectra.getRawAtMeasurementTime());
-                        distanceMap.get(event).put(station, EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude()));
+                        distanceMap.get(event).put(station, configService.getDistanceFunc().apply(configService.getEventCoord(event), configService.getStationCoord(station)));
 
                         stations.add(station);
                         eventCountByStation.put(station, eventCountByStation.get(station) + 1);

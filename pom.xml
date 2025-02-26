@@ -6,7 +6,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>gov.llnl.gnem.apps.coda.calibration</groupId>
 	<artifactId>coda-calibration</artifactId>
-	<version>1.0.22</version>
+	<version>1.0.24</version>
 	<name>coda-calibration</name>
 
 	<packaging>pom</packaging>
@@ -66,18 +66,19 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<maven.compiler.plugin.version>3.12.1</maven.compiler.plugin.version>
-		<maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
-		<maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+		<maven.javadoc.plugin.version>3.11.2</maven.javadoc.plugin.version>
+		<maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
 		<maven.shade.plugin.version>3.5.2</maven.shade.plugin.version>
-		<maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
+		<maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
 		<maven.source.plugin.version>3.3.0</maven.source.plugin.version>
 
 		<jfx.version>17.0.11</jfx.version>
-		<!-- 17.0.11 introduced regressions with WebKit, have to hold off for now -->
+		<!-- 17.0.11 introduced regressions with WebKit, have to hold off for
+		now -->
 		<jfx-web.version>17.0.10</jfx-web.version>
-		
+
 		<jaxb-api.version>4.0.1</jaxb-api.version>
-		<spring.boot.version>3.3.1</spring.boot.version>
+		<spring.boot.version>3.4.1</spring.boot.version>
 		<reactor.version>2023.0.3</reactor.version>
 
 		<jakarta.persistence.version>3.1.0</jakarta.persistence.version>
@@ -96,13 +97,13 @@
 		<tyrus.standalone.client.version>2.1.5</tyrus.standalone.client.version>
 		<commons.compress.version>1.26.0</commons.compress.version>
 		<commons.math3.version>3.6.1</commons.math3.version>
-		<guava.version>33.0.0-jre</guava.version>
+		<guava.version>33.4.0-jre</guava.version>
 		<failsafe.version>2.4.4</failsafe.version>
 
 		<!-- Testing -->
-		<spring.test.version>6.1.4</spring.test.version>
-		<junit.jupiter.version>5.10.2</junit.jupiter.version>
-		<mockito.version>5.10.0</mockito.version>
+		<spring.test.version>6.2.2</spring.test.version>
+		<junit.jupiter.version>5.11.4</junit.jupiter.version>
+		<mockito.version>5.15.2</mockito.version>
 
 		<!-- CVE overrides -->
 		<log4j2.version>3.0.0-beta2</log4j2.version>
@@ -175,6 +176,12 @@
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-web</artifactId>
 				<version>${jfx-web.version}</version>
+				<classifier>mac-aarch64</classifier>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-web</artifactId>
+				<version>${jfx-web.version}</version>
 				<classifier>linux</classifier>
 			</dependency>
 			<dependency>
@@ -188,6 +195,12 @@
 				<artifactId>javafx-graphics</artifactId>
 				<version>${jfx.version}</version>
 				<classifier>mac</classifier>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-graphics</artifactId>
+				<version>${jfx.version}</version>
+				<classifier>mac-aarch64</classifier>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>

@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
@@ -94,7 +95,7 @@ public class SwftStyleParamFileWriter implements ParamTempFileWriter {
 
     @Override
     public void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
-            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints, String polygons) {
+            List<MdacParametersFI> fi, List<MdacParametersPS> ps, CalibrationSettings calibrationSettings, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints, String polygons) {
         File sharedParamFile = new File(folder.toFile(), "Shared.param");
         sharedParamFile.deleteOnExit();
         try {

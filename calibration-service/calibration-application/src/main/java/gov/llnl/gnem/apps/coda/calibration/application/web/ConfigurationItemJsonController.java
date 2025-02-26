@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
@@ -50,6 +51,20 @@ public class ConfigurationItemJsonController {
 
     @PostMapping(value = { "/velocity/update", "/velocity/update/" }, name = "updateVelocity")
     public ResponseEntity<?> update(@Valid @RequestBody VelocityConfiguration entry, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        }
+        configService.update(entry);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = { "/calibration-settings", "/calibration-settings/" }, name = "getCalibrationSettings")
+    public CalibrationSettings getCalibrationSettings() {
+        return configService.getCalibrationSettings();
+    }
+
+    @PostMapping(value = { "/calibration-settings/update", "/calibration-settings/update/" }, name = "updateCalibrationSettings")
+    public ResponseEntity<?> update(@Valid @RequestBody CalibrationSettings entry, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }

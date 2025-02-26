@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.EventBus;
@@ -42,6 +41,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.Spectra;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioMeasurementEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioStatusEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.RatioStatusEvent.Status;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.DistanceCalculator;
 import gov.llnl.gnem.apps.coda.common.gui.events.ShowFailureReportEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.MaybeNumericStringComparator;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -64,7 +64,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
-import llnl.gnem.core.util.Geometry.EModel;
 
 @Component
 public class SpectraRatioGuiController implements RefreshableController {
@@ -82,6 +81,9 @@ public class SpectraRatioGuiController implements RefreshableController {
 
     @FXML
     private TableColumn<SpectraEvent, Double> refMwCol;
+    
+    @FXML
+    private TableColumn<SpectraEvent, Double> valMwCol;
 
     @FXML
     private TableColumn<SpectraEvent, String> dateCol;
@@ -117,6 +119,7 @@ public class SpectraRatioGuiController implements RefreshableController {
     private EventClient eventClient;
     private SpectraClient spectraClient;
     private SpectraRatioClient spectraRatioClient;
+    private DistanceCalculator distanceCalc;
     private CertLeafletMapController certMapController;
 
     private Event selectedEventForDistCalc;
@@ -141,12 +144,13 @@ public class SpectraRatioGuiController implements RefreshableController {
 
     private Stage stage;
 
-    public SpectraRatioGuiController(EventClient eventClient, SpectraClient spectraClient, CertLeafletMapController certMapController, SpectraRatioClient spectraRatioClient, EventBus bus,
-            ConfigurableApplicationContext springContext) throws IOException {
+    public SpectraRatioGuiController(EventClient eventClient, SpectraClient spectraClient, CertLeafletMapController certMapController, SpectraRatioClient spectraRatioClient,
+            DistanceCalculator distanceCalc, EventBus bus) throws IOException {
         this.eventClient = eventClient;
         this.spectraClient = spectraClient;
         this.spectraRatioClient = spectraRatioClient;
         this.certMapController = certMapController;
+        this.distanceCalc = distanceCalc;
         this.bus = bus;
     }
 
@@ -175,6 +179,20 @@ public class SpectraRatioGuiController implements RefreshableController {
         }
         return eventMw;
     }
+    
+    private Double getEventValMw(SpectraEvent event) {
+        if (event == null) {
+            return null;
+        }
+
+        Spectra eventSpectra = spectraClient.getValidationSpectra(event.getEventID()).block(Duration.ofSeconds(2));
+
+        if (eventSpectra == null || eventSpectra.getMw() < 0.0) {
+            return null;
+        }
+
+        return eventSpectra.getMw();
+    }
 
     private Double getEventRefMw(SpectraEvent event) {
         if (event == null) {
@@ -196,7 +214,7 @@ public class SpectraRatioGuiController implements RefreshableController {
         // Calculate event distance based from selected event
         if (event != null && selectedEventForDistCalc != null) {
 
-            return EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), selectedEventForDistCalc.getLatitude(), selectedEventForDistCalc.getLongitude());
+            return distanceCalc.getDistanceFunc().apply(DistanceCalculator.getEventCoord(event), DistanceCalculator.getEventCoord(selectedEventForDistCalc));
         }
 
         return 0.0;
@@ -228,6 +246,7 @@ public class SpectraRatioGuiController implements RefreshableController {
 
         fitMwCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventFitMw).orElseGet(() -> null)));
         refMwCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventRefMw).orElseGet(() -> null)));
+        valMwCol.setCellValueFactory(x -> Bindings.createObjectBinding(() -> Optional.ofNullable(x).map(CellDataFeatures::getValue).map(this::getEventValMw).orElseGet(() -> null)));
 
         dateCol.setCellValueFactory(
                 x -> Bindings.createStringBinding(
@@ -316,7 +335,7 @@ public class SpectraRatioGuiController implements RefreshableController {
 
     @FXML
     private void calculateDistance() {
-        if (tableView != null) {
+        if ((tableView != null) && !tableView.getSelectionModel().getSelectedItems().isEmpty()) {
             selectedEventForDistCalc = eventClient.getEvent(tableView.getSelectionModel().getSelectedItems().get(0).getEventID()).block();
             tableView.refresh();
         }

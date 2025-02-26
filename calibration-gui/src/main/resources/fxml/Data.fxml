@@ -18,13 +18,13 @@
 								<TableColumn fx:id="eventCol" editable="false" prefWidth="75.0" text="Event" />
 								<TableColumn fx:id="stationCol" editable="false" prefWidth="75.0" text="Station" />
                         		<TableColumn fx:id="networkCol" editable="false" prefWidth="75.0" text="Network" visible="false" />
-								<TableColumn editable="false" maxWidth="-1.0" minWidth="-1.0" prefWidth="-1.0" sortable="false" text="Frequency">
+								<TableColumn editable="false" maxWidth="-1.0" minWidth="-1.0" prefWidth="-1.0" sortable="false" text="Frequency (hz)">
 									<columns>
 										<TableColumn fx:id="lowFreqCol" editable="false" minWidth="-1.0" prefWidth="-1.0" text="Low" />
 										<TableColumn fx:id="highFreqCol" editable="false" minWidth="-1.0" prefWidth="-1.0" text="High" />
 									</columns>
 								</TableColumn>
-								<TableColumn fx:id="depthCol" editable="false" prefWidth="25.0" text="Depth" />
+								<TableColumn fx:id="depthCol" editable="false" prefWidth="25.0" text="Depth (m)" />
 							</columns>
 							<columnResizePolicy>
 								<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

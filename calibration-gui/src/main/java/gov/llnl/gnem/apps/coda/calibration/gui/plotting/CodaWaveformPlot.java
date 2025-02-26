@@ -35,6 +35,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.DistanceCalculator;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.util.NumberFormatFactory;
 import gov.llnl.gnem.apps.coda.common.model.domain.Event;
@@ -112,6 +113,8 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
 
     private BooleanSupplier showCodaStartLine;
 
+    private DistanceCalculator distanceCalc;
+
     private enum PLOT_ORDERING {
         BACKGROUND(0), NOISE_BOX(1), WAVEFORM(2), NOISE_LINE(3), SHAPE_FIT(4), MODEL_FIT(5), PICKS(6);
 
@@ -127,8 +130,9 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
     }
 
     public CodaWaveformPlot(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramClient, final PeakVelocityClient velocityClient,
-            BooleanSupplier showGroupVelocity, BooleanSupplier showWindowLines, BooleanSupplier showCodaStartLine, final TimeSeries... seismograms) {
+            BooleanSupplier showGroupVelocity, BooleanSupplier showWindowLines, BooleanSupplier showCodaStartLine, DistanceCalculator distanceCalc, final TimeSeries... seismograms) {
         super(seismograms);
+
         xAxis = new BasicAxis(Axis.Type.X, "Time (seconds from origin)");
         yAxis = new BasicAxis(Axis.Type.Y, "log10(amplitude)");
         this.addAxes(xAxis, yAxis);
@@ -139,6 +143,7 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
         this.showGroupVelocity = showGroupVelocity;
         this.showWindowLines = showWindowLines;
         this.showCodaStartLine = showCodaStartLine;
+        this.distanceCalc = distanceCalc;
     }
 
     public void setGroupVelocityVisbility() {
@@ -248,7 +253,8 @@ public class CodaWaveformPlot extends PlotlyWaveformPlot {
             yAxis.setMin(min);
             yAxis.setMax(max);
 
-            final double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
+            final double distance = distanceCalc.getDistanceFunc().apply(DistanceCalculator.getEventCoord(event), DistanceCalculator.getStationCoord(station));
+
             final double baz = EModel.getBAZ(station.getLatitude(), station.getLongitude(), event.getLatitude(), event.getLongitude());
             plotIdentifier = waveform.getEvent().getEventId() + "_" + waveform.getStream().getStation().getStationName() + "_" + waveform.getLowFrequency() + "_" + waveform.getHighFrequency();
             final String labelText = plotIdentifier + "; Distance: " + dfmt4.format(distance) + "km; BAz(deg): " + dfmt4.format(baz);

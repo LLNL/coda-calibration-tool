@@ -26,6 +26,7 @@
                       <TableColumn id="eventCol" fx:id="eventCol" editable="false" minWidth="35.0" prefWidth="100.0" text="Event" />
                         <TableColumn id="fitMwCol" fx:id="fitMwCol" editable="false" prefWidth="30.0" text="Fit Mw" />
                         <TableColumn id="refMwCol" fx:id="refMwCol" editable="false" prefWidth="30.0" text="Ref Mw" />
+                        <TableColumn id="valMwCol" fx:id="valMwCol" editable="false" prefWidth="30.0" text="Val Mw" />
                         <TableColumn id="dateCol" fx:id="dateCol" editable="false" minWidth="35.0" prefWidth="200.0" text="Date" />
                         <TableColumn id="distanceCol" fx:id="distanceCol" editable="false" minWidth="35.0" prefWidth="100.0" text="Distance" />
                       <TableColumn id="numCol" fx:id="numCol" editable="false" prefWidth="75.0" text="Numerator" />

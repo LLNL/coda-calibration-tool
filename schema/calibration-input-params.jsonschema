@@ -632,6 +632,23 @@
                     }
                 }
             }
+        },
+        "calibration-settings": {
+            "$id": "#/properties/calibration-settings",
+            "type": "object",
+            "title": "Configuration properties related to calibration.",
+            "properties": {
+                "distanceCalcMethod": {
+                    "$id": "#/properties/calibration-settings/properties/distanceCalcMethod",
+                    "type": "string",
+                    "title": "Distance calibration method.",
+                    "default": "EPICENTRAL",
+                    "examples": [
+                        "EPICENTRAL",
+                        "HYPOCENTRAL",
+                    ]
+                },
+            }
         },        
         "velocity-configuration": {
             "$id": "#/properties/velocity-configuration",

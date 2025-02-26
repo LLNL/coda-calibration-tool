@@ -18,10 +18,10 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
-import gov.llnl.gnem.apps.coda.calibration.gui.converters.param.RawGeoJSON;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParameters;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.common.model.domain.FrequencyBand;
@@ -54,6 +54,10 @@ public interface ParameterClient {
     public Flux<MdacParametersFI> getFiParameters();
 
     public Mono<String> removeFiParameter(MdacParametersFI parameters);
+
+    public Mono<CalibrationSettings> getCalibrationSettings();
+
+    public Mono<String> updateCalibrationSettings(CalibrationSettings calSettings);
 
     public Mono<VelocityConfiguration> getVelocityConfiguration();
 

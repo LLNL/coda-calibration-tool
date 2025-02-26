@@ -45,6 +45,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.SiteFrequencyBandParamet
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.repository.SharedFrequencyBandParametersRepository;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersFiService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersPsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
@@ -87,6 +88,9 @@ public class SiteCalibrationServiceImplTest {
     private MdacParametersPsService mdacPsService;
 
     @Mock
+    private ConfigurationService confServ;
+
+    @Mock
     private VelocityConfiguration velConf;
 
     @Mock
@@ -107,7 +111,7 @@ public class SiteCalibrationServiceImplTest {
         Mockito.when(mdacFiService.findFirst()).thenReturn(new MdacParametersFI());
         Mockito.when(mdacPsService.findMatchingPhase(Mockito.any())).thenReturn(new MdacParametersPS());
 
-        SpectraCalculator spectraCalc = new SpectraCalculator(converter, syntheticCodaModel, mdac, mdacFiService, mdacPsService, velConf);
+        SpectraCalculator spectraCalc = new SpectraCalculator(converter, syntheticCodaModel, mdac, mdacFiService, mdacPsService, velConf, confServ);
         siteCalibrationServiceImpl.setSpectraCalc(spectraCalc);
         siteCalibrationServiceImpl.setServiceConfig(new ServiceConfig());
     }

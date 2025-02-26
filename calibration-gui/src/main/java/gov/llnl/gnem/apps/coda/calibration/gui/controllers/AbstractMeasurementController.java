@@ -427,7 +427,7 @@ public abstract class AbstractMeasurementController implements MapListeningContr
                 summaryValues.add(new Pair<>("Origin Time", DateTimeFormatter.ISO_TIME.withZone(ZoneId.of("UTC")).format(event.getOriginTime().toInstant())));
                 summaryValues.add(new Pair<>("Latitude", dfmt4.format(event.getLatitude())));
                 summaryValues.add(new Pair<>("Longitude", dfmt4.format(event.getLongitude())));
-                summaryValues.add(new Pair<>("Depth (km)", dfmt2.format(event.getDepth())));
+                summaryValues.add(new Pair<>("Depth (km)", dfmt2.format(event.getDepth() / 1000.0)));
                 summaryValues.add(null); // Adds space between sections
 
                 if (mwParameters != null && !mwParameters.isEmpty()) {

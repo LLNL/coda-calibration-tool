@@ -151,9 +151,9 @@ public class GuiApplication extends Application {
         fxmlLoader.setControllerFactory(springContext::getBean);
 
         try {
-            Font.loadFont(getClass().getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
             Parent root = fxmlLoader.load();
             Platform.runLater(() -> {
+                Font.loadFont(GuiApplication.class.getResource("/fxml/MaterialIcons-Regular.ttf").toExternalForm(), 18);
                 primaryStage.setTitle(props.getBaseTitle());
                 Scene scene = new Scene(root, props.getHeight(), props.getWidth());
                 primaryStage.setScene(scene);

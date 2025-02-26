@@ -22,6 +22,7 @@ import com.google.common.eventbus.Subscribe;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.controllers.RefreshableController;
 import gov.llnl.gnem.apps.coda.calibration.gui.events.ParametersLoadedEvent;
+import gov.llnl.gnem.apps.coda.calibration.model.messaging.CalibrationSettingsChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.GvDataChangeEvent;
 import gov.llnl.gnem.apps.coda.calibration.model.messaging.ShapeConstraintsChangeEvent;
 import javafx.event.ActionEvent;
@@ -44,6 +45,9 @@ public class ParametersController implements RefreshableController {
     private SiteBandController siteBandController;
 
     @FXML
+    private CalibrationSettingsController calibrationSettingsController;
+
+    @FXML
     private VelocityConfigurationController velocityConfigController;
 
     @FXML
@@ -55,6 +59,11 @@ public class ParametersController implements RefreshableController {
     public ParametersController(EventBus bus) {
         this.bus = bus;
         this.bus.register(this);
+    }
+
+    @Subscribe
+    private void listener(CalibrationSettingsChangeEvent event) {
+        calibrationSettingsController.requestData();
     }
 
     @Subscribe
@@ -81,12 +90,13 @@ public class ParametersController implements RefreshableController {
         sharedBandController.requestData();
         modelController.requestData();
         siteBandController.requestData();
+        calibrationSettingsController.requestData();
         velocityConfigController.requestData();
         shapeConfigController.requestData();
     }
 
     @Override
     public Runnable getRefreshFunction() {
-        return () -> reloadData();
-    }    
+        return this::reloadData;
+    }
 }

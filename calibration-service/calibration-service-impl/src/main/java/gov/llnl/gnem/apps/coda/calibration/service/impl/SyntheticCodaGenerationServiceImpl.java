@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SharedFrequencyBandParametersService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.SyntheticCodaGenerationService;
 import gov.llnl.gnem.apps.coda.calibration.service.impl.processing.SyntheticCodaModel;
@@ -37,7 +38,6 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 import llnl.gnem.core.util.TimeT;
-import llnl.gnem.core.util.Geometry.EModel;
 import llnl.gnem.core.waveform.seismogram.TimeSeries;
 
 @Service
@@ -49,11 +49,15 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
     private SyntheticCodaModel syntheticCodaModel;
     private SharedFrequencyBandParametersService sfbService;
 
+    private ConfigurationService configService;
+
     @Autowired
-    public SyntheticCodaGenerationServiceImpl(WaveformToTimeSeriesConverter converter, SyntheticCodaModel syntheticCodaModel, SharedFrequencyBandParametersService sfbService) {
+    public SyntheticCodaGenerationServiceImpl(WaveformToTimeSeriesConverter converter, SyntheticCodaModel syntheticCodaModel, SharedFrequencyBandParametersService sfbService,
+            ConfigurationService configService) {
         this.converter = converter;
         this.syntheticCodaModel = syntheticCodaModel;
         this.sfbService = sfbService;
+        this.configService = configService;
     }
 
     @Override
@@ -73,7 +77,7 @@ public class SyntheticCodaGenerationServiceImpl implements SyntheticCodaGenerati
 
             TimeSeries seis = converter.convert(sourceWaveform);
 
-            double distance = EModel.getDistanceWGS84(event.getLatitude(), event.getLongitude(), station.getLatitude(), station.getLongitude());
+            double distance = configService.getDistanceFunc().apply(configService.getEventCoord(event), configService.getStationCoord(station));
 
             double br = syntheticCodaModel.getDistanceFunction(model.getBeta0(), model.getBeta1(), model.getBeta2(), distance);
             double vr = syntheticCodaModel.getDistanceFunction(model.getVelocity0(), model.getVelocity1(), model.getVelocity2(), distance);

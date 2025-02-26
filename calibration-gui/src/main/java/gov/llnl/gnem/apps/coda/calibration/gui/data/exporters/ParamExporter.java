@@ -39,6 +39,7 @@ import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ParamTempFileW
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ReferenceMwTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.SpectraTempFileWriter;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.exporters.api.ValidationMwTempFileWriter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.EventSpectraReport;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
@@ -109,12 +110,15 @@ public class ParamExporter {
 
             List<MdacParametersFI> fi = paramClient.getFiParameters().toStream().filter(Objects::nonNull).collect(Collectors.toList());
             List<MdacParametersPS> ps = paramClient.getPsParameters().toStream().filter(Objects::nonNull).collect(Collectors.toList());
+
+            CalibrationSettings calSettings = paramClient.getCalibrationSettings().subscribeOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(5l));
             VelocityConfiguration velocity = paramClient.getVelocityConfiguration().subscribeOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(5l));
             ShapeFitterConstraints shapeConstraints = paramClient.getShapeFitterConstraints().subscribeOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(5l));
+
             String polygonGeoJSON = paramClient.getMapPolygon().subscribeOn(Schedulers.boundedElastic()).block(Duration.ofSeconds(5l));
 
             for (ParamTempFileWriter writer : paramWriters) {
-                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters, fi, ps, velocity, shapeConstraints, polygonGeoJSON);
+                writer.writeParams(tmpFolder, sharedParametersByFreqBand, siteParameters, fi, ps, calSettings, velocity, shapeConstraints, polygonGeoJSON);
             }
         }
 

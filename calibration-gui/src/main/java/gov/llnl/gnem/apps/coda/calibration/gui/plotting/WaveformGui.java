@@ -28,6 +28,7 @@ import com.google.common.eventbus.Subscribe;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.PeakVelocityClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ShapeMeasurementClient;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.DistanceCalculator;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import javafx.application.Platform;
@@ -73,9 +74,11 @@ public class WaveformGui {
     private final Property<Boolean> shouldFocus = new SimpleBooleanProperty(false);
     private final DirectoryChooser screenshotFolderChooser = new DirectoryChooser();
 
+    private DistanceCalculator distanceCalc;
+
     @Autowired
     public WaveformGui(final WaveformClient waveformClient, final ShapeMeasurementClient shapeClient, final ParameterClient paramsClient, final PeakVelocityClient peakVelocityClient,
-            final LeafletMapController cctMap, final CertLeafletMapController certMap, final MapPlottingUtilities mapPlotUtilities, final EventBus bus) {
+            final LeafletMapController cctMap, final CertLeafletMapController certMap, final MapPlottingUtilities mapPlotUtilities, DistanceCalculator distanceCalc, final EventBus bus) {
         this.waveformClient = waveformClient;
         this.shapeClient = shapeClient;
         this.paramsClient = paramsClient;
@@ -83,6 +86,8 @@ public class WaveformGui {
         this.mapPlotUtilities = mapPlotUtilities;
         this.cctMap = cctMap;
         this.certMap = certMap;
+        this.distanceCalc = distanceCalc;
+
         bus.register(this);
         Platform.runLater(() -> {
             final FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/WaveformGui.fxml"));
@@ -130,7 +135,7 @@ public class WaveformGui {
         snapshotButton.setGraphic(label);
         snapshotButton.setContentDisplay(ContentDisplay.CENTER);
         screenshotFolderChooser.setTitle("Screenshot Export Folder");
-        waveformPlotManager = new CodaWaveformPlotManager(waveformClient, shapeClient, paramsClient, peakVelocityClient, certMap, cctMap, mapPlotUtilities);
+        waveformPlotManager = new CodaWaveformPlotManager(waveformClient, shapeClient, paramsClient, peakVelocityClient, certMap, cctMap, mapPlotUtilities, distanceCalc);
         waveformPlotManager.attachToDisplayNode(waveformPlotNode);
         stage.setOnCloseRequest(evt -> {
             waveformPlotManager.setSavedAxisLimits(null);

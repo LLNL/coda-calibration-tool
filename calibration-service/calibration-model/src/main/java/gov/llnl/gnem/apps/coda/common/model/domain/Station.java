@@ -48,6 +48,11 @@ public class Station implements Serializable {
     @Column(name = "stationLongitude")
     @NumberFormat
     private double longitude;
+    
+    @NotNull
+    @Column(name = "stationElevation")
+    @NumberFormat
+    private double elevation = 0d;
 
     @NotNull
     @Column(name = "station_name")
@@ -77,6 +82,15 @@ public class Station implements Serializable {
 
     public Station setLongitude(double longitude) {
         this.longitude = longitude;
+        return this;
+    }
+
+    public double getElevation() {
+        return elevation;
+    }
+
+    public Station setElevation(double elevation) {
+        this.elevation = elevation;
         return this;
     }
 
@@ -127,7 +141,19 @@ public class Station implements Serializable {
 
     @Override
     public String toString() {
-        return "Station [networkName=" + networkName + ", latitude=" + latitude + ", longitude=" + longitude + ", stationName=" + stationName + "]";
+        StringBuilder builder = new StringBuilder();
+        builder.append("Station [networkName=")
+               .append(networkName)
+               .append(", latitude=")
+               .append(latitude)
+               .append(", longitude=")
+               .append(longitude)
+               .append(", elevation=")
+               .append(elevation)
+               .append(", stationName=")
+               .append(stationName)
+               .append("]");
+        return builder.toString();
     }
 
 }

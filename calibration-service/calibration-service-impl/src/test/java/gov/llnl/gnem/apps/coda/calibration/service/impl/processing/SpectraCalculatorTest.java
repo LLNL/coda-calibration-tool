@@ -41,6 +41,7 @@ import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.VelocityConfiguration;
 import gov.llnl.gnem.apps.coda.calibration.repository.SharedFrequencyBandParametersRepository;
+import gov.llnl.gnem.apps.coda.calibration.service.api.ConfigurationService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersFiService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MdacParametersPsService;
 import gov.llnl.gnem.apps.coda.calibration.service.api.MeasuredMwsService;
@@ -79,6 +80,9 @@ public class SpectraCalculatorTest {
 
     @Mock
     private ServiceConfig svcConf;
+
+    @Mock
+    private ConfigurationService confServ;
 
     @Mock
     private SharedFrequencyBandParametersRepository sharedFrequencyBandParametersRepository;
@@ -134,7 +138,7 @@ public class SpectraCalculatorTest {
         mdacFi.setZeta(1);
 
         mdacService = new MdacCalculatorService();
-        spectraCalc = new SpectraCalculator(converter, syntheticCodaModel, mdacService, mdacFiService, mdacPsService, velConf);
+        spectraCalc = new SpectraCalculator(converter, syntheticCodaModel, mdacService, mdacFiService, mdacPsService, velConf, confServ);
     }
 
     class TestInput {

@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.ParameterClient;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
@@ -61,7 +62,7 @@ public class ParameterLocalClient implements ParameterClient {
 
     @Override
     public Mono<String> setSharedFrequencyBandParameter(SharedFrequencyBandParameters parameters) throws JsonProcessingException {
-        return Mono.just(Optional.ofNullable(sharedParamsService.update(parameters)).orElseGet(() -> new SharedFrequencyBandParameters()).toString());
+        return Mono.just(Optional.ofNullable(sharedParamsService.update(parameters)).orElseGet(SharedFrequencyBandParameters::new).toString());
     }
 
     @Override
@@ -119,29 +120,39 @@ public class ParameterLocalClient implements ParameterClient {
 
     @Override
     public Mono<SharedFrequencyBandParameters> getSharedFrequencyBandParametersForFrequency(FrequencyBand frequencyBand) {
-        return Mono.just(Optional.ofNullable(sharedParamsService.findByFrequencyBand(frequencyBand)).orElseGet(() -> new SharedFrequencyBandParameters()));
+        return Mono.just(Optional.ofNullable(sharedParamsService.findByFrequencyBand(frequencyBand)).orElseGet(SharedFrequencyBandParameters::new));
+    }
+
+    @Override
+    public Mono<CalibrationSettings> getCalibrationSettings() {
+        return Mono.just(Optional.ofNullable(configService.getCalibrationSettings()).orElseGet(CalibrationSettings::new));
+    }
+
+    @Override
+    public Mono<String> updateCalibrationSettings(CalibrationSettings calSettings) {
+        return Mono.just(Optional.ofNullable(configService.update(calSettings)).map(CalibrationSettings::toString).orElseGet(() -> ""));
     }
 
     @Override
     public Mono<VelocityConfiguration> getVelocityConfiguration() {
-        return Mono.just(Optional.ofNullable(configService.getVelocityConfiguration()).orElseGet(() -> new VelocityConfiguration()));
+        return Mono.just(Optional.ofNullable(configService.getVelocityConfiguration()).orElseGet(VelocityConfiguration::new));
     }
 
     @Override
     public Mono<String> updateVelocityConfiguration(VelocityConfiguration velConf) {
-        return Mono.just(Optional.ofNullable(configService.update(velConf)).map(v -> v.toString()).orElseGet(() -> ""));
+        return Mono.just(Optional.ofNullable(configService.update(velConf)).map(VelocityConfiguration::toString).orElseGet(() -> ""));
     }
 
     @Override
     public Mono<ShapeFitterConstraints> getShapeFitterConstraints() {
-        return Mono.just(Optional.ofNullable(configService.getCalibrationShapeFitterConstraints()).orElseGet(() -> new ShapeFitterConstraints()));
+        return Mono.just(Optional.ofNullable(configService.getCalibrationShapeFitterConstraints()).orElseGet(ShapeFitterConstraints::new));
     }
 
     @Override
     public Mono<String> updateShapeFitterConstraints(ShapeFitterConstraints conf) {
-        return Mono.just(Optional.ofNullable(configService.update(conf)).map(v -> v.toString()).orElseGet(() -> ""));
+        return Mono.just(Optional.ofNullable(configService.update(conf)).map(ShapeFitterConstraints::toString).orElseGet(() -> ""));
     }
-    
+
     @Override
     public Mono<String> updateMapPolygon(String rawGeoJSON) {
         return Mono.just(configService.updatePolygon(rawGeoJSON)).onErrorReturn("");
@@ -150,6 +161,6 @@ public class ParameterLocalClient implements ParameterClient {
     @Override
     public Mono<String> getMapPolygon() {
         return Mono.just(configService.getPolygonGeoJSON()).onErrorReturn("");
-    }    
+    }
 
 }

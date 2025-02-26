@@ -15,6 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.converters.param;
 
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.BAND_FIELD;
+import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.CALIBRATION_SETTINGS;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.ENVELOPE_JOB_NODE;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.MDAC_FI_FIELD;
 import static gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.CalibrationJsonConstants.MDAC_PS_FIELD;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,6 +54,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import gov.llnl.gnem.apps.coda.calibration.gui.converters.api.FileToParameterConverter;
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ReferenceMwParameters;
@@ -114,6 +117,7 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
                 results.addAll(convertJsonFields(node, MDAC_PS_FIELD, this::mdacPsFromJsonNode));
                 results.addAll(convertJsonFields(node, MDAC_FI_FIELD, this::mdacFiFromJsonNode));
                 results.addAll(convertJsonFields(node, REFERENCE_EVENTS_FIELD, this::refEventsFromJsonNode));
+                results.addAll(convertJsonFields(node, CALIBRATION_SETTINGS, this::calibrationSettingsJsonNode));
                 results.addAll(convertJsonFields(node, VALIDATION_EVENTS_FIELD, this::valEventsFromJsonNode));
                 results.addAll(convertJsonFields(node, VELOCITY_CONFIGURATION, this::velocityConfigurationFromJsonNode));
                 results.addAll(convertJsonFields(node, SHAPE_CONSTRAINTS, this::shapeConstraintsFromJsonNode));
@@ -152,6 +156,20 @@ public class CodaJsonParamLoader implements FileToParameterConverter<Object> {
         try {
             //TODO: Validate all fields
             VelocityConfiguration val = reader.readValue(node);
+            return new Result<>(true, val);
+        } catch (IOException e) {
+            return exceptionalResult(e);
+        }
+    }
+
+    protected Result<Object> calibrationSettingsJsonNode(JsonNode node) {
+        ObjectReader reader = mapper.readerFor(CalibrationSettings.class);
+        try {
+            //TODO: Validate all fields
+            CalibrationSettings val = reader.readValue(node);
+            if (val.getDistanceCalcMethod() != null) {
+                val.setDistanceCalcMethod(val.getDistanceCalcMethod().toUpperCase(Locale.ENGLISH));
+            }
             return new Result<>(true, val);
         } catch (IOException e) {
             return exceptionalResult(e);

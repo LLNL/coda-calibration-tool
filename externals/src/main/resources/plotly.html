@@ -152,6 +152,9 @@
 			showTips: false,
 			modeBarButtonsToRemove: ['autoscale2d', 'autoscale3d', 'toImage'],
 			modeBarButtonsToAdd: mbarButtons,
+    		edits: {
+        		'annotationPosition': true
+    		}
 		};
 
 		var updateGroupVelocityVisibility = function () {
@@ -443,6 +446,17 @@
 							//These are in coordinate space for the axis FYI so you might need to translate them if you swap axis range space
 							plotData.fireShapeMoveEvent(shape.name, shape.x0, shape.x1, shape.y0, shape.y1);
 						}
+					}
+				}
+				
+				//Check if this was an annotation movement event
+				let annotationMoved = Object.keys(data).some(i => {
+					return i.startsWith('annotations')
+				});
+				if (annotationMoved) {
+					for (var j = 0; j < layout.annotations.length; j++) {
+						let anno = layout.annotations[j];
+						plotData.fireAnnotationMoveEvent(anno.text, anno.x, anno.y);
 					}
 				}
 

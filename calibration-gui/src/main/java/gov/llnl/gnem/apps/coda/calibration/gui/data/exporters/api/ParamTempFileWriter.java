@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import gov.llnl.gnem.apps.coda.calibration.model.domain.CalibrationSettings;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersFI;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.MdacParametersPS;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.ShapeFitterConstraints;
@@ -29,5 +30,6 @@ import gov.llnl.gnem.apps.coda.common.model.domain.Station;
 
 public interface ParamTempFileWriter {
     void writeParams(Path folder, Map<FrequencyBand, SharedFrequencyBandParameters> sharedParametersByFreqBand, Map<Station, Map<FrequencyBand, SiteFrequencyBandParameters>> siteParameters,
-            List<MdacParametersFI> fi, List<MdacParametersPS> ps, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints, String polygonGeoJSON);
+            List<MdacParametersFI> fi, List<MdacParametersPS> ps, CalibrationSettings calibrationSettings, VelocityConfiguration velocity, ShapeFitterConstraints shapeConstraints,
+            String polygonGeoJSON);
 }

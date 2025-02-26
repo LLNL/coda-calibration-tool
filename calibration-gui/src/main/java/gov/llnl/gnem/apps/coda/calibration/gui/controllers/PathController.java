@@ -49,6 +49,7 @@ import com.google.common.eventbus.Subscribe;
 import gov.llnl.gnem.apps.coda.calibration.gui.data.client.api.SpectraClient;
 import gov.llnl.gnem.apps.coda.calibration.gui.plotting.MapPlottingUtilities;
 import gov.llnl.gnem.apps.coda.calibration.model.domain.SpectraMeasurement;
+import gov.llnl.gnem.apps.coda.common.gui.data.client.DistanceCalculator;
 import gov.llnl.gnem.apps.coda.common.gui.data.client.api.WaveformClient;
 import gov.llnl.gnem.apps.coda.common.gui.events.WaveformSelectionEvent;
 import gov.llnl.gnem.apps.coda.common.gui.util.EventStaFreqStringComparator;
@@ -86,7 +87,6 @@ import llnl.gnem.core.gui.plotting.api.PlotFactory;
 import llnl.gnem.core.gui.plotting.api.Symbol;
 import llnl.gnem.core.gui.plotting.api.SymbolStyles;
 import llnl.gnem.core.gui.plotting.events.PlotObjectClick;
-import llnl.gnem.core.util.Geometry.EModel;
 
 @Component
 public class PathController implements MapListeningController, RefreshableController, ScreenshotEnabledController {
@@ -153,16 +153,18 @@ public class PathController implements MapListeningController, RefreshableContro
     private boolean isVisible = false;
 
     private final PlotFactory plotFactory;
+    private DistanceCalculator distanceCalc;
 
     @Autowired
     public PathController(final SpectraClient spectraMeasurementClient, final WaveformClient waveformClient, final EventBus bus, final GeoMap mapImpl, final MapPlottingUtilities mappingUtilities,
-            final PlotFactory plotFactory) {
+            final PlotFactory plotFactory, DistanceCalculator distanceCalc) {
         this.spectraMeasurementClient = spectraMeasurementClient;
         this.waveformClient = waveformClient;
         this.mapImpl = mapImpl;
         this.mappingUtilities = mappingUtilities;
         this.bus = bus;
         this.plotFactory = plotFactory;
+        this.distanceCalc = distanceCalc;
 
         eventSelectionCallback = this::selectDataByCriteria;
         stationSelectionCallback = this::selectDataByCriteria;
@@ -534,6 +536,8 @@ public class PathController implements MapListeningController, RefreshableContro
             if (measurements != null) {
                 final DescriptiveStatistics overallBeforeStats = new DescriptiveStatistics();
                 final DescriptiveStatistics overallAfterStats = new DescriptiveStatistics();
+                final DescriptiveStatistics overallBeforeSD = new DescriptiveStatistics();
+                final DescriptiveStatistics overallAfterSD = new DescriptiveStatistics();
 
                 for (final SpectraMeasurement firstMeasurement : measurements) {
                     for (final SpectraMeasurement secondMeasurement : measurements) {
@@ -548,6 +552,8 @@ public class PathController implements MapListeningController, RefreshableContro
                                 DescriptiveStatistics beforeStats = new DescriptiveStatistics();
                                 DescriptiveStatistics afterStats = new DescriptiveStatistics();
 
+                                firstMeasurement.getWaveform().getEvent().getDepth();
+
                                 if (!used.containsKey(staPair)) {
                                     used.put(staPair, new HashSet<>());
                                     used.put(staPair2, used.get(staPair));
@@ -557,7 +563,7 @@ public class PathController implements MapListeningController, RefreshableContro
                                     afterStatsStaPairs.put(staPair2, afterStats);
                                     distanceStaPairs.put(
                                             staPair,
-                                                EModel.getDistanceWGS84(firstStation.getLatitude(), firstStation.getLongitude(), secondStation.getLatitude(), secondStation.getLongitude()));
+                                                distanceCalc.getDistanceFunc().apply(DistanceCalculator.getStationCoord(firstStation), DistanceCalculator.getStationCoord(secondStation)));
                                     distanceStaPairs.put(staPair2, distanceStaPairs.get(staPair));
                                     sourceMeasurements.put(staPair, new ArrayList<>());
                                     sourceMeasurements.put(staPair2, sourceMeasurements.get(staPair));
@@ -585,6 +591,9 @@ public class PathController implements MapListeningController, RefreshableContro
                         }
                     }
                 }
+
+                beforeStatsStaPairs.values().stream().distinct().forEach(x -> overallBeforeSD.addValue(x.getStandardDeviation()));
+                afterStatsStaPairs.values().stream().distinct().forEach(x -> overallAfterSD.addValue(x.getStandardDeviation()));
 
                 try {
                     for (final Entry<Pair<Station, Station>, Double> distanceStaPair : distanceStaPairs.entrySet()) {
@@ -666,7 +675,16 @@ public class PathController implements MapListeningController, RefreshableContro
                             sdSymbolMap.put(point2, sourceMeasurements.get(staPair));
                         }
                     }
-                    sdPlot.getTitle().setText("σ(Before) = " + dfmt2.format(overallBeforeStats.getStandardDeviation()) + "; σ(After) = " + dfmt2.format(overallAfterStats.getStandardDeviation()));
+                    sdPlot.getTitle()
+                          .setText(
+                                  "avg per-pair σ(B/A) = "
+                                          + dfmt2.format(overallBeforeSD.getMean())
+                                          + " / "
+                                          + dfmt2.format(overallAfterSD.getMean())
+                                          + "; total σ(B/A) = "
+                                          + dfmt2.format(overallBeforeStats.getStandardDeviation())
+                                          + " / "
+                                          + dfmt2.format(overallAfterStats.getStandardDeviation()));
                     Double xAxisPaddingPercent = 0.1;
                     Double yAxisPaddingPercent = 0.3;
 
@@ -705,7 +723,7 @@ public class PathController implements MapListeningController, RefreshableContro
 
                 if (firstMeasurements != null && !firstMeasurements.isEmpty() && secondMeasurements != null && !secondMeasurements.isEmpty()) {
                     if (stationDistance == null) {
-                        stationDistance = EModel.getDistanceWGS84(firstStation.getLatitude(), firstStation.getLongitude(), secondStation.getLatitude(), secondStation.getLongitude());
+                        stationDistance = distanceCalc.getDistanceFunc().apply(DistanceCalculator.getStationCoord(firstStation), DistanceCalculator.getStationCoord(secondStation));
                     }
 
                     for (final SpectraMeasurement firstMeasurement : firstMeasurements) {

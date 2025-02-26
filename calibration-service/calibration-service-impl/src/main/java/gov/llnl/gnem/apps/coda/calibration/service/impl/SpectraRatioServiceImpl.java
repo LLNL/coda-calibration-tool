@@ -82,11 +82,13 @@ import gov.llnl.gnem.apps.coda.common.model.domain.SyntheticCoda;
 import gov.llnl.gnem.apps.coda.common.model.domain.Waveform;
 import gov.llnl.gnem.apps.coda.common.model.domain.WaveformMetadata;
 import gov.llnl.gnem.apps.coda.common.model.messaging.Result;
+import gov.llnl.gnem.apps.coda.common.model.util.LightweightIllegalStateException;
 import gov.llnl.gnem.apps.coda.common.model.util.PICK_TYPES;
 import gov.llnl.gnem.apps.coda.common.service.api.NotificationService;
 import gov.llnl.gnem.apps.coda.common.service.api.WaveformService;
 import gov.llnl.gnem.apps.coda.common.service.util.MetadataUtils;
 import gov.llnl.gnem.apps.coda.common.service.util.WaveformToTimeSeriesConverter;
+import gov.llnl.gnem.apps.coda.common.service.util.WaveformUtils;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.RatioEventData;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetails;
 import gov.llnl.gnem.apps.coda.spectra.model.domain.SpectraRatioPairDetailsMetadata;
@@ -570,8 +572,12 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
         double maxRate = Math.max(numerWaveform.getSampleRate(), denomWaveform.getSampleRate());
         if (denomWaveform.getSampleRate() != maxRate) {
             denomSegment.interpolate(maxRate);
+            ratio.getDenomWaveform().setSegment(WaveformUtils.floatsToDoubles(denomSegment.getData()));
+            ratio.getDenomWaveform().setSampleRate(maxRate);
         } else if (numerWaveform.getSampleRate() != maxRate) {
             numerSegment.interpolate(maxRate);
+            ratio.getNumerWaveform().setSegment(WaveformUtils.floatsToDoubles(numerSegment.getData()));
+            ratio.getNumerWaveform().setSampleRate(maxRate);
         }
 
         // Get index of start and end cuts using peak value and f-marker
@@ -582,6 +588,16 @@ public class SpectraRatioServiceImpl implements SpectraRatioPairDetailsService {
 
         //Calculate the ratio based on the new segments
         ratio.updateCutTimesAndRecalculateDiff(numerStartIdx, denomStartIdx, numerEndIdx, denomEndIdx);
+        if (ratio.getDiffAvg() == null) {
+            Result<SpectraRatioPairDetails> res = new Result<>(false, ratioDetails);
+            res.setErrors(
+                    List.of(
+                            new LightweightIllegalStateException("Ratio pair does not overlap in time for given cuts at "
+                                    + ratioDetails.getNumerWaveform().toString()
+                                    + " "
+                                    + ratioDetails.getDenomWaveform().toString())));
+            return res;
+        }
         return new Result<>(true, ratioDetails);
     }
 
