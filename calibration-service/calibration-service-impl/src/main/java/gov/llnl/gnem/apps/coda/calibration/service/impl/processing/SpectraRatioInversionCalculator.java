@@ -76,7 +76,9 @@ public class SpectraRatioInversionCalculator {
 
     private static final int JOINT_FIT = 0;
     private static final int JOINT_CF_A = 3;
+    private static final int JOINT_AS_A = 4;
     private static final int JOINT_CF_B = 6;
+    private static final int JOINT_AS_B = 7;
 
     private double momentErrorRange;
     private final double DEFAULT_LOW_MOMENT = 1.0;
@@ -90,6 +92,10 @@ public class SpectraRatioInversionCalculator {
     private MdacCalculator mdacCalculator;
 
     enum CORNER_FREQ_NAMES {
+        A1_MIN, A1_MAX, B1_MIN, B1_MAX, A2_MIN, A2_MAX, B2_MIN, B2_MAX
+    }
+    
+    enum APP_STRESS_NAMES {
         A1_MIN, A1_MAX, B1_MIN, B1_MAX, A2_MIN, A2_MAX, B2_MIN, B2_MAX
     }
 
@@ -233,39 +239,60 @@ public class SpectraRatioInversionCalculator {
             double cornerFreqA2Max = Double.NEGATIVE_INFINITY;
             double cornerFreqB1Max = Double.NEGATIVE_INFINITY;
             double cornerFreqB2Max = Double.NEGATIVE_INFINITY;
+            
+            double appStressA1Min = Double.POSITIVE_INFINITY;
+            double appStressA2Min = Double.POSITIVE_INFINITY;
+            double appStressB1Min = Double.POSITIVE_INFINITY;
+            double appStressB2Min = Double.POSITIVE_INFINITY;
+            double appStressA1Max = Double.NEGATIVE_INFINITY;
+            double appStressA2Max = Double.NEGATIVE_INFINITY;
+            double appStressB1Max = Double.NEGATIVE_INFINITY;
+            double appStressB2Max = Double.NEGATIVE_INFINITY;
 
             for (RatioOptimizerMeasurement meas : costFunc.getOptimizerMeasurements()) {
                 if (meas.getFit() < f1) {
                     if (meas.getCornerFreqA() < cornerFreqA1Min) {
                         cornerFreqA1Min = meas.getCornerFreqA();
                         cornerFreqA2Min = meas.getCornerFreqA();
+                        appStressA1Min = meas.getStressA();
+                        appStressA2Min = meas.getStressA();
                     }
                     if (meas.getCornerFreqA() > cornerFreqA1Max) {
                         cornerFreqA1Max = meas.getCornerFreqA();
                         cornerFreqA2Max = meas.getCornerFreqA();
+                        appStressA1Max = meas.getStressA();
+                        appStressA2Max = meas.getStressA();
                     }
 
                     if (meas.getCornerFreqB() < cornerFreqB1Min) {
                         cornerFreqB1Min = meas.getCornerFreqB();
                         cornerFreqB2Min = meas.getCornerFreqB();
+                        appStressB1Min = meas.getStressB();
+                        appStressB2Min = meas.getStressB();
                     }
                     if (meas.getCornerFreqB() > cornerFreqB1Max) {
                         cornerFreqB1Max = meas.getCornerFreqB();
                         cornerFreqB2Max = meas.getCornerFreqB();
+                        appStressB1Max = meas.getStressB();
+                        appStressB2Max = meas.getStressB();
                     }
                 } else if (meas.getFit() < f2) {
                     if (meas.getCornerFreqA() < cornerFreqA2Min) {
                         cornerFreqA2Min = meas.getCornerFreqA();
+                        appStressA2Min = meas.getStressA();
                     }
                     if (meas.getCornerFreqA() > cornerFreqA2Max) {
                         cornerFreqA2Max = meas.getCornerFreqA();
+                        appStressA2Max = meas.getStressA();
                     }
 
                     if (meas.getCornerFreqB() < cornerFreqB2Min) {
                         cornerFreqB2Min = meas.getCornerFreqB();
+                        appStressB2Min = meas.getStressB();
                     }
                     if (meas.getCornerFreqB() > cornerFreqB2Max) {
                         cornerFreqB2Max = meas.getCornerFreqB();
+                        appStressB2Max = meas.getStressB();
                     }
                 } else {
                     break;
@@ -281,12 +308,20 @@ public class SpectraRatioInversionCalculator {
                     .setCornerEstimateA1Max(cornerFreqA1Max)
                     .setCornerEstimateA2Min(cornerFreqA2Min)
                     .setCornerEstimateA2Max(cornerFreqA2Max)
+                    .setApparentStressA1Min(appStressA1Min)
+                    .setApparentStressA1Max(appStressA1Max)
+                    .setApparentStressA2Min(appStressA2Min)
+                    .setApparentStressA2Max(appStressA2Max) 
                     .setMomentEstimateB((float) best.getPoint()[2])
                     .setCornerEstimateB((float) mdacCalculator.cornerFreqFromApparentStressM0(Math.pow(10, best.getPoint()[2]), best.getPoint()[3]))
                     .setCornerEstimateB1Min(cornerFreqB1Min)
                     .setCornerEstimateB1Max(cornerFreqB1Max)
                     .setCornerEstimateB2Min(cornerFreqB2Min)
                     .setCornerEstimateB2Max(cornerFreqB2Max)
+                    .setApparentStressB1Min(appStressB1Min)
+                    .setApparentStressB1Max(appStressB1Max)
+                    .setApparentStressB2Min(appStressB2Min)
+                    .setApparentStressB2Max(appStressB2Max) 
                     .setApparentStressEstimateA((float) best.getPoint()[1])
                     .setApparentStressEstimateB((float) best.getPoint()[3])
                     .setMisfit(best.getValue().floatValue())
@@ -465,6 +500,17 @@ public class SpectraRatioInversionCalculator {
         cornerFreqMap.put(CORNER_FREQ_NAMES.A2_MAX, new HashMap<>());
         cornerFreqMap.put(CORNER_FREQ_NAMES.B2_MIN, new HashMap<>());
         cornerFreqMap.put(CORNER_FREQ_NAMES.B2_MAX, new HashMap<>());
+        
+        Map<APP_STRESS_NAMES, Map<Pair<Integer, Integer>, Double>> appStressMap = new EnumMap<>(APP_STRESS_NAMES.class);
+
+        appStressMap.put(APP_STRESS_NAMES.A1_MIN, new HashMap<>());
+        appStressMap.put(APP_STRESS_NAMES.A1_MAX, new HashMap<>());
+        appStressMap.put(APP_STRESS_NAMES.B1_MIN, new HashMap<>());
+        appStressMap.put(APP_STRESS_NAMES.B1_MAX, new HashMap<>());
+        appStressMap.put(APP_STRESS_NAMES.A2_MIN, new HashMap<>());
+        appStressMap.put(APP_STRESS_NAMES.A2_MAX, new HashMap<>());
+        appStressMap.put(APP_STRESS_NAMES.B2_MIN, new HashMap<>());
+        appStressMap.put(APP_STRESS_NAMES.B2_MAX, new HashMap<>());
 
         for (Entry<Pair<Integer, Integer>, List<Double[]>> eventPairDataEntry : eventPairData.entrySet()) {
 
@@ -482,10 +528,22 @@ public class SpectraRatioInversionCalculator {
             double cornerFreqA2Max = Double.NEGATIVE_INFINITY;
             double cornerFreqB2Max = Double.NEGATIVE_INFINITY;
 
+            double apparentStressA1Min = Double.POSITIVE_INFINITY;              
+            double apparentStressB1Min = Double.POSITIVE_INFINITY;               
+            double apparentStressA2Min = Double.POSITIVE_INFINITY;               
+            double apparentStressB2Min = Double.POSITIVE_INFINITY;               
+            double apparentStressA1Max = Double.NEGATIVE_INFINITY;               
+            double apparentStressB1Max = Double.NEGATIVE_INFINITY;               
+            double apparentStressA2Max = Double.NEGATIVE_INFINITY;               
+            double apparentStressB2Max = Double.NEGATIVE_INFINITY;               
+            
             for (Double[] values : eventPairDataEntry.getValue()) {
                 Double eventFit = values[JOINT_FIT];
                 Double cornerFreqA = values[JOINT_CF_A];
                 Double cornerFreqB = values[JOINT_CF_B];
+                Double appStressA = values[JOINT_AS_A];
+                Double appStressB = values[JOINT_AS_B];
+                
                 if (eventFit < f1) {
                     if (cornerFreqA < cornerFreqA1Min) {
                         cornerFreqA1Min = cornerFreqA;
@@ -504,6 +562,22 @@ public class SpectraRatioInversionCalculator {
                         cornerFreqB1Max = cornerFreqB;
                         cornerFreqB2Max = cornerFreqB;
                     }
+                    if (appStressA < apparentStressA1Min) {                   
+                        apparentStressA1Min = appStressA;                     
+                        apparentStressA2Min = appStressA;                     
+                    }                                                      
+                    if (appStressA > apparentStressA1Max) {                   
+                        apparentStressA1Max = appStressA;                     
+                        apparentStressA2Max = appStressA;                     
+                    }                                                      
+                    if (appStressB < apparentStressB1Min) {                   
+                        apparentStressB1Min = appStressB;                     
+                        apparentStressB2Min = appStressB;                     
+                    }                                                      
+                    if (appStressB > apparentStressB1Max) {                   
+                        apparentStressB1Max = appStressB;                     
+                        apparentStressB2Max = appStressB;                     
+                    }                                                                     
                 } else if (eventFit < f2) {
                     if (cornerFreqA < cornerFreqA2Min) {
                         cornerFreqA2Min = cornerFreqA;
@@ -511,13 +585,25 @@ public class SpectraRatioInversionCalculator {
                     if (cornerFreqA > cornerFreqA2Max) {
                         cornerFreqA2Max = cornerFreqA;
                     }
-
                     if (cornerFreqB < cornerFreqB2Min) {
                         cornerFreqB2Min = cornerFreqB;
                     }
                     if (cornerFreqB > cornerFreqB2Max) {
                         cornerFreqB2Max = cornerFreqB;
                     }
+                    
+                    if (appStressA < apparentStressA2Min) {                   
+                        apparentStressA2Min = appStressA;                     
+                    }                                                      
+                    if (appStressA > apparentStressA2Max) {                   
+                        apparentStressA2Max = appStressA;                     
+                    }                                                      
+                    if (appStressB < apparentStressB2Min) {                   
+                        apparentStressB2Min = appStressB;                     
+                    }                                                      
+                    if (appStressB > apparentStressB2Max) {                   
+                        apparentStressB2Max = appStressB;                     
+                    }    
                 }
             }
 
@@ -529,6 +615,16 @@ public class SpectraRatioInversionCalculator {
             cornerFreqMap.get(CORNER_FREQ_NAMES.A2_MAX).put(idxPair, cornerFreqA2Max);
             cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MIN).put(idxPair, cornerFreqB2Min);
             cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MAX).put(idxPair, cornerFreqB2Max);
+
+            appStressMap.get(APP_STRESS_NAMES.A1_MIN).put(idxPair, apparentStressA1Min);    
+            appStressMap.get(APP_STRESS_NAMES.A1_MAX).put(idxPair, apparentStressA1Max);    
+            appStressMap.get(APP_STRESS_NAMES.B1_MIN).put(idxPair, apparentStressB1Min);    
+            appStressMap.get(APP_STRESS_NAMES.B1_MAX).put(idxPair, apparentStressB1Max);    
+            appStressMap.get(APP_STRESS_NAMES.A2_MIN).put(idxPair, apparentStressA2Min);    
+            appStressMap.get(APP_STRESS_NAMES.A2_MAX).put(idxPair, apparentStressA2Max);    
+            appStressMap.get(APP_STRESS_NAMES.B2_MIN).put(idxPair, apparentStressB2Min);    
+            appStressMap.get(APP_STRESS_NAMES.B2_MAX).put(idxPair, apparentStressB2Max);    
+            
         }
 
         //We split these back out to "per-pair" measurements to report them
@@ -583,7 +679,15 @@ public class SpectraRatioInversionCalculator {
                     .setCornerEstimateB2Min(cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MIN).get(idxPair))
                     .setCornerEstimateB2Max(cornerFreqMap.get(CORNER_FREQ_NAMES.B2_MAX).get(idxPair))
                     .setApparentStressEstimateA((float) best.getPoint()[eventAidx + 1])
+                    .setApparentStressA1Min(appStressMap.get(APP_STRESS_NAMES.A1_MIN).get(idxPair))
+                    .setApparentStressA1Max(appStressMap.get(APP_STRESS_NAMES.A1_MAX).get(idxPair))
+                    .setApparentStressA2Min(appStressMap.get(APP_STRESS_NAMES.A2_MIN).get(idxPair))
+                    .setApparentStressA2Max(appStressMap.get(APP_STRESS_NAMES.A2_MAX).get(idxPair))
                     .setApparentStressEstimateB((float) best.getPoint()[eventBidx + 1])
+                    .setApparentStressB1Min(appStressMap.get(APP_STRESS_NAMES.B1_MIN).get(idxPair))
+                    .setApparentStressB1Max(appStressMap.get(APP_STRESS_NAMES.B1_MAX).get(idxPair))
+                    .setApparentStressB2Min(appStressMap.get(APP_STRESS_NAMES.B2_MIN).get(idxPair))
+                    .setApparentStressB2Max(appStressMap.get(APP_STRESS_NAMES.B2_MAX).get(idxPair))
                     .setMisfit(best.getValue().floatValue())
                     .setAppStressMin((float) lowTestAppStressMpa)
                     .setAppStressMax((float) highTestAppStressMpa)

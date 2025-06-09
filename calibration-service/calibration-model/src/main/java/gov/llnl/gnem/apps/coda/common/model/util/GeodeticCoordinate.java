@@ -19,13 +19,11 @@ public class GeodeticCoordinate {
     private final double lat;
     private final double lon;
     private final double depthKm;
-    private final double elevationKm;
 
     public GeodeticCoordinate() {
         lat = 0;
         lon = 0;
         depthKm = 0;
-        elevationKm = 0;
     }
 
     /**
@@ -41,21 +39,13 @@ public class GeodeticCoordinate {
         this.lat = lat;
         this.lon = lon;
         this.depthKm = depth;
-        elevationKm = 0;
     }
 
-    public GeodeticCoordinate(double lat, double lon, double depth, double elevKm) {
-        this.lat = lat;
-        this.lon = lon;
-        this.depthKm = depth;
-        elevationKm = elevKm;
-    }
 
     public GeodeticCoordinate(GeodeticCoordinate old) {
         lat = old.getLat();
         lon = old.getLon();
         depthKm = old.getDepthKm();
-        this.elevationKm = old.elevationKm;
     }
 
     public double getLat() {
@@ -70,17 +60,12 @@ public class GeodeticCoordinate {
         return depthKm;
     }
 
-    public double getElevationKm() {
-        return elevationKm;
-    }
-
     @Override
     public int hashCode() {
         int hash = 3;
         hash = 29 * hash + (int) (Double.doubleToLongBits(this.lat) ^ (Double.doubleToLongBits(this.lat) >>> 32));
         hash = 29 * hash + (int) (Double.doubleToLongBits(this.lon) ^ (Double.doubleToLongBits(this.lon) >>> 32));
         hash = 29 * hash + (int) (Double.doubleToLongBits(this.depthKm) ^ (Double.doubleToLongBits(this.depthKm) >>> 32));
-        hash = 29 * hash + (int) (Double.doubleToLongBits(this.elevationKm) ^ (Double.doubleToLongBits(this.elevationKm) >>> 32));
         return hash;
     }
 
@@ -105,15 +90,12 @@ public class GeodeticCoordinate {
         if (Double.doubleToLongBits(this.depthKm) != Double.doubleToLongBits(other.depthKm)) {
             return false;
         }
-        if (Double.doubleToLongBits(this.elevationKm) != Double.doubleToLongBits(other.elevationKm)) {
-            return false;
-        }
         return true;
     }
 
     @Override
     public String toString() {
-        return "GeodeticCoordinate{" + "lat=" + lat + ", lon=" + lon + ", depthKm=" + depthKm + ", elevationKm=" + elevationKm + '}';
+        return "GeodeticCoordinate{" + "lat=" + lat + ", lon=" + lon + ", depthKm=" + depthKm + '}';
     }
 
 }

@@ -221,10 +221,8 @@
 				if (curShape.name === 'f') {
 					curShape.x0 = [x];
 					curShape.x1 = [x];
+					plotData.fireShapeMoveEvent(curShape.name, curShape.x0, curShape.x1, curShape.y0, curShape.y1);
 				}
-			}
-			if (curShape) {
-				plotData.fireShapeMoveEvent(curShape.name, curShape.x0, curShape.x1, curShape.y0, curShape.y1);
 			}
 		}
 

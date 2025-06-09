@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,7 +145,11 @@ public class MeasuredMwsController extends AbstractMeasurementController {
 
     @Override
     protected List<Spectra> getFitSpectra() {
-        return new ArrayList<>(fitSpectra.get(evidCombo.getSelectionModel().getSelectedItem()));
+        List<Spectra> spectra = fitSpectra.get(evidCombo.getSelectionModel().getSelectedItem());
+        if (spectra == null) {
+            spectra = Collections.emptyList();
+        }
+        return spectra;
     }
 
     @Override

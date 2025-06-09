@@ -15,9 +15,7 @@
 package gov.llnl.gnem.apps.coda.calibration.gui.plotting;
 
 import java.beans.PropertyChangeListener;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -552,8 +550,6 @@ public class RatioMeasurementSpectraPlotManager {
                     tmpFolder.toFile().deleteOnExit();
 
                     exportScreenshots(tmpFolder.toFile());
-                    exportReportData(tmpFolder.toFile());
-
                     exportArchive = spectraRatioExporter.createExportArchive(ratioMeasurementReport, getEventPair(), tmpFolder);
 
                     if (exportArchive != null) {
@@ -677,7 +673,7 @@ public class RatioMeasurementSpectraPlotManager {
     private void addEventDataToTable(String dataHeader, EventPair eventPair) {
         Double epicentralEventDistance = getEventPairEpicentralDistanceKm();
         Double hypocentralEventDistance = getHypocentralEventPairDistanceKm();
-        Double eventDepth = getEventPairDepthKm();
+        Double eventDepth = getEventPairDepthDiffKm();
 
         ratioSummaryValues.add(new Pair<>(dataHeader, ""));
         ratioSummaryValues.add(new Pair<>("Numerator Event [A]", eventPair.getY().getEventId()));
@@ -1074,8 +1070,8 @@ public class RatioMeasurementSpectraPlotManager {
 
                     getRatioSpectraPlot().getSubplot().addPlotObject(refRatioShape);
 
-                    createFrequencyLine("Pair", false, PAIR_COLOR, LineStyles.DASH, true, pairMomentRatio, false);
-                    createFrequencyLine("Pair", true, PAIR_COLOR, LineStyles.DASH, true, refRatio, false);
+                    createFrequencyLine("Pair", true, PAIR_COLOR, LineStyles.DASH, true, pairMomentRatio, false);
+                    createFrequencyLine("Pair", false, PAIR_COLOR, LineStyles.DASH, true, refRatio, false);
                 }
             }
 
@@ -1092,8 +1088,8 @@ public class RatioMeasurementSpectraPlotManager {
 
                     getRatioSpectraPlot().getSubplot().addPlotObject(refRatioShape);
 
-                    createFrequencyLine("Joint", false, JOINT_COLOR, LineStyles.LONG_DASH, true, jointMomentRatio, false);
-                    createFrequencyLine("Joint", true, JOINT_COLOR, LineStyles.LONG_DASH, true, refRatio, false);
+                    createFrequencyLine("Joint", true, JOINT_COLOR, LineStyles.LONG_DASH, true, jointMomentRatio, false);
+                    createFrequencyLine("Joint", false, JOINT_COLOR, LineStyles.LONG_DASH, true, refRatio, false);
                 }
             }
         }
@@ -1160,8 +1156,8 @@ public class RatioMeasurementSpectraPlotManager {
 
                     getRatioSpectraPlot().getSubplot().addPlotObject(refRatioShape);
 
-                    createFrequencyLine("CCT", false, Color.BLACK, LineStyles.DOT, true, momentRatio, false);
-                    createFrequencyLine("CCT", true, Color.BLACK, LineStyles.DOT, true, refRatio, false);
+                    createFrequencyLine("CCT", true, Color.BLACK, LineStyles.DOT, true, momentRatio, false);
+                    createFrequencyLine("CCT", false, Color.BLACK, LineStyles.DOT, true, refRatio, false);
                 }
             }
         }
@@ -1311,7 +1307,7 @@ public class RatioMeasurementSpectraPlotManager {
     }
 
     // Gets the depth difference between event pair
-    public Double getEventPairDepthKm() {
+    public Double getEventPairDepthDiffKm() {
         SpectraRatioPairDetails ratioDetails = getCurrentFirstRatio();
         if (ratioDetails != null) {
             double numerDepth = ratioDetails.getNumerWaveform().getEvent().getDepth();
@@ -1512,35 +1508,6 @@ public class RatioMeasurementSpectraPlotManager {
 
         exportSVG(combinedContourPlots, folder + File.separator + "Combined_Plots_" + plotExportSuffix);
         exportSVG(ratioSpectralPlotController.getSpectralPlot().getSubplot(), folder + File.separator + SPECTRA_RATIO_PREFIX + plotExportSuffix);
-    }
-
-    public void exportReportData(final File folder) {
-        String reportFilename = "EventPairTableData.txt";
-        StringBuilder reportStr = new StringBuilder();
-
-        String timestamp = SnapshotUtils.getTimestampWithLeadingSeparator();
-        reportStr.append("SPECTRA RATIO DATA REPORT\nTimestamp: " + timestamp + "\n");
-        reportStr.append("=".repeat(100) + "\n");
-
-        ratioSummaryValues.forEach(keyValuePair -> {
-            reportStr.append(keyValuePair.getX() + ": " + keyValuePair.getY() + "\n");
-        });
-
-        reportStr.append("=".repeat(100) + "\nSPECTRA RATIO DATA POINTS\n");
-        ratioMeasurementReport.getRatiosList(getEventPair()).forEach(pairDetails -> {
-            String centerFreq = dfmt4.format(centerFreq(pairDetails.getNumerWaveform().getLowFrequency(), pairDetails.getNumerWaveform().getHighFrequency()));
-            reportStr.append("{station: " + pairDetails.getNumerWaveform().getStream().getStation().getStationName());
-            reportStr.append(" , center_freq: " + centerFreq);
-            reportStr.append(" , ratio: " + dfmt4.format(pairDetails.getDiffAvg()) + "}\n");
-        });
-
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(folder + File.separator + reportFilename));
-            writer.write(reportStr.toString());
-            writer.close();
-        } catch (IOException e) {
-            log.error("Error attempting to write report data text file : {}", e.getLocalizedMessage(), e);
-        }
     }
 
     private void exportSVG(BasicPlot plot, String path) {

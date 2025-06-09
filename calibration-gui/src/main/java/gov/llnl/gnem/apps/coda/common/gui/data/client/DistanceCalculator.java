@@ -68,21 +68,20 @@ public class DistanceCalculator {
 
     public Double getHypocentralDistance(GeodeticCoordinate coordA, GeodeticCoordinate coordB) {
 
-        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordA = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordA.getLat(), coordA.getLon(), Math.copySign(coordA.getDepthKm(), -1d));
-        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordB = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordB.getLat(), coordB.getLon(), coordB.getElevationKm());
+        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordA = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordA.getLat(), coordA.getLon(), coordA.getDepthKm());
+        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordB = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordB.getLat(), coordB.getLon(), coordB.getDepthKm());   
 
         return EModel.getSeparationMeters(convertedCoordA, convertedCoordB) / 1000.0;
     }
 
     public static GeodeticCoordinate getEventCoord(Event event) {
-
         // Note we are assuming event depth is in meters, and converting to km for distance calculations in km
         return new GeodeticCoordinate(event.getLatitude(), event.getLongitude(), event.getDepth() / 1000.0);
     }
 
     public static GeodeticCoordinate getStationCoord(Station station) {
-
         // Here, we are assuming a station elevation is in meters
-        return new GeodeticCoordinate(station.getLatitude(), station.getLongitude(), station.getElevation() / 1000.0);
+        // Geodetic coordinate lib expects depth positive is down
+        return new GeodeticCoordinate(station.getLatitude(), station.getLongitude(), Math.copySign(station.getElevation() / 1000.0, -1d));
     }
 }

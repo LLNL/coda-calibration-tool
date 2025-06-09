@@ -151,11 +151,11 @@ public class SpectraPlotManager {
     public void plotSpectraPlots() {
         if (eventPair != null) {
             if (!getCombinedPlotPoints().isEmpty()) {
-                combinedPlot = plotSpectra(getCombinedPlotPoints(), String.format("Event_Pair_%s_%s", eventPair.getX().getEventId(), eventPair.getY().getEventId()), combinedPlotPane);
+                combinedPlot = plotSpectra(getCombinedPlotPoints(), String.format("Event_Pair_%s_%s", eventPair.getY().getEventId(), eventPair.getX().getEventId()), combinedPlotPane);
             }
             if (!getNumeratorPlotPoints().isEmpty() && !getDenominatorPlotPoints().isEmpty()) {
-                numerPlot = plotSpectra(getNumeratorPlotPoints(), String.format("Numerator Event %s", eventPair.getX().getEventId()), numerPane);
-                denomPlot = plotSpectra(getDenominatorPlotPoints(), String.format("Denominator Event %s", eventPair.getY().getEventId()), denomPane);
+                numerPlot = plotSpectra(getNumeratorPlotPoints(), String.format("Numerator Event %s", eventPair.getY().getEventId()), numerPane);
+                denomPlot = plotSpectra(getDenominatorPlotPoints(), String.format("Denominator Event %s", eventPair.getX().getEventId()), denomPane);
             }
         }
     }
@@ -180,10 +180,10 @@ public class SpectraPlotManager {
             plotPane = combinedPlotPane;
         }
 
-        String combinedName = String.format("Combined_Plot_For_%s_%s", eventPair.getX().getEventId(), eventPair.getY().getEventId());
-        String splitname = String.format("Spectra_Plots_%s_%s", eventPair.getX().getEventId(), eventPair.getY().getEventId());
-        String numerName = String.format("Numerator_Spectra_Plot_%s", eventPair.getX().getEventId());
-        String denomName = String.format("Denominator_Spectra_Plot_%s", eventPair.getY().getEventId());
+        String combinedName = String.format("Combined_Plot_For_%s_%s", eventPair.getY().getEventId(), eventPair.getX().getEventId());
+        String splitname = String.format("Spectra_Plots_%s_%s", eventPair.getY().getEventId(), eventPair.getX().getEventId());
+        String numerName = String.format("Numerator_Spectra_Plot_%s", eventPair.getY().getEventId());
+        String denomName = String.format("Denominator_Spectra_Plot_%s", eventPair.getX().getEventId());
 
         if (isCombinedPlot && combinedPlot != null) {
             SnapshotUtils.writePng(folder, new Pair<>(combinedName + "_", plotPane), timestamp);

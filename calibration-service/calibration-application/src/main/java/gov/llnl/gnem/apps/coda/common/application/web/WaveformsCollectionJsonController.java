@@ -144,7 +144,9 @@ public class WaveformsCollectionJsonController {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
-        getWaveformService().update(sessionId, new ArrayList<>(waveforms));
+        if (waveforms != null) {
+            getWaveformService().update(sessionId, new ArrayList<>(waveforms));
+        }
         return ResponseEntity.ok().build();
     }
 
@@ -153,7 +155,9 @@ public class WaveformsCollectionJsonController {
         if (result.hasErrors()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
-        getWaveformService().update(sessionId, new ArrayList<>(waveforms));
+        if (waveforms != null) {
+            getWaveformService().update(sessionId, new ArrayList<>(waveforms));
+        }
         return ResponseEntity.ok().build();
     }
 

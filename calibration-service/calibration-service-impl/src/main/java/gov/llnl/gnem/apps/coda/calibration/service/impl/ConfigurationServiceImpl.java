@@ -167,8 +167,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public Double getHypocentralDistance(GeodeticCoordinate coordA, GeodeticCoordinate coordB) {
 
-        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordA = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordA.getLat(), coordA.getLon(), Math.copySign(coordA.getDepthKm(), -1d));
-        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordB = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordB.getLat(), coordB.getLon(), coordB.getElevationKm());
+        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordA = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordA.getLat(), coordA.getLon(), coordA.getDepthKm());
+        llnl.gnem.core.util.Geometry.GeodeticCoordinate convertedCoordB = new llnl.gnem.core.util.Geometry.GeodeticCoordinate(coordB.getLat(), coordB.getLon(), coordB.getDepthKm());
 
         return EModel.getSeparationMeters(convertedCoordA, convertedCoordB) / 1000.0;
     }
@@ -181,10 +181,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public GeodeticCoordinate getStationCoord(Station station) {
-        // Note we are assuming station elevation is in meters, and converting to km for distance calculations in km
-        return new GeodeticCoordinate(station.getLatitude(), station.getLongitude(), station.getElevation() / 1000.0);
+        // Here, we are assuming a station elevation is in meters
+        // Geodetic coordinate lib expects depth positive is down
+        return new GeodeticCoordinate(station.getLatitude(), station.getLongitude(), Math.copySign(station.getElevation() / 1000.0, -1d));
     }
-
+    
     @Override
     public WGS84DistanceCalcFunction getDistanceFunc() {
 

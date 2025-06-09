@@ -121,7 +121,47 @@ public class SpectraRatioPairInversionResultJoint {
     @Column
     @NumberFormat
     @NotNull
+    private double apparentStressA1Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double apparentStressA2Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double apparentStressA1Max;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double apparentStressA2Max;
+
+    @Column
+    @NumberFormat
+    @NotNull
     private float apparentStressEstimateB;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double apparentStressB1Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double apparentStressB2Min;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double apparentStressB1Max;
+
+    @Column
+    @NumberFormat
+    @NotNull
+    private double apparentStressB2Max;
 
     @Column
     @NumberFormat
@@ -384,6 +424,78 @@ public class SpectraRatioPairInversionResultJoint {
         return this;
     }
 
+    public double getApparentStressA1Min() {
+        return apparentStressA1Min;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressA1Min(double apparentStressA1Min) {
+        this.apparentStressA1Min = apparentStressA1Min;
+        return this;
+    }
+
+    public double getApparentStressA2Min() {
+        return apparentStressA2Min;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressA2Min(double apparentStressA2Min) {
+        this.apparentStressA2Min = apparentStressA2Min;
+        return this;
+    }
+
+    public double getApparentStressA1Max() {
+        return apparentStressA1Max;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressA1Max(double apparentStressA1Max) {
+        this.apparentStressA1Max = apparentStressA1Max;
+        return this;
+    }
+
+    public double getApparentStressA2Max() {
+        return apparentStressA2Max;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressA2Max(double apparentStressA2Max) {
+        this.apparentStressA2Max = apparentStressA2Max;
+        return this;
+    }
+
+    public double getApparentStressB1Min() {
+        return apparentStressB1Min;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressB1Min(double apparentStressB1Min) {
+        this.apparentStressB1Min = apparentStressB1Min;
+        return this;
+    }
+
+    public double getApparentStressB2Min() {
+        return apparentStressB2Min;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressB2Min(double apparentStressB2Min) {
+        this.apparentStressB2Min = apparentStressB2Min;
+        return this;
+    }
+
+    public double getApparentStressB1Max() {
+        return apparentStressB1Max;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressB1Max(double apparentStressB1Max) {
+        this.apparentStressB1Max = apparentStressB1Max;
+        return this;
+    }
+
+    public double getApparentStressB2Max() {
+        return apparentStressB2Max;
+    }
+
+    public SpectraRatioPairInversionResultJoint setApparentStressB2Max(double apparentStressB2Max) {
+        this.apparentStressB2Max = apparentStressB2Max;
+        return this;
+    }
+
     public float getMisfit() {
         return misfit;
     }
@@ -619,10 +731,26 @@ public class SpectraRatioPairInversionResultJoint {
                     appStressMin,
                     appStressXdim,
                     appStressYdim,
+                    apparentStressA1Max,
+                    apparentStressA1Min,
+                    apparentStressA2Max,
+                    apparentStressA2Min,
+                    apparentStressB1Max,
+                    apparentStressB1Min,
+                    apparentStressB2Max,
+                    apparentStressB2Min,
                     apparentStressEstimateA,
                     apparentStressEstimateB,
                     cornerEstimateA,
+                    cornerEstimateA1Max,
+                    cornerEstimateA1Min,
+                    cornerEstimateA2Max,
+                    cornerEstimateA2Min,
                     cornerEstimateB,
+                    cornerEstimateB1Max,
+                    cornerEstimateB1Min,
+                    cornerEstimateB2Max,
+                    cornerEstimateB2Min,
                     eventIdA,
                     eventIdB,
                     id,
@@ -658,10 +786,26 @@ public class SpectraRatioPairInversionResultJoint {
                 && Float.floatToIntBits(appStressMin) == Float.floatToIntBits(other.appStressMin)
                 && appStressXdim == other.appStressXdim
                 && appStressYdim == other.appStressYdim
+                && Double.doubleToLongBits(apparentStressA1Max) == Double.doubleToLongBits(other.apparentStressA1Max)
+                && Double.doubleToLongBits(apparentStressA1Min) == Double.doubleToLongBits(other.apparentStressA1Min)
+                && Double.doubleToLongBits(apparentStressA2Max) == Double.doubleToLongBits(other.apparentStressA2Max)
+                && Double.doubleToLongBits(apparentStressA2Min) == Double.doubleToLongBits(other.apparentStressA2Min)
+                && Double.doubleToLongBits(apparentStressB1Max) == Double.doubleToLongBits(other.apparentStressB1Max)
+                && Double.doubleToLongBits(apparentStressB1Min) == Double.doubleToLongBits(other.apparentStressB1Min)
+                && Double.doubleToLongBits(apparentStressB2Max) == Double.doubleToLongBits(other.apparentStressB2Max)
+                && Double.doubleToLongBits(apparentStressB2Min) == Double.doubleToLongBits(other.apparentStressB2Min)
                 && Float.floatToIntBits(apparentStressEstimateA) == Float.floatToIntBits(other.apparentStressEstimateA)
                 && Float.floatToIntBits(apparentStressEstimateB) == Float.floatToIntBits(other.apparentStressEstimateB)
                 && Float.floatToIntBits(cornerEstimateA) == Float.floatToIntBits(other.cornerEstimateA)
+                && Double.doubleToLongBits(cornerEstimateA1Max) == Double.doubleToLongBits(other.cornerEstimateA1Max)
+                && Double.doubleToLongBits(cornerEstimateA1Min) == Double.doubleToLongBits(other.cornerEstimateA1Min)
+                && Double.doubleToLongBits(cornerEstimateA2Max) == Double.doubleToLongBits(other.cornerEstimateA2Max)
+                && Double.doubleToLongBits(cornerEstimateA2Min) == Double.doubleToLongBits(other.cornerEstimateA2Min)
                 && Float.floatToIntBits(cornerEstimateB) == Float.floatToIntBits(other.cornerEstimateB)
+                && Double.doubleToLongBits(cornerEstimateB1Max) == Double.doubleToLongBits(other.cornerEstimateB1Max)
+                && Double.doubleToLongBits(cornerEstimateB1Min) == Double.doubleToLongBits(other.cornerEstimateB1Min)
+                && Double.doubleToLongBits(cornerEstimateB2Max) == Double.doubleToLongBits(other.cornerEstimateB2Max)
+                && Double.doubleToLongBits(cornerEstimateB2Min) == Double.doubleToLongBits(other.cornerEstimateB2Min)
                 && Objects.equals(eventIdA, other.eventIdA)
                 && Objects.equals(eventIdB, other.eventIdB)
                 && Objects.equals(id, other.id)
@@ -682,69 +826,6 @@ public class SpectraRatioPairInversionResultJoint {
                 && Objects.equals(stressXIndex, other.stressXIndex)
                 && Objects.equals(stressYIndex, other.stressYIndex)
                 && Objects.equals(version, other.version);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("SpectraRatioPairInversionResultJoint [id=")
-               .append(id)
-               .append(", version=")
-               .append(version)
-               .append(", eventIdA=")
-               .append(eventIdA)
-               .append(", eventIdB=")
-               .append(eventIdB)
-               .append(", momentEstimateA=")
-               .append(momentEstimateA)
-               .append(", cornerEstimateA=")
-               .append(cornerEstimateA)
-               .append(", momentEstimateB=")
-               .append(momentEstimateB)
-               .append(", cornerEstimateB=")
-               .append(cornerEstimateB)
-               .append(", apparentStressEstimateA=")
-               .append(apparentStressEstimateA)
-               .append(", apparentStressEstimateB=")
-               .append(apparentStressEstimateB)
-               .append(", misfit=")
-               .append(misfit)
-               .append(", m0samples=")
-               .append(m0samples)
-               .append(", m0XIndex=")
-               .append(m0XIndex)
-               .append(", m0YIndex=")
-               .append(m0YIndex)
-               .append(", stressSamples=")
-               .append(stressSamples)
-               .append(", stressXIndex=")
-               .append(stressXIndex)
-               .append(", stressYIndex=")
-               .append(stressYIndex)
-               .append(", m0minX=")
-               .append(m0minX)
-               .append(", m0maxX=")
-               .append(m0maxX)
-               .append(", m0minY=")
-               .append(m0minY)
-               .append(", m0maxY=")
-               .append(m0maxY)
-               .append(", m0Xdim=")
-               .append(m0Xdim)
-               .append(", m0Ydim=")
-               .append(m0Ydim)
-               .append(", appStressMin=")
-               .append(appStressMin)
-               .append(", appStressMax=")
-               .append(appStressMax)
-               .append(", appStressXdim=")
-               .append(appStressXdim)
-               .append(", appStressYdim=")
-               .append(appStressYdim)
-               .append(", kConstant=")
-               .append(kConstant)
-               .append("]");
-        return builder.toString();
     }
 
 }

@@ -414,9 +414,13 @@ public abstract class AbstractMeasurementController implements MapListeningContr
             filteredMeasurements = filterToEvent(evidCombo.getSelectionModel().getSelectedItem(), spectralMeasurements);
             fittingSpectra = getFitSpectra();
             final Spectra referenceSpectra = spectraClient.getReferenceSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
-            fittingSpectra.add(referenceSpectra);
+            if (!referenceSpectra.getSpectraXY().isEmpty()) {
+                fittingSpectra.add(referenceSpectra);
+            }
             final Spectra validationSpectra = spectraClient.getValidationSpectra(evidCombo.getSelectionModel().getSelectedItem()).block(Duration.ofSeconds(2));
-            fittingSpectra.add(validationSpectra);
+            if (!validationSpectra.getSpectraXY().isEmpty()) {
+                fittingSpectra.add(validationSpectra);
+            }
 
             if (filteredMeasurements != null && !filteredMeasurements.isEmpty() && filteredMeasurements.get(0).getWaveform() != null) {
                 final Event event = filteredMeasurements.get(0).getWaveform().getEvent();

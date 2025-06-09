@@ -119,6 +119,9 @@ public class LeafletMap {
 
         Platform.runLater(() -> {
             webView = new WebView();
+            webView.setMinHeight(5);
+            webView.setMinWidth(5);
+            
             webView.getEngine().setJavaScriptEnabled(true);
             webView.setContextMenuEnabled(false);
             contextMenu = new ContextMenu();

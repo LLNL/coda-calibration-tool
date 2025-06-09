@@ -259,7 +259,7 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
                         PLOT_ORDERING.DIFF_WAVEFORM.getZOrder(),
                         numeratorCutColor,
                         true,
-                        !this.alignPeaks,
+                        true,
                         false);
             plotTimeSeries(
                     denomSegment,
@@ -270,7 +270,7 @@ public class RatioDetailPlot extends PlotlyWaveformPlot {
                         PLOT_ORDERING.DIFF_WAVEFORM.getZOrder(),
                         denominatorCutColor,
                         false,
-                        !this.alignPeaks,
+                        false,
                         false);
             plotTimeSeries(diffSegment, numeratorWave.getSampleRate(), numerOriginTime, numerStartCutTime, "Diff Wave", PLOT_ORDERING.DIFF_WAVEFORM.getZOrder(), diffColor, true, false, true);
             replot();

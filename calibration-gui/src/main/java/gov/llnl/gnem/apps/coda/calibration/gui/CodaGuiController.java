@@ -397,6 +397,8 @@ public class CodaGuiController {
                 }
 
                 manualWebview = new WebView();
+                manualWebview.setMinHeight(5);
+                manualWebview.setMinWidth(5);
 
                 manualWebview.getEngine().setJavaScriptEnabled(true);
                 manualWebview.getEngine().getLoadWorker().stateProperty().addListener((o, ov, nv) -> {

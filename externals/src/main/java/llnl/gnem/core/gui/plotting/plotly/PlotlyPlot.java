@@ -44,6 +44,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Worker;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -153,7 +154,15 @@ public class PlotlyPlot implements BasicPlot {
         view.setMaxSize(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
         Platform.runLater(() -> {
             webView = new WebView();
+            
+            //Webview behaves very poorly with small plots so we need to cap how small
+            //we allow the view to be and detach/attach from our parent as necessary
+            //to avoid blow-ups from libraries downstream
+            webView.setMinHeight(5);
+            webView.setMinWidth(5);
+            
             view.getChildren().add(webView);
+            
             webView.setContextMenuEnabled(false);
             engine = webView.getEngine();
             engine.setJavaScriptEnabled(true);
@@ -171,6 +180,13 @@ public class PlotlyPlot implements BasicPlot {
                     engine.executeScript("initPlotDiv();");
                     plotData.getPlotReady().set(true);
                     replot();
+                    ChangeListener<? super Number> webviewReplot = (ev, a, b) -> {
+                        if (a != b) {
+                            replot();
+                        }
+                    };
+                    view.widthProperty().addListener(webviewReplot);
+                    view.heightProperty().addListener(webviewReplot);
                 }
             });
 
@@ -631,7 +647,14 @@ public class PlotlyPlot implements BasicPlot {
 
     @Override
     public String getSVG() {
-        return (String) engine.executeScript("getSvg();");
+        String svg = "";
+        try {
+         svg = (String) engine.executeScript("getSvg();");
+        }
+        catch (Exception e) {
+            log.warn("Unable to generate SVG for plot, {}", e.getLocalizedMessage());
+        }
+        return svg;
     }
 
     private List<PlotObjectData> getOrderedPlots(final Collection<PlotObjectData> values) {
